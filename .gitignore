@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.turbo/
+.env
+.env.local
+*.log
+
+# pnpm
+.pnpm-store/
+
+# Vite
+apps/web/dist/
+
+# Build API
+apps/api/dist/
+
+# K8s secrets reais (nunca commitar)
+k8s/secrets-real.yaml

@@ -1,0 +1,78 @@
+name: Deploy Prod (nossagrana)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag semantica da imagem para deploy em producao, ex: v1.2.3"
+        required: true
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar formato da tag estavel
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag invalida: '$TAG'. Producao aceita apenas tag estavel vX.Y.Z."
+            exit 1
+          fi
+
+      - name: Checkout para validacao da tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Garantir que a tag existe no repositorio
+        run: |
+          set -euo pipefail
+          git rev-parse "${{ inputs.tag }}^{commit}" >/dev/null
+
+  approve:
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Aguardando aprovacao manual
+        run: echo "Aprovacao recebida para deploy da tag ${{ inputs.tag }} em producao."
+
+  deploy:
+    needs: approve
+    uses: ./.github/workflows/deploy-environment.yml
+    with:
+      environment: prod
+      tag: ${{ inputs.tag }}
+      ref: ${{ inputs.tag }}
+    secrets: inherit
+
+  summary:
+    needs: [validate-tag, approve, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resumo do workflow
+        run: |
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
+          RESULT_LABEL="SUCESSO"
+          if [ "$DEPLOY_RESULT" != "success" ]; then
+            RESULT_LABEL="FALHA"
+          fi
+
+          {
+            echo "## Deployment Summary"
+            echo
+            echo "| Campo | Valor |"
+            echo "| --- | --- |"
+            echo "| Resultado | $RESULT_LABEL |"
+            echo "| Environment | prod |"
+            echo "| Tag version deployada | \`${{ inputs.tag }}\` |"
+            echo "| Ref usado | \`${{ inputs.tag }}\` |"
+            echo "| Status deploy | \`$DEPLOY_RESULT\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+

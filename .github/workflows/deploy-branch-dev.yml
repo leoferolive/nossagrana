@@ -1,0 +1,147 @@
+name: Deploy Branch Dev (nossagrana-dev)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ref do checkout (branch, tag ou SHA) para gerar uma RC e deployar em dev"
+        required: true
+
+concurrency:
+  group: deploy-branch-dev
+  cancel-in-progress: true
+
+jobs:
+  create-rc:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      rc_tag: ${{ steps.version.outputs.rc_tag }}
+      rc_sha: ${{ steps.version.outputs.rc_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref }}
+
+      - name: Criar RC tag
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          RC_SHA="$(git rev-parse HEAD)"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          LAST_TAG="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' \
+            | grep -v -- '-rc\.' \
+            | sort -V | tail -n 1 || true)"
+          [ -z "$LAST_TAG" ] && LAST_TAG="v0.0.0"
+
+          VERSION="${LAST_TAG#v}"
+          MAJOR="${VERSION%%.*}"; REST="${VERSION#*.}"
+          MINOR="${REST%%.*}"; PATCH="${REST##*.}"
+          NEXT_PATCH=$((PATCH + 1))
+
+          RC_TAG="v${MAJOR}.${MINOR}.${NEXT_PATCH}-rc.${SHORT_SHA}"
+
+          if git rev-parse "$RC_TAG" >/dev/null 2>&1; then
+            echo "Tag $RC_TAG ja existe, reutilizando."
+          else
+            git tag -a "$RC_TAG" "$RC_SHA" -m "Release candidate $RC_TAG"
+            git push origin "$RC_TAG"
+
+            gh release create "$RC_TAG" \
+              --target "$RC_SHA" \
+              --title "$RC_TAG" \
+              --notes "Release candidate para branch/ref: \`${{ inputs.ref }}\`" \
+              --prerelease
+          fi
+
+          echo "rc_tag=$RC_TAG" >> "$GITHUB_OUTPUT"
+          echo "rc_sha=$RC_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Limpar RC tags antigas (manter ultimas 10)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          OLD_RC_TAGS="$(git tag --list 'v*.*.*-rc.*' | sort -V | head -n -10)"
+
+          if [ -z "$OLD_RC_TAGS" ]; then
+            echo "Nenhuma RC tag para remover."
+            exit 0
+          fi
+
+          while IFS= read -r tag; do
+            echo "Removendo RC tag: $tag"
+            gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
+          done <<< "$OLD_RC_TAGS"
+
+  deploy:
+    needs: create-rc
+    uses: ./.github/workflows/deploy-environment.yml
+    with:
+      environment: dev
+      tag: ${{ needs.create-rc.outputs.rc_tag }}
+      ref: ${{ needs.create-rc.outputs.rc_sha }}
+    secrets: inherit
+
+  cleanup-images:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Apagar imagens RC antigas da API (manter ultimas 3)
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: nossagrana-dev-api
+          package-type: container
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 3
+          ignore-versions: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+      - name: Apagar imagens RC antigas do Web (manter ultimas 3)
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: nossagrana-dev-web
+          package-type: container
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 3
+          ignore-versions: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  summary:
+    needs: [create-rc, deploy, cleanup-images]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resumo do workflow
+        run: |
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
+          CLEANUP_RESULT="${{ needs.cleanup-images.result }}"
+          RESULT_LABEL="SUCESSO"
+          if [ "$DEPLOY_RESULT" != "success" ]; then
+            RESULT_LABEL="FALHA"
+          fi
+
+          {
+            echo "## Deployment Summary"
+            echo
+            echo "| Campo | Valor |"
+            echo "| --- | --- |"
+            echo "| Resultado | $RESULT_LABEL |"
+            echo "| Environment | dev |"
+            echo "| Tag version deployada | \`${{ needs.create-rc.outputs.rc_tag }}\` |"
+            echo "| Ref/SHA usado | \`${{ needs.create-rc.outputs.rc_sha }}\` |"
+            echo "| Status deploy | \`$DEPLOY_RESULT\` |"
+            echo "| Status cleanup imagens | \`$CLEANUP_RESULT\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+

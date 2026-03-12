@@ -1,0 +1,253 @@
+name: Deploy to Environment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Ambiente alvo: 'dev' ou 'prod'"
+        required: true
+        type: string
+      tag:
+        description: "Tag da imagem Docker a deployar"
+        required: true
+        type: string
+      ref:
+        description: "Git ref (tag, SHA ou branch) para fazer checkout do codigo"
+        required: true
+        type: string
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      resolved_sha: ${{ steps.meta.outputs.resolved_sha }}
+      build_time: ${{ steps.meta.outputs.build_time }}
+      namespace: ${{ steps.meta.outputs.namespace }}
+      api_deployment: ${{ steps.meta.outputs.api_deployment }}
+      api_container: ${{ steps.meta.outputs.api_container }}
+      api_image_repository: ${{ steps.meta.outputs.api_image_repository }}
+      api_image_uri: ${{ steps.meta.outputs.api_image_uri }}
+      web_deployment: ${{ steps.meta.outputs.web_deployment }}
+      web_container: ${{ steps.meta.outputs.web_container }}
+      web_image_repository: ${{ steps.meta.outputs.web_image_repository }}
+      web_image_uri: ${{ steps.meta.outputs.web_image_uri }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Resolve deploy metadata
+        id: meta
+        run: |
+          set -euo pipefail
+
+          RESOLVED_SHA="$(git rev-parse HEAD)"
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          if [ "${{ inputs.environment }}" = "prod" ]; then
+            NAMESPACE="nossagrana"
+            API_DEPLOYMENT="nossagrana-api"
+            API_CONTAINER="nossagrana-api"
+            API_IMAGE_REPOSITORY="ghcr.io/${{ github.repository_owner }}/nossagrana-api"
+            WEB_DEPLOYMENT="nossagrana-web"
+            WEB_CONTAINER="nossagrana-web"
+            WEB_IMAGE_REPOSITORY="ghcr.io/${{ github.repository_owner }}/nossagrana-web"
+          else
+            NAMESPACE="nossagrana-dev"
+            API_DEPLOYMENT="nossagrana-dev-api"
+            API_CONTAINER="nossagrana-dev-api"
+            API_IMAGE_REPOSITORY="ghcr.io/${{ github.repository_owner }}/nossagrana-dev-api"
+            WEB_DEPLOYMENT="nossagrana-dev-web"
+            WEB_CONTAINER="nossagrana-dev-web"
+            WEB_IMAGE_REPOSITORY="ghcr.io/${{ github.repository_owner }}/nossagrana-dev-web"
+          fi
+
+          API_IMAGE_URI="${API_IMAGE_REPOSITORY}:${{ inputs.tag }}"
+          WEB_IMAGE_URI="${WEB_IMAGE_REPOSITORY}:${{ inputs.tag }}"
+
+          echo "resolved_sha=$RESOLVED_SHA" >> "$GITHUB_OUTPUT"
+          echo "build_time=$BUILD_TIME" >> "$GITHUB_OUTPUT"
+          echo "namespace=$NAMESPACE" >> "$GITHUB_OUTPUT"
+          echo "api_deployment=$API_DEPLOYMENT" >> "$GITHUB_OUTPUT"
+          echo "api_container=$API_CONTAINER" >> "$GITHUB_OUTPUT"
+          echo "api_image_repository=$API_IMAGE_REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "api_image_uri=$API_IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "web_deployment=$WEB_DEPLOYMENT" >> "$GITHUB_OUTPUT"
+          echo "web_container=$WEB_CONTAINER" >> "$GITHUB_OUTPUT"
+          echo "web_image_repository=$WEB_IMAGE_REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "web_image_uri=$WEB_IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT || github.token }}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/api/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ needs.prepare.outputs.api_image_repository }}:latest
+            ${{ needs.prepare.outputs.api_image_uri }}
+          labels: |
+            org.opencontainers.image.title=NossaGrana API
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ inputs.tag }}
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.resolved_sha }}
+            org.opencontainers.image.ref.name=${{ inputs.ref }}
+            org.opencontainers.image.created=${{ needs.prepare.outputs.build_time }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ needs.prepare.outputs.web_image_repository }}:latest
+            ${{ needs.prepare.outputs.web_image_uri }}
+          labels: |
+            org.opencontainers.image.title=NossaGrana Web
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ inputs.tag }}
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.resolved_sha }}
+            org.opencontainers.image.ref.name=${{ inputs.ref }}
+            org.opencontainers.image.created=${{ needs.prepare.outputs.build_time }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [prepare, build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (manifests k8s)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Configure KUBECONFIG
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$KUBECONFIG_B64" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Apply Kubernetes manifests
+        run: kubectl apply -f "./k8s/${{ inputs.environment }}"
+
+      - name: Update deployment images and metadata
+        run: |
+          NAMESPACE="${{ needs.prepare.outputs.namespace }}"
+
+          kubectl set image "deployment/${{ needs.prepare.outputs.api_deployment }}" \
+            "${{ needs.prepare.outputs.api_container }}=${{ needs.prepare.outputs.api_image_uri }}" \
+            -n "$NAMESPACE"
+
+          kubectl set image "deployment/${{ needs.prepare.outputs.web_deployment }}" \
+            "${{ needs.prepare.outputs.web_container }}=${{ needs.prepare.outputs.web_image_uri }}" \
+            -n "$NAMESPACE"
+
+          kubectl set env "deployment/${{ needs.prepare.outputs.api_deployment }}" \
+            APP_VERSION="${{ inputs.tag }}" \
+            APP_GIT_TAG="${{ inputs.tag }}" \
+            APP_GIT_SHA="${{ needs.prepare.outputs.resolved_sha }}" \
+            APP_BUILD_TIME="${{ needs.prepare.outputs.build_time }}" \
+            APP_ENVIRONMENT="${{ inputs.environment }}" \
+            -n "$NAMESPACE"
+
+          kubectl set env "deployment/${{ needs.prepare.outputs.web_deployment }}" \
+            APP_VERSION="${{ inputs.tag }}" \
+            APP_GIT_TAG="${{ inputs.tag }}" \
+            APP_GIT_SHA="${{ needs.prepare.outputs.resolved_sha }}" \
+            APP_BUILD_TIME="${{ needs.prepare.outputs.build_time }}" \
+            APP_ENVIRONMENT="${{ inputs.environment }}" \
+            -n "$NAMESPACE"
+
+          kubectl annotate "deployment/${{ needs.prepare.outputs.api_deployment }}" \
+            "deploy.nossagrana/tag=${{ inputs.tag }}" \
+            "deploy.nossagrana/sha=${{ needs.prepare.outputs.resolved_sha }}" \
+            "deploy.nossagrana/build-time=${{ needs.prepare.outputs.build_time }}" \
+            --overwrite \
+            -n "$NAMESPACE"
+
+          kubectl annotate "deployment/${{ needs.prepare.outputs.web_deployment }}" \
+            "deploy.nossagrana/tag=${{ inputs.tag }}" \
+            "deploy.nossagrana/sha=${{ needs.prepare.outputs.resolved_sha }}" \
+            "deploy.nossagrana/build-time=${{ needs.prepare.outputs.build_time }}" \
+            --overwrite \
+            -n "$NAMESPACE"
+
+      - name: Wait for rollouts
+        run: |
+          NAMESPACE="${{ needs.prepare.outputs.namespace }}"
+          kubectl rollout status "deployment/${{ needs.prepare.outputs.api_deployment }}" -n "$NAMESPACE" --timeout=300s
+          kubectl rollout status "deployment/${{ needs.prepare.outputs.web_deployment }}" -n "$NAMESPACE" --timeout=300s
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          set +e
+          NAMESPACE="${{ needs.prepare.outputs.namespace }}"
+          API_DEPLOYED_IMAGE="$(kubectl get deployment "${{ needs.prepare.outputs.api_deployment }}" -n "$NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null)"
+          WEB_DEPLOYED_IMAGE="$(kubectl get deployment "${{ needs.prepare.outputs.web_deployment }}" -n "$NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null)"
+          DEPLOYED_TAG="$(kubectl get deployment "${{ needs.prepare.outputs.api_deployment }}" -n "$NAMESPACE" -o jsonpath='{.metadata.annotations.deploy\.nossagrana/tag}' 2>/dev/null)"
+          DEPLOYED_SHA="$(kubectl get deployment "${{ needs.prepare.outputs.api_deployment }}" -n "$NAMESPACE" -o jsonpath='{.metadata.annotations.deploy\.nossagrana/sha}' 2>/dev/null)"
+
+          [ -z "$API_DEPLOYED_IMAGE" ] && API_DEPLOYED_IMAGE="indisponivel"
+          [ -z "$WEB_DEPLOYED_IMAGE" ] && WEB_DEPLOYED_IMAGE="indisponivel"
+          [ -z "$DEPLOYED_TAG" ] && DEPLOYED_TAG="${{ inputs.tag }}"
+          [ -z "$DEPLOYED_SHA" ] && DEPLOYED_SHA="${{ needs.prepare.outputs.resolved_sha }}"
+
+          JOB_RESULT="${{ job.status }}"
+          RESULT_LABEL="SUCESSO"
+          if [ "$JOB_RESULT" != "success" ]; then
+            RESULT_LABEL="FALHA"
+          fi
+
+          {
+            echo "## Deployment Summary"
+            echo
+            echo "| Campo | Valor |"
+            echo "| --- | --- |"
+            echo "| Resultado | $RESULT_LABEL |"
+            echo "| Environment | ${{ inputs.environment }} |"
+            echo "| Tag version deployada | \`$DEPLOYED_TAG\` |"
+            echo "| API image deployada | \`$API_DEPLOYED_IMAGE\` |"
+            echo "| Web image deployada | \`$WEB_DEPLOYED_IMAGE\` |"
+            echo "| Git SHA | \`$DEPLOYED_SHA\` |"
+            echo "| Build time (UTC) | \`${{ needs.prepare.outputs.build_time }}\` |"
+            echo "| Namespace | \`$NAMESPACE\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+

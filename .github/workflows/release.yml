@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+concurrency:
+  group: release-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Resolve next release tag
+        id: version
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          RELEASE_SHA="${{ github.event.workflow_run.head_sha }}"
+          EXISTING_TAG="$(git tag --points-at "$RELEASE_SHA" --list 'v[0-9]*.[0-9]*.[0-9]*' \
+            | grep -v -- '-rc\.' \
+            | sort -V | tail -n 1 || true)"
+
+          if [ -n "$EXISTING_TAG" ]; then
+            RELEASE_TAG="$EXISTING_TAG"
+          else
+            LAST_TAG="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' \
+              | grep -v -- '-rc\.' \
+              | sort -V | tail -n 1 || true)"
+            [ -z "$LAST_TAG" ] && LAST_TAG="v0.0.0"
+
+            VERSION="${LAST_TAG#v}"
+            MAJOR="${VERSION%%.*}"; REST="${VERSION#*.}"
+            MINOR="${REST%%.*}"; PATCH="${REST##*.}"
+            NEXT_PATCH=$((PATCH + 1))
+
+            RELEASE_TAG="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+            git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "Release $RELEASE_TAG"
+            git push origin "$RELEASE_TAG"
+          fi
+
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure GitHub Release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+          RELEASE_SHA: ${{ steps.version.outputs.release_sha }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            echo "GitHub Release ${RELEASE_TAG} ja existe."
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$RELEASE_SHA" \
+              --title "$RELEASE_TAG" \
+              --generate-notes
+          fi
+
+      - name: Disparar deploy em dev
+        env:
+          GH_TOKEN: ${{ secrets.GHCR_PAT || github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+          RELEASE_SHA: ${{ steps.version.outputs.release_sha }}
+        run: |
+          set -euo pipefail
+          gh workflow run deploy-on-tag.yml \
+            --field tag="$RELEASE_TAG" \
+            --field ref="$RELEASE_SHA"
+

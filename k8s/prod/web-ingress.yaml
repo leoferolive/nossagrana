@@ -1,20 +1,21 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nossagrana-api
+  name: nossagrana-web
   namespace: nossagrana
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   rules:
-    - host: api.nossagrana.home
+    - host: app.nossagrana.home
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nossagrana-api
+                name: nossagrana-web
                 port:
                   number: 80
+

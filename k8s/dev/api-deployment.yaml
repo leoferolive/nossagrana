@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nossagrana-api
-  namespace: nossagrana
+  name: nossagrana-dev-api
+  namespace: nossagrana-dev
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nossagrana-api
+      app: nossagrana-dev-api
   template:
     metadata:
       labels:
-        app: nossagrana-api
+        app: nossagrana-dev-api
     spec:
       containers:
-        - name: api
-          image: ghcr.io/leoferolive/nossagrana-api:latest
+        - name: nossagrana-dev-api
+          image: ghcr.io/leoferolive/nossagrana-dev-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -23,7 +23,7 @@ spec:
             - secretRef:
                 name: nossagrana-api-secrets
             - configMapRef:
-                name: nossagrana-api-config
+                name: nossagrana-dev-api-config
           readinessProbe:
             httpGet:
               path: /api/health
@@ -36,16 +36,4 @@ spec:
               port: 3000
             initialDelaySeconds: 15
             periodSeconds: 15
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nossagrana-api
-  namespace: nossagrana
-spec:
-  selector:
-    app: nossagrana-api
-  ports:
-    - name: http
-      port: 80
-      targetPort: 3000
+

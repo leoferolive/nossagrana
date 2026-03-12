@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nossagrana-web
-  namespace: nossagrana
+  name: nossagrana-dev-web
+  namespace: nossagrana-dev
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nossagrana-web
+      app: nossagrana-dev-web
   template:
     metadata:
       labels:
-        app: nossagrana-web
+        app: nossagrana-dev-web
     spec:
       containers:
-        - name: web
-          image: ghcr.io/leoferolive/nossagrana-web:latest
+        - name: nossagrana-dev-web
+          image: ghcr.io/leoferolive/nossagrana-dev-web:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -31,16 +31,4 @@ spec:
               port: 80
             initialDelaySeconds: 15
             periodSeconds: 15
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nossagrana-web
-  namespace: nossagrana
-spec:
-  selector:
-    app: nossagrana-web
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
+

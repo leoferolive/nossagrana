@@ -11,7 +11,9 @@
    Do instead: run the smallest relevant automated checks first, then broaden only if needed.
 
 ## Shell & Command Reliability
-1. **[2026-03-11] Prefer fast, scoped search commands**
+1. **[2026-03-11] `pnpm` may be unavailable in fresh environments**
+   Do instead: run `corepack enable && corepack prepare pnpm@9.15.0 --activate` before install/build checks.
+2. **[2026-03-11] Prefer fast, scoped search commands**
    Do instead: use `rg`/`rg --files` with directory scoping before broader shell patterns.
 
 ## Domain Behavior Guardrails

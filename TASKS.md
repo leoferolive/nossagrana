@@ -8,19 +8,19 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ## Fase 0 — Setup e Infraestrutura
 
-- [ ] Inicializar monorepo com pnpm workspaces + Turborepo
-- [ ] Configurar `apps/api` (Fastify + TypeScript)
-- [ ] Configurar `apps/web` (Vite + React + TypeScript + Tailwind)
-- [ ] Configurar `packages/types` (tipos e schemas Zod compartilhados)
-- [ ] Configurar ESLint + Prettier no monorepo
-- [ ] Dockerfile multi-stage para `apps/api` (target linux/arm64)
-- [ ] Dockerfile multi-stage para `apps/web` (nginx + build Vite)
-- [ ] Manifests K8s: Deployment, Service e Ingress para API
-- [ ] Manifests K8s: Deployment, Service e Ingress para Web
-- [ ] Manifest K8s: PostgreSQL (StatefulSet + PVC)
-- [ ] Configurar GitHub Actions (CI/CD via self-workflows)
-- [ ] Ajustar Ingress para Cloudflare Tunnel existente
-- [ ] Configurar variáveis de ambiente e secrets no K3s
+- [x] Inicializar monorepo com pnpm workspaces + Turborepo
+- [x] Configurar `apps/api` (Fastify + TypeScript)
+- [x] Configurar `apps/web` (Vite + React + TypeScript + Tailwind)
+- [x] Configurar `packages/types` (tipos e schemas Zod compartilhados)
+- [x] Configurar ESLint + Prettier no monorepo
+- [x] Dockerfile multi-stage para `apps/api` (target linux/arm64)
+- [x] Dockerfile multi-stage para `apps/web` (nginx + build Vite)
+- [x] Manifests K8s: Deployment, Service e Ingress para API
+- [x] Manifests K8s: Deployment, Service e Ingress para Web
+- [x] Manifest K8s: PostgreSQL (StatefulSet + PVC)
+- [x] Configurar GitHub Actions (CI/CD via self-workflows)
+- [~] Ajustar Ingress para Cloudflare Tunnel existente
+- [~] Configurar variáveis de ambiente e secrets no K3s
 - [ ] Testar deploy end-to-end no Raspberry Pi
 
 ---

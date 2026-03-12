@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nossagrana-api-config
+  namespace: nossagrana
+data:
+  NODE_ENV: production
+  PORT: '3000'
+  JWT_EXPIRES_IN: 15m
+  REFRESH_TOKEN_EXPIRES_IN: 7d
+  CORS_ORIGIN: https://app.nossagrana.home

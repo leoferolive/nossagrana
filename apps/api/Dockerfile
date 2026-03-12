@@ -3,7 +3,7 @@ WORKDIR /app
 
 RUN corepack enable
 
-COPY pnpm-workspace.yaml package.json turbo.json tsconfig.base.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/types/package.json packages/types/package.json
 

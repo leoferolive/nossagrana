@@ -85,6 +85,9 @@ jobs:
 
   deploy:
     needs: create-rc
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/deploy-environment.yml
     with:
       environment: dev
@@ -144,4 +147,3 @@ jobs:
             echo "| Status deploy | \`$DEPLOY_RESULT\` |"
             echo "| Status cleanup imagens | \`$CLEANUP_RESULT\` |"
           } >> "$GITHUB_STEP_SUMMARY"
-

@@ -57,6 +57,9 @@ jobs:
 
   deploy-dev:
     needs: validate-inputs
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/deploy-environment.yml
     with:
       environment: dev
@@ -88,4 +91,3 @@ jobs:
             echo "| Ref usado | \`${{ inputs.ref }}\` |"
             echo "| Status deploy | \`$DEPLOY_RESULT\` |"
           } >> "$GITHUB_STEP_SUMMARY"
-

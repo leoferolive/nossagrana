@@ -44,6 +44,9 @@ jobs:
 
   deploy:
     needs: approve
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/deploy-environment.yml
     with:
       environment: prod
@@ -75,4 +78,3 @@ jobs:
             echo "| Ref usado | \`${{ inputs.tag }}\` |"
             echo "| Status deploy | \`$DEPLOY_RESULT\` |"
           } >> "$GITHUB_STEP_SUMMARY"
-

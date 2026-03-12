@@ -79,7 +79,7 @@ jobs:
           echo "web_image_repository=$WEB_IMAGE_REPOSITORY" >> "$GITHUB_OUTPUT"
           echo "web_image_uri=$WEB_IMAGE_URI" >> "$GITHUB_OUTPUT"
 
-  build-and-push:
+  build-and-push-api:
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -119,8 +119,31 @@ jobs:
             org.opencontainers.image.revision=${{ needs.prepare.outputs.resolved_sha }}
             org.opencontainers.image.ref.name=${{ inputs.ref }}
             org.opencontainers.image.created=${{ needs.prepare.outputs.build_time }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=nossagrana-api-${{ inputs.environment }}
+          cache-to: type=gha,mode=max,scope=nossagrana-api-${{ inputs.environment }}
+
+  build-and-push-web:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT || github.token }}
 
       - name: Build and push Web image
         uses: docker/build-push-action@v6
@@ -139,11 +162,11 @@ jobs:
             org.opencontainers.image.revision=${{ needs.prepare.outputs.resolved_sha }}
             org.opencontainers.image.ref.name=${{ inputs.ref }}
             org.opencontainers.image.created=${{ needs.prepare.outputs.build_time }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=nossagrana-web-${{ inputs.environment }}
+          cache-to: type=gha,mode=max,scope=nossagrana-web-${{ inputs.environment }}
 
   deploy:
-    needs: [prepare, build-and-push]
+    needs: [prepare, build-and-push-api, build-and-push-web]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (manifests k8s)
@@ -250,4 +273,3 @@ jobs:
             echo "| Build time (UTC) | \`${{ needs.prepare.outputs.build_time }}\` |"
             echo "| Namespace | \`$NAMESPACE\` |"
           } >> "$GITHUB_STEP_SUMMARY"
-

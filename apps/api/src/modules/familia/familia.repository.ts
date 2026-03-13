@@ -3,7 +3,17 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import { convites, familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
+import {
+  categorias,
+  convites,
+  familias,
+  metodosPagamento,
+  orcamentoCategoria,
+  snapshotsMensais,
+  solicitacoesEntrada,
+  transacoes,
+  usuarioFamilia,
+} from '../../db/schema.js';
 import type {
   CreatedFamilia,
   CreatedFamiliaInvite,
@@ -284,6 +294,26 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
 
     return deleted.length > 0;
   }
+
+  async deleteFamily(input: { familiaId: string }): Promise<boolean> {
+    return db.transaction(async (tx) => {
+      await tx.delete(transacoes).where(eq(transacoes.familiaId, input.familiaId));
+      await tx.delete(orcamentoCategoria).where(eq(orcamentoCategoria.familiaId, input.familiaId));
+      await tx.delete(snapshotsMensais).where(eq(snapshotsMensais.familiaId, input.familiaId));
+      await tx.delete(convites).where(eq(convites.familiaId, input.familiaId));
+      await tx.delete(solicitacoesEntrada).where(eq(solicitacoesEntrada.familiaId, input.familiaId));
+      await tx.delete(usuarioFamilia).where(eq(usuarioFamilia.familiaId, input.familiaId));
+      await tx.delete(metodosPagamento).where(eq(metodosPagamento.familiaId, input.familiaId));
+      await tx.delete(categorias).where(eq(categorias.familiaId, input.familiaId));
+
+      const deletedFamilia = await tx
+        .delete(familias)
+        .where(eq(familias.id, input.familiaId))
+        .returning({ id: familias.id });
+
+      return deletedFamilia.length > 0;
+    });
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
@@ -453,5 +483,24 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     }
 
     return memberships.delete(input.usuarioId);
+  }
+
+  async deleteFamily(input: { familiaId: string }): Promise<boolean> {
+    const existed = this.familiasById.delete(input.familiaId);
+    this.membershipsByFamiliaId.delete(input.familiaId);
+
+    for (const [inviteId, invite] of this.invitesById.entries()) {
+      if (invite.familiaId === input.familiaId) {
+        this.invitesById.delete(inviteId);
+      }
+    }
+
+    for (const [requestId, joinRequest] of this.joinRequestsById.entries()) {
+      if (joinRequest.familiaId === input.familiaId) {
+        this.joinRequestsById.delete(requestId);
+      }
+    }
+
+    return existed;
   }
 }

@@ -68,6 +68,18 @@ export class ForbiddenActiveFamilySwitchError extends Error {
   }
 }
 
+export class ForbiddenFamiliaDeletionError extends Error {
+  constructor() {
+    super('Apenas admin pode excluir familia');
+  }
+}
+
+export class FamiliaNotFoundError extends Error {
+  constructor() {
+    super('Familia nao encontrada');
+  }
+}
+
 export class FamiliaService {
   constructor(private readonly familiaRepository: FamiliaRepository) {}
 
@@ -201,5 +213,24 @@ export class FamiliaService {
     return {
       familiaIdAtiva: input.familiaId,
     };
+  }
+
+  async deleteFamily(input: { familiaId: string; usuarioId: string }) {
+    const isAdmin = await this.familiaRepository.isUserAdmin({
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+    });
+
+    if (!isAdmin) {
+      throw new ForbiddenFamiliaDeletionError();
+    }
+
+    const deleted = await this.familiaRepository.deleteFamily({
+      familiaId: input.familiaId,
+    });
+
+    if (!deleted) {
+      throw new FamiliaNotFoundError();
+    }
   }
 }

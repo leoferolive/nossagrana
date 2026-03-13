@@ -961,4 +961,64 @@ describe('API health endpoint', () => {
       familiaIdAtiva: familia.id,
     });
   });
+
+  it('deletes family as admin and revokes family access', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Delete',
+        email: 'admin-family-delete@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-delete@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Excluir',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const deleteResponse = await app.inject({
+      method: 'DELETE',
+      url: `/api/familias/${familia.id}`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+    });
+
+    expect(deleteResponse.statusCode).toBe(204);
+
+    const switchAfterDeleteResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias/alternar',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        familiaId: familia.id,
+      },
+    });
+
+    expect(switchAfterDeleteResponse.statusCode).toBe(403);
+  });
 });

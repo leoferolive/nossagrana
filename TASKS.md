@@ -74,7 +74,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Rota `PATCH /familias/solicitacoes/:id` — aprovar/rejeitar (UC22)
 - [x] Rota `GET /familias/:id/membros` — listar membros
 - [x] Rota `DELETE /familias/:id/membros/:usuarioId` — remover membro (UC23)
-- [ ] Rota `DELETE /familias/:id` — excluir família (UC24)
+- [x] Rota `DELETE /familias/:id` — excluir família (UC24)
 - [x] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend

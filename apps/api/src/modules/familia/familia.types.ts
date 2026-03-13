@@ -76,4 +76,5 @@ export interface FamiliaRepository {
   }): Promise<ReviewedFamiliaJoinRequest | null>;
   listMembers(input: { familiaId: string }): Promise<FamiliaMember[]>;
   removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
+  deleteFamily(input: { familiaId: string }): Promise<boolean>;
 }

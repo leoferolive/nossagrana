@@ -1,6 +1,7 @@
 import {
   familiaCreateInviteRequestSchema,
   familiaCreateInviteResponseSchema,
+  familiaDeleteParamsSchema,
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
   familiaJoinByInviteResponseSchema,
@@ -151,6 +152,25 @@ export const familiaSwitchActiveSchema = {
     }),
     403: z.object({
       message: z.literal('Usuario sem acesso a familia informada'),
+    }),
+  },
+};
+
+export const familiaDeleteSchema = {
+  params: familiaDeleteParamsSchema,
+  response: {
+    204: z.null(),
+    400: z.object({
+      message: z.literal('familia_id da rota difere da familia ativa'),
+    }),
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    403: z.object({
+      message: z.literal('Apenas admin pode excluir familia'),
+    }),
+    404: z.object({
+      message: z.literal('Familia nao encontrada'),
     }),
   },
 };

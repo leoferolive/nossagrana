@@ -1,6 +1,7 @@
 import {
   familiaCreateInviteRequestSchema,
   familiaCreateRequestSchema,
+  familiaDeleteParamsSchema,
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
   familiaListMembersParamsSchema,
@@ -17,6 +18,7 @@ import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.r
 import {
   familiaCreateInviteSchema,
   familiaCreateSchema,
+  familiaDeleteSchema,
   familiaJoinByInviteSchema,
   familiaListJoinRequestsSchema,
   familiaListMembersSchema,
@@ -27,7 +29,9 @@ import {
 } from './familia.schema.js';
 import {
   FamiliaMemberNotFoundError,
+  FamiliaNotFoundError,
   ForbiddenActiveFamilySwitchError,
+  ForbiddenFamiliaDeletionError,
   ForbiddenFamiliaJoinRequestListError,
   ForbiddenFamiliaMemberRemovalError,
   FamiliaService,
@@ -272,6 +276,39 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         if (error instanceof FamiliaMemberNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  fastify.delete(
+    '/familias/:id',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: familiaDeleteSchema,
+    },
+    async (request, reply) => {
+      try {
+        const params = familiaDeleteParamsSchema.parse(request.params);
+        if (params.id !== request.familiaIdAtiva) {
+          return reply.code(400).send({ message: 'familia_id da rota difere da familia ativa' });
+        }
+
+        await familiaService.deleteFamily({
+          familiaId: params.id,
+          usuarioId: request.user.sub,
+        });
+
+        return reply.code(204).send();
+      } catch (error) {
+        if (error instanceof ForbiddenFamiliaDeletionError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
+        if (error instanceof FamiliaNotFoundError) {
           return reply.code(404).send({ message: error.message });
         }
 

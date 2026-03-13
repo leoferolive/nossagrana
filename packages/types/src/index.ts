@@ -222,3 +222,9 @@ export const familiaSwitchActiveResponseSchema = z.object({
 });
 
 export type FamiliaSwitchActiveResponse = z.infer<typeof familiaSwitchActiveResponseSchema>;
+
+export const familiaDeleteParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type FamiliaDeleteParams = z.infer<typeof familiaDeleteParamsSchema>;

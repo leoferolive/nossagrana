@@ -25,4 +25,24 @@ describe('API health endpoint', () => {
       app: 'api',
     });
   });
+
+  it('registers a user', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo@example.com',
+        senha: 'password123',
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      user: {
+        nome: 'Leo',
+        email: 'leo@example.com',
+      },
+    });
+  });
 });

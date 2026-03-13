@@ -46,7 +46,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 2 — Autenticação
 
 ### Backend
-- [ ] Rota `POST /auth/register` — cadastro de usuário (UC01)
+- [x] Rota `POST /auth/register` — cadastro de usuário (UC01)
 - [ ] Rota `POST /auth/login` — login com JWT + refresh token (UC02)
 - [ ] Rota `POST /auth/refresh` — renovar access token
 - [ ] Rota `POST /auth/logout` — invalidar refresh token

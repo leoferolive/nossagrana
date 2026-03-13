@@ -5,6 +5,7 @@ import {
 } from 'fastify-type-provider-zod';
 
 import { env } from './config/env.js';
+import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
@@ -25,6 +26,7 @@ export const buildApp = () => {
   app.register(authPlugin);
   app.register(websocketPlugin);
 
+  app.register(authRoutes, { prefix: '/api' });
   app.register(healthRoutes, { prefix: '/api' });
 
   return app;

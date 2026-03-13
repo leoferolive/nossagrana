@@ -13,3 +13,22 @@ export const healthResponseSchema = z.object({
 });
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
+
+export const authRegisterRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  senha: z.string().min(8),
+});
+
+export type AuthRegisterRequest = z.infer<typeof authRegisterRequestSchema>;
+
+export const authRegisterResponseSchema = z.object({
+  user: z.object({
+    id: z.string().uuid(),
+    nome: z.string(),
+    email: z.string().email(),
+    dataCriacao: z.string(),
+  }),
+});
+
+export type AuthRegisterResponse = z.infer<typeof authRegisterResponseSchema>;

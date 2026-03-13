@@ -44,13 +44,21 @@ pnpm dev
 pnpm lint
 pnpm type-check
 pnpm build
+pnpm deps:check
+```
+
+### Banco (API / Drizzle)
+
+```bash
+pnpm --filter api db:generate
+pnpm --filter api db:migrate
 ```
 
 ## Infra de deploy (base)
 
 - Dockerfiles: `apps/api/Dockerfile`, `apps/web/Dockerfile`
 - Kubernetes: `k8s/`
-- CI/CD: `.github/workflows/ci-cd.yml`
+- CI/CD: `.github/workflows/ci.yml` + workflows de release/deploy em `.github/workflows/`
 
 ## Documentacao
 
@@ -58,4 +66,5 @@ pnpm build
 - `docs/FLOWS.md`
 - `docs/USE_CASES.md`
 - `docs/DECISIONS.md`
+- `docs/DEPENDENCY_POLICY.md`
 - `TASKS.md`

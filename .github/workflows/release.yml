@@ -14,9 +14,11 @@ jobs:
   release:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      release_sha: ${{ steps.version.outputs.release_sha }}
     permissions:
       contents: write
-      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,14 +76,40 @@ jobs:
               --generate-notes
           fi
 
-      - name: Disparar deploy em dev
-        env:
-          GH_TOKEN: ${{ secrets.GHCR_PAT || github.token }}
-          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
-          RELEASE_SHA: ${{ steps.version.outputs.release_sha }}
-        run: |
-          set -euo pipefail
-          gh workflow run deploy-on-tag.yml \
-            --field tag="$RELEASE_TAG" \
-            --field ref="$RELEASE_SHA"
+  deploy-dev:
+    needs: release
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/deploy-environment.yml
+    with:
+      environment: dev
+      tag: ${{ needs.release.outputs.release_tag }}
+      ref: ${{ needs.release.outputs.release_sha }}
+    secrets: inherit
 
+  summary:
+    needs: [release, deploy-dev]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resumo do workflow
+        run: |
+          RELEASE_RESULT="${{ needs.release.result }}"
+          DEPLOY_RESULT="${{ needs.deploy-dev.result }}"
+          RESULT_LABEL="SUCESSO"
+          if [ "$RELEASE_RESULT" != "success" ] || [ "$DEPLOY_RESULT" != "success" ]; then
+            RESULT_LABEL="FALHA"
+          fi
+
+          {
+            echo "## Release Summary"
+            echo
+            echo "| Campo | Valor |"
+            echo "| --- | --- |"
+            echo "| Resultado | $RESULT_LABEL |"
+            echo "| Tag criada/reutilizada | \`${{ needs.release.outputs.release_tag }}\` |"
+            echo "| SHA release | \`${{ needs.release.outputs.release_sha }}\` |"
+            echo "| Status release | \`$RELEASE_RESULT\` |"
+            echo "| Status deploy dev | \`$DEPLOY_RESULT\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

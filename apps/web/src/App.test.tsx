@@ -12,6 +12,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: /entrar no nossagrana/i })).toBeInTheDocument();
+    expect(screen.getByText(/financas familiares em tempo real/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
@@ -25,6 +26,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
 
     expect(screen.getByRole('heading', { name: /criar conta no nossagrana/i })).toBeInTheDocument();
+    expect(screen.getByText(/junte sua familia e organize tudo em um lugar/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^e-mail$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();

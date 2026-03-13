@@ -6,6 +6,7 @@ import { useAuth } from './use-auth';
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });
 
 const AuthConsumer = () => {
@@ -33,6 +34,26 @@ const AuthConsumer = () => {
 };
 
 describe('AuthContext', () => {
+  it('hydrates session from localStorage on startup', () => {
+    localStorage.setItem(
+      'nossagrana.auth.session',
+      JSON.stringify({
+        accessToken: 'saved-access-token',
+        refreshToken: 'saved-refresh-token',
+      }),
+    );
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByText('authenticated: yes')).toBeInTheDocument();
+    expect(screen.getByText('accessToken: saved-access-token')).toBeInTheDocument();
+    expect(screen.getByText('refreshToken: saved-refresh-token')).toBeInTheDocument();
+  });
+
   it('starts logged out and allows login/logout flow', () => {
     render(
       <AuthProvider>
@@ -49,12 +70,15 @@ describe('AuthContext', () => {
     expect(screen.getByText('authenticated: yes')).toBeInTheDocument();
     expect(screen.getByText('accessToken: access-token-1')).toBeInTheDocument();
     expect(screen.getByText('refreshToken: refresh-token-1')).toBeInTheDocument();
+    expect(localStorage.getItem('nossagrana.auth.session')).toContain('access-token-1');
+    expect(localStorage.getItem('nossagrana.auth.session')).toContain('refresh-token-1');
 
     fireEvent.click(screen.getByRole('button', { name: 'logout' }));
 
     expect(screen.getByText('authenticated: no')).toBeInTheDocument();
     expect(screen.getByText('accessToken: none')).toBeInTheDocument();
     expect(screen.getByText('refreshToken: none')).toBeInTheDocument();
+    expect(localStorage.getItem('nossagrana.auth.session')).toBeNull();
   });
 
   it('updates only access token when refresh happens', () => {
@@ -69,5 +93,7 @@ describe('AuthContext', () => {
 
     expect(screen.getByText('accessToken: access-token-2')).toBeInTheDocument();
     expect(screen.getByText('refreshToken: refresh-token-1')).toBeInTheDocument();
+    expect(localStorage.getItem('nossagrana.auth.session')).toContain('access-token-2');
+    expect(localStorage.getItem('nossagrana.auth.session')).toContain('refresh-token-1');
   });
 });

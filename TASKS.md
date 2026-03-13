@@ -81,7 +81,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)
 - [x] Tela de configurações da família (Admin)
 - [x] Listagem de membros com opção de remoção
-- [ ] Gestão de solicitações pendentes (Admin)
+- [x] Gestão de solicitações pendentes (Admin)
 - [ ] Geração e compartilhamento de código de convite
 - [ ] Seletor de família ativa (para usuários com múltiplas famílias)
 

@@ -71,4 +71,20 @@ describe('App', () => {
 
     expect(screen.queryByRole('button', { name: /remover maria/i })).not.toBeInTheDocument();
   });
+
+  it('manages pending requests in family settings', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    expect(screen.getByRole('button', { name: /aprovar joao/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /rejeitar joao/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /aprovar joao/i }));
+
+    expect(screen.queryByRole('button', { name: /aprovar joao/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /rejeitar joao/i })).not.toBeInTheDocument();
+  });
 });

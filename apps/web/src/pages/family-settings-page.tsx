@@ -11,9 +11,13 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
     { id: '1', nome: 'Leo', role: 'admin' as const },
     { id: '2', nome: 'Maria', role: 'membro' as const },
   ]);
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([{ id: 'r1', nome: 'Joao' }]);
 
   const removeMember = (memberId: string) => {
     setMembros((currentMembers) => currentMembers.filter((member) => member.id !== memberId));
+  };
+  const handlePendingRequest = (requestId: string) => {
+    setSolicitacoesPendentes((currentRequests) => currentRequests.filter((request) => request.id !== requestId));
   };
 
   return (
@@ -52,7 +56,35 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
           ))}
         </ul>
 
-        <p>Solicitacoes pendentes</p>
+        <div className="space-y-2">
+          <p className="font-semibold text-text">Solicitacoes pendentes</p>
+          <ul className="space-y-2">
+            {solicitacoesPendentes.map((solicitacao) => (
+              <li
+                key={solicitacao.id}
+                className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+              >
+                <span>{solicitacao.nome}</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handlePendingRequest(solicitacao.id)}
+                    className="text-xs font-semibold text-success transition hover:underline"
+                  >
+                    Aprovar {solicitacao.nome}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePendingRequest(solicitacao.id)}
+                    className="text-xs font-semibold text-danger transition hover:underline"
+                  >
+                    Rejeitar {solicitacao.nome}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
         <p>Convites</p>
       </div>
     </AuthShell>

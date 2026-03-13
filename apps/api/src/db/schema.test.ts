@@ -7,6 +7,7 @@ import {
   familias,
   metodosPagamento,
   solicitacoesEntrada,
+  transacoes,
   users,
   usuarioFamilia,
 } from './schema.js';
@@ -158,5 +159,45 @@ describe('database schema', () => {
     expect(columns.usuarioDonoId.notNull).toBe(true);
     expect(columns.ativo.notNull).toBe(true);
     expect(columns.criadoEm.notNull).toBe(true);
+  });
+
+  it('defines transacoes table with required columns', () => {
+    const columns = getTableColumns(transacoes);
+
+    expect(Object.keys(columns)).toEqual([
+      'id',
+      'familiaId',
+      'tipo',
+      'valor',
+      'categoriaId',
+      'descricao',
+      'data',
+      'mesReferencia',
+      'metodoPagamentoId',
+      'usuarioRegistrouId',
+      'recorrente',
+      'frequencia',
+      'dataFimRecorrencia',
+      'parcelado',
+      'numeroParcelas',
+      'parcelaAtual',
+      'valorTotal',
+      'valorParcela',
+      'transacaoPaiId',
+      'criadoEm',
+      'atualizadoEm',
+    ]);
+    expect(columns.id.notNull).toBe(true);
+    expect(columns.familiaId.notNull).toBe(true);
+    expect(columns.tipo.notNull).toBe(true);
+    expect(columns.valor.notNull).toBe(true);
+    expect(columns.categoriaId.notNull).toBe(true);
+    expect(columns.data.notNull).toBe(true);
+    expect(columns.mesReferencia.notNull).toBe(true);
+    expect(columns.usuarioRegistrouId.notNull).toBe(true);
+    expect(columns.recorrente.notNull).toBe(true);
+    expect(columns.parcelado.notNull).toBe(true);
+    expect(columns.criadoEm.notNull).toBe(true);
+    expect(columns.atualizadoEm.notNull).toBe(true);
   });
 });

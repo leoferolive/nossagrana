@@ -1,6 +1,8 @@
 import {
   boolean,
+  date,
   integer,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -123,4 +125,41 @@ export const metodosPagamento = pgTable('metodos_pagamento', {
     .references(() => users.id),
   ativo: boolean('ativo').notNull().default(true),
   criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const transacaoTipo = pgEnum('transacao_tipo', ['receita', 'despesa']);
+export const transacaoFrequencia = pgEnum('transacao_frequencia', [
+  'mensal',
+  'semanal',
+  'quinzenal',
+]);
+
+export const transacoes = pgTable('transacoes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  familiaId: uuid('familia_id')
+    .notNull()
+    .references(() => familias.id),
+  tipo: transacaoTipo('tipo').notNull(),
+  valor: numeric('valor', { precision: 14, scale: 2 }).notNull(),
+  categoriaId: uuid('categoria_id')
+    .notNull()
+    .references(() => categorias.id),
+  descricao: text('descricao'),
+  data: date('data').notNull(),
+  mesReferencia: text('mes_referencia').notNull(),
+  metodoPagamentoId: uuid('metodo_pagamento_id').references(() => metodosPagamento.id),
+  usuarioRegistrouId: uuid('usuario_registrou_id')
+    .notNull()
+    .references(() => users.id),
+  recorrente: boolean('recorrente').notNull().default(false),
+  frequencia: transacaoFrequencia('frequencia'),
+  dataFimRecorrencia: date('data_fim_recorrencia'),
+  parcelado: boolean('parcelado').notNull().default(false),
+  numeroParcelas: integer('numero_parcelas'),
+  parcelaAtual: integer('parcela_atual'),
+  valorTotal: numeric('valor_total', { precision: 14, scale: 2 }),
+  valorParcela: numeric('valor_parcela', { precision: 14, scale: 2 }),
+  transacaoPaiId: uuid('transacao_pai_id'),
+  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+  atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow().notNull(),
 });

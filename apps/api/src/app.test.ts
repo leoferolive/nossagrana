@@ -151,4 +151,48 @@ describe('API health endpoint', () => {
 
     expect(refreshAfterLogoutResponse.statusCode).toBe(401);
   });
+
+  it('protects private route with JWT authentication', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-private@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-private@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const unauthorizedResponse = await app.inject({
+      method: 'GET',
+      url: '/api/auth/me',
+    });
+    expect(unauthorizedResponse.statusCode).toBe(401);
+
+    const authorizedResponse = await app.inject({
+      method: 'GET',
+      url: '/api/auth/me',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    expect(authorizedResponse.statusCode).toBe(200);
+    expect(authorizedResponse.json()).toMatchObject({
+      user: {
+        email: 'leo-private@example.com',
+      },
+    });
+  });
 });

@@ -64,3 +64,12 @@ export const authLogoutRequestSchema = z.object({
 });
 
 export type AuthLogoutRequest = z.infer<typeof authLogoutRequestSchema>;
+
+export const authMeResponseSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    email: z.string().email(),
+  }),
+});
+
+export type AuthMeResponse = z.infer<typeof authMeResponseSchema>;

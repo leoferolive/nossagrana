@@ -2,6 +2,7 @@ import {
   authLoginRequestSchema,
   authLoginResponseSchema,
   authLogoutRequestSchema,
+  authMeResponseSchema,
   authRefreshRequestSchema,
   authRefreshResponseSchema,
   authRegisterRequestSchema,
@@ -41,4 +42,10 @@ export const authRefreshSchema = {
 
 export const authLogoutSchema = {
   body: authLogoutRequestSchema,
+};
+
+export const authMeSchema = {
+  response: {
+    200: authMeResponseSchema,
+  },
 };

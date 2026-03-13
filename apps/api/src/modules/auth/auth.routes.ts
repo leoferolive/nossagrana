@@ -11,6 +11,7 @@ import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository
 import {
   authLoginSchema,
   authLogoutSchema,
+  authMeSchema,
   authRefreshSchema,
   authRegisterSchema,
 } from './auth.schema.js';
@@ -115,5 +116,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const payload = authLogoutRequestSchema.parse(request.body);
     revokedRefreshTokens.add(payload.refreshToken);
     return reply.code(204).send();
+  });
+
+  fastify.get('/auth/me', { preHandler: [fastify.authenticate], schema: authMeSchema }, async (request) => {
+    return {
+      user: {
+        id: request.user.sub,
+        email: request.user.email,
+      },
+    };
   });
 };

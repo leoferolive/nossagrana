@@ -1,20 +1,11 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+
+import { AuthContext, type AuthContextValue } from './auth-context-store';
 
 interface AuthSession {
   accessToken: string;
   refreshToken: string;
 }
-
-interface AuthContextValue {
-  isAuthenticated: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
-  login: (session: AuthSession) => void;
-  logout: () => void;
-  setAccessToken: (accessToken: string) => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -22,37 +13,38 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<AuthSession | null>(null);
+  const login = useCallback((nextSession: AuthSession) => {
+    setSession(nextSession);
+  }, []);
+
+  const logout = useCallback(() => {
+    setSession(null);
+  }, []);
+
+  const setAccessToken = useCallback((accessToken: string) => {
+    setSession((currentSession) => {
+      if (!currentSession) {
+        return null;
+      }
+
+      return {
+        ...currentSession,
+        accessToken,
+      };
+    });
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       isAuthenticated: session !== null,
       accessToken: session?.accessToken ?? null,
       refreshToken: session?.refreshToken ?? null,
-      login: (nextSession) => setSession(nextSession),
-      logout: () => setSession(null),
-      setAccessToken: (accessToken) =>
-        setSession((currentSession) => {
-          if (!currentSession) {
-            return null;
-          }
-
-          return {
-            ...currentSession,
-            accessToken,
-          };
-        }),
+      login,
+      logout,
+      setAccessToken,
     }),
-    [session],
+    [login, logout, session, setAccessToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-
-  return context;
 };

@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { AuthProvider, useAuth } from './auth-context';
+import { AuthProvider } from './auth-context';
+import { useAuth } from './use-auth';
 
 afterEach(() => {
   cleanup();

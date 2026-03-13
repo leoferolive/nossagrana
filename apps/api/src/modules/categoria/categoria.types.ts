@@ -10,4 +10,5 @@ export interface Categoria {
 
 export interface CategoriaRepository {
   listByFamiliaId(input: { familiaId: string }): Promise<Categoria[]>;
+  create(input: { familiaId: string; nome: string; tipo: 'receita' | 'despesa'; criadoPor: string }): Promise<Categoria>;
 }

@@ -247,3 +247,24 @@ export const categoriaListResponseSchema = z.object({
 });
 
 export type CategoriaListResponse = z.infer<typeof categoriaListResponseSchema>;
+
+export const categoriaCreateRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  tipo: categoriaTipoSchema,
+});
+
+export type CategoriaCreateRequest = z.infer<typeof categoriaCreateRequestSchema>;
+
+export const categoriaCreateResponseSchema = z.object({
+  categoria: z.object({
+    id: z.string().uuid(),
+    familiaId: z.string().uuid(),
+    nome: z.string().min(1),
+    tipo: categoriaTipoSchema,
+    ativo: z.boolean(),
+    criadoPor: z.string().uuid(),
+    criadoEm: z.string(),
+  }),
+});
+
+export type CategoriaCreateResponse = z.infer<typeof categoriaCreateResponseSchema>;

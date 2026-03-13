@@ -1,8 +1,9 @@
+import { categoriaCreateRequestSchema } from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleCategoriaRepository, InMemoryCategoriaRepository } from './categoria.repository.js';
-import { categoriaListSchema } from './categoria.schema.js';
+import { categoriaCreateSchema, categoriaListSchema } from './categoria.schema.js';
 import { CategoriaService } from './categoria.service.js';
 
 const defaultCategoriaService = (): CategoriaService => {
@@ -15,6 +16,30 @@ const defaultCategoriaService = (): CategoriaService => {
 
 export const categoriaRoutes: FastifyPluginAsync = async (fastify) => {
   const categoriaService = defaultCategoriaService();
+
+  fastify.post(
+    '/categorias',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: categoriaCreateSchema,
+    },
+    async (request, reply) => {
+      const payload = categoriaCreateRequestSchema.parse(request.body);
+      const categoria = await categoriaService.create({
+        familiaId: request.familiaIdAtiva as string,
+        nome: payload.nome,
+        tipo: payload.tipo,
+        criadoPor: request.user.sub,
+      });
+
+      return reply.code(201).send({
+        categoria: {
+          ...categoria,
+          criadoEm: categoria.criadoEm.toISOString(),
+        },
+      });
+    },
+  );
 
   fastify.get(
     '/categorias',

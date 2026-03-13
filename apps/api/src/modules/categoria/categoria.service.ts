@@ -8,4 +8,13 @@ export class CategoriaService {
       familiaId: input.familiaId,
     });
   }
+
+  async create(input: { familiaId: string; nome: string; tipo: 'receita' | 'despesa'; criadoPor: string }) {
+    return this.categoriaRepository.create({
+      familiaId: input.familiaId,
+      nome: input.nome,
+      tipo: input.tipo,
+      criadoPor: input.criadoPor,
+    });
+  }
 }

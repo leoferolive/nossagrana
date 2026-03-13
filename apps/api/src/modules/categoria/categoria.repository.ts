@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
@@ -26,6 +28,39 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
       criadoEm: categoria.criadoEm,
     }));
   }
+
+  async create(input: {
+    familiaId: string;
+    nome: string;
+    tipo: 'receita' | 'despesa';
+    criadoPor: string;
+  }): Promise<Categoria> {
+    const [created] = await db
+      .insert(categorias)
+      .values({
+        familiaId: input.familiaId,
+        nome: input.nome,
+        tipo: input.tipo,
+        ativo: true,
+        criadoPor: input.criadoPor,
+      })
+      .returning({
+        id: categorias.id,
+        familiaId: categorias.familiaId,
+        nome: categorias.nome,
+        tipo: categorias.tipo,
+        ativo: categorias.ativo,
+        criadoPor: categorias.criadoPor,
+        criadoEm: categorias.criadoEm,
+      });
+
+    return {
+      ...created,
+      tipo: created.tipo as 'receita' | 'despesa',
+      ativo: created.ativo,
+      criadoEm: created.criadoEm,
+    };
+  }
 }
 
 export class InMemoryCategoriaRepository implements CategoriaRepository {
@@ -33,5 +68,26 @@ export class InMemoryCategoriaRepository implements CategoriaRepository {
 
   async listByFamiliaId(input: { familiaId: string }): Promise<Categoria[]> {
     return this.categorias.filter((categoria) => categoria.familiaId === input.familiaId && categoria.ativo);
+  }
+
+  async create(input: {
+    familiaId: string;
+    nome: string;
+    tipo: 'receita' | 'despesa';
+    criadoPor: string;
+  }): Promise<Categoria> {
+    const created: Categoria = {
+      id: randomUUID(),
+      familiaId: input.familiaId,
+      nome: input.nome,
+      tipo: input.tipo,
+      ativo: true,
+      criadoPor: input.criadoPor,
+      criadoEm: new Date(),
+    };
+
+    this.categorias.push(created);
+
+    return created;
   }
 }

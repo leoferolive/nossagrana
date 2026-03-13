@@ -1071,4 +1071,82 @@ describe('API health endpoint', () => {
       categorias: [],
     });
   });
+
+  it('creates a category for active family', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Categoria Create',
+        email: 'admin-family-category-create@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-category-create@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Categoria Create',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/categorias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+      payload: {
+        nome: 'Alimentacao',
+        tipo: 'despesa',
+      },
+    });
+
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toMatchObject({
+      categoria: {
+        familiaId: familia.id,
+        nome: 'Alimentacao',
+        tipo: 'despesa',
+        ativo: true,
+      },
+    });
+
+    const listResponse = await app.inject({
+      method: 'GET',
+      url: '/api/categorias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+    });
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listResponse.json()).toMatchObject({
+      categorias: [
+        {
+          nome: 'Alimentacao',
+          tipo: 'despesa',
+        },
+      ],
+    });
+  });
 });

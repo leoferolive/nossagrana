@@ -38,7 +38,7 @@ O sistema suporta múltiplas famílias, cada uma com dados completamente isolado
 ### Entrada na Família
 
 1. **Código/Link de convite:** Admin gera código → novo usuário entra direto
-2. **Solicitação:** Usuário busca a família → Admin aprova ou rejeita
+2. **Solicitação:** Usuário busca a família → envia solicitação → Admin aprova ou rejeita
 
 ---
 
@@ -120,7 +120,9 @@ divergente (flag se dados foram alterados após snapshot), gerado_em
 - Atualização em tempo real via WebSocket/SSE
 
 ### 4.2 Registro de Transação
-- Botão flutuante "+" sempre visível em qualquer tela
+- Ação de nova transação (`+`) sempre visível nas telas principais
+  - Mobile: FAB flutuante
+  - Desktop: botão fixo na barra superior
 - Modal com: tipo, valor, categoria, descrição, data, método de pagamento
 - Opções: recorrente (frequência + data fim), parcelado (nº de parcelas)
 - Defaults: tipo=despesa, data=hoje
@@ -186,12 +188,26 @@ divergente (flag se dados foram alterados após snapshot), gerado_em
 | PWA | Instalável como app no celular |
 | Tempo real | WebSocket/SSE para sincronização entre membros da família |
 
+### 5.1 Diretrizes Visuais (MVP)
+
+- **Tema padrão:** dark (como nos wireframes desktop/mobile), mantendo contraste AA para texto e controles.
+- **Cores semânticas obrigatórias:**
+  - `success` (receitas / status positivo)
+  - `danger` (despesas / erro / estouro)
+  - `warning` (alerta de orçamento >= 80%)
+  - `info` (saldo / destaque informativo)
+  - `muted` (texto secundário e bordas)
+- **Tokens de UI:** cores, espaçamentos, raio, tipografia e sombras devem ser centralizados em tokens (Tailwind theme/CSS variables), evitando valores hardcoded espalhados.
+- **Iconografia:** usar biblioteca única de ícones (consistente em web e mobile), com mapeamento semântico por domínio (transação, orçamento, família, ajuda, status).
+- **Estados visuais mínimos por componente:** default, hover/focus, ativo, desabilitado e erro.
+- **Acessibilidade visual:** foco visível para navegação por teclado, contraste mínimo e não depender apenas de cor para indicar estado (ex: incluir label/ícone em orçamento e divergência).
+
 ---
 
 ## 6. Telas Principais
 
 1. Login
-2. Cadastro / Entrada na Família
+2. Cadastro / Entrada na Família (criar família, entrar por convite, buscar e solicitar)
 3. Dashboard financeiro
 4. Modal Nova Transação (FAB)
 5. Extrato do mês
@@ -200,8 +216,10 @@ divergente (flag se dados foram alterados após snapshot), gerado_em
 8. Orçamento mensal
 9. Relatórios e Insights
 10. Histórico de meses
-11. Configurações da Família (admin)
-12. Ajuda / FAQ
+11. Configurações (hub mobile)
+12. Configurações da Família (admin)
+13. Perfil / Conta
+14. Ajuda / FAQ
 
 ---
 

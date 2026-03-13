@@ -99,6 +99,8 @@ nossagrana/
 - Componentes funcionais com hooks
 - Sem prop drilling: usar Zustand para estado global
 - Tailwind para estilos — sem CSS modules ou styled-components
+- Centralizar paleta semântica e estilos em tokens (theme do Tailwind/CSS variables), evitando valores hardcoded espalhados
+- Usar uma única biblioteca de ícones em toda a aplicação, com mapeamento semântico consistente por contexto/tela
 - Axios ou fetch nativo para chamadas à API
 
 ---

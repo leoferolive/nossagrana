@@ -143,6 +143,27 @@ else:
 
 ---
 
+## UX e Navegação
+
+- **Navegação por plataforma:**
+  - Desktop usa sidebar com acesso direto às áreas principais
+  - Mobile usa tabs principais (`Dashboard`, `Extrato`, `Relatórios`, `Config`) e sub-telas dentro de `Config`
+- **Entrada de transação sempre acessível:**
+  - Mobile usa FAB flutuante (`+`)
+  - Desktop usa botão fixo na barra superior
+- **Onboarding de família:**
+  - Fluxo explicita 3 caminhos: criar família, entrar por convite, buscar família e solicitar entrada
+
+### Sistema Visual
+
+- **Tema base:** dark-first no MVP, alinhado aos wireframes aprovados.
+- **Design tokens centralizados:** todas as cores/spacing/radius/typography/shadow via tokens no tema do Tailwind (e/ou CSS variables), sem hardcode repetido em componentes.
+- **Paleta semântica fixa:** `success`, `danger`, `warning`, `info`, `muted` para manter consistência entre dashboard, extrato, orçamento e histórico.
+- **Iconografia padronizada:** adotar uma única biblioteca de ícones em toda a aplicação, com tamanho e espessura consistentes por contexto.
+- **Regra de acessibilidade visual:** estados críticos devem combinar cor + texto/ícone (não só cor), com foco visível e contraste adequado.
+
+---
+
 ## Segurança
 
 - Senhas com bcrypt (salt rounds = 12)

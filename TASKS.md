@@ -78,7 +78,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend
-- [ ] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / solicitar)
+- [ ] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)
 - [ ] Tela de configurações da família (Admin)
 - [ ] Listagem de membros com opção de remoção
 - [ ] Gestão de solicitações pendentes (Admin)
@@ -110,7 +110,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota `POST /transacoes/:id/antecipar` — antecipar parcelas (UC11)
 
 ### Frontend
-- [ ] Modal de nova transação (FAB — botão flutuante sempre visível)
+- [ ] Ação de nova transação sempre visível (`+`) em telas principais (FAB no mobile, botão fixo no desktop)
 - [ ] Campos: tipo, valor, categoria, descrição, data, método de pagamento
 - [ ] Toggle parcelado (nº de parcelas + cálculo de valor da parcela)
 - [ ] Toggle recorrente (frequência + data fim opcional)
@@ -210,6 +210,9 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Interface administrativa para System Admin
 - [ ] Rota de recuperação de família excluída (UC25)
 - [ ] Rota de impersonação de usuário (UC26)
+- [ ] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
+- [ ] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
+- [ ] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
 - [ ] Tela de Configurações gerais (perfil, conta)
 - [ ] Revisão de mensagens de erro e feedback visual
 - [ ] Testes de carga básicos no Raspberry Pi

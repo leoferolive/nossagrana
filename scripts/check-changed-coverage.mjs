@@ -39,6 +39,9 @@ const changedFiles = changedFilesRaw
       .filter(Boolean)
       .filter((file) => /^apps\/(api|web)\/src\/.+\.(ts|tsx)$/.test(file))
       .filter((file) => !/\.test\.(ts|tsx)$/.test(file))
+      .filter((file) => !/\.spec\.(ts|tsx)$/.test(file))
+      .filter((file) => !/\/src\/test\//.test(file))
+      .filter((file) => !/\.d\.ts$/.test(file))
   : [];
 
 if (changedFiles.length === 0) {

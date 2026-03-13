@@ -7,6 +7,7 @@ import {
   familiaListJoinRequestsResponseSchema,
   familiaListMembersParamsSchema,
   familiaListMembersResponseSchema,
+  familiaRemoveMemberParamsSchema,
   familiaReviewJoinRequestParamsSchema,
   familiaReviewJoinRequestRequestSchema,
   familiaReviewJoinRequestResponseSchema,
@@ -111,6 +112,30 @@ export const familiaListMembersSchema = {
     }),
     401: z.object({
       message: z.literal('Nao autenticado'),
+    }),
+  },
+};
+
+export const familiaRemoveMemberSchema = {
+  params: familiaRemoveMemberParamsSchema,
+  response: {
+    204: z.null(),
+    400: z.object({
+      message: z.literal('familia_id da rota difere da familia ativa'),
+    }),
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    403: z.union([
+      z.object({
+        message: z.literal('Apenas admin pode remover membro'),
+      }),
+      z.object({
+        message: z.literal('Admin nao pode remover a si mesmo'),
+      }),
+    ]),
+    404: z.object({
+      message: z.literal('Membro nao encontrado na familia'),
     }),
   },
 };

@@ -203,3 +203,10 @@ export const familiaListMembersResponseSchema = z.object({
 });
 
 export type FamiliaListMembersResponse = z.infer<typeof familiaListMembersResponseSchema>;
+
+export const familiaRemoveMemberParamsSchema = z.object({
+  id: z.string().uuid(),
+  usuarioId: z.string().uuid(),
+});
+
+export type FamiliaRemoveMemberParams = z.infer<typeof familiaRemoveMemberParamsSchema>;

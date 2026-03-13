@@ -74,4 +74,5 @@ export interface FamiliaRepository {
     acao: 'aprovar' | 'rejeitar';
   }): Promise<ReviewedFamiliaJoinRequest | null>;
   listMembers(input: { familiaId: string }): Promise<FamiliaMember[]>;
+  removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
 }

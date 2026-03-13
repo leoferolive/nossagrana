@@ -260,6 +260,20 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       .from(usuarioFamilia)
       .where(eq(usuarioFamilia.familiaId, input.familiaId));
   }
+
+  async removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean> {
+    const deleted = await db
+      .delete(usuarioFamilia)
+      .where(
+        and(
+          eq(usuarioFamilia.familiaId, input.familiaId),
+          eq(usuarioFamilia.usuarioId, input.usuarioId),
+        ),
+      )
+      .returning({ usuarioId: usuarioFamilia.usuarioId });
+
+    return deleted.length > 0;
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
@@ -411,5 +425,14 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
       role: membership.role,
       dataEntrada: membership.dataEntrada,
     }));
+  }
+
+  async removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean> {
+    const memberships = this.membershipsByFamiliaId.get(input.familiaId);
+    if (!memberships) {
+      return false;
+    }
+
+    return memberships.delete(input.usuarioId);
   }
 }

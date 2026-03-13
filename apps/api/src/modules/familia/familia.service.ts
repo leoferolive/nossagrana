@@ -44,6 +44,24 @@ export class JoinRequestNotFoundError extends Error {
   }
 }
 
+export class ForbiddenFamiliaMemberRemovalError extends Error {
+  constructor() {
+    super('Apenas admin pode remover membro');
+  }
+}
+
+export class SelfMemberRemovalError extends Error {
+  constructor() {
+    super('Admin nao pode remover a si mesmo');
+  }
+}
+
+export class FamiliaMemberNotFoundError extends Error {
+  constructor() {
+    super('Membro nao encontrado na familia');
+  }
+}
+
 export class FamiliaService {
   constructor(private readonly familiaRepository: FamiliaRepository) {}
 
@@ -138,5 +156,29 @@ export class FamiliaService {
     return this.familiaRepository.listMembers({
       familiaId: input.familiaId,
     });
+  }
+
+  async removeMember(input: { familiaId: string; usuarioId: string; actorId: string }) {
+    const isAdmin = await this.familiaRepository.isUserAdmin({
+      familiaId: input.familiaId,
+      usuarioId: input.actorId,
+    });
+
+    if (!isAdmin) {
+      throw new ForbiddenFamiliaMemberRemovalError();
+    }
+
+    if (input.usuarioId === input.actorId) {
+      throw new SelfMemberRemovalError();
+    }
+
+    const removed = await this.familiaRepository.removeMember({
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+    });
+
+    if (!removed) {
+      throw new FamiliaMemberNotFoundError();
+    }
   }
 }

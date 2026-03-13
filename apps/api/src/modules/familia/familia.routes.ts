@@ -4,6 +4,7 @@ import {
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
   familiaListMembersParamsSchema,
+  familiaRemoveMemberParamsSchema,
   familiaReviewJoinRequestParamsSchema,
   familiaReviewJoinRequestRequestSchema,
   familiaRequestJoinRequestSchema,
@@ -18,15 +19,19 @@ import {
   familiaJoinByInviteSchema,
   familiaListJoinRequestsSchema,
   familiaListMembersSchema,
+  familiaRemoveMemberSchema,
   familiaReviewJoinRequestSchema,
   familiaRequestJoinSchema,
 } from './familia.schema.js';
 import {
+  FamiliaMemberNotFoundError,
   ForbiddenFamiliaJoinRequestListError,
+  ForbiddenFamiliaMemberRemovalError,
   FamiliaService,
   ForbiddenFamiliaInviteError,
   InvalidFamiliaInviteCodeError,
   JoinRequestNotFoundError,
+  SelfMemberRemovalError,
 } from './familia.service.js';
 
 const defaultFamiliaService = (): FamiliaService => {
@@ -235,6 +240,40 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
           dataEntrada: membro.dataEntrada.toISOString(),
         })),
       });
+    },
+  );
+
+  fastify.delete(
+    '/familias/:id/membros/:usuarioId',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: familiaRemoveMemberSchema,
+    },
+    async (request, reply) => {
+      try {
+        const params = familiaRemoveMemberParamsSchema.parse(request.params);
+        if (params.id !== request.familiaIdAtiva) {
+          return reply.code(400).send({ message: 'familia_id da rota difere da familia ativa' });
+        }
+
+        await familiaService.removeMember({
+          familiaId: params.id,
+          usuarioId: params.usuarioId,
+          actorId: request.user.sub,
+        });
+
+        return reply.code(204).send();
+      } catch (error) {
+        if (error instanceof ForbiddenFamiliaMemberRemovalError || error instanceof SelfMemberRemovalError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
+        if (error instanceof FamiliaMemberNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+
+        throw error;
+      }
     },
   );
 };

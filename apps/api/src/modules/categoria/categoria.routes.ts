@@ -1,9 +1,17 @@
-import { categoriaCreateRequestSchema, categoriaUpdateParamsSchema, categoriaUpdateRequestSchema } from '@nossagrana/types';
+import {
+  categoriaCreateRequestSchema,
+  categoriaUpdateParamsSchema,
+  categoriaUpdateRequestSchema,
+} from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleCategoriaRepository, InMemoryCategoriaRepository } from './categoria.repository.js';
-import { categoriaCreateSchema, categoriaListSchema, categoriaUpdateSchema } from './categoria.schema.js';
+import {
+  categoriaCreateSchema,
+  categoriaListSchema,
+  categoriaUpdateSchema,
+} from './categoria.schema.js';
 import { CategoriaNotFoundError, CategoriaService } from './categoria.service.js';
 
 const defaultCategoriaService = (): CategoriaService => {

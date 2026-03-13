@@ -74,7 +74,13 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         nome: input.nome,
         tipo: input.tipo,
       })
-      .where(and(eq(categorias.id, input.id), eq(categorias.familiaId, input.familiaId), eq(categorias.ativo, true)))
+      .where(
+        and(
+          eq(categorias.id, input.id),
+          eq(categorias.familiaId, input.familiaId),
+          eq(categorias.ativo, true),
+        ),
+      )
       .returning({
         id: categorias.id,
         familiaId: categorias.familiaId,
@@ -102,7 +108,9 @@ export class InMemoryCategoriaRepository implements CategoriaRepository {
   private categorias: Categoria[] = [];
 
   async listByFamiliaId(input: { familiaId: string }): Promise<Categoria[]> {
-    return this.categorias.filter((categoria) => categoria.familiaId === input.familiaId && categoria.ativo);
+    return this.categorias.filter(
+      (categoria) => categoria.familiaId === input.familiaId && categoria.ativo,
+    );
   }
 
   async create(input: {
@@ -133,7 +141,8 @@ export class InMemoryCategoriaRepository implements CategoriaRepository {
     tipo: 'receita' | 'despesa';
   }): Promise<Categoria | null> {
     const index = this.categorias.findIndex(
-      (categoria) => categoria.id === input.id && categoria.familiaId === input.familiaId && categoria.ativo,
+      (categoria) =>
+        categoria.id === input.id && categoria.familiaId === input.familiaId && categoria.ativo,
     );
 
     if (index === -1) {

@@ -46,6 +46,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 2 — Autenticação
 
 ### Backend
+
 - [x] Rota `POST /auth/register` — cadastro de usuário (UC01)
 - [x] Rota `POST /auth/login` — login com JWT + refresh token (UC02)
 - [x] Rota `POST /auth/refresh` — renovar access token
@@ -54,6 +55,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Middleware de isolamento por `familia_id`
 
 ### Frontend
+
 - [x] Tela de login
 - [x] Tela de cadastro
 - [x] Lógica de refresh token automático (interceptor)
@@ -66,6 +68,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 3 — Família e Onboarding
 
 ### Backend
+
 - [x] Rota `POST /familias` — criar família (UC05)
 - [x] Rota `POST /familias/convites` — gerar código de convite (UC21)
 - [x] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
@@ -78,6 +81,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend
+
 - [x] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)
 - [x] Tela de configurações da família (Admin)
 - [x] Listagem de membros com opção de remoção
@@ -90,6 +94,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 4 — Core Financeiro
 
 ### Backend
+
 - [x] Rota `GET /categorias` — listar categorias da família
 - [x] Rota `POST /categorias` — criar categoria (UC17)
 - [x] Rota `PATCH /categorias/:id` — editar categoria
@@ -110,6 +115,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota `POST /transacoes/:id/antecipar` — antecipar parcelas (UC11)
 
 ### Frontend
+
 - [ ] Ação de nova transação sempre visível (`+`) em telas principais (FAB no mobile, botão fixo no desktop)
 - [ ] Campos: tipo, valor, categoria, descrição, data, método de pagamento
 - [ ] Toggle parcelado (nº de parcelas + cálculo de valor da parcela)
@@ -126,6 +132,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 5 — Dashboard e Tempo Real
 
 ### Backend
+
 - [ ] Rota `GET /dashboard` — resumo do mês (receitas, despesas, saldo)
 - [ ] Rota `GET /dashboard/graficos` — dados para gráficos
 - [ ] Rota `GET /dashboard/orcamento` — orçamento vs gasto por categoria
@@ -134,6 +141,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Gerenciar rooms por `familia_id` no WebSocket
 
 ### Frontend
+
 - [ ] Tela de Dashboard (tela principal)
 - [ ] Cards de resumo: Receitas / Despesas / Saldo
 - [ ] Gráfico de despesas por categoria (pizza/donut)
@@ -148,6 +156,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 6 — Orçamento e Relatórios
 
 ### Backend
+
 - [ ] Rota `GET /orcamento` — listar orçamentos vigentes por categoria
 - [ ] Rota `POST /orcamento/:categoriaId` — definir/alterar limite (UC19)
 - [ ] Rota `GET /orcamento/:categoriaId/historico` — histórico de vigências
@@ -157,6 +166,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota `GET /cartoes/:id/fatura/:mesReferencia` — fatura do cartão (UC16)
 
 ### Frontend
+
 - [ ] Tela de Orçamento (tabela categoria × limite × % utilizado)
 - [ ] Formulário de edição de limite por categoria
 - [ ] Histórico de alterações de limite
@@ -171,6 +181,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 7 — Histórico e Snapshot
 
 ### Backend
+
 - [ ] Rota `GET /historico` — listar meses com snapshots (UC15)
 - [ ] Rota `GET /historico/:mesReferencia` — detalhe do mês
 - [ ] Serviço de geração de snapshot mensal (UC27)
@@ -179,6 +190,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Trigger de divergência ao editar/excluir transação de mês com snapshot
 
 ### Frontend
+
 - [ ] Tela de Histórico de Meses
 - [ ] Gráfico de tendência (receita × despesa × saldo)
 - [ ] Lista de meses com indicador de divergência
@@ -189,6 +201,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 8 — PWA e Guia In-App
 
 ### PWA
+
 - [ ] Configurar vite-plugin-pwa (manifest + service worker)
 - [ ] Ícones para instalação (192x192, 512x512)
 - [ ] Estratégia de cache (assets estáticos)
@@ -196,6 +209,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Testar offline básico
 
 ### Guia In-App
+
 - [ ] Componente de First-time Tour (por tela, flag por usuário)
 - [ ] Tours: Dashboard, Modal de Transação, Orçamento, Extrato, Histórico
 - [ ] Componente de Tooltip contextual ("?")

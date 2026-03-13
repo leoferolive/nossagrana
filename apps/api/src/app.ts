@@ -1,8 +1,5 @@
 import Fastify from 'fastify';
-import {
-  serializerCompiler,
-  validatorCompiler,
-} from 'fastify-type-provider-zod';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 
 import { env } from './config/env.js';
 import { authRoutes } from './modules/auth/auth.routes.js';

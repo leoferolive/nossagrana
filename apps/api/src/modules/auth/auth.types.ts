@@ -26,5 +26,9 @@ export interface AuthRepositoryUser {
 
 export interface AuthRepository {
   findByEmail(email: string): Promise<AuthRepositoryUser | null>;
-  createUser(input: { nome: string; email: string; senhaHash: string }): Promise<AuthRepositoryUser>;
+  createUser(input: {
+    nome: string;
+    email: string;
+    senhaHash: string;
+  }): Promise<AuthRepositoryUser>;
 }

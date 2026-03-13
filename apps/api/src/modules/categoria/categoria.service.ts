@@ -15,7 +15,12 @@ export class CategoriaService {
     });
   }
 
-  async create(input: { familiaId: string; nome: string; tipo: 'receita' | 'despesa'; criadoPor: string }) {
+  async create(input: {
+    familiaId: string;
+    nome: string;
+    tipo: 'receita' | 'despesa';
+    criadoPor: string;
+  }) {
     return this.categoriaRepository.create({
       familiaId: input.familiaId,
       nome: input.nome,
@@ -24,7 +29,12 @@ export class CategoriaService {
     });
   }
 
-  async update(input: { id: string; familiaId: string; nome: string; tipo: 'receita' | 'despesa' }) {
+  async update(input: {
+    id: string;
+    familiaId: string;
+    nome: string;
+    tipo: 'receita' | 'despesa';
+  }) {
     const updated = await this.categoriaRepository.update({
       id: input.id,
       familiaId: input.familiaId,

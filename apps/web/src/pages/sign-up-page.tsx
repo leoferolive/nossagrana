@@ -22,7 +22,11 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
       footer={
         <>
           Ja tem conta?{' '}
-          <button type="button" onClick={onOpenLogin} className="font-semibold text-info transition hover:underline">
+          <button
+            type="button"
+            onClick={onOpenLogin}
+            className="font-semibold text-info transition hover:underline"
+          >
             Entrar
           </button>
         </>
@@ -32,7 +36,12 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
         <FormField id="fullName" label="Nome completo" type="text" autoComplete="name" />
         <FormField id="email" label="E-mail" type="email" autoComplete="email" />
         <FormField id="password" label="Senha" type="password" autoComplete="new-password" />
-        <FormField id="confirmPassword" label="Confirmar senha" type="password" autoComplete="new-password" />
+        <FormField
+          id="confirmPassword"
+          label="Confirmar senha"
+          type="password"
+          autoComplete="new-password"
+        />
         <PrimaryButton type="submit">Criar conta</PrimaryButton>
       </form>
     </AuthShell>

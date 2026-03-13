@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       tag:
-        description: "Tag da imagem Docker a deployar"
+        description: 'Tag da imagem Docker a deployar'
         required: true
         type: string
       ref:
-        description: "Git ref (tag, SHA ou branch) para fazer checkout do codigo"
+        description: 'Git ref (tag, SHA ou branch) para fazer checkout do codigo'
         required: true
         type: string
 

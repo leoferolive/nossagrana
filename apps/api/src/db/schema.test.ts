@@ -14,22 +14,13 @@ import {
   users,
   usuarioFamilia,
 } from './schema.js';
-import {
-  CATEGORIAS_PADRAO_DESPESA,
-  CATEGORIAS_PADRAO_RECEITA,
-} from './seeds/categorias-padrao.js';
+import { CATEGORIAS_PADRAO_DESPESA, CATEGORIAS_PADRAO_RECEITA } from './seeds/categorias-padrao.js';
 
 describe('database schema', () => {
   it('defines users table with required columns', () => {
     const columns = getTableColumns(users);
 
-    expect(Object.keys(columns)).toEqual([
-      'id',
-      'nome',
-      'email',
-      'senhaHash',
-      'dataCriacao',
-    ]);
+    expect(Object.keys(columns)).toEqual(['id', 'nome', 'email', 'senhaHash', 'dataCriacao']);
     expect(columns.id.notNull).toBe(true);
     expect(columns.email.notNull).toBe(true);
     expect(columns.senhaHash.notNull).toBe(true);
@@ -48,12 +39,7 @@ describe('database schema', () => {
   it('defines usuario_familia table with required columns', () => {
     const columns = getTableColumns(usuarioFamilia);
 
-    expect(Object.keys(columns)).toEqual([
-      'usuarioId',
-      'familiaId',
-      'role',
-      'dataEntrada',
-    ]);
+    expect(Object.keys(columns)).toEqual(['usuarioId', 'familiaId', 'role', 'dataEntrada']);
     expect(columns.usuarioId.notNull).toBe(true);
     expect(columns.familiaId.notNull).toBe(true);
     expect(columns.role.notNull).toBe(true);
@@ -122,12 +108,7 @@ describe('database schema', () => {
   });
 
   it('defines categorias padrao for seed', () => {
-    expect(CATEGORIAS_PADRAO_RECEITA).toEqual([
-      'Salario',
-      'Bonus',
-      'Investimentos',
-      'Outros',
-    ]);
+    expect(CATEGORIAS_PADRAO_RECEITA).toEqual(['Salario', 'Bonus', 'Investimentos', 'Outros']);
     expect(CATEGORIAS_PADRAO_DESPESA).toEqual([
       'Moradia',
       'Alimentacao',

@@ -45,7 +45,10 @@ export class AuthService {
   constructor(
     private readonly repository: AuthRepository,
     private readonly hashFn: (password: string) => Promise<string> = hashPassword,
-    private readonly verifyFn: (password: string, hash: string) => Promise<boolean> = verifyPassword,
+    private readonly verifyFn: (
+      password: string,
+      hash: string,
+    ) => Promise<boolean> = verifyPassword,
   ) {}
 
   async register(input: RegisterUserInput): Promise<RegisteredUser> {

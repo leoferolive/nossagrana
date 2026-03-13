@@ -16,11 +16,7 @@ import {
   authRefreshSchema,
   authRegisterSchema,
 } from './auth.schema.js';
-import {
-  AuthService,
-  EmailAlreadyExistsError,
-  InvalidCredentialsError,
-} from './auth.service.js';
+import { AuthService, EmailAlreadyExistsError, InvalidCredentialsError } from './auth.service.js';
 
 const defaultAuthService = (): AuthService => {
   if (env.NODE_ENV === 'test') {
@@ -119,14 +115,18 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.code(204).send();
   });
 
-  fastify.get('/auth/me', { preHandler: [fastify.authenticate], schema: authMeSchema }, async (request) => {
-    return {
-      user: {
-        id: request.user.sub,
-        email: request.user.email,
-      },
-    };
-  });
+  fastify.get(
+    '/auth/me',
+    { preHandler: [fastify.authenticate], schema: authMeSchema },
+    async (request) => {
+      return {
+        user: {
+          id: request.user.sub,
+          email: request.user.email,
+        },
+      };
+    },
+  );
 
   fastify.get(
     '/auth/familia-context',

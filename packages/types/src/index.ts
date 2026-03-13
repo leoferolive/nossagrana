@@ -186,7 +186,9 @@ export const familiaReviewJoinRequestResponseSchema = z.object({
   }),
 });
 
-export type FamiliaReviewJoinRequestResponse = z.infer<typeof familiaReviewJoinRequestResponseSchema>;
+export type FamiliaReviewJoinRequestResponse = z.infer<
+  typeof familiaReviewJoinRequestResponseSchema
+>;
 
 export const familiaListMembersParamsSchema = z.object({
   id: z.string().uuid(),

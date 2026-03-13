@@ -70,7 +70,12 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     const [membership] = await db
       .select({ usuarioId: usuarioFamilia.usuarioId })
       .from(usuarioFamilia)
-      .where(and(eq(usuarioFamilia.familiaId, input.familiaId), eq(usuarioFamilia.usuarioId, input.usuarioId)))
+      .where(
+        and(
+          eq(usuarioFamilia.familiaId, input.familiaId),
+          eq(usuarioFamilia.usuarioId, input.usuarioId),
+        ),
+      )
       .limit(1);
 
     return Boolean(membership);
@@ -174,7 +179,9 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     };
   }
 
-  async listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]> {
+  async listPendingJoinRequests(input: {
+    familiaId: string;
+  }): Promise<CreatedFamiliaJoinRequest[]> {
     const requests = await db
       .select({
         id: solicitacoesEntrada.id,
@@ -301,7 +308,9 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       await tx.delete(orcamentoCategoria).where(eq(orcamentoCategoria.familiaId, input.familiaId));
       await tx.delete(snapshotsMensais).where(eq(snapshotsMensais.familiaId, input.familiaId));
       await tx.delete(convites).where(eq(convites.familiaId, input.familiaId));
-      await tx.delete(solicitacoesEntrada).where(eq(solicitacoesEntrada.familiaId, input.familiaId));
+      await tx
+        .delete(solicitacoesEntrada)
+        .where(eq(solicitacoesEntrada.familiaId, input.familiaId));
       await tx.delete(usuarioFamilia).where(eq(usuarioFamilia.familiaId, input.familiaId));
       await tx.delete(metodosPagamento).where(eq(metodosPagamento.familiaId, input.familiaId));
       await tx.delete(categorias).where(eq(categorias.familiaId, input.familiaId));
@@ -414,7 +423,9 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     return joinRequest;
   }
 
-  async listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]> {
+  async listPendingJoinRequests(input: {
+    familiaId: string;
+  }): Promise<CreatedFamiliaJoinRequest[]> {
     return Array.from(this.joinRequestsById.values()).filter(
       (request) => request.familiaId === input.familiaId && request.status === 'pendente',
     );

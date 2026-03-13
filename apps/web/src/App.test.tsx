@@ -40,7 +40,9 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
-    expect(screen.getByRole('heading', { name: /como deseja entrar na sua familia/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /como deseja entrar na sua familia/i }),
+    ).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /criar familia/i }).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /entrar com convite/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /buscar e solicitar/i })).toBeInTheDocument();

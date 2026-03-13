@@ -41,7 +41,11 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
       footer={
         <>
           Ja tem familia ativa?{' '}
-          <button type="button" onClick={onOpenLogin} className="font-semibold text-info transition hover:underline">
+          <button
+            type="button"
+            onClick={onOpenLogin}
+            className="font-semibold text-info transition hover:underline"
+          >
             Ir para login
           </button>
         </>

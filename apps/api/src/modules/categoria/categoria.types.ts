@@ -10,6 +10,16 @@ export interface Categoria {
 
 export interface CategoriaRepository {
   listByFamiliaId(input: { familiaId: string }): Promise<Categoria[]>;
-  create(input: { familiaId: string; nome: string; tipo: 'receita' | 'despesa'; criadoPor: string }): Promise<Categoria>;
-  update(input: { id: string; familiaId: string; nome: string; tipo: 'receita' | 'despesa' }): Promise<Categoria | null>;
+  create(input: {
+    familiaId: string;
+    nome: string;
+    tipo: 'receita' | 'despesa';
+    criadoPor: string;
+  }): Promise<Categoria>;
+  update(input: {
+    id: string;
+    familiaId: string;
+    nome: string;
+    tipo: 'receita' | 'despesa';
+  }): Promise<Categoria | null>;
 }

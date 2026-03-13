@@ -19,7 +19,9 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
     setMembros((currentMembers) => currentMembers.filter((member) => member.id !== memberId));
   };
   const handlePendingRequest = (requestId: string) => {
-    setSolicitacoesPendentes((currentRequests) => currentRequests.filter((request) => request.id !== requestId));
+    setSolicitacoesPendentes((currentRequests) =>
+      currentRequests.filter((request) => request.id !== requestId),
+    );
   };
   const generateInviteCode = () => {
     setInviteCode('FAM-LEO-2026');
@@ -52,9 +54,13 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
         <p className="font-semibold text-text">Membros</p>
         <ul className="space-y-2">
           {membros.map((membro) => (
-            <li key={membro.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+            <li
+              key={membro.id}
+              className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+            >
               <span>
-                {membro.nome} <span className="text-xs uppercase text-text-dim">({membro.role})</span>
+                {membro.nome}{' '}
+                <span className="text-xs uppercase text-text-dim">({membro.role})</span>
               </span>
 
               {membro.role !== 'admin' && (

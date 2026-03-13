@@ -14,7 +14,11 @@ export const LoginPage = ({ onOpenSignUp }: LoginPageProps) => {
       footer={
         <>
           Nao tem conta?{' '}
-          <button type="button" onClick={onOpenSignUp} className="font-semibold text-info transition hover:underline">
+          <button
+            type="button"
+            onClick={onOpenSignUp}
+            className="font-semibold text-info transition hover:underline"
+          >
             Cadastre-se
           </button>
         </>

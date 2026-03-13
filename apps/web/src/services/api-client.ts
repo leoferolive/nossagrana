@@ -83,7 +83,10 @@ export class ApiClient {
     return true;
   }
 
-  private withAuthHeader(headers: HeadersInit | undefined, accessToken: string | null): HeadersInit {
+  private withAuthHeader(
+    headers: HeadersInit | undefined,
+    accessToken: string | null,
+  ): HeadersInit {
     const parsedHeaders = new Headers(headers);
 
     if (accessToken) {

@@ -11,7 +11,12 @@ export const App = () => {
   const [screen, setScreen] = useState<AuthScreen>('login');
 
   if (screen === 'sign-up') {
-    return <SignUpPage onOpenLogin={() => setScreen('login')} onCompleteSignUp={() => setScreen('onboarding')} />;
+    return (
+      <SignUpPage
+        onOpenLogin={() => setScreen('login')}
+        onCompleteSignUp={() => setScreen('onboarding')}
+      />
+    );
   }
 
   if (screen === 'onboarding') {

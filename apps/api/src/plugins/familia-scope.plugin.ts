@@ -9,7 +9,10 @@ import { usuarioFamilia } from '../db/schema.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    requireFamiliaScope: (request: import('fastify').FastifyRequest, reply: FastifyReply) => Promise<void>;
+    requireFamiliaScope: (
+      request: import('fastify').FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
   }
 
   interface FastifyRequest {

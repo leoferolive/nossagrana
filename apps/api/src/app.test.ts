@@ -688,9 +688,11 @@ describe('API health endpoint', () => {
       },
     });
 
-    const [pending] = (pendingResponse.json() as {
-      solicitacoes: Array<{ id: string }>;
-    }).solicitacoes;
+    const [pending] = (
+      pendingResponse.json() as {
+        solicitacoes: Array<{ id: string }>;
+      }
+    ).solicitacoes;
 
     const approveResponse = await app.inject({
       method: 'PATCH',
@@ -875,9 +877,11 @@ describe('API health endpoint', () => {
       },
     });
 
-    const membersBefore = (membersBeforeResponse.json() as {
-      membros: Array<{ usuarioId: string; role: string }>;
-    }).membros;
+    const membersBefore = (
+      membersBeforeResponse.json() as {
+        membros: Array<{ usuarioId: string; role: string }>;
+      }
+    ).membros;
     const removableMember = membersBefore.find((membro) => membro.role === 'membro');
 
     const removeResponse = await app.inject({

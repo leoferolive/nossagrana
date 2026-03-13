@@ -271,7 +271,10 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
 
         return reply.code(204).send();
       } catch (error) {
-        if (error instanceof ForbiddenFamiliaMemberRemovalError || error instanceof SelfMemberRemovalError) {
+        if (
+          error instanceof ForbiddenFamiliaMemberRemovalError ||
+          error instanceof SelfMemberRemovalError
+        ) {
           return reply.code(403).send({ message: error.message });
         }
 

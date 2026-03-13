@@ -67,7 +67,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Backend
 - [x] Rota `POST /familias` — criar família (UC05)
-- [ ] Rota `POST /familias/convites` — gerar código de convite (UC21)
+- [x] Rota `POST /familias/convites` — gerar código de convite (UC21)
 - [ ] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
 - [ ] Rota `POST /familias/solicitar` — solicitar entrada (UC04)
 - [ ] Rota `GET /familias/solicitacoes` — listar solicitações pendentes (Admin)

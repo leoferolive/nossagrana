@@ -290,4 +290,59 @@ describe('API health endpoint', () => {
       },
     });
   });
+
+  it('creates invite code for active family when requester is admin', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-family-invite@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-family-invite@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Convite',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const inviteResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias/convites',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+      payload: {},
+    });
+
+    expect(inviteResponse.statusCode).toBe(201);
+    expect(inviteResponse.json()).toMatchObject({
+      convite: {
+        id: expect.any(String),
+        familiaId: familia.id,
+        codigo: expect.any(String),
+      },
+    });
+  });
 });

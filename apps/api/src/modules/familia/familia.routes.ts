@@ -1,10 +1,10 @@
-import { familiaCreateRequestSchema } from '@nossagrana/types';
+import { familiaCreateInviteRequestSchema, familiaCreateRequestSchema } from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
-import { familiaCreateSchema } from './familia.schema.js';
-import { FamiliaService } from './familia.service.js';
+import { familiaCreateInviteSchema, familiaCreateSchema } from './familia.schema.js';
+import { FamiliaService, ForbiddenFamiliaInviteError } from './familia.service.js';
 
 const defaultFamiliaService = (): FamiliaService => {
   if (env.NODE_ENV === 'test') {
@@ -36,6 +36,37 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
           dataCriacao: familia.dataCriacao.toISOString(),
         },
       });
+    },
+  );
+
+  fastify.post(
+    '/familias/convites',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: familiaCreateInviteSchema,
+    },
+    async (request, reply) => {
+      try {
+        familiaCreateInviteRequestSchema.parse(request.body);
+        const convite = await familiaService.createInvite({
+          familiaId: request.familiaIdAtiva as string,
+          usuarioId: request.user.sub,
+        });
+
+        return reply.code(201).send({
+          convite: {
+            ...convite,
+            expiraEm: convite.expiraEm.toISOString(),
+            dataCriacao: convite.dataCriacao.toISOString(),
+          },
+        });
+      } catch (error) {
+        if (error instanceof ForbiddenFamiliaInviteError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
+        throw error;
+      }
     },
   );
 };

@@ -89,3 +89,20 @@ export const familiaCreateResponseSchema = z.object({
 });
 
 export type FamiliaCreateResponse = z.infer<typeof familiaCreateResponseSchema>;
+
+export const familiaCreateInviteRequestSchema = z.object({});
+
+export type FamiliaCreateInviteRequest = z.infer<typeof familiaCreateInviteRequestSchema>;
+
+export const familiaCreateInviteResponseSchema = z.object({
+  convite: z.object({
+    id: z.string().uuid(),
+    familiaId: z.string().uuid(),
+    codigo: z.string().min(1),
+    expiraEm: z.string(),
+    criadoPor: z.string().uuid(),
+    dataCriacao: z.string(),
+  }),
+});
+
+export type FamiliaCreateInviteResponse = z.infer<typeof familiaCreateInviteResponseSchema>;

@@ -1,9 +1,13 @@
-import { authLoginRequestSchema, authRegisterRequestSchema } from '@nossagrana/types';
+import {
+  authLoginRequestSchema,
+  authRefreshRequestSchema,
+  authRegisterRequestSchema,
+} from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
-import { authLoginSchema, authRegisterSchema } from './auth.schema.js';
+import { authLoginSchema, authRefreshSchema, authRegisterSchema } from './auth.schema.js';
 import {
   AuthService,
   EmailAlreadyExistsError,
@@ -67,6 +71,32 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       throw error;
+    }
+  });
+
+  fastify.post('/auth/refresh', { schema: authRefreshSchema }, async (request, reply) => {
+    try {
+      const payload = authRefreshRequestSchema.parse(request.body);
+      const decodedToken = fastify.jwt.verify<{
+        sub: string;
+        email: string;
+        tokenType?: string;
+      }>(payload.refreshToken, {
+        key: env.REFRESH_TOKEN_SECRET,
+      });
+
+      if (decodedToken.tokenType !== 'refresh') {
+        return reply.code(401).send({ message: 'Refresh token invalido' });
+      }
+
+      const accessToken = fastify.jwt.sign({
+        sub: decodedToken.sub,
+        email: decodedToken.email,
+      });
+
+      return reply.code(200).send({ accessToken });
+    } catch {
+      return reply.code(401).send({ message: 'Refresh token invalido' });
     }
   });
 };

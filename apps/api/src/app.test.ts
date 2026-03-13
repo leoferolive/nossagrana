@@ -72,4 +72,40 @@ describe('API health endpoint', () => {
       refreshToken: expect.any(String),
     });
   });
+
+  it('refreshes access token with refresh token', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-refresh@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-refresh@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { refreshToken } = loginResponse.json() as { refreshToken: string };
+
+    const refreshResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/refresh',
+      payload: {
+        refreshToken,
+      },
+    });
+
+    expect(refreshResponse.statusCode).toBe(200);
+    expect(refreshResponse.json()).toMatchObject({
+      accessToken: expect.any(String),
+    });
+  });
 });

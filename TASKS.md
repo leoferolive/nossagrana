@@ -48,7 +48,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ### Backend
 - [x] Rota `POST /auth/register` — cadastro de usuário (UC01)
 - [x] Rota `POST /auth/login` — login com JWT + refresh token (UC02)
-- [ ] Rota `POST /auth/refresh` — renovar access token
+- [x] Rota `POST /auth/refresh` — renovar access token
 - [ ] Rota `POST /auth/logout` — invalidar refresh token
 - [ ] Plugin Fastify de autenticação (verificar JWT em rotas protegidas)
 - [ ] Middleware de isolamento por `familia_id`

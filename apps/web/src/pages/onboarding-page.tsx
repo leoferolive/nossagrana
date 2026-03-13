@@ -6,6 +6,11 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 
 type OnboardingMode = 'create' | 'invite' | 'request';
 
+interface FamilyOption {
+  id: string;
+  nome: string;
+}
+
 interface OnboardingPageProps {
   onOpenLogin: () => void;
   onOpenFamilySettings: () => void;
@@ -13,6 +18,21 @@ interface OnboardingPageProps {
 
 export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: OnboardingPageProps) => {
   const [mode, setMode] = useState<OnboardingMode>('create');
+  const familyOptions: FamilyOption[] = [
+    { id: 'familia-oliveira', nome: 'Familia Oliveira' },
+    { id: 'familia-souza', nome: 'Familia Souza' },
+  ];
+  const [selectedFamilyId, setSelectedFamilyId] = useState(familyOptions[0].id);
+  const [activeFamilyName, setActiveFamilyName] = useState(familyOptions[0].nome);
+
+  const handleSwitchFamily = () => {
+    const selectedFamily = familyOptions.find((family) => family.id === selectedFamilyId);
+    if (!selectedFamily) {
+      return;
+    }
+
+    setActiveFamilyName(selectedFamily.nome);
+  };
 
   return (
     <AuthShell
@@ -27,6 +47,34 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
         </>
       }
     >
+      <div className="mb-4 space-y-2 rounded-lg border border-border bg-surface p-3 text-sm text-text-muted">
+        <p className="font-semibold text-text">Familia ativa: {activeFamilyName}</p>
+        <label htmlFor="activeFamily" className="block text-xs font-medium uppercase tracking-wide">
+          Selecionar familia ativa
+        </label>
+        <div className="flex items-center gap-2">
+          <select
+            id="activeFamily"
+            value={selectedFamilyId}
+            onChange={(event) => setSelectedFamilyId(event.target.value)}
+            className="w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text outline-none transition focus:border-info focus:ring-2 focus:ring-info/30"
+          >
+            {familyOptions.map((family) => (
+              <option key={family.id} value={family.id}>
+                {family.nome}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleSwitchFamily}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-info transition hover:border-info"
+          >
+            Alternar familia
+          </button>
+        </div>
+      </div>
+
       <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <button
           type="button"

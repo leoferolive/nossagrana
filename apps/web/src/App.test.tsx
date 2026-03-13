@@ -111,4 +111,20 @@ describe('App', () => {
     expect(writeText).toHaveBeenCalledWith('FAM-LEO-2026');
     expect(await screen.findByText(/codigo copiado/i)).toBeInTheDocument();
   });
+
+  it('switches active family from onboarding selector', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(screen.getByText(/familia ativa: Familia Oliveira/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/selecionar familia ativa/i), {
+      target: { value: 'familia-souza' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /alternar familia/i }));
+
+    expect(screen.getByText(/familia ativa: Familia Souza/i)).toBeInTheDocument();
+  });
 });

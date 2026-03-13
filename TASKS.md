@@ -56,7 +56,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ### Frontend
 - [x] Tela de login
 - [x] Tela de cadastro
-- [ ] Lógica de refresh token automático (interceptor)
+- [x] Lógica de refresh token automático (interceptor)
 - [ ] Contexto de autenticação (AuthContext)
 - [ ] Rota protegida (PrivateRoute)
 - [ ] Persistência de sessão (localStorage com token)

@@ -1,4 +1,5 @@
 import { getTableColumns } from 'drizzle-orm';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -7,6 +8,7 @@ import {
   familias,
   metodosPagamento,
   orcamentoCategoria,
+  snapshotsMensais,
   solicitacoesEntrada,
   transacoes,
   users,
@@ -222,5 +224,48 @@ describe('database schema', () => {
     expect(columns.vigenciaInicio.notNull).toBe(true);
     expect(columns.criadoPor.notNull).toBe(true);
     expect(columns.criadoEm.notNull).toBe(true);
+  });
+
+  it('defines snapshots_mensais table with required columns', () => {
+    const columns = getTableColumns(snapshotsMensais);
+
+    expect(Object.keys(columns)).toEqual([
+      'id',
+      'familiaId',
+      'mesReferencia',
+      'totalReceitas',
+      'totalDespesas',
+      'saldo',
+      'dadosCategorias',
+      'dadosUsuarios',
+      'divergente',
+      'geradoEm',
+    ]);
+    expect(columns.id.notNull).toBe(true);
+    expect(columns.familiaId.notNull).toBe(true);
+    expect(columns.mesReferencia.notNull).toBe(true);
+    expect(columns.totalReceitas.notNull).toBe(true);
+    expect(columns.totalDespesas.notNull).toBe(true);
+    expect(columns.saldo.notNull).toBe(true);
+    expect(columns.dadosCategorias.notNull).toBe(true);
+    expect(columns.dadosUsuarios.notNull).toBe(true);
+    expect(columns.divergente.notNull).toBe(true);
+    expect(columns.geradoEm.notNull).toBe(true);
+  });
+
+  it('defines indexes for familia_id, mes_referencia and usuario_id in transacoes', () => {
+    const indexes = getTableConfig(transacoes).indexes;
+    const indexNames = indexes.map((indexConfig) => {
+      const configWithName = indexConfig as { config?: { name?: string }; name?: string };
+      return configWithName.config?.name ?? configWithName.name ?? '';
+    });
+
+    expect(indexNames).toEqual(
+      expect.arrayContaining([
+        'transacoes_familia_id_idx',
+        'transacoes_mes_referencia_idx',
+        'transacoes_usuario_registrou_id_idx',
+      ]),
+    );
   });
 });

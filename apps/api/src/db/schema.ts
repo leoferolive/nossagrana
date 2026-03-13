@@ -1,7 +1,9 @@
 import {
   boolean,
   date,
+  index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -134,35 +136,43 @@ export const transacaoFrequencia = pgEnum('transacao_frequencia', [
   'quinzenal',
 ]);
 
-export const transacoes = pgTable('transacoes', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  familiaId: uuid('familia_id')
-    .notNull()
-    .references(() => familias.id),
-  tipo: transacaoTipo('tipo').notNull(),
-  valor: numeric('valor', { precision: 14, scale: 2 }).notNull(),
-  categoriaId: uuid('categoria_id')
-    .notNull()
-    .references(() => categorias.id),
-  descricao: text('descricao'),
-  data: date('data').notNull(),
-  mesReferencia: text('mes_referencia').notNull(),
-  metodoPagamentoId: uuid('metodo_pagamento_id').references(() => metodosPagamento.id),
-  usuarioRegistrouId: uuid('usuario_registrou_id')
-    .notNull()
-    .references(() => users.id),
-  recorrente: boolean('recorrente').notNull().default(false),
-  frequencia: transacaoFrequencia('frequencia'),
-  dataFimRecorrencia: date('data_fim_recorrencia'),
-  parcelado: boolean('parcelado').notNull().default(false),
-  numeroParcelas: integer('numero_parcelas'),
-  parcelaAtual: integer('parcela_atual'),
-  valorTotal: numeric('valor_total', { precision: 14, scale: 2 }),
-  valorParcela: numeric('valor_parcela', { precision: 14, scale: 2 }),
-  transacaoPaiId: uuid('transacao_pai_id'),
-  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
-  atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow().notNull(),
-});
+export const transacoes = pgTable(
+  'transacoes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    tipo: transacaoTipo('tipo').notNull(),
+    valor: numeric('valor', { precision: 14, scale: 2 }).notNull(),
+    categoriaId: uuid('categoria_id')
+      .notNull()
+      .references(() => categorias.id),
+    descricao: text('descricao'),
+    data: date('data').notNull(),
+    mesReferencia: text('mes_referencia').notNull(),
+    metodoPagamentoId: uuid('metodo_pagamento_id').references(() => metodosPagamento.id),
+    usuarioRegistrouId: uuid('usuario_registrou_id')
+      .notNull()
+      .references(() => users.id),
+    recorrente: boolean('recorrente').notNull().default(false),
+    frequencia: transacaoFrequencia('frequencia'),
+    dataFimRecorrencia: date('data_fim_recorrencia'),
+    parcelado: boolean('parcelado').notNull().default(false),
+    numeroParcelas: integer('numero_parcelas'),
+    parcelaAtual: integer('parcela_atual'),
+    valorTotal: numeric('valor_total', { precision: 14, scale: 2 }),
+    valorParcela: numeric('valor_parcela', { precision: 14, scale: 2 }),
+    transacaoPaiId: uuid('transacao_pai_id'),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+    atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('transacoes_familia_id_idx').on(table.familiaId),
+    index('transacoes_mes_referencia_idx').on(table.mesReferencia),
+    index('transacoes_usuario_registrou_id_idx').on(table.usuarioRegistrouId),
+  ],
+);
 
 export const orcamentoCategoria = pgTable('orcamento_categoria', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -180,3 +190,25 @@ export const orcamentoCategoria = pgTable('orcamento_categoria', {
     .references(() => users.id),
   criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const snapshotsMensais = pgTable(
+  'snapshots_mensais',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    mesReferencia: text('mes_referencia').notNull(),
+    totalReceitas: numeric('total_receitas', { precision: 14, scale: 2 }).notNull(),
+    totalDespesas: numeric('total_despesas', { precision: 14, scale: 2 }).notNull(),
+    saldo: numeric('saldo', { precision: 14, scale: 2 }).notNull(),
+    dadosCategorias: jsonb('dados_categorias').notNull(),
+    dadosUsuarios: jsonb('dados_usuarios').notNull(),
+    divergente: boolean('divergente').notNull().default(false),
+    geradoEm: timestamp('gerado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('snapshots_mensais_familia_id_idx').on(table.familiaId),
+    index('snapshots_mensais_mes_referencia_idx').on(table.mesReferencia),
+  ],
+);

@@ -8,9 +8,10 @@ type OnboardingMode = 'create' | 'invite' | 'request';
 
 interface OnboardingPageProps {
   onOpenLogin: () => void;
+  onOpenFamilySettings: () => void;
 }
 
-export const OnboardingPage = ({ onOpenLogin }: OnboardingPageProps) => {
+export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: OnboardingPageProps) => {
   const [mode, setMode] = useState<OnboardingMode>('create');
 
   return (
@@ -49,6 +50,14 @@ export const OnboardingPage = ({ onOpenLogin }: OnboardingPageProps) => {
           Buscar e solicitar
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={onOpenFamilySettings}
+        className="mb-4 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-info hover:text-info"
+      >
+        Configuracoes da familia
+      </button>
 
       {mode === 'create' && (
         <form className="space-y-4">

@@ -45,4 +45,15 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /entrar com convite/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /buscar e solicitar/i })).toBeInTheDocument();
   });
+
+  it('opens family settings screen from onboarding', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    expect(screen.getByRole('heading', { name: /configuracoes da familia/i })).toBeInTheDocument();
+    expect(screen.getByText(/gestao de membros, convites e solicitacoes/i)).toBeInTheDocument();
+  });
 });

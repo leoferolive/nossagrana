@@ -41,3 +41,18 @@ export const usuarioFamilia = pgTable(
     }),
   ],
 );
+
+export const convites = pgTable('convites', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  familiaId: uuid('familia_id')
+    .notNull()
+    .references(() => familias.id),
+  codigo: text('codigo').notNull().unique(),
+  criadoPor: uuid('criado_por')
+    .notNull()
+    .references(() => users.id),
+  expiraEm: timestamp('expira_em', { withTimezone: true }).notNull(),
+  usadoPor: uuid('usado_por').references(() => users.id),
+  usadoEm: timestamp('usado_em', { withTimezone: true }),
+  dataCriacao: timestamp('data_criacao', { withTimezone: true }).defaultNow().notNull(),
+});

@@ -1,4 +1,13 @@
-import { boolean, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 // Bootstrap table to enable real Drizzle migrations from now on.
 export const schemaVersion = pgTable('schema_version', {
@@ -90,5 +99,28 @@ export const categorias = pgTable('categorias', {
   criadoPor: uuid('criado_por')
     .notNull()
     .references(() => users.id),
+  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const metodoPagamentoTipo = pgEnum('metodo_pagamento_tipo', [
+  'credito',
+  'debito',
+  'pix',
+  'dinheiro',
+]);
+
+export const metodosPagamento = pgTable('metodos_pagamento', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  familiaId: uuid('familia_id')
+    .notNull()
+    .references(() => familias.id),
+  nome: text('nome').notNull(),
+  tipo: metodoPagamentoTipo('tipo').notNull(),
+  dataFechamento: integer('data_fechamento'),
+  dataVencimento: integer('data_vencimento'),
+  usuarioDonoId: uuid('usuario_dono_id')
+    .notNull()
+    .references(() => users.id),
+  ativo: boolean('ativo').notNull().default(true),
   criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
 });

@@ -5,6 +5,7 @@ import {
   categorias,
   convites,
   familias,
+  metodosPagamento,
   solicitacoesEntrada,
   users,
   usuarioFamilia,
@@ -134,5 +135,28 @@ describe('database schema', () => {
       'Compras',
       'Outros',
     ]);
+  });
+
+  it('defines metodos_pagamento table with required columns', () => {
+    const columns = getTableColumns(metodosPagamento);
+
+    expect(Object.keys(columns)).toEqual([
+      'id',
+      'familiaId',
+      'nome',
+      'tipo',
+      'dataFechamento',
+      'dataVencimento',
+      'usuarioDonoId',
+      'ativo',
+      'criadoEm',
+    ]);
+    expect(columns.id.notNull).toBe(true);
+    expect(columns.familiaId.notNull).toBe(true);
+    expect(columns.nome.notNull).toBe(true);
+    expect(columns.tipo.notNull).toBe(true);
+    expect(columns.usuarioDonoId.notNull).toBe(true);
+    expect(columns.ativo.notNull).toBe(true);
+    expect(columns.criadoEm.notNull).toBe(true);
   });
 });

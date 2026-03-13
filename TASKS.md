@@ -54,7 +54,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Middleware de isolamento por `familia_id`
 
 ### Frontend
-- [ ] Tela de login
+- [x] Tela de login
 - [ ] Tela de cadastro
 - [ ] Lógica de refresh token automático (interceptor)
 - [ ] Contexto de autenticação (AuthContext)

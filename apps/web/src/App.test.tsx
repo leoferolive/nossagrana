@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { App } from './App';
 
 describe('App', () => {
-  it('renders setup confirmation text', () => {
+  it('renders login screen', () => {
     render(<App />);
 
-    expect(screen.getByText('Setup inicial concluido')).toBeInTheDocument();
-    expect(screen.getByText(/Ambiente pronto para fase 1/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /entrar no nossagrana/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
+    expect(screen.getByText(/nao tem conta\? cadastre-se/i)).toBeInTheDocument();
   });
 });

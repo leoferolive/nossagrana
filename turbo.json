@@ -13,7 +13,16 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "lint:fast": {
+      "dependsOn": ["^lint:fast"]
+    },
     "type-check": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "test:coverage": {
       "dependsOn": ["^build"]
     }
   }

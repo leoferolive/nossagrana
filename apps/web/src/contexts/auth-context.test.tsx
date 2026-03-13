@@ -1,0 +1,72 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { AuthProvider, useAuth } from './auth-context';
+
+afterEach(() => {
+  cleanup();
+});
+
+const AuthConsumer = () => {
+  const { isAuthenticated, accessToken, refreshToken, login, logout, setAccessToken } = useAuth();
+
+  return (
+    <div>
+      <p>authenticated: {isAuthenticated ? 'yes' : 'no'}</p>
+      <p>accessToken: {accessToken ?? 'none'}</p>
+      <p>refreshToken: {refreshToken ?? 'none'}</p>
+      <button
+        type="button"
+        onClick={() => login({ accessToken: 'access-token-1', refreshToken: 'refresh-token-1' })}
+      >
+        login
+      </button>
+      <button type="button" onClick={() => setAccessToken('access-token-2')}>
+        rotate-access-token
+      </button>
+      <button type="button" onClick={logout}>
+        logout
+      </button>
+    </div>
+  );
+};
+
+describe('AuthContext', () => {
+  it('starts logged out and allows login/logout flow', () => {
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByText('authenticated: no')).toBeInTheDocument();
+    expect(screen.getByText('accessToken: none')).toBeInTheDocument();
+    expect(screen.getByText('refreshToken: none')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'login' }));
+
+    expect(screen.getByText('authenticated: yes')).toBeInTheDocument();
+    expect(screen.getByText('accessToken: access-token-1')).toBeInTheDocument();
+    expect(screen.getByText('refreshToken: refresh-token-1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'logout' }));
+
+    expect(screen.getByText('authenticated: no')).toBeInTheDocument();
+    expect(screen.getByText('accessToken: none')).toBeInTheDocument();
+    expect(screen.getByText('refreshToken: none')).toBeInTheDocument();
+  });
+
+  it('updates only access token when refresh happens', () => {
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'login' }));
+    fireEvent.click(screen.getByRole('button', { name: 'rotate-access-token' }));
+
+    expect(screen.getByText('accessToken: access-token-2')).toBeInTheDocument();
+    expect(screen.getByText('refreshToken: refresh-token-1')).toBeInTheDocument();
+  });
+});

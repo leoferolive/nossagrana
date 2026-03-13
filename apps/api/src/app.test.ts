@@ -108,4 +108,47 @@ describe('API health endpoint', () => {
       accessToken: expect.any(String),
     });
   });
+
+  it('invalidates refresh token on logout', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-logout@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-logout@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { refreshToken } = loginResponse.json() as { refreshToken: string };
+
+    const logoutResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      payload: {
+        refreshToken,
+      },
+    });
+
+    expect(logoutResponse.statusCode).toBe(204);
+
+    const refreshAfterLogoutResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/refresh',
+      payload: {
+        refreshToken,
+      },
+    });
+
+    expect(refreshAfterLogoutResponse.statusCode).toBe(401);
+  });
 });

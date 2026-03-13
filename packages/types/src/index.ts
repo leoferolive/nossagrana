@@ -58,3 +58,9 @@ export const authRefreshResponseSchema = z.object({
 });
 
 export type AuthRefreshResponse = z.infer<typeof authRefreshResponseSchema>;
+
+export const authLogoutRequestSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+export type AuthLogoutRequest = z.infer<typeof authLogoutRequestSchema>;

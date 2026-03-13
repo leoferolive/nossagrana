@@ -1,6 +1,7 @@
 import {
   authLoginRequestSchema,
   authLoginResponseSchema,
+  authLogoutRequestSchema,
   authRefreshRequestSchema,
   authRefreshResponseSchema,
   authRegisterRequestSchema,
@@ -36,4 +37,8 @@ export const authRefreshSchema = {
       message: z.literal('Refresh token invalido'),
     }),
   },
+};
+
+export const authLogoutSchema = {
+  body: authLogoutRequestSchema,
 };

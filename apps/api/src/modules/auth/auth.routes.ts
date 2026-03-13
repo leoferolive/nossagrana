@@ -1,5 +1,6 @@
 import {
   authLoginRequestSchema,
+  authLogoutRequestSchema,
   authRefreshRequestSchema,
   authRegisterRequestSchema,
 } from '@nossagrana/types';
@@ -7,7 +8,12 @@ import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
-import { authLoginSchema, authRefreshSchema, authRegisterSchema } from './auth.schema.js';
+import {
+  authLoginSchema,
+  authLogoutSchema,
+  authRefreshSchema,
+  authRegisterSchema,
+} from './auth.schema.js';
 import {
   AuthService,
   EmailAlreadyExistsError,
@@ -24,6 +30,7 @@ const defaultAuthService = (): AuthService => {
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   const authService = defaultAuthService();
+  const revokedRefreshTokens = new Set<string>();
 
   fastify.post('/auth/register', { schema: authRegisterSchema }, async (request, reply) => {
     try {
@@ -77,6 +84,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/auth/refresh', { schema: authRefreshSchema }, async (request, reply) => {
     try {
       const payload = authRefreshRequestSchema.parse(request.body);
+      if (revokedRefreshTokens.has(payload.refreshToken)) {
+        return reply.code(401).send({ message: 'Refresh token invalido' });
+      }
+
       const decodedToken = fastify.jwt.verify<{
         sub: string;
         email: string;
@@ -98,5 +109,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     } catch {
       return reply.code(401).send({ message: 'Refresh token invalido' });
     }
+  });
+
+  fastify.post('/auth/logout', { schema: authLogoutSchema }, async (request, reply) => {
+    const payload = authLogoutRequestSchema.parse(request.body);
+    revokedRefreshTokens.add(payload.refreshToken);
+    return reply.code(204).send();
   });
 };

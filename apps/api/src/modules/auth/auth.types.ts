@@ -32,3 +32,5 @@ export interface AuthRepository {
     senhaHash: string;
   }): Promise<AuthRepositoryUser>;
 }
+
+export const authTypesRuntimeMarker = true;

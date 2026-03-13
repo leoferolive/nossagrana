@@ -23,3 +23,5 @@ export interface CategoriaRepository {
     tipo: 'receita' | 'despesa';
   }): Promise<Categoria | null>;
 }
+
+export const categoriaTypesRuntimeMarker = true;

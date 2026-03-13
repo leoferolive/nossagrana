@@ -78,3 +78,5 @@ export interface FamiliaRepository {
   removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   deleteFamily(input: { familiaId: string }): Promise<boolean>;
 }
+
+export const familiaTypesRuntimeMarker = true;

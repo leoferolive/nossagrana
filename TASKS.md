@@ -29,7 +29,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 - [x] Instalar e configurar Drizzle ORM + Drizzle Kit
 - [x] Schema: tabela `users`
-- [ ] Schema: tabela `familias`
+- [x] Schema: tabela `familias`
 - [ ] Schema: tabela `usuario_familia`
 - [ ] Schema: tabela `convites`
 - [ ] Schema: tabela `solicitacoes_entrada`

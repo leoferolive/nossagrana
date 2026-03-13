@@ -14,3 +14,9 @@ export const users = pgTable('users', {
   senhaHash: text('senha_hash').notNull(),
   dataCriacao: timestamp('data_criacao', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const familias = pgTable('familias', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  nome: text('nome').notNull(),
+  dataCriacao: timestamp('data_criacao', { withTimezone: true }).defaultNow().notNull(),
+});

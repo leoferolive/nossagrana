@@ -73,3 +73,19 @@ export const authMeResponseSchema = z.object({
 });
 
 export type AuthMeResponse = z.infer<typeof authMeResponseSchema>;
+
+export const familiaCreateRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+});
+
+export type FamiliaCreateRequest = z.infer<typeof familiaCreateRequestSchema>;
+
+export const familiaCreateResponseSchema = z.object({
+  familia: z.object({
+    id: z.string().uuid(),
+    nome: z.string().min(1),
+    dataCriacao: z.string(),
+  }),
+});
+
+export type FamiliaCreateResponse = z.infer<typeof familiaCreateResponseSchema>;

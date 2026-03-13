@@ -240,4 +240,54 @@ describe('API health endpoint', () => {
       familiaId: '11111111-1111-1111-1111-111111111111',
     });
   });
+
+  it('creates a family for authenticated user', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-family-create@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-family-create@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const unauthorizedResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      payload: {
+        nome: 'Familia Silva',
+      },
+    });
+    expect(unauthorizedResponse.statusCode).toBe(401);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Silva',
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      familia: {
+        nome: 'Familia Silva',
+      },
+    });
+  });
 });

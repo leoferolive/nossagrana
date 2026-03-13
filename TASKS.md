@@ -66,7 +66,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 3 — Família e Onboarding
 
 ### Backend
-- [ ] Rota `POST /familias` — criar família (UC05)
+- [x] Rota `POST /familias` — criar família (UC05)
 - [ ] Rota `POST /familias/convites` — gerar código de convite (UC21)
 - [ ] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
 - [ ] Rota `POST /familias/solicitar` — solicitar entrada (UC04)

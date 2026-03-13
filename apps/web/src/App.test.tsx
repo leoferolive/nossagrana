@@ -56,4 +56,19 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /configuracoes da familia/i })).toBeInTheDocument();
     expect(screen.getByText(/gestao de membros, convites e solicitacoes/i)).toBeInTheDocument();
   });
+
+  it('lists members and allows removing a member in family settings', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    expect(screen.getByText(/leo/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /remover maria/i }));
+
+    expect(screen.queryByRole('button', { name: /remover maria/i })).not.toBeInTheDocument();
+  });
 });

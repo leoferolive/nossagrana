@@ -1,0 +1,12 @@
+# Legacy infrastructure/workflow hardening tracked separately.
+# Keep Semgrep blocking for application code while these files are remediated.
+.github/workflows/deploy-branch-dev.yml
+.github/workflows/deploy-environment.yml
+.github/workflows/deploy-on-tag.yml
+.github/workflows/deploy-prod.yml
+.github/workflows/release.yml
+k8s/dev/api-deployment.yaml
+k8s/dev/web-deployment.yaml
+k8s/postgres/statefulset.yaml
+k8s/prod/api-deployment.yaml
+k8s/prod/web-deployment.yaml

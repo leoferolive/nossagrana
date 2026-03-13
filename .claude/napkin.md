@@ -7,7 +7,9 @@
 - Each item includes date + "Do instead".
 
 ## Execution & Validation (Highest Priority)
-1. **[2026-03-11] Validate critical flows after every meaningful code change**
+1. **[2026-03-12] `tsc -b` no frontend pode gerar JS em `src/` se `noEmit` nao estiver ativo**
+   Do instead: usar `tsc --noEmit` nos scripts de build/type-check do web para evitar artefatos versionaveis.
+2. **[2026-03-11] Validate critical flows after every meaningful code change**
    Do instead: run the smallest relevant automated checks first, then broaden only if needed.
 
 ## Shell & Command Reliability
@@ -19,7 +21,9 @@
    Do instead: use `rg`/`rg --files` with directory scoping before broader shell patterns.
 
 ## Domain Behavior Guardrails
-1. **[2026-03-11] Preserve unrelated local changes**
+1. **[2026-03-12] Frontend `apps/web` deve versionar apenas fontes TS/TSX**
+   Do instead: remover artefatos JS gerados (`src/**/*.js`, `vite.config.js`, `.d.ts` gerado) e bloquear no `.gitignore`.
+2. **[2026-03-11] Preserve unrelated local changes**
    Do instead: edit only task-related files and never revert existing user changes unless explicitly requested.
 
 ## User Directives

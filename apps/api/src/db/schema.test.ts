@@ -6,6 +6,7 @@ import {
   convites,
   familias,
   metodosPagamento,
+  orcamentoCategoria,
   solicitacoesEntrada,
   transacoes,
   users,
@@ -199,5 +200,27 @@ describe('database schema', () => {
     expect(columns.parcelado.notNull).toBe(true);
     expect(columns.criadoEm.notNull).toBe(true);
     expect(columns.atualizadoEm.notNull).toBe(true);
+  });
+
+  it('defines orcamento_categoria table with required columns', () => {
+    const columns = getTableColumns(orcamentoCategoria);
+
+    expect(Object.keys(columns)).toEqual([
+      'id',
+      'familiaId',
+      'categoriaId',
+      'valorLimite',
+      'vigenciaInicio',
+      'vigenciaFim',
+      'criadoPor',
+      'criadoEm',
+    ]);
+    expect(columns.id.notNull).toBe(true);
+    expect(columns.familiaId.notNull).toBe(true);
+    expect(columns.categoriaId.notNull).toBe(true);
+    expect(columns.valorLimite.notNull).toBe(true);
+    expect(columns.vigenciaInicio.notNull).toBe(true);
+    expect(columns.criadoPor.notNull).toBe(true);
+    expect(columns.criadoEm.notNull).toBe(true);
   });
 });

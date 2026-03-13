@@ -36,7 +36,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Schema: tabela `categorias` (com seed de categorias padrão)
 - [x] Schema: tabela `metodos_pagamento`
 - [x] Schema: tabela `transacoes`
-- [ ] Schema: tabela `orcamento_categoria`
+- [x] Schema: tabela `orcamento_categoria`
 - [ ] Schema: tabela `snapshots_mensais`
 - [ ] Criar índices: `familia_id`, `mes_referencia`, `usuario_id`
 - [ ] Configurar migration inicial e rodar no banco

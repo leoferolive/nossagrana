@@ -163,3 +163,20 @@ export const transacoes = pgTable('transacoes', {
   criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
   atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const orcamentoCategoria = pgTable('orcamento_categoria', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  familiaId: uuid('familia_id')
+    .notNull()
+    .references(() => familias.id),
+  categoriaId: uuid('categoria_id')
+    .notNull()
+    .references(() => categorias.id),
+  valorLimite: numeric('valor_limite', { precision: 14, scale: 2 }).notNull(),
+  vigenciaInicio: text('vigencia_inicio').notNull(),
+  vigenciaFim: text('vigencia_fim'),
+  criadoPor: uuid('criado_por')
+    .notNull()
+    .references(() => users.id),
+  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+});

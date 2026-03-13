@@ -90,7 +90,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 4 — Core Financeiro
 
 ### Backend
-- [ ] Rota `GET /categorias` — listar categorias da família
+- [x] Rota `GET /categorias` — listar categorias da família
 - [ ] Rota `POST /categorias` — criar categoria (UC17)
 - [ ] Rota `PATCH /categorias/:id` — editar categoria
 - [ ] Rota `DELETE /categorias/:id` — desativar categoria (soft delete)

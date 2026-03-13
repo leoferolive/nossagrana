@@ -6,6 +6,9 @@ export type FamilyRole = z.infer<typeof familyRoleSchema>;
 export const transactionTypeSchema = z.enum(['receita', 'despesa']);
 export type TransactionType = z.infer<typeof transactionTypeSchema>;
 
+export const categoriaTipoSchema = z.enum(['receita', 'despesa']);
+export type CategoriaTipo = z.infer<typeof categoriaTipoSchema>;
+
 export const healthResponseSchema = z.object({
   status: z.literal('ok'),
   app: z.literal('api'),
@@ -228,3 +231,19 @@ export const familiaDeleteParamsSchema = z.object({
 });
 
 export type FamiliaDeleteParams = z.infer<typeof familiaDeleteParamsSchema>;
+
+export const categoriaListResponseSchema = z.object({
+  categorias: z.array(
+    z.object({
+      id: z.string().uuid(),
+      familiaId: z.string().uuid(),
+      nome: z.string().min(1),
+      tipo: categoriaTipoSchema,
+      ativo: z.boolean(),
+      criadoPor: z.string().uuid(),
+      criadoEm: z.string(),
+    }),
+  ),
+});
+
+export type CategoriaListResponse = z.infer<typeof categoriaListResponseSchema>;

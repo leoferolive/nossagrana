@@ -1021,4 +1021,54 @@ describe('API health endpoint', () => {
 
     expect(switchAfterDeleteResponse.statusCode).toBe(403);
   });
+
+  it('lists categories for active family', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Categorias',
+        email: 'admin-family-categories@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-categories@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Categorias',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const categoriesResponse = await app.inject({
+      method: 'GET',
+      url: '/api/categorias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+    });
+
+    expect(categoriesResponse.statusCode).toBe(200);
+    expect(categoriesResponse.json()).toMatchObject({
+      categorias: [],
+    });
+  });
 });

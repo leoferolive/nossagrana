@@ -6,6 +6,7 @@ import {
 
 import { env } from './config/env.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
+import { categoriaRoutes } from './modules/categoria/categoria.routes.js';
 import { familiaRoutes } from './modules/familia/familia.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
@@ -30,6 +31,7 @@ export const buildApp = () => {
   app.register(websocketPlugin);
 
   app.register(authRoutes, { prefix: '/api' });
+  app.register(categoriaRoutes, { prefix: '/api' });
   app.register(familiaRoutes, { prefix: '/api' });
   app.register(healthRoutes, { prefix: '/api' });
 

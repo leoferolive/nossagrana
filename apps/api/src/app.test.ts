@@ -45,4 +45,31 @@ describe('API health endpoint', () => {
       },
     });
   });
+
+  it('logs in a user with access and refresh token', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-login@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-login@example.com',
+        senha: 'password123',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      accessToken: expect.any(String),
+      refreshToken: expect.any(String),
+    });
+  });
 });

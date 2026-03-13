@@ -32,3 +32,17 @@ export const authRegisterResponseSchema = z.object({
 });
 
 export type AuthRegisterResponse = z.infer<typeof authRegisterResponseSchema>;
+
+export const authLoginRequestSchema = z.object({
+  email: z.string().trim().email(),
+  senha: z.string().min(8),
+});
+
+export type AuthLoginRequest = z.infer<typeof authLoginRequestSchema>;
+
+export const authLoginResponseSchema = z.object({
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+
+export type AuthLoginResponse = z.infer<typeof authLoginResponseSchema>;

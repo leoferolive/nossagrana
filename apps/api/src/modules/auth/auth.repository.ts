@@ -12,6 +12,7 @@ export class DrizzleAuthRepository implements AuthRepository {
         id: users.id,
         nome: users.nome,
         email: users.email,
+        senhaHash: users.senhaHash,
         dataCriacao: users.dataCriacao,
       })
       .from(users)
@@ -37,6 +38,7 @@ export class DrizzleAuthRepository implements AuthRepository {
         id: users.id,
         nome: users.nome,
         email: users.email,
+        senhaHash: users.senhaHash,
         dataCriacao: users.dataCriacao,
       });
 
@@ -62,6 +64,7 @@ export class InMemoryAuthRepository implements AuthRepository {
       id,
       nome: input.nome,
       email: input.email,
+      senhaHash: input.senhaHash,
       dataCriacao: now,
     };
     this.usersByEmail.set(input.email, user);

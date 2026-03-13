@@ -1,4 +1,9 @@
-import { authRegisterRequestSchema, authRegisterResponseSchema } from '@nossagrana/types';
+import {
+  authLoginRequestSchema,
+  authLoginResponseSchema,
+  authRegisterRequestSchema,
+  authRegisterResponseSchema,
+} from '@nossagrana/types';
 import { z } from 'zod';
 
 export const authRegisterSchema = {
@@ -7,6 +12,16 @@ export const authRegisterSchema = {
     201: authRegisterResponseSchema,
     409: z.object({
       message: z.literal('Email ja cadastrado'),
+    }),
+  },
+};
+
+export const authLoginSchema = {
+  body: authLoginRequestSchema,
+  response: {
+    200: authLoginResponseSchema,
+    401: z.object({
+      message: z.literal('Credenciais invalidas'),
     }),
   },
 };

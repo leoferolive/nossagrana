@@ -4,6 +4,11 @@ export interface RegisterUserInput {
   senha: string;
 }
 
+export interface LoginInput {
+  email: string;
+  senha: string;
+}
+
 export interface RegisteredUser {
   id: string;
   nome: string;
@@ -15,6 +20,7 @@ export interface AuthRepositoryUser {
   id: string;
   nome: string;
   email: string;
+  senhaHash: string;
   dataCriacao: Date;
 }
 

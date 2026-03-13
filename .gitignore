@@ -11,9 +11,14 @@ dist/
 
 # Vite
 apps/web/dist/
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
+apps/web/src/**/*.js
 
 # Build API
 apps/api/dist/
+apps/api/coverage/
+apps/web/coverage/
 
 # K8s secrets reais (nunca commitar)
 k8s/secrets-real.yaml

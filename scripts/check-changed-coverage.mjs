@@ -42,6 +42,7 @@ const changedFiles = changedFilesRaw
       .filter((file) => !/\.spec\.(ts|tsx)$/.test(file))
       .filter((file) => !/\/src\/test\//.test(file))
       .filter((file) => !/\.d\.ts$/.test(file))
+      .filter((file) => fs.existsSync(path.join(rootDir, file)))
   : [];
 
 if (changedFiles.length === 0) {

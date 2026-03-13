@@ -82,7 +82,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Tela de configurações da família (Admin)
 - [x] Listagem de membros com opção de remoção
 - [x] Gestão de solicitações pendentes (Admin)
-- [ ] Geração e compartilhamento de código de convite
+- [x] Geração e compartilhamento de código de convite
 - [ ] Seletor de família ativa (para usuários com múltiplas famílias)
 
 ---

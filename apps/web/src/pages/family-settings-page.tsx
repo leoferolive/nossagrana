@@ -12,12 +12,26 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
     { id: '2', nome: 'Maria', role: 'membro' as const },
   ]);
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([{ id: 'r1', nome: 'Joao' }]);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [isInviteCopied, setIsInviteCopied] = useState(false);
 
   const removeMember = (memberId: string) => {
     setMembros((currentMembers) => currentMembers.filter((member) => member.id !== memberId));
   };
   const handlePendingRequest = (requestId: string) => {
     setSolicitacoesPendentes((currentRequests) => currentRequests.filter((request) => request.id !== requestId));
+  };
+  const generateInviteCode = () => {
+    setInviteCode('FAM-LEO-2026');
+    setIsInviteCopied(false);
+  };
+  const copyInviteCode = async () => {
+    if (!inviteCode || !navigator.clipboard?.writeText) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(inviteCode);
+    setIsInviteCopied(true);
   };
 
   return (
@@ -85,7 +99,32 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
             ))}
           </ul>
         </div>
-        <p>Convites</p>
+        <div className="space-y-2">
+          <p className="font-semibold text-text">Convites</p>
+          <button
+            type="button"
+            onClick={generateInviteCode}
+            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-info transition hover:border-info"
+          >
+            Gerar codigo de convite
+          </button>
+
+          {inviteCode && (
+            <div className="space-y-2 rounded-md border border-border px-3 py-2">
+              <p>Codigo: {inviteCode}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  void copyInviteCode();
+                }}
+                className="text-xs font-semibold text-info transition hover:underline"
+              >
+                Copiar codigo
+              </button>
+              {isInviteCopied && <p className="text-xs text-success">Codigo copiado</p>}
+            </div>
+          )}
+        </div>
       </div>
     </AuthShell>
   );

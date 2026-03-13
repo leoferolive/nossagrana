@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
 
@@ -86,5 +86,29 @@ describe('App', () => {
 
     expect(screen.queryByRole('button', { name: /aprovar joao/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /rejeitar joao/i })).not.toBeInTheDocument();
+  });
+
+  it('generates and copies invite code in family settings', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /gerar codigo de convite/i }));
+
+    expect(screen.getByText(/codigo: FAM-LEO-2026/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /copiar codigo/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /copiar codigo/i }));
+
+    expect(writeText).toHaveBeenCalledWith('FAM-LEO-2026');
+    expect(await screen.findByText(/codigo copiado/i)).toBeInTheDocument();
   });
 });

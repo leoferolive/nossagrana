@@ -195,4 +195,49 @@ describe('API health endpoint', () => {
       },
     });
   });
+
+  it('enforces familia scope middleware on protected routes', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Leo',
+        email: 'leo-family@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'leo-family@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const missingHeaderResponse = await app.inject({
+      method: 'GET',
+      url: '/api/auth/familia-context',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+    expect(missingHeaderResponse.statusCode).toBe(400);
+
+    const validHeaderResponse = await app.inject({
+      method: 'GET',
+      url: '/api/auth/familia-context',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': '11111111-1111-1111-1111-111111111111',
+      },
+    });
+    expect(validHeaderResponse.statusCode).toBe(200);
+    expect(validHeaderResponse.json()).toMatchObject({
+      familiaId: '11111111-1111-1111-1111-111111111111',
+    });
+  });
 });

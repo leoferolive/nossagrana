@@ -10,6 +10,7 @@ import { env } from '../../config/env.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
 import {
   authLoginSchema,
+  authFamiliaContextSchema,
   authLogoutSchema,
   authMeSchema,
   authRefreshSchema,
@@ -126,4 +127,15 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       },
     };
   });
+
+  fastify.get(
+    '/auth/familia-context',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: authFamiliaContextSchema,
+    },
+    async (request) => {
+      return { familiaId: request.familiaIdAtiva };
+    },
+  );
 };

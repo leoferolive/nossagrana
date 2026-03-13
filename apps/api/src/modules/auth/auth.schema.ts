@@ -49,3 +49,11 @@ export const authMeSchema = {
     200: authMeResponseSchema,
   },
 };
+
+export const authFamiliaContextSchema = {
+  response: {
+    200: z.object({
+      familiaId: z.string().uuid(),
+    }),
+  },
+};

@@ -75,7 +75,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Rota `GET /familias/:id/membros` — listar membros
 - [x] Rota `DELETE /familias/:id/membros/:usuarioId` — remover membro (UC23)
 - [ ] Rota `DELETE /familias/:id` — excluir família (UC24)
-- [ ] Rota `POST /familias/alternar` — alternar família ativa (UC20)
+- [x] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend
 - [ ] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)

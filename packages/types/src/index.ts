@@ -210,3 +210,15 @@ export const familiaRemoveMemberParamsSchema = z.object({
 });
 
 export type FamiliaRemoveMemberParams = z.infer<typeof familiaRemoveMemberParamsSchema>;
+
+export const familiaSwitchActiveRequestSchema = z.object({
+  familiaId: z.string().uuid(),
+});
+
+export type FamiliaSwitchActiveRequest = z.infer<typeof familiaSwitchActiveRequestSchema>;
+
+export const familiaSwitchActiveResponseSchema = z.object({
+  familiaIdAtiva: z.string().uuid(),
+});
+
+export type FamiliaSwitchActiveResponse = z.infer<typeof familiaSwitchActiveResponseSchema>;

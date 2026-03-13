@@ -5,6 +5,7 @@ import {
   familiaJoinByInviteRequestSchema,
   familiaListMembersParamsSchema,
   familiaRemoveMemberParamsSchema,
+  familiaSwitchActiveRequestSchema,
   familiaReviewJoinRequestParamsSchema,
   familiaReviewJoinRequestRequestSchema,
   familiaRequestJoinRequestSchema,
@@ -20,11 +21,13 @@ import {
   familiaListJoinRequestsSchema,
   familiaListMembersSchema,
   familiaRemoveMemberSchema,
+  familiaSwitchActiveSchema,
   familiaReviewJoinRequestSchema,
   familiaRequestJoinSchema,
 } from './familia.schema.js';
 import {
   FamiliaMemberNotFoundError,
+  ForbiddenActiveFamilySwitchError,
   ForbiddenFamiliaJoinRequestListError,
   ForbiddenFamiliaMemberRemovalError,
   FamiliaService,
@@ -270,6 +273,31 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
 
         if (error instanceof FamiliaMemberNotFoundError) {
           return reply.code(404).send({ message: error.message });
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  fastify.post(
+    '/familias/alternar',
+    {
+      preHandler: [fastify.authenticate],
+      schema: familiaSwitchActiveSchema,
+    },
+    async (request, reply) => {
+      try {
+        const payload = familiaSwitchActiveRequestSchema.parse(request.body);
+        const result = await familiaService.switchActiveFamily({
+          familiaId: payload.familiaId,
+          usuarioId: request.user.sub,
+        });
+
+        return reply.code(200).send(result);
+      } catch (error) {
+        if (error instanceof ForbiddenActiveFamilySwitchError) {
+          return reply.code(403).send({ message: error.message });
         }
 
         throw error;

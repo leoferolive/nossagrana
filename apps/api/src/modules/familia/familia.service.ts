@@ -62,6 +62,12 @@ export class FamiliaMemberNotFoundError extends Error {
   }
 }
 
+export class ForbiddenActiveFamilySwitchError extends Error {
+  constructor() {
+    super('Usuario sem acesso a familia informada');
+  }
+}
+
 export class FamiliaService {
   constructor(private readonly familiaRepository: FamiliaRepository) {}
 
@@ -180,5 +186,20 @@ export class FamiliaService {
     if (!removed) {
       throw new FamiliaMemberNotFoundError();
     }
+  }
+
+  async switchActiveFamily(input: { familiaId: string; usuarioId: string }) {
+    const hasMembership = await this.familiaRepository.hasMembership({
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+    });
+
+    if (!hasMembership) {
+      throw new ForbiddenActiveFamilySwitchError();
+    }
+
+    return {
+      familiaIdAtiva: input.familiaId,
+    };
   }
 }

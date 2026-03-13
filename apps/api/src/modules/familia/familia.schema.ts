@@ -8,6 +8,8 @@ import {
   familiaListMembersParamsSchema,
   familiaListMembersResponseSchema,
   familiaRemoveMemberParamsSchema,
+  familiaSwitchActiveRequestSchema,
+  familiaSwitchActiveResponseSchema,
   familiaReviewJoinRequestParamsSchema,
   familiaReviewJoinRequestRequestSchema,
   familiaReviewJoinRequestResponseSchema,
@@ -136,6 +138,19 @@ export const familiaRemoveMemberSchema = {
     ]),
     404: z.object({
       message: z.literal('Membro nao encontrado na familia'),
+    }),
+  },
+};
+
+export const familiaSwitchActiveSchema = {
+  body: familiaSwitchActiveRequestSchema,
+  response: {
+    200: familiaSwitchActiveResponseSchema,
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    403: z.object({
+      message: z.literal('Usuario sem acesso a familia informada'),
     }),
   },
 };

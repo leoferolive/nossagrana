@@ -56,6 +56,16 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     return Boolean(membership);
   }
 
+  async hasMembership(input: { familiaId: string; usuarioId: string }): Promise<boolean> {
+    const [membership] = await db
+      .select({ usuarioId: usuarioFamilia.usuarioId })
+      .from(usuarioFamilia)
+      .where(and(eq(usuarioFamilia.familiaId, input.familiaId), eq(usuarioFamilia.usuarioId, input.usuarioId)))
+      .limit(1);
+
+    return Boolean(membership);
+  }
+
   async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite> {
     const code = randomBytes(6).toString('hex').toUpperCase();
     const now = new Date();
@@ -309,6 +319,15 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     }
 
     return memberships.get(input.usuarioId)?.role === 'admin';
+  }
+
+  async hasMembership(input: { familiaId: string; usuarioId: string }): Promise<boolean> {
+    const memberships = this.membershipsByFamiliaId.get(input.familiaId);
+    if (!memberships) {
+      return false;
+    }
+
+    return memberships.has(input.usuarioId);
   }
 
   async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite> {

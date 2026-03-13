@@ -909,4 +909,56 @@ describe('API health endpoint', () => {
       ],
     });
   });
+
+  it('switches active family for authenticated member', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Alternar',
+        email: 'admin-family-switch@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-switch@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Alternar',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const switchResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias/alternar',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        familiaId: familia.id,
+      },
+    });
+
+    expect(switchResponse.statusCode).toBe(200);
+    expect(switchResponse.json()).toMatchObject({
+      familiaIdAtiva: familia.id,
+    });
+  });
 });

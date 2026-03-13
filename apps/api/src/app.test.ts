@@ -435,4 +435,85 @@ describe('API health endpoint', () => {
       },
     });
   });
+
+  it('creates pending join request for a family', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Solic',
+        email: 'admin-family-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const adminLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: adminAccessToken } = adminLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+      },
+      payload: {
+        nome: 'Familia Solicitar',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Solicitante',
+        email: 'requester-family-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const requesterLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'requester-family-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: requesterAccessToken } = requesterLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    const requestResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias/solicitar',
+      headers: {
+        authorization: `Bearer ${requesterAccessToken}`,
+      },
+      payload: {
+        familiaId: familia.id,
+      },
+    });
+
+    expect(requestResponse.statusCode).toBe(201);
+    expect(requestResponse.json()).toMatchObject({
+      solicitacao: {
+        familiaId: familia.id,
+        usuarioId: expect.any(String),
+        status: 'pendente',
+      },
+    });
+  });
 });

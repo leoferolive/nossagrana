@@ -126,3 +126,21 @@ export const familiaJoinByInviteResponseSchema = z.object({
 });
 
 export type FamiliaJoinByInviteResponse = z.infer<typeof familiaJoinByInviteResponseSchema>;
+
+export const familiaRequestJoinRequestSchema = z.object({
+  familiaId: z.string().uuid(),
+});
+
+export type FamiliaRequestJoinRequest = z.infer<typeof familiaRequestJoinRequestSchema>;
+
+export const familiaRequestJoinResponseSchema = z.object({
+  solicitacao: z.object({
+    id: z.string().uuid(),
+    familiaId: z.string().uuid(),
+    usuarioId: z.string().uuid(),
+    status: z.literal('pendente'),
+    solicitadoEm: z.string(),
+  }),
+});
+
+export type FamiliaRequestJoinResponse = z.infer<typeof familiaRequestJoinResponseSchema>;

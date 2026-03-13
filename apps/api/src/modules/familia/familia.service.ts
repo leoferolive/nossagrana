@@ -15,6 +15,11 @@ interface JoinFamiliaByInviteInput {
   usuarioId: string;
 }
 
+interface RequestFamiliaJoinInput {
+  familiaId: string;
+  usuarioId: string;
+}
+
 export class ForbiddenFamiliaInviteError extends Error {
   constructor() {
     super('Apenas admin pode gerar convite');
@@ -64,5 +69,12 @@ export class FamiliaService {
     }
 
     return familia;
+  }
+
+  async requestJoin(input: RequestFamiliaJoinInput) {
+    return this.familiaRepository.requestJoin({
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+    });
   }
 }

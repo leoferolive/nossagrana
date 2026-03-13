@@ -3,6 +3,7 @@ import {
   familiaCreateRequestSchema,
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
+  familiaRequestJoinRequestSchema,
 } from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
@@ -12,6 +13,7 @@ import {
   familiaCreateInviteSchema,
   familiaCreateSchema,
   familiaJoinByInviteSchema,
+  familiaRequestJoinSchema,
 } from './familia.schema.js';
 import {
   FamiliaService,
@@ -111,6 +113,28 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
 
         throw error;
       }
+    },
+  );
+
+  fastify.post(
+    '/familias/solicitar',
+    {
+      preHandler: [fastify.authenticate],
+      schema: familiaRequestJoinSchema,
+    },
+    async (request, reply) => {
+      const payload = familiaRequestJoinRequestSchema.parse(request.body);
+      const solicitacao = await familiaService.requestJoin({
+        familiaId: payload.familiaId,
+        usuarioId: request.user.sub,
+      });
+
+      return reply.code(201).send({
+        solicitacao: {
+          ...solicitacao,
+          solicitadoEm: solicitacao.solicitadoEm.toISOString(),
+        },
+      });
     },
   );
 };

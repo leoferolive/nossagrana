@@ -4,6 +4,8 @@ import {
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
   familiaJoinByInviteResponseSchema,
+  familiaRequestJoinRequestSchema,
+  familiaRequestJoinResponseSchema,
   familiaCreateRequestSchema,
   familiaCreateResponseSchema,
 } from '@nossagrana/types';
@@ -45,6 +47,16 @@ export const familiaJoinByInviteSchema = {
     }),
     404: z.object({
       message: z.literal('Codigo de convite invalido ou expirado'),
+    }),
+  },
+};
+
+export const familiaRequestJoinSchema = {
+  body: familiaRequestJoinRequestSchema,
+  response: {
+    201: familiaRequestJoinResponseSchema,
+    401: z.object({
+      message: z.literal('Nao autenticado'),
     }),
   },
 };

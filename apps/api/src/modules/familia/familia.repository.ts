@@ -3,14 +3,16 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import { convites, familias, usuarioFamilia } from '../../db/schema.js';
+import { convites, familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
 import type {
   CreatedFamilia,
   CreatedFamiliaInvite,
+  CreatedFamiliaJoinRequest,
   CreateFamiliaInput,
   CreateFamiliaInviteInput,
-  JoinFamiliaByInviteInput,
   FamiliaRepository,
+  JoinFamiliaByInviteInput,
+  RequestFamiliaJoinInput,
 } from './familia.types.js';
 
 export class DrizzleFamiliaRepository implements FamiliaRepository {
@@ -128,12 +130,35 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       };
     });
   }
+
+  async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest> {
+    const [joinRequest] = await db
+      .insert(solicitacoesEntrada)
+      .values({
+        familiaId: input.familiaId,
+        usuarioId: input.usuarioId,
+        status: 'pendente',
+      })
+      .returning({
+        id: solicitacoesEntrada.id,
+        familiaId: solicitacoesEntrada.familiaId,
+        usuarioId: solicitacoesEntrada.usuarioId,
+        status: solicitacoesEntrada.status,
+        solicitadoEm: solicitacoesEntrada.solicitadoEm,
+      });
+
+    return {
+      ...joinRequest,
+      status: 'pendente',
+    };
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
   private familiasById = new Map<string, CreatedFamilia>();
   private membershipsByFamiliaId = new Map<string, Map<string, 'admin' | 'membro'>>();
   private invitesById = new Map<string, CreatedFamiliaInvite>();
+  private joinRequestsById = new Map<string, CreatedFamiliaJoinRequest>();
 
   async createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia> {
     const id = randomUUID();
@@ -193,5 +218,18 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     this.invitesById.delete(invite.id);
 
     return this.familiasById.get(invite.familiaId) ?? null;
+  }
+
+  async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest> {
+    const joinRequest: CreatedFamiliaJoinRequest = {
+      id: randomUUID(),
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+      status: 'pendente',
+      solicitadoEm: new Date(),
+    };
+
+    this.joinRequestsById.set(joinRequest.id, joinRequest);
+    return joinRequest;
   }
 }

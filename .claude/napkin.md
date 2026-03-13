@@ -32,5 +32,9 @@
 
 ## User Directives
 
-1. **[2026-03-11] Keep response style concise and action-oriented**
+1. **[2026-03-12] Sempre iniciar implementação por TDD**
+   Do instead: começar cada task escrevendo/ajustando um teste que falhe, depois implementar para passar, e só então refatorar.
+2. **[2026-03-13] Fechar cada task com simulação da CI e commit**
+   Do instead: após dev, rodar fluxo local de CI (lint, type-check, build, testes/cobertura e audit quando rede permitir) e só então commitar antes da próxima task.
+3. **[2026-03-11] Keep response style concise and action-oriented**
    Do instead: summarize outcome first, include only necessary details, and list next steps only when useful.

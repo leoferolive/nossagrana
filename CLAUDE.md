@@ -71,6 +71,12 @@ nossagrana/
 
 ## Padrões de Código
 
+### Processo de Desenvolvimento
+- Sempre começar implementações por TDD (Red -> Green -> Refactor)
+- Antes de alterar código de produção, escrever ou ajustar primeiro um teste que falhe
+- Rodar os testes e simular a esteira CI antes de fechar a task
+- Fazer commit ao final de cada task concluída, antes de iniciar a próxima
+
 ### Nomenclatura
 - TypeScript: `camelCase` para variáveis/funções, `PascalCase` para tipos/interfaces/classes
 - Banco de dados: `snake_case` para tabelas e colunas

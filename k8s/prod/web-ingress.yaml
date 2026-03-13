@@ -4,7 +4,7 @@ metadata:
   name: nossagrana-web
   namespace: nossagrana
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   ingressClassName: traefik
   rules:
@@ -18,4 +18,3 @@ spec:
                 name: nossagrana-web
                 port:
                   number: 80
-

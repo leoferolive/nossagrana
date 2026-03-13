@@ -19,7 +19,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Manifests K8s: Deployment, Service e Ingress para Web
 - [x] Manifest K8s: PostgreSQL (StatefulSet + PVC)
 - [x] Configurar GitHub Actions (CI/CD via self-workflows)
-- [ ] Ajustar Ingress para Cloudflare Tunnel existente
+- [x] Ajustar Ingress para Cloudflare Tunnel existente
 - [x] Configurar variáveis de ambiente e secrets no K3s
 - [x] Testar deploy end-to-end no Raspberry Pi
 
@@ -27,8 +27,8 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ## Fase 1 — Banco de Dados
 
-- [ ] Instalar e configurar Drizzle ORM + Drizzle Kit
-- [ ] Schema: tabela `users`
+- [x] Instalar e configurar Drizzle ORM + Drizzle Kit
+- [x] Schema: tabela `users`
 - [ ] Schema: tabela `familias`
 - [ ] Schema: tabela `usuario_familia`
 - [ ] Schema: tabela `convites`

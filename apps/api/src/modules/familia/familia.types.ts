@@ -47,4 +47,5 @@ export interface FamiliaRepository {
   createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite>;
   joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null>;
   requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest>;
+  listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]>;
 }

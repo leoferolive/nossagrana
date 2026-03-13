@@ -32,6 +32,12 @@ export class InvalidFamiliaInviteCodeError extends Error {
   }
 }
 
+export class ForbiddenFamiliaJoinRequestListError extends Error {
+  constructor() {
+    super('Apenas admin pode listar solicitacoes');
+  }
+}
+
 export class FamiliaService {
   constructor(private readonly familiaRepository: FamiliaRepository) {}
 
@@ -75,6 +81,21 @@ export class FamiliaService {
     return this.familiaRepository.requestJoin({
       familiaId: input.familiaId,
       usuarioId: input.usuarioId,
+    });
+  }
+
+  async listPendingJoinRequests(input: { familiaId: string; usuarioId: string }) {
+    const isAdmin = await this.familiaRepository.isUserAdmin({
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+    });
+
+    if (!isAdmin) {
+      throw new ForbiddenFamiliaJoinRequestListError();
+    }
+
+    return this.familiaRepository.listPendingJoinRequests({
+      familiaId: input.familiaId,
     });
   }
 }

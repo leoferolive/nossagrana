@@ -144,3 +144,17 @@ export const familiaRequestJoinResponseSchema = z.object({
 });
 
 export type FamiliaRequestJoinResponse = z.infer<typeof familiaRequestJoinResponseSchema>;
+
+export const familiaListJoinRequestsResponseSchema = z.object({
+  solicitacoes: z.array(
+    z.object({
+      id: z.string().uuid(),
+      familiaId: z.string().uuid(),
+      usuarioId: z.string().uuid(),
+      status: z.literal('pendente'),
+      solicitadoEm: z.string(),
+    }),
+  ),
+});
+
+export type FamiliaListJoinRequestsResponse = z.infer<typeof familiaListJoinRequestsResponseSchema>;

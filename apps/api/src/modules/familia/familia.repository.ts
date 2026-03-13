@@ -152,6 +152,29 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       status: 'pendente',
     };
   }
+
+  async listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]> {
+    const requests = await db
+      .select({
+        id: solicitacoesEntrada.id,
+        familiaId: solicitacoesEntrada.familiaId,
+        usuarioId: solicitacoesEntrada.usuarioId,
+        status: solicitacoesEntrada.status,
+        solicitadoEm: solicitacoesEntrada.solicitadoEm,
+      })
+      .from(solicitacoesEntrada)
+      .where(
+        and(
+          eq(solicitacoesEntrada.familiaId, input.familiaId),
+          eq(solicitacoesEntrada.status, 'pendente'),
+        ),
+      );
+
+    return requests.map((request) => ({
+      ...request,
+      status: 'pendente',
+    }));
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
@@ -231,5 +254,11 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
 
     this.joinRequestsById.set(joinRequest.id, joinRequest);
     return joinRequest;
+  }
+
+  async listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]> {
+    return Array.from(this.joinRequestsById.values()).filter(
+      (request) => request.familiaId === input.familiaId && request.status === 'pendente',
+    );
   }
 }

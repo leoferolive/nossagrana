@@ -13,9 +13,11 @@ import {
   familiaCreateInviteSchema,
   familiaCreateSchema,
   familiaJoinByInviteSchema,
+  familiaListJoinRequestsSchema,
   familiaRequestJoinSchema,
 } from './familia.schema.js';
 import {
+  ForbiddenFamiliaJoinRequestListError,
   FamiliaService,
   ForbiddenFamiliaInviteError,
   InvalidFamiliaInviteCodeError,
@@ -135,6 +137,35 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
           solicitadoEm: solicitacao.solicitadoEm.toISOString(),
         },
       });
+    },
+  );
+
+  fastify.get(
+    '/familias/solicitacoes',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: familiaListJoinRequestsSchema,
+    },
+    async (request, reply) => {
+      try {
+        const solicitacoes = await familiaService.listPendingJoinRequests({
+          familiaId: request.familiaIdAtiva as string,
+          usuarioId: request.user.sub,
+        });
+
+        return reply.code(200).send({
+          solicitacoes: solicitacoes.map((solicitacao) => ({
+            ...solicitacao,
+            solicitadoEm: solicitacao.solicitadoEm.toISOString(),
+          })),
+        });
+      } catch (error) {
+        if (error instanceof ForbiddenFamiliaJoinRequestListError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
+        throw error;
+      }
     },
   );
 };

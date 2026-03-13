@@ -4,6 +4,7 @@ import {
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
   familiaJoinByInviteResponseSchema,
+  familiaListJoinRequestsResponseSchema,
   familiaRequestJoinRequestSchema,
   familiaRequestJoinResponseSchema,
   familiaCreateRequestSchema,
@@ -57,6 +58,21 @@ export const familiaRequestJoinSchema = {
     201: familiaRequestJoinResponseSchema,
     401: z.object({
       message: z.literal('Nao autenticado'),
+    }),
+  },
+};
+
+export const familiaListJoinRequestsSchema = {
+  response: {
+    200: familiaListJoinRequestsResponseSchema,
+    400: z.object({
+      message: z.literal('familia_id invalido ou ausente'),
+    }),
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    403: z.object({
+      message: z.literal('Apenas admin pode listar solicitacoes'),
     }),
   },
 };

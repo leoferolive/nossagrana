@@ -607,4 +607,124 @@ describe('API health endpoint', () => {
       ],
     });
   });
+
+  it('approves a join request as admin', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Aprova',
+        email: 'admin-family-approve-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const adminLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-approve-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: adminAccessToken } = adminLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+      },
+      payload: {
+        nome: 'Familia Aprovar Solicitacao',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Solicitante Aprova',
+        email: 'requester-family-approve-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const requesterLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'requester-family-approve-request@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: requesterAccessToken } = requesterLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/familias/solicitar',
+      headers: {
+        authorization: `Bearer ${requesterAccessToken}`,
+      },
+      payload: {
+        familiaId: familia.id,
+      },
+    });
+
+    const pendingResponse = await app.inject({
+      method: 'GET',
+      url: '/api/familias/solicitacoes',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+        'x-familia-id': familia.id,
+      },
+    });
+
+    const [pending] = (pendingResponse.json() as {
+      solicitacoes: Array<{ id: string }>;
+    }).solicitacoes;
+
+    const approveResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/familias/solicitacoes/${pending.id}`,
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+        'x-familia-id': familia.id,
+      },
+      payload: {
+        acao: 'aprovar',
+      },
+    });
+
+    expect(approveResponse.statusCode).toBe(200);
+    expect(approveResponse.json()).toMatchObject({
+      solicitacao: {
+        id: pending.id,
+        familiaId: familia.id,
+        status: 'aprovada',
+      },
+    });
+
+    const pendingAfterApproveResponse = await app.inject({
+      method: 'GET',
+      url: '/api/familias/solicitacoes',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+        'x-familia-id': familia.id,
+      },
+    });
+
+    expect(pendingAfterApproveResponse.statusCode).toBe(200);
+    expect(pendingAfterApproveResponse.json()).toMatchObject({
+      solicitacoes: [],
+    });
+  });
 });

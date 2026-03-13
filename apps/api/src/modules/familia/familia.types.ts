@@ -37,8 +37,20 @@ export interface CreatedFamiliaJoinRequest {
   id: string;
   familiaId: string;
   usuarioId: string;
-  status: 'pendente';
+  status: 'pendente' | 'aprovada' | 'rejeitada';
   solicitadoEm: Date;
+  respondidoEm?: Date;
+  respondidoPor?: string;
+}
+
+export interface ReviewedFamiliaJoinRequest {
+  id: string;
+  familiaId: string;
+  usuarioId: string;
+  status: 'aprovada' | 'rejeitada';
+  solicitadoEm: Date;
+  respondidoEm: Date;
+  respondidoPor: string;
 }
 
 export interface FamiliaRepository {
@@ -48,4 +60,10 @@ export interface FamiliaRepository {
   joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null>;
   requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest>;
   listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]>;
+  reviewJoinRequest(input: {
+    solicitacaoId: string;
+    familiaId: string;
+    adminId: string;
+    acao: 'aprovar' | 'rejeitar';
+  }): Promise<ReviewedFamiliaJoinRequest | null>;
 }

@@ -5,6 +5,9 @@ import {
   familiaJoinByInviteRequestSchema,
   familiaJoinByInviteResponseSchema,
   familiaListJoinRequestsResponseSchema,
+  familiaReviewJoinRequestParamsSchema,
+  familiaReviewJoinRequestRequestSchema,
+  familiaReviewJoinRequestResponseSchema,
   familiaRequestJoinRequestSchema,
   familiaRequestJoinResponseSchema,
   familiaCreateRequestSchema,
@@ -73,6 +76,26 @@ export const familiaListJoinRequestsSchema = {
     }),
     403: z.object({
       message: z.literal('Apenas admin pode listar solicitacoes'),
+    }),
+  },
+};
+
+export const familiaReviewJoinRequestSchema = {
+  params: familiaReviewJoinRequestParamsSchema,
+  body: familiaReviewJoinRequestRequestSchema,
+  response: {
+    200: familiaReviewJoinRequestResponseSchema,
+    400: z.object({
+      message: z.literal('familia_id invalido ou ausente'),
+    }),
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    403: z.object({
+      message: z.literal('Apenas admin pode listar solicitacoes'),
+    }),
+    404: z.object({
+      message: z.literal('Solicitacao nao encontrada ou ja processada'),
     }),
   },
 };

@@ -3,6 +3,8 @@ import {
   familiaCreateRequestSchema,
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
+  familiaReviewJoinRequestParamsSchema,
+  familiaReviewJoinRequestRequestSchema,
   familiaRequestJoinRequestSchema,
 } from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
@@ -14,6 +16,7 @@ import {
   familiaCreateSchema,
   familiaJoinByInviteSchema,
   familiaListJoinRequestsSchema,
+  familiaReviewJoinRequestSchema,
   familiaRequestJoinSchema,
 } from './familia.schema.js';
 import {
@@ -21,6 +24,7 @@ import {
   FamiliaService,
   ForbiddenFamiliaInviteError,
   InvalidFamiliaInviteCodeError,
+  JoinRequestNotFoundError,
 } from './familia.service.js';
 
 const defaultFamiliaService = (): FamiliaService => {
@@ -162,6 +166,44 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (error) {
         if (error instanceof ForbiddenFamiliaJoinRequestListError) {
           return reply.code(403).send({ message: error.message });
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  fastify.patch(
+    '/familias/solicitacoes/:id',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: familiaReviewJoinRequestSchema,
+    },
+    async (request, reply) => {
+      try {
+        const params = familiaReviewJoinRequestParamsSchema.parse(request.params);
+        const payload = familiaReviewJoinRequestRequestSchema.parse(request.body);
+        const solicitacao = await familiaService.reviewJoinRequest({
+          solicitacaoId: params.id,
+          familiaId: request.familiaIdAtiva as string,
+          usuarioId: request.user.sub,
+          acao: payload.acao,
+        });
+
+        return reply.code(200).send({
+          solicitacao: {
+            ...solicitacao,
+            solicitadoEm: solicitacao.solicitadoEm.toISOString(),
+            respondidoEm: solicitacao.respondidoEm.toISOString(),
+          },
+        });
+      } catch (error) {
+        if (error instanceof ForbiddenFamiliaJoinRequestListError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
+        if (error instanceof JoinRequestNotFoundError) {
+          return reply.code(404).send({ message: error.message });
         }
 
         throw error;

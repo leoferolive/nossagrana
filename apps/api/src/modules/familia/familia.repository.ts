@@ -13,6 +13,7 @@ import type {
   FamiliaRepository,
   JoinFamiliaByInviteInput,
   RequestFamiliaJoinInput,
+  ReviewedFamiliaJoinRequest,
 } from './familia.types.js';
 
 export class DrizzleFamiliaRepository implements FamiliaRepository {
@@ -175,6 +176,78 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       status: 'pendente',
     }));
   }
+
+  async reviewJoinRequest(input: {
+    solicitacaoId: string;
+    familiaId: string;
+    adminId: string;
+    acao: 'aprovar' | 'rejeitar';
+  }): Promise<ReviewedFamiliaJoinRequest | null> {
+    const now = new Date();
+    const reviewedStatus = input.acao === 'aprovar' ? 'aprovada' : 'rejeitada';
+
+    return db.transaction(async (tx) => {
+      const [pending] = await tx
+        .select({
+          id: solicitacoesEntrada.id,
+          familiaId: solicitacoesEntrada.familiaId,
+          usuarioId: solicitacoesEntrada.usuarioId,
+          solicitadoEm: solicitacoesEntrada.solicitadoEm,
+        })
+        .from(solicitacoesEntrada)
+        .where(
+          and(
+            eq(solicitacoesEntrada.id, input.solicitacaoId),
+            eq(solicitacoesEntrada.familiaId, input.familiaId),
+            eq(solicitacoesEntrada.status, 'pendente'),
+          ),
+        )
+        .limit(1);
+
+      if (!pending) {
+        return null;
+      }
+
+      const [reviewed] = await tx
+        .update(solicitacoesEntrada)
+        .set({
+          status: reviewedStatus,
+          respondidoEm: now,
+          respondidoPor: input.adminId,
+        })
+        .where(eq(solicitacoesEntrada.id, pending.id))
+        .returning({
+          id: solicitacoesEntrada.id,
+          familiaId: solicitacoesEntrada.familiaId,
+          usuarioId: solicitacoesEntrada.usuarioId,
+          status: solicitacoesEntrada.status,
+          solicitadoEm: solicitacoesEntrada.solicitadoEm,
+          respondidoEm: solicitacoesEntrada.respondidoEm,
+          respondidoPor: solicitacoesEntrada.respondidoPor,
+        });
+
+      if (reviewedStatus === 'aprovada') {
+        await tx
+          .insert(usuarioFamilia)
+          .values({
+            usuarioId: pending.usuarioId,
+            familiaId: pending.familiaId,
+            role: 'membro',
+          })
+          .onConflictDoNothing();
+      }
+
+      return {
+        id: reviewed.id,
+        familiaId: reviewed.familiaId,
+        usuarioId: reviewed.usuarioId,
+        status: reviewedStatus,
+        solicitadoEm: reviewed.solicitadoEm,
+        respondidoEm: reviewed.respondidoEm ?? now,
+        respondidoPor: reviewed.respondidoPor ?? input.adminId,
+      };
+    });
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
@@ -260,5 +333,43 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     return Array.from(this.joinRequestsById.values()).filter(
       (request) => request.familiaId === input.familiaId && request.status === 'pendente',
     );
+  }
+
+  async reviewJoinRequest(input: {
+    solicitacaoId: string;
+    familiaId: string;
+    adminId: string;
+    acao: 'aprovar' | 'rejeitar';
+  }): Promise<ReviewedFamiliaJoinRequest | null> {
+    const request = this.joinRequestsById.get(input.solicitacaoId);
+    if (!request || request.familiaId !== input.familiaId || request.status !== 'pendente') {
+      return null;
+    }
+
+    const reviewedStatus = input.acao === 'aprovar' ? 'aprovada' : 'rejeitada';
+    const reviewedAt = new Date();
+    const reviewed: ReviewedFamiliaJoinRequest = {
+      id: request.id,
+      familiaId: request.familiaId,
+      usuarioId: request.usuarioId,
+      status: reviewedStatus,
+      solicitadoEm: request.solicitadoEm,
+      respondidoEm: reviewedAt,
+      respondidoPor: input.adminId,
+    };
+
+    this.joinRequestsById.set(request.id, {
+      ...request,
+      status: reviewedStatus,
+      respondidoEm: reviewedAt,
+      respondidoPor: input.adminId,
+    });
+
+    if (reviewedStatus === 'aprovada') {
+      const memberships = this.membershipsByFamiliaId.get(request.familiaId);
+      memberships?.set(request.usuarioId, 'membro');
+    }
+
+    return reviewed;
   }
 }

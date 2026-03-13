@@ -38,6 +38,12 @@ export class ForbiddenFamiliaJoinRequestListError extends Error {
   }
 }
 
+export class JoinRequestNotFoundError extends Error {
+  constructor() {
+    super('Solicitacao nao encontrada ou ja processada');
+  }
+}
+
 export class FamiliaService {
   constructor(private readonly familiaRepository: FamiliaRepository) {}
 
@@ -97,5 +103,34 @@ export class FamiliaService {
     return this.familiaRepository.listPendingJoinRequests({
       familiaId: input.familiaId,
     });
+  }
+
+  async reviewJoinRequest(input: {
+    solicitacaoId: string;
+    familiaId: string;
+    usuarioId: string;
+    acao: 'aprovar' | 'rejeitar';
+  }) {
+    const isAdmin = await this.familiaRepository.isUserAdmin({
+      familiaId: input.familiaId,
+      usuarioId: input.usuarioId,
+    });
+
+    if (!isAdmin) {
+      throw new ForbiddenFamiliaJoinRequestListError();
+    }
+
+    const reviewed = await this.familiaRepository.reviewJoinRequest({
+      solicitacaoId: input.solicitacaoId,
+      familiaId: input.familiaId,
+      adminId: input.usuarioId,
+      acao: input.acao,
+    });
+
+    if (!reviewed) {
+      throw new JoinRequestNotFoundError();
+    }
+
+    return reviewed;
   }
 }

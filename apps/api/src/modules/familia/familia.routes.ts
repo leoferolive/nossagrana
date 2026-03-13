@@ -3,6 +3,7 @@ import {
   familiaCreateRequestSchema,
   familiaJoinByInviteParamsSchema,
   familiaJoinByInviteRequestSchema,
+  familiaListMembersParamsSchema,
   familiaReviewJoinRequestParamsSchema,
   familiaReviewJoinRequestRequestSchema,
   familiaRequestJoinRequestSchema,
@@ -16,6 +17,7 @@ import {
   familiaCreateSchema,
   familiaJoinByInviteSchema,
   familiaListJoinRequestsSchema,
+  familiaListMembersSchema,
   familiaReviewJoinRequestSchema,
   familiaRequestJoinSchema,
 } from './familia.schema.js';
@@ -208,6 +210,31 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
 
         throw error;
       }
+    },
+  );
+
+  fastify.get(
+    '/familias/:id/membros',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: familiaListMembersSchema,
+    },
+    async (request, reply) => {
+      const params = familiaListMembersParamsSchema.parse(request.params);
+      if (params.id !== request.familiaIdAtiva) {
+        return reply.code(400).send({ message: 'familia_id da rota difere da familia ativa' });
+      }
+
+      const membros = await familiaService.listMembers({
+        familiaId: params.id,
+      });
+
+      return reply.code(200).send({
+        membros: membros.map((membro) => ({
+          ...membro,
+          dataEntrada: membro.dataEntrada.toISOString(),
+        })),
+      });
     },
   );
 };

@@ -53,6 +53,13 @@ export interface ReviewedFamiliaJoinRequest {
   respondidoPor: string;
 }
 
+export interface FamiliaMember {
+  usuarioId: string;
+  familiaId: string;
+  role: 'admin' | 'membro';
+  dataEntrada: Date;
+}
+
 export interface FamiliaRepository {
   createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia>;
   isUserAdmin(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
@@ -66,4 +73,5 @@ export interface FamiliaRepository {
     adminId: string;
     acao: 'aprovar' | 'rejeitar';
   }): Promise<ReviewedFamiliaJoinRequest | null>;
+  listMembers(input: { familiaId: string }): Promise<FamiliaMember[]>;
 }

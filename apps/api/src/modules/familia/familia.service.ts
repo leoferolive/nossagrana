@@ -133,4 +133,10 @@ export class FamiliaService {
 
     return reviewed;
   }
+
+  async listMembers(input: { familiaId: string }) {
+    return this.familiaRepository.listMembers({
+      familiaId: input.familiaId,
+    });
+  }
 }

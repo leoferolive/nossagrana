@@ -184,3 +184,22 @@ export const familiaReviewJoinRequestResponseSchema = z.object({
 });
 
 export type FamiliaReviewJoinRequestResponse = z.infer<typeof familiaReviewJoinRequestResponseSchema>;
+
+export const familiaListMembersParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type FamiliaListMembersParams = z.infer<typeof familiaListMembersParamsSchema>;
+
+export const familiaListMembersResponseSchema = z.object({
+  membros: z.array(
+    z.object({
+      usuarioId: z.string().uuid(),
+      familiaId: z.string().uuid(),
+      role: z.enum(['admin', 'membro']),
+      dataEntrada: z.string(),
+    }),
+  ),
+});
+
+export type FamiliaListMembersResponse = z.infer<typeof familiaListMembersResponseSchema>;

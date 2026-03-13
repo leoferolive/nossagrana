@@ -727,4 +727,61 @@ describe('API health endpoint', () => {
       solicitacoes: [],
     });
   });
+
+  it('lists family members by family id', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Membros',
+        email: 'admin-family-members@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const adminLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-members@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: adminAccessToken } = adminLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+      },
+      payload: {
+        nome: 'Familia Membros',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const listMembersResponse = await app.inject({
+      method: 'GET',
+      url: `/api/familias/${familia.id}/membros`,
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+        'x-familia-id': familia.id,
+      },
+    });
+
+    expect(listMembersResponse.statusCode).toBe(200);
+    expect(listMembersResponse.json()).toMatchObject({
+      membros: [
+        {
+          familiaId: familia.id,
+          role: 'admin',
+        },
+      ],
+    });
+  });
 });

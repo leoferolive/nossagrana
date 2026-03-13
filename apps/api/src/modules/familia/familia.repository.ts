@@ -248,11 +248,26 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       };
     });
   }
+
+  async listMembers(input: { familiaId: string }) {
+    return db
+      .select({
+        usuarioId: usuarioFamilia.usuarioId,
+        familiaId: usuarioFamilia.familiaId,
+        role: usuarioFamilia.role,
+        dataEntrada: usuarioFamilia.dataEntrada,
+      })
+      .from(usuarioFamilia)
+      .where(eq(usuarioFamilia.familiaId, input.familiaId));
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
   private familiasById = new Map<string, CreatedFamilia>();
-  private membershipsByFamiliaId = new Map<string, Map<string, 'admin' | 'membro'>>();
+  private membershipsByFamiliaId = new Map<
+    string,
+    Map<string, { role: 'admin' | 'membro'; dataEntrada: Date }>
+  >();
   private invitesById = new Map<string, CreatedFamiliaInvite>();
   private joinRequestsById = new Map<string, CreatedFamiliaJoinRequest>();
 
@@ -266,7 +281,10 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     };
 
     this.familiasById.set(id, familia);
-    this.membershipsByFamiliaId.set(id, new Map([[input.usuarioId, 'admin']]));
+    this.membershipsByFamiliaId.set(
+      id,
+      new Map([[input.usuarioId, { role: 'admin', dataEntrada: now }]]),
+    );
     return familia;
   }
 
@@ -276,7 +294,7 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
       return false;
     }
 
-    return memberships.get(input.usuarioId) === 'admin';
+    return memberships.get(input.usuarioId)?.role === 'admin';
   }
 
   async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite> {
@@ -310,7 +328,11 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
       return null;
     }
 
-    memberships.set(input.usuarioId, 'membro');
+    const existingMembership = memberships.get(input.usuarioId);
+    memberships.set(input.usuarioId, {
+      role: 'membro',
+      dataEntrada: existingMembership?.dataEntrada ?? now,
+    });
     this.invitesById.delete(invite.id);
 
     return this.familiasById.get(invite.familiaId) ?? null;
@@ -367,9 +389,27 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
 
     if (reviewedStatus === 'aprovada') {
       const memberships = this.membershipsByFamiliaId.get(request.familiaId);
-      memberships?.set(request.usuarioId, 'membro');
+      const existingMembership = memberships?.get(request.usuarioId);
+      memberships?.set(request.usuarioId, {
+        role: 'membro',
+        dataEntrada: existingMembership?.dataEntrada ?? reviewedAt,
+      });
     }
 
     return reviewed;
+  }
+
+  async listMembers(input: { familiaId: string }) {
+    const memberships = this.membershipsByFamiliaId.get(input.familiaId);
+    if (!memberships) {
+      return [];
+    }
+
+    return Array.from(memberships.entries()).map(([usuarioId, membership]) => ({
+      usuarioId,
+      familiaId: input.familiaId,
+      role: membership.role,
+      dataEntrada: membership.dataEntrada,
+    }));
   }
 }

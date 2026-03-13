@@ -5,6 +5,8 @@ import {
   familiaJoinByInviteRequestSchema,
   familiaJoinByInviteResponseSchema,
   familiaListJoinRequestsResponseSchema,
+  familiaListMembersParamsSchema,
+  familiaListMembersResponseSchema,
   familiaReviewJoinRequestParamsSchema,
   familiaReviewJoinRequestRequestSchema,
   familiaReviewJoinRequestResponseSchema,
@@ -96,6 +98,19 @@ export const familiaReviewJoinRequestSchema = {
     }),
     404: z.object({
       message: z.literal('Solicitacao nao encontrada ou ja processada'),
+    }),
+  },
+};
+
+export const familiaListMembersSchema = {
+  params: familiaListMembersParamsSchema,
+  response: {
+    200: familiaListMembersResponseSchema,
+    400: z.object({
+      message: z.literal('familia_id da rota difere da familia ativa'),
+    }),
+    401: z.object({
+      message: z.literal('Nao autenticado'),
     }),
   },
 };

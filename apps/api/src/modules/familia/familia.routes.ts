@@ -1,10 +1,23 @@
-import { familiaCreateInviteRequestSchema, familiaCreateRequestSchema } from '@nossagrana/types';
+import {
+  familiaCreateInviteRequestSchema,
+  familiaCreateRequestSchema,
+  familiaJoinByInviteParamsSchema,
+  familiaJoinByInviteRequestSchema,
+} from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
-import { familiaCreateInviteSchema, familiaCreateSchema } from './familia.schema.js';
-import { FamiliaService, ForbiddenFamiliaInviteError } from './familia.service.js';
+import {
+  familiaCreateInviteSchema,
+  familiaCreateSchema,
+  familiaJoinByInviteSchema,
+} from './familia.schema.js';
+import {
+  FamiliaService,
+  ForbiddenFamiliaInviteError,
+  InvalidFamiliaInviteCodeError,
+} from './familia.service.js';
 
 const defaultFamiliaService = (): FamiliaService => {
   if (env.NODE_ENV === 'test') {
@@ -63,6 +76,37 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (error) {
         if (error instanceof ForbiddenFamiliaInviteError) {
           return reply.code(403).send({ message: error.message });
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  fastify.post(
+    '/familias/entrar/:codigo',
+    {
+      preHandler: [fastify.authenticate],
+      schema: familiaJoinByInviteSchema,
+    },
+    async (request, reply) => {
+      try {
+        const params = familiaJoinByInviteParamsSchema.parse(request.params);
+        familiaJoinByInviteRequestSchema.parse(request.body);
+        const familia = await familiaService.joinByInvite({
+          codigo: params.codigo,
+          usuarioId: request.user.sub,
+        });
+
+        return reply.code(200).send({
+          familia: {
+            ...familia,
+            dataCriacao: familia.dataCriacao.toISOString(),
+          },
+        });
+      } catch (error) {
+        if (error instanceof InvalidFamiliaInviteCodeError) {
+          return reply.code(404).send({ message: error.message });
         }
 
         throw error;

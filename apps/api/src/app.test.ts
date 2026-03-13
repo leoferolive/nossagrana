@@ -345,4 +345,94 @@ describe('API health endpoint', () => {
       },
     });
   });
+
+  it('joins family through invite code', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin',
+        email: 'admin-family-join@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const adminLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-join@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: adminAccessToken } = adminLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+      },
+      payload: {
+        nome: 'Familia Entrar',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const inviteResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias/convites',
+      headers: {
+        authorization: `Bearer ${adminAccessToken}`,
+        'x-familia-id': familia.id,
+      },
+      payload: {},
+    });
+
+    const { convite } = inviteResponse.json() as { convite: { codigo: string } };
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Membro',
+        email: 'member-family-join@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const memberLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'member-family-join@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken: memberAccessToken } = memberLoginResponse.json() as {
+      accessToken: string;
+    };
+
+    const joinResponse = await app.inject({
+      method: 'POST',
+      url: `/api/familias/entrar/${convite.codigo}`,
+      headers: {
+        authorization: `Bearer ${memberAccessToken}`,
+      },
+      payload: {},
+    });
+
+    expect(joinResponse.statusCode).toBe(200);
+    expect(joinResponse.json()).toMatchObject({
+      familia: {
+        id: familia.id,
+        nome: 'Familia Entrar',
+      },
+    });
+  });
 });

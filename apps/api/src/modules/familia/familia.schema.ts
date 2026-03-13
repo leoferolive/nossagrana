@@ -1,6 +1,9 @@
 import {
   familiaCreateInviteRequestSchema,
   familiaCreateInviteResponseSchema,
+  familiaJoinByInviteParamsSchema,
+  familiaJoinByInviteRequestSchema,
+  familiaJoinByInviteResponseSchema,
   familiaCreateRequestSchema,
   familiaCreateResponseSchema,
 } from '@nossagrana/types';
@@ -28,6 +31,20 @@ export const familiaCreateInviteSchema = {
     }),
     403: z.object({
       message: z.literal('Apenas admin pode gerar convite'),
+    }),
+  },
+};
+
+export const familiaJoinByInviteSchema = {
+  params: familiaJoinByInviteParamsSchema,
+  body: familiaJoinByInviteRequestSchema,
+  response: {
+    200: familiaJoinByInviteResponseSchema,
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    404: z.object({
+      message: z.literal('Codigo de convite invalido ou expirado'),
     }),
   },
 };

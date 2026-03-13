@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { convites, familias, usuarioFamilia } from '../../db/schema.js';
@@ -9,6 +9,7 @@ import type {
   CreatedFamiliaInvite,
   CreateFamiliaInput,
   CreateFamiliaInviteInput,
+  JoinFamiliaByInviteInput,
   FamiliaRepository,
 } from './familia.types.js';
 
@@ -76,11 +77,62 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
 
     return createdInvite;
   }
+
+  async joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null> {
+    const now = new Date();
+
+    return db.transaction(async (tx) => {
+      const [invite] = await tx
+        .select({
+          id: convites.id,
+          familiaId: convites.familiaId,
+          familiaNome: familias.nome,
+          familiaDataCriacao: familias.dataCriacao,
+        })
+        .from(convites)
+        .innerJoin(familias, eq(familias.id, convites.familiaId))
+        .where(
+          and(
+            eq(convites.codigo, input.codigo),
+            isNull(convites.usadoPor),
+            gt(convites.expiraEm, now),
+          ),
+        )
+        .limit(1);
+
+      if (!invite) {
+        return null;
+      }
+
+      await tx
+        .insert(usuarioFamilia)
+        .values({
+          usuarioId: input.usuarioId,
+          familiaId: invite.familiaId,
+          role: 'membro',
+        })
+        .onConflictDoNothing();
+
+      await tx
+        .update(convites)
+        .set({
+          usadoPor: input.usuarioId,
+          usadoEm: now,
+        })
+        .where(eq(convites.id, invite.id));
+
+      return {
+        id: invite.familiaId,
+        nome: invite.familiaNome,
+        dataCriacao: invite.familiaDataCriacao,
+      };
+    });
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
   private familiasById = new Map<string, CreatedFamilia>();
-  private adminMembershipsByFamiliaId = new Map<string, Set<string>>();
+  private membershipsByFamiliaId = new Map<string, Map<string, 'admin' | 'membro'>>();
   private invitesById = new Map<string, CreatedFamiliaInvite>();
 
   async createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia> {
@@ -93,17 +145,17 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     };
 
     this.familiasById.set(id, familia);
-    this.adminMembershipsByFamiliaId.set(id, new Set([input.usuarioId]));
+    this.membershipsByFamiliaId.set(id, new Map([[input.usuarioId, 'admin']]));
     return familia;
   }
 
   async isUserAdmin(input: { familiaId: string; usuarioId: string }): Promise<boolean> {
-    const admins = this.adminMembershipsByFamiliaId.get(input.familiaId);
-    if (!admins) {
+    const memberships = this.membershipsByFamiliaId.get(input.familiaId);
+    if (!memberships) {
       return false;
     }
 
-    return admins.has(input.usuarioId);
+    return memberships.get(input.usuarioId) === 'admin';
   }
 
   async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite> {
@@ -120,5 +172,26 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
 
     this.invitesById.set(id, invite);
     return invite;
+  }
+
+  async joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null> {
+    const now = new Date();
+    const invite = Array.from(this.invitesById.values()).find(
+      (entry) => entry.codigo === input.codigo && entry.expiraEm > now,
+    );
+
+    if (!invite) {
+      return null;
+    }
+
+    const memberships = this.membershipsByFamiliaId.get(invite.familiaId);
+    if (!memberships) {
+      return null;
+    }
+
+    memberships.set(input.usuarioId, 'membro');
+    this.invitesById.delete(invite.id);
+
+    return this.familiasById.get(invite.familiaId) ?? null;
   }
 }

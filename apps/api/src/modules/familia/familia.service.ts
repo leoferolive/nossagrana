@@ -10,9 +10,20 @@ interface CreateFamiliaInviteInput {
   usuarioId: string;
 }
 
+interface JoinFamiliaByInviteInput {
+  codigo: string;
+  usuarioId: string;
+}
+
 export class ForbiddenFamiliaInviteError extends Error {
   constructor() {
     super('Apenas admin pode gerar convite');
+  }
+}
+
+export class InvalidFamiliaInviteCodeError extends Error {
+  constructor() {
+    super('Codigo de convite invalido ou expirado');
   }
 }
 
@@ -40,5 +51,18 @@ export class FamiliaService {
       familiaId: input.familiaId,
       criadoPor: input.usuarioId,
     });
+  }
+
+  async joinByInvite(input: JoinFamiliaByInviteInput) {
+    const familia = await this.familiaRepository.joinByInvite({
+      codigo: input.codigo,
+      usuarioId: input.usuarioId,
+    });
+
+    if (!familia) {
+      throw new InvalidFamiliaInviteCodeError();
+    }
+
+    return familia;
   }
 }

@@ -2,12 +2,17 @@ import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import {
+  categorias,
   convites,
   familias,
   solicitacoesEntrada,
   users,
   usuarioFamilia,
 } from './schema.js';
+import {
+  CATEGORIAS_PADRAO_DESPESA,
+  CATEGORIAS_PADRAO_RECEITA,
+} from './seeds/categorias-padrao.js';
 
 describe('database schema', () => {
   it('defines users table with required columns', () => {
@@ -88,5 +93,46 @@ describe('database schema', () => {
     expect(columns.usuarioId.notNull).toBe(true);
     expect(columns.status.notNull).toBe(true);
     expect(columns.solicitadoEm.notNull).toBe(true);
+  });
+
+  it('defines categorias table with required columns', () => {
+    const columns = getTableColumns(categorias);
+
+    expect(Object.keys(columns)).toEqual([
+      'id',
+      'familiaId',
+      'nome',
+      'tipo',
+      'ativo',
+      'criadoPor',
+      'criadoEm',
+    ]);
+    expect(columns.id.notNull).toBe(true);
+    expect(columns.familiaId.notNull).toBe(true);
+    expect(columns.nome.notNull).toBe(true);
+    expect(columns.tipo.notNull).toBe(true);
+    expect(columns.ativo.notNull).toBe(true);
+    expect(columns.criadoPor.notNull).toBe(true);
+    expect(columns.criadoEm.notNull).toBe(true);
+  });
+
+  it('defines categorias padrao for seed', () => {
+    expect(CATEGORIAS_PADRAO_RECEITA).toEqual([
+      'Salario',
+      'Bonus',
+      'Investimentos',
+      'Outros',
+    ]);
+    expect(CATEGORIAS_PADRAO_DESPESA).toEqual([
+      'Moradia',
+      'Alimentacao',
+      'Transporte',
+      'Saude',
+      'Lazer',
+      'Educacao',
+      'Assinaturas',
+      'Compras',
+      'Outros',
+    ]);
   });
 });

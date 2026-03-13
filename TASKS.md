@@ -33,7 +33,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Schema: tabela `usuario_familia`
 - [x] Schema: tabela `convites`
 - [x] Schema: tabela `solicitacoes_entrada`
-- [ ] Schema: tabela `categorias` (com seed de categorias padrão)
+- [x] Schema: tabela `categorias` (com seed de categorias padrão)
 - [ ] Schema: tabela `metodos_pagamento`
 - [ ] Schema: tabela `transacoes`
 - [ ] Schema: tabela `orcamento_categoria`

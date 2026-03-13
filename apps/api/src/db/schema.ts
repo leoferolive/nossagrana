@@ -56,3 +56,23 @@ export const convites = pgTable('convites', {
   usadoEm: timestamp('usado_em', { withTimezone: true }),
   dataCriacao: timestamp('data_criacao', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const solicitacaoEntradaStatus = pgEnum('solicitacao_entrada_status', [
+  'pendente',
+  'aprovada',
+  'rejeitada',
+]);
+
+export const solicitacoesEntrada = pgTable('solicitacoes_entrada', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  familiaId: uuid('familia_id')
+    .notNull()
+    .references(() => familias.id),
+  usuarioId: uuid('usuario_id')
+    .notNull()
+    .references(() => users.id),
+  status: solicitacaoEntradaStatus('status').notNull().default('pendente'),
+  solicitadoEm: timestamp('solicitado_em', { withTimezone: true }).defaultNow().notNull(),
+  respondidoEm: timestamp('respondido_em', { withTimezone: true }),
+  respondidoPor: uuid('respondido_por').references(() => users.id),
+});

@@ -1,7 +1,13 @@
 import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { convites, familias, users, usuarioFamilia } from './schema.js';
+import {
+  convites,
+  familias,
+  solicitacoesEntrada,
+  users,
+  usuarioFamilia,
+} from './schema.js';
 
 describe('database schema', () => {
   it('defines users table with required columns', () => {
@@ -63,5 +69,24 @@ describe('database schema', () => {
     expect(columns.criadoPor.notNull).toBe(true);
     expect(columns.expiraEm.notNull).toBe(true);
     expect(columns.dataCriacao.notNull).toBe(true);
+  });
+
+  it('defines solicitacoes_entrada table with required columns', () => {
+    const columns = getTableColumns(solicitacoesEntrada);
+
+    expect(Object.keys(columns)).toEqual([
+      'id',
+      'familiaId',
+      'usuarioId',
+      'status',
+      'solicitadoEm',
+      'respondidoEm',
+      'respondidoPor',
+    ]);
+    expect(columns.id.notNull).toBe(true);
+    expect(columns.familiaId.notNull).toBe(true);
+    expect(columns.usuarioId.notNull).toBe(true);
+    expect(columns.status.notNull).toBe(true);
+    expect(columns.solicitadoEm.notNull).toBe(true);
   });
 });

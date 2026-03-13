@@ -1149,4 +1149,76 @@ describe('API health endpoint', () => {
       ],
     });
   });
+
+  it('updates a category from active family', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Admin Categoria Update',
+        email: 'admin-family-category-update@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'admin-family-category-update@example.com',
+        senha: 'password123',
+      },
+    });
+
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        nome: 'Familia Categoria Update',
+      },
+    });
+
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/categorias',
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+      payload: {
+        nome: 'Mercado',
+        tipo: 'despesa',
+      },
+    });
+
+    const { categoria } = createResponse.json() as { categoria: { id: string } };
+
+    const updateResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/categorias/${categoria.id}`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        'x-familia-id': familia.id,
+      },
+      payload: {
+        nome: 'Supermercado',
+        tipo: 'despesa',
+      },
+    });
+
+    expect(updateResponse.statusCode).toBe(200);
+    expect(updateResponse.json()).toMatchObject({
+      categoria: {
+        id: categoria.id,
+        nome: 'Supermercado',
+      },
+    });
+  });
 });

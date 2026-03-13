@@ -92,7 +92,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ### Backend
 - [x] Rota `GET /categorias` — listar categorias da família
 - [x] Rota `POST /categorias` — criar categoria (UC17)
-- [ ] Rota `PATCH /categorias/:id` — editar categoria
+- [x] Rota `PATCH /categorias/:id` — editar categoria
 - [ ] Rota `DELETE /categorias/:id` — desativar categoria (soft delete)
 - [ ] Seed de categorias padrão ao criar família
 - [ ] Rota `GET /metodos-pagamento` — listar métodos da família

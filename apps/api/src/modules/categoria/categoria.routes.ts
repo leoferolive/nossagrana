@@ -1,10 +1,10 @@
-import { categoriaCreateRequestSchema } from '@nossagrana/types';
+import { categoriaCreateRequestSchema, categoriaUpdateParamsSchema, categoriaUpdateRequestSchema } from '@nossagrana/types';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleCategoriaRepository, InMemoryCategoriaRepository } from './categoria.repository.js';
-import { categoriaCreateSchema, categoriaListSchema } from './categoria.schema.js';
-import { CategoriaService } from './categoria.service.js';
+import { categoriaCreateSchema, categoriaListSchema, categoriaUpdateSchema } from './categoria.schema.js';
+import { CategoriaNotFoundError, CategoriaService } from './categoria.service.js';
 
 const defaultCategoriaService = (): CategoriaService => {
   if (env.NODE_ENV === 'test') {
@@ -38,6 +38,39 @@ export const categoriaRoutes: FastifyPluginAsync = async (fastify) => {
           criadoEm: categoria.criadoEm.toISOString(),
         },
       });
+    },
+  );
+
+  fastify.patch(
+    '/categorias/:id',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: categoriaUpdateSchema,
+    },
+    async (request, reply) => {
+      try {
+        const params = categoriaUpdateParamsSchema.parse(request.params);
+        const payload = categoriaUpdateRequestSchema.parse(request.body);
+        const categoria = await categoriaService.update({
+          id: params.id,
+          familiaId: request.familiaIdAtiva as string,
+          nome: payload.nome,
+          tipo: payload.tipo,
+        });
+
+        return reply.code(200).send({
+          categoria: {
+            ...categoria,
+            criadoEm: categoria.criadoEm.toISOString(),
+          },
+        });
+      } catch (error) {
+        if (error instanceof CategoriaNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+
+        throw error;
+      }
     },
   );
 

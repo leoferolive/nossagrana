@@ -1,5 +1,11 @@
 import type { CategoriaRepository } from './categoria.types.js';
 
+export class CategoriaNotFoundError extends Error {
+  constructor() {
+    super('Categoria nao encontrada');
+  }
+}
+
 export class CategoriaService {
   constructor(private readonly categoriaRepository: CategoriaRepository) {}
 
@@ -16,5 +22,20 @@ export class CategoriaService {
       tipo: input.tipo,
       criadoPor: input.criadoPor,
     });
+  }
+
+  async update(input: { id: string; familiaId: string; nome: string; tipo: 'receita' | 'despesa' }) {
+    const updated = await this.categoriaRepository.update({
+      id: input.id,
+      familiaId: input.familiaId,
+      nome: input.nome,
+      tipo: input.tipo,
+    });
+
+    if (!updated) {
+      throw new CategoriaNotFoundError();
+    }
+
+    return updated;
   }
 }

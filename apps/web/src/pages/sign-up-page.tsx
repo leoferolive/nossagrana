@@ -1,12 +1,20 @@
+import type { FormEvent } from 'react';
+
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
 import { PrimaryButton } from '@/components/ui/primary-button';
 
 interface SignUpPageProps {
   onOpenLogin: () => void;
+  onCompleteSignUp: () => void;
 }
 
-export const SignUpPage = ({ onOpenLogin }: SignUpPageProps) => {
+export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onCompleteSignUp();
+  };
+
   return (
     <AuthShell
       title="Criar conta no NossaGrana"
@@ -20,7 +28,7 @@ export const SignUpPage = ({ onOpenLogin }: SignUpPageProps) => {
         </>
       }
     >
-      <form className="space-y-4">
+      <form className="space-y-4" noValidate onSubmit={handleSubmit}>
         <FormField id="fullName" label="Nome completo" type="text" autoComplete="name" />
         <FormField id="email" label="E-mail" type="email" autoComplete="email" />
         <FormField id="password" label="Senha" type="password" autoComplete="new-password" />

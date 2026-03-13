@@ -78,7 +78,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend
-- [ ] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)
+- [x] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)
 - [ ] Tela de configurações da família (Admin)
 - [ ] Listagem de membros com opção de remoção
 - [ ] Gestão de solicitações pendentes (Admin)

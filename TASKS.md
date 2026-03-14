@@ -19,7 +19,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Manifests K8s: Deployment, Service e Ingress para Web
 - [x] Manifest K8s: PostgreSQL (StatefulSet + PVC)
 - [x] Configurar GitHub Actions (CI/CD via self-workflows)
-- [ ] Ajustar Ingress para Cloudflare Tunnel existente
+- [x] Ajustar Ingress para Cloudflare Tunnel existente
 - [x] Configurar variáveis de ambiente e secrets no K3s
 - [x] Testar deploy end-to-end no Raspberry Pi
 
@@ -27,72 +27,77 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ## Fase 1 — Banco de Dados
 
-- [ ] Instalar e configurar Drizzle ORM + Drizzle Kit
-- [ ] Schema: tabela `users`
-- [ ] Schema: tabela `familias`
-- [ ] Schema: tabela `usuario_familia`
-- [ ] Schema: tabela `convites`
-- [ ] Schema: tabela `solicitacoes_entrada`
-- [ ] Schema: tabela `categorias` (com seed de categorias padrão)
-- [ ] Schema: tabela `metodos_pagamento`
-- [ ] Schema: tabela `transacoes`
-- [ ] Schema: tabela `orcamento_categoria`
-- [ ] Schema: tabela `snapshots_mensais`
-- [ ] Criar índices: `familia_id`, `mes_referencia`, `usuario_id`
-- [ ] Configurar migration inicial e rodar no banco
+- [x] Instalar e configurar Drizzle ORM + Drizzle Kit
+- [x] Schema: tabela `users`
+- [x] Schema: tabela `familias`
+- [x] Schema: tabela `usuario_familia`
+- [x] Schema: tabela `convites`
+- [x] Schema: tabela `solicitacoes_entrada`
+- [x] Schema: tabela `categorias` (com seed de categorias padrão)
+- [x] Schema: tabela `metodos_pagamento`
+- [x] Schema: tabela `transacoes`
+- [x] Schema: tabela `orcamento_categoria`
+- [x] Schema: tabela `snapshots_mensais`
+- [x] Criar índices: `familia_id`, `mes_referencia`, `usuario_id`
+- [x] Configurar migration inicial e rodar no banco
 
 ---
 
 ## Fase 2 — Autenticação
 
 ### Backend
-- [ ] Rota `POST /auth/register` — cadastro de usuário (UC01)
-- [ ] Rota `POST /auth/login` — login com JWT + refresh token (UC02)
-- [ ] Rota `POST /auth/refresh` — renovar access token
-- [ ] Rota `POST /auth/logout` — invalidar refresh token
-- [ ] Plugin Fastify de autenticação (verificar JWT em rotas protegidas)
-- [ ] Middleware de isolamento por `familia_id`
+
+- [x] Rota `POST /auth/register` — cadastro de usuário (UC01)
+- [x] Rota `POST /auth/login` — login com JWT + refresh token (UC02)
+- [x] Rota `POST /auth/refresh` — renovar access token
+- [x] Rota `POST /auth/logout` — invalidar refresh token
+- [x] Plugin Fastify de autenticação (verificar JWT em rotas protegidas)
+- [x] Middleware de isolamento por `familia_id`
 
 ### Frontend
-- [ ] Tela de login
-- [ ] Tela de cadastro
-- [ ] Lógica de refresh token automático (interceptor)
-- [ ] Contexto de autenticação (AuthContext)
-- [ ] Rota protegida (PrivateRoute)
-- [ ] Persistência de sessão (localStorage com token)
+
+- [x] Tela de login
+- [x] Tela de cadastro
+- [x] Lógica de refresh token automático (interceptor)
+- [x] Contexto de autenticação (AuthContext)
+- [x] Rota protegida (PrivateRoute)
+- [x] Persistência de sessão (localStorage com token)
 
 ---
 
 ## Fase 3 — Família e Onboarding
 
 ### Backend
-- [ ] Rota `POST /familias` — criar família (UC05)
-- [ ] Rota `POST /familias/convites` — gerar código de convite (UC21)
-- [ ] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
-- [ ] Rota `POST /familias/solicitar` — solicitar entrada (UC04)
-- [ ] Rota `GET /familias/solicitacoes` — listar solicitações pendentes (Admin)
-- [ ] Rota `PATCH /familias/solicitacoes/:id` — aprovar/rejeitar (UC22)
-- [ ] Rota `GET /familias/:id/membros` — listar membros
-- [ ] Rota `DELETE /familias/:id/membros/:usuarioId` — remover membro (UC23)
-- [ ] Rota `DELETE /familias/:id` — excluir família (UC24)
-- [ ] Rota `POST /familias/alternar` — alternar família ativa (UC20)
+
+- [x] Rota `POST /familias` — criar família (UC05)
+- [x] Rota `POST /familias/convites` — gerar código de convite (UC21)
+- [x] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
+- [x] Rota `POST /familias/solicitar` — solicitar entrada (UC04)
+- [x] Rota `GET /familias/solicitacoes` — listar solicitações pendentes (Admin)
+- [x] Rota `PATCH /familias/solicitacoes/:id` — aprovar/rejeitar (UC22)
+- [x] Rota `GET /familias/:id/membros` — listar membros
+- [x] Rota `DELETE /familias/:id/membros/:usuarioId` — remover membro (UC23)
+- [x] Rota `DELETE /familias/:id` — excluir família (UC24)
+- [x] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend
-- [ ] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / solicitar)
-- [ ] Tela de configurações da família (Admin)
-- [ ] Listagem de membros com opção de remoção
-- [ ] Gestão de solicitações pendentes (Admin)
-- [ ] Geração e compartilhamento de código de convite
-- [ ] Seletor de família ativa (para usuários com múltiplas famílias)
+
+- [x] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / buscar família e solicitar)
+- [x] Tela de configurações da família (Admin)
+- [x] Listagem de membros com opção de remoção
+- [x] Gestão de solicitações pendentes (Admin)
+- [x] Geração e compartilhamento de código de convite
+- [x] Seletor de família ativa (para usuários com múltiplas famílias)
 
 ---
 
 ## Fase 4 — Core Financeiro
 
 ### Backend
-- [ ] Rota `GET /categorias` — listar categorias da família
-- [ ] Rota `POST /categorias` — criar categoria (UC17)
-- [ ] Rota `PATCH /categorias/:id` — editar categoria
+
+- [x] Rota `GET /categorias` — listar categorias da família
+- [x] Rota `POST /categorias` — criar categoria (UC17)
+- [x] Rota `PATCH /categorias/:id` — editar categoria
 - [ ] Rota `DELETE /categorias/:id` — desativar categoria (soft delete)
 - [ ] Seed de categorias padrão ao criar família
 - [ ] Rota `GET /metodos-pagamento` — listar métodos da família
@@ -110,7 +115,8 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota `POST /transacoes/:id/antecipar` — antecipar parcelas (UC11)
 
 ### Frontend
-- [ ] Modal de nova transação (FAB — botão flutuante sempre visível)
+
+- [ ] Ação de nova transação sempre visível (`+`) em telas principais (FAB no mobile, botão fixo no desktop)
 - [ ] Campos: tipo, valor, categoria, descrição, data, método de pagamento
 - [ ] Toggle parcelado (nº de parcelas + cálculo de valor da parcela)
 - [ ] Toggle recorrente (frequência + data fim opcional)
@@ -126,6 +132,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 5 — Dashboard e Tempo Real
 
 ### Backend
+
 - [ ] Rota `GET /dashboard` — resumo do mês (receitas, despesas, saldo)
 - [ ] Rota `GET /dashboard/graficos` — dados para gráficos
 - [ ] Rota `GET /dashboard/orcamento` — orçamento vs gasto por categoria
@@ -134,6 +141,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Gerenciar rooms por `familia_id` no WebSocket
 
 ### Frontend
+
 - [ ] Tela de Dashboard (tela principal)
 - [ ] Cards de resumo: Receitas / Despesas / Saldo
 - [ ] Gráfico de despesas por categoria (pizza/donut)
@@ -148,6 +156,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 6 — Orçamento e Relatórios
 
 ### Backend
+
 - [ ] Rota `GET /orcamento` — listar orçamentos vigentes por categoria
 - [ ] Rota `POST /orcamento/:categoriaId` — definir/alterar limite (UC19)
 - [ ] Rota `GET /orcamento/:categoriaId/historico` — histórico de vigências
@@ -157,6 +166,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota `GET /cartoes/:id/fatura/:mesReferencia` — fatura do cartão (UC16)
 
 ### Frontend
+
 - [ ] Tela de Orçamento (tabela categoria × limite × % utilizado)
 - [ ] Formulário de edição de limite por categoria
 - [ ] Histórico de alterações de limite
@@ -171,6 +181,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 7 — Histórico e Snapshot
 
 ### Backend
+
 - [ ] Rota `GET /historico` — listar meses com snapshots (UC15)
 - [ ] Rota `GET /historico/:mesReferencia` — detalhe do mês
 - [ ] Serviço de geração de snapshot mensal (UC27)
@@ -179,6 +190,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Trigger de divergência ao editar/excluir transação de mês com snapshot
 
 ### Frontend
+
 - [ ] Tela de Histórico de Meses
 - [ ] Gráfico de tendência (receita × despesa × saldo)
 - [ ] Lista de meses com indicador de divergência
@@ -189,6 +201,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 8 — PWA e Guia In-App
 
 ### PWA
+
 - [ ] Configurar vite-plugin-pwa (manifest + service worker)
 - [ ] Ícones para instalação (192x192, 512x512)
 - [ ] Estratégia de cache (assets estáticos)
@@ -196,6 +209,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Testar offline básico
 
 ### Guia In-App
+
 - [ ] Componente de First-time Tour (por tela, flag por usuário)
 - [ ] Tours: Dashboard, Modal de Transação, Orçamento, Extrato, Histórico
 - [ ] Componente de Tooltip contextual ("?")
@@ -210,6 +224,9 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Interface administrativa para System Admin
 - [ ] Rota de recuperação de família excluída (UC25)
 - [ ] Rota de impersonação de usuário (UC26)
+- [ ] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
+- [ ] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
+- [ ] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
 - [ ] Tela de Configurações gerais (perfil, conta)
 - [ ] Revisão de mensagens de erro e feedback visual
 - [ ] Testes de carga básicos no Raspberry Pi

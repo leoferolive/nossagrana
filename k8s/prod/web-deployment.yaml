@@ -31,4 +31,3 @@ spec:
               port: 80
             initialDelaySeconds: 15
             periodSeconds: 15
-

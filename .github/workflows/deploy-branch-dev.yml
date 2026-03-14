@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Ref do checkout (branch, tag ou SHA) para gerar uma RC e deployar em dev"
+        description: 'Ref do checkout (branch, tag ou SHA) para gerar uma RC e deployar em dev'
         required: true
 
 concurrency:

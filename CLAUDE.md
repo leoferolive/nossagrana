@@ -12,6 +12,7 @@ Permite que uma família registre receitas e despesas, acompanhe saldo em tempo 
 controle cartões de crédito e visualize relatórios e insights financeiros.
 
 **Documentação completa em `/docs/`:**
+
 - `PRD.md` — requisitos completos, modelo de dados e regras de negócio
 - `FLOWS.md` — 7 fluxos da aplicação em Mermaid
 - `USE_CASES.md` — 32 casos de uso detalhados
@@ -22,20 +23,20 @@ controle cartões de crédito e visualize relatórios e insights financeiros.
 
 ## Stack
 
-| Camada | Tecnologia |
-|---|---|
-| Backend | Node.js + Fastify + TypeScript |
-| ORM | Drizzle ORM + Drizzle Kit |
-| Banco | PostgreSQL |
-| Validação | Zod (schemas compartilhados em `packages/types`) |
-| Frontend | React + Vite + TypeScript |
-| Estilo | Tailwind CSS |
-| PWA | vite-plugin-pwa |
-| Monorepo | pnpm workspaces + Turborepo |
-| Tempo real | WebSocket (fastify-websocket) |
-| Agendamento | node-cron |
-| Auth | JWT (access token 15min) + Refresh Token (7 dias) |
-| Hash senha | bcrypt |
+| Camada      | Tecnologia                                        |
+| ----------- | ------------------------------------------------- |
+| Backend     | Node.js + Fastify + TypeScript                    |
+| ORM         | Drizzle ORM + Drizzle Kit                         |
+| Banco       | PostgreSQL                                        |
+| Validação   | Zod (schemas compartilhados em `packages/types`)  |
+| Frontend    | React + Vite + TypeScript                         |
+| Estilo      | Tailwind CSS                                      |
+| PWA         | vite-plugin-pwa                                   |
+| Monorepo    | pnpm workspaces + Turborepo                       |
+| Tempo real  | WebSocket (fastify-websocket)                     |
+| Agendamento | node-cron                                         |
+| Auth        | JWT (access token 15min) + Refresh Token (7 dias) |
+| Hash senha  | bcrypt                                            |
 
 ---
 
@@ -71,18 +72,28 @@ nossagrana/
 
 ## Padrões de Código
 
+### Processo de Desenvolvimento
+
+- Sempre começar implementações por TDD (Red -> Green -> Refactor)
+- Antes de alterar código de produção, escrever ou ajustar primeiro um teste que falhe
+- Rodar os testes e simular a esteira CI antes de fechar a task
+- Fazer commit ao final de cada task concluída, antes de iniciar a próxima
+
 ### Nomenclatura
+
 - TypeScript: `camelCase` para variáveis/funções, `PascalCase` para tipos/interfaces/classes
 - Banco de dados: `snake_case` para tabelas e colunas
 - Arquivos e pastas: `kebab-case`
 - Rotas da API: `kebab-case` (ex: `/metodos-pagamento`)
 
 ### TypeScript
+
 - Sempre tipado — evitar `any`
 - Usar tipos de `packages/types` para DTOs compartilhados
 - Preferir `interface` para objetos, `type` para unions e aliases
 
 ### Backend (Fastify)
+
 - Toda rota deve ter schema Zod para validação de input e output
 - Separar concerns: routes → service → repository
 - Toda query ao banco via Drizzle (sem SQL raw a não ser que necessário)
@@ -90,9 +101,12 @@ nossagrana/
 - Sempre validar que `familia_id` do recurso pertence ao usuário autenticado
 
 ### Frontend (React)
+
 - Componentes funcionais com hooks
 - Sem prop drilling: usar Zustand para estado global
 - Tailwind para estilos — sem CSS modules ou styled-components
+- Centralizar paleta semântica e estilos em tokens (theme do Tailwind/CSS variables), evitando valores hardcoded espalhados
+- Usar uma única biblioteca de ícones em toda a aplicação, com mapeamento semântico consistente por contexto/tela
 - Axios ou fetch nativo para chamadas à API
 
 ---
@@ -100,10 +114,12 @@ nossagrana/
 ## Regras de Negócio Críticas
 
 ### Isolamento Multi-Tenant
+
 **Toda query que acessa dados financeiros DEVE filtrar por `familia_id`.**
 Nunca retornar dados de outra família.
 
 ### Mês de Referência (UC31)
+
 ```typescript
 // Para cartão de crédito:
 // Se dia da transação > dia de fechamento → próximo mês
@@ -112,16 +128,19 @@ Nunca retornar dados de outra família.
 ```
 
 ### Snapshot Mensal
+
 - Gerado por job (node-cron) no último dia de cada mês
 - Snapshot original NUNCA é recalculado
 - Ao editar/excluir transação de mês com snapshot → setar `divergente = true`
 
 ### Parcelas
+
 - `valor_parcela = valor_total / numero_parcelas` (arredondar para 2 casas)
 - Cada parcela tem `transacao_pai_id` apontando para a original
 - Parcelas usam a regra de mês de referência do cartão
 
 ### Recorrências
+
 - Gerar até `data_fim_recorrencia` ou indefinidamente se null
 - Cancelar = remover lançamentos futuros ainda não processados
 - Edição: opção "só esta" ou "esta e as futuras"
@@ -144,6 +163,7 @@ Nunca retornar dados de outra família.
 ## Variáveis de Ambiente
 
 ### API (`apps/api/.env`)
+
 ```
 NODE_ENV=development
 PORT=3000
@@ -156,6 +176,7 @@ CORS_ORIGIN=http://localhost:5173
 ```
 
 ### Web (`apps/web/.env`)
+
 ```
 VITE_API_URL=http://localhost:3000
 VITE_WS_URL=ws://localhost:3000
@@ -189,6 +210,7 @@ pnpm dev
 
 O CI/CD é feito via GitHub Actions usando o self-workflows.
 Ao fazer push na branch `main`, o workflow:
+
 1. Faz build das imagens Docker (multi-stage, target `linux/arm64`)
 2. Faz push para GHCR (`ghcr.io/leoferolive/nossagrana-*`)
 3. Aplica os manifests K8s no cluster K3s

@@ -5,6 +5,9 @@ import type {
   CategoriaListResponse,
   CategoriaUpdateRequest,
   CategoriaUpdateResponse,
+  DashboardGraficosResponse,
+  DashboardOrcamentoResponse,
+  DashboardResumoResponse,
   MetodoPagamentoCreateRequest,
   MetodoPagamentoCreateResponse,
   MetodoPagamentoDeleteResponse,
@@ -19,7 +22,7 @@ import type {
   TransacaoUpdateRequest,
 } from '@nossagrana/types';
 
-import type { ApiClient } from './api-client';
+import { ApiClient } from './api-client';
 
 const familiaHeader = (familiaId: string) => ({ 'X-Familia-Id': familiaId });
 
@@ -162,3 +165,56 @@ export class TransacaoService {
     });
   }
 }
+
+// ─── Dashboard ─────────────────────────────────────────────────────────────────
+
+export class DashboardService {
+  constructor(private readonly api: ApiClient) {}
+
+  async getDashboardResumo(familiaId: string, mesReferencia?: string): Promise<DashboardResumoResponse> {
+    const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
+    return this.api.request<DashboardResumoResponse>(`/api/dashboard${qs}`, {
+      headers: familiaHeader(familiaId),
+    });
+  }
+
+  async getDashboardGraficos(familiaId: string, mesReferencia?: string): Promise<DashboardGraficosResponse> {
+    const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
+    return this.api.request<DashboardGraficosResponse>(`/api/dashboard/graficos${qs}`, {
+      headers: familiaHeader(familiaId),
+    });
+  }
+
+  async getDashboardOrcamento(familiaId: string, mesReferencia?: string): Promise<DashboardOrcamentoResponse> {
+    const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
+    return this.api.request<DashboardOrcamentoResponse>(`/api/dashboard/orcamento${qs}`, {
+      headers: familiaHeader(familiaId),
+    });
+  }
+}
+
+// ─── Singleton ─────────────────────────────────────────────────────────────────
+
+const AUTH_STORAGE_KEY = 'nossagrana.auth.session';
+
+const readStoredSession = (): { accessToken?: string; refreshToken?: string } => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as { accessToken?: string; refreshToken?: string }) : {};
+  } catch {
+    return {};
+  }
+};
+
+const lazyApiClient = new ApiClient({
+  baseUrl: typeof import.meta !== 'undefined' ? (import.meta.env.VITE_API_URL ?? '') : '',
+  getAccessToken: () => readStoredSession().accessToken ?? null,
+  getRefreshToken: () => readStoredSession().refreshToken ?? null,
+  setAccessToken: (token: string) => {
+    const session = readStoredSession();
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, accessToken: token }));
+  },
+  clearSession: () => localStorage.removeItem(AUTH_STORAGE_KEY),
+});
+
+export const coreFinanceiroService = new DashboardService(lazyApiClient);

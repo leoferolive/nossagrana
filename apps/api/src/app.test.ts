@@ -1724,3 +1724,94 @@ describe('Dashboard routes', () => {
     expect(res.json()).toEqual([]);
   });
 });
+
+describe('Orcamento routes', () => {
+  const app = buildApp();
+  let accessToken: string;
+  let familiaId: string;
+  let categoriaId: string;
+
+  async function setupUserFamilyAndCategory(email: string) {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'User ORC', email, senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email, senha: 'password123' },
+    });
+    const { accessToken: tok } = loginRes.json() as { accessToken: string };
+    const familyRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${tok}` },
+      payload: { nome: 'Familia ORC' },
+    });
+    const { familia } = familyRes.json() as { familia: { id: string } };
+    const createCatRes = await app.inject({
+      method: 'POST',
+      url: '/api/categorias',
+      headers: { authorization: `Bearer ${tok}`, 'x-familia-id': familia.id },
+      payload: { nome: 'Alimentacao ORC', tipo: 'despesa' },
+    });
+    const { categoria } = createCatRes.json() as { categoria: { id: string } };
+    return { accessToken: tok, familiaId: familia.id, categoriaId: categoria.id };
+  }
+
+  beforeAll(async () => {
+    await app.ready();
+    ({ accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory(
+      'orc@example.com',
+    ));
+  });
+
+  afterAll(() => app.close());
+
+  it('GET /api/orcamento retorna lista vazia inicialmente', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/orcamento?mesReferencia=2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().orcamentos).toEqual([]);
+  });
+
+  it('GET /api/orcamento sem JWT retorna 401', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/orcamento' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('POST /api/orcamento/:categoriaId define limite e retorna orcamento', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/orcamento/${categoriaId}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { valorLimite: '500.00', vigenciaInicio: '2026-03' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().orcamento.valorLimite).toBe('500.00');
+    expect(res.json().orcamento.vigenciaInicio).toBe('2026-03');
+    expect(res.json().orcamento.categoriaId).toBe(categoriaId);
+  });
+
+  it('GET /api/orcamento/:categoriaId/historico retorna historico', async () => {
+    // First set a budget
+    await app.inject({
+      method: 'POST',
+      url: `/api/orcamento/${categoriaId}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { valorLimite: '300.00', vigenciaInicio: '2026-01' },
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/orcamento/${categoriaId}/historico`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().historico.length).toBeGreaterThan(0);
+  });
+});

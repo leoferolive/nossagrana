@@ -33,7 +33,6 @@ interface InMemoryTransacao {
 export class InMemoryOrcamentoRepository implements OrcamentoRepository {
   private _orcamentos: InMemoryOrcamento[] = [];
   private _transacoes: InMemoryTransacao[] = [];
-  private _idCounter = 1;
 
   seedTransacao(t: { familiaId: string; categoriaId: string; mesReferencia: string; valor: string }): void {
     this._transacoes.push(t);
@@ -96,7 +95,7 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
 
   async insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
     const record: InMemoryOrcamento = {
-      id: String(this._idCounter++),
+      id: crypto.randomUUID(),
       familiaId: input.familiaId,
       categoriaId: input.categoriaId,
       categoriaNome: input.categoriaId,

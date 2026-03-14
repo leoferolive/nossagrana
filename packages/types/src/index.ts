@@ -359,3 +359,85 @@ export type MetodoPagamentoUpdateResponse = z.infer<typeof metodoPagamentoUpdate
 
 export const metodoPagamentoDeleteResponseSchema = metodoPagamentoCreateResponseSchema;
 export type MetodoPagamentoDeleteResponse = z.infer<typeof metodoPagamentoDeleteResponseSchema>;
+
+// ─── Transações ──────────────────────────────────────────────────────────────
+
+export const transacaoTipoSchema = z.enum(['receita', 'despesa']);
+export type TransacaoTipo = z.infer<typeof transacaoTipoSchema>;
+
+export const transacaoFrequenciaSchema = z.enum(['mensal', 'semanal', 'quinzenal']);
+export type TransacaoFrequencia = z.infer<typeof transacaoFrequenciaSchema>;
+
+const transacaoSchema = z.object({
+  id: z.string().uuid(),
+  familiaId: z.string().uuid(),
+  tipo: transacaoTipoSchema,
+  valor: z.string(),
+  categoriaId: z.string().uuid(),
+  descricao: z.string().nullable(),
+  data: z.string(),
+  mesReferencia: z.string(),
+  metodoPagamentoId: z.string().uuid().nullable(),
+  usuarioRegistrouId: z.string().uuid(),
+  recorrente: z.boolean(),
+  frequencia: transacaoFrequenciaSchema.nullable(),
+  dataFimRecorrencia: z.string().nullable(),
+  parcelado: z.boolean(),
+  numeroParcelas: z.number().int().nullable(),
+  parcelaAtual: z.number().int().nullable(),
+  valorTotal: z.string().nullable(),
+  valorParcela: z.string().nullable(),
+  transacaoPaiId: z.string().uuid().nullable(),
+  criadoEm: z.string(),
+  atualizadoEm: z.string(),
+});
+
+export const transacaoCreateRequestSchema = z.object({
+  tipo: transacaoTipoSchema,
+  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  categoriaId: z.string().uuid(),
+  descricao: z.string().trim().optional().nullable(),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve ser YYYY-MM-DD'),
+  metodoPagamentoId: z.string().uuid().optional().nullable(),
+  parcelado: z.boolean().optional().default(false),
+  numeroParcelas: z.number().int().min(2).max(72).optional().nullable(),
+  recorrente: z.boolean().optional().default(false),
+  frequencia: transacaoFrequenciaSchema.optional().nullable(),
+  dataFimRecorrencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
+});
+export type TransacaoCreateRequest = z.infer<typeof transacaoCreateRequestSchema>;
+
+export const transacaoCreateResponseSchema = z.object({ transacao: transacaoSchema });
+export type TransacaoCreateResponse = z.infer<typeof transacaoCreateResponseSchema>;
+
+export const transacaoParamsSchema = z.object({ id: z.string().uuid() });
+export type TransacaoParams = z.infer<typeof transacaoParamsSchema>;
+
+export const transacaoListQuerySchema = z.object({
+  mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+  tipo: transacaoTipoSchema.optional(),
+  categoriaId: z.string().uuid().optional(),
+  usuarioRegistrouId: z.string().uuid().optional(),
+  metodoPagamentoId: z.string().uuid().optional(),
+});
+export type TransacaoListQuery = z.infer<typeof transacaoListQuerySchema>;
+
+export const transacaoListResponseSchema = z.object({ transacoes: z.array(transacaoSchema) });
+export type TransacaoListResponse = z.infer<typeof transacaoListResponseSchema>;
+
+export const transacaoResponseSchema = z.object({ transacao: transacaoSchema });
+export type TransacaoResponse = z.infer<typeof transacaoResponseSchema>;
+
+export const transacaoUpdateRequestSchema = z.object({
+  tipo: transacaoTipoSchema,
+  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  categoriaId: z.string().uuid(),
+  descricao: z.string().trim().optional().nullable(),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  metodoPagamentoId: z.string().uuid().optional().nullable(),
+});
+export type TransacaoUpdateRequest = z.infer<typeof transacaoUpdateRequestSchema>;

@@ -7,6 +7,7 @@ import { categoriaRoutes } from './modules/categoria/categoria.routes.js';
 import { familiaRoutes } from './modules/familia/familia.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { metodoPagamentoRoutes } from './modules/metodo-pagamento/metodo-pagamento.routes.js';
+import { transacaoRoutes } from './modules/transacao/transacao.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
@@ -33,6 +34,7 @@ export const buildApp = () => {
   app.register(familiaRoutes, { prefix: '/api' });
   app.register(healthRoutes, { prefix: '/api' });
   app.register(metodoPagamentoRoutes, { prefix: '/api' });
+  app.register(transacaoRoutes, { prefix: '/api' });
 
   return app;
 };

@@ -97,7 +97,16 @@ export const App = () => {
 
   if (screen === 'metodos-pagamento') {
     return (
-      <MetodosPagamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />
+      <MetodosPagamentoPage
+        familiaId={DEMO_FAMILIA_ID}
+        onBack={() => setScreen('dashboard')}
+        onVerFatura={(id, nome, mes) => {
+          setFaturaMetodoId(id);
+          setFaturaMetodoNome(nome);
+          setFaturaMes(mes);
+          setScreen('fatura');
+        }}
+      />
     );
   }
 

@@ -307,3 +307,55 @@ export const categoriaDeleteResponseSchema = z.object({
 });
 
 export type CategoriaDeleteResponse = z.infer<typeof categoriaDeleteResponseSchema>;
+
+// ─── Métodos de Pagamento ────────────────────────────────────────────────────
+
+export const metodoPagamentoTipoSchema = z.enum(['credito', 'debito', 'pix', 'dinheiro']);
+export type MetodoPagamentoTipo = z.infer<typeof metodoPagamentoTipoSchema>;
+
+const metodoPagamentoSchema = z.object({
+  id: z.string().uuid(),
+  familiaId: z.string().uuid(),
+  nome: z.string().min(1),
+  tipo: metodoPagamentoTipoSchema,
+  dataFechamento: z.number().int().min(1).max(31).nullable(),
+  dataVencimento: z.number().int().min(1).max(31).nullable(),
+  usuarioDonoId: z.string().uuid(),
+  ativo: z.boolean(),
+  criadoEm: z.string(),
+});
+
+export const metodoPagamentoListResponseSchema = z.object({
+  metodosPagamento: z.array(metodoPagamentoSchema),
+});
+export type MetodoPagamentoListResponse = z.infer<typeof metodoPagamentoListResponseSchema>;
+
+export const metodoPagamentoCreateRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  tipo: metodoPagamentoTipoSchema,
+  dataFechamento: z.number().int().min(1).max(31).nullable().optional().default(null),
+  dataVencimento: z.number().int().min(1).max(31).nullable().optional().default(null),
+});
+export type MetodoPagamentoCreateRequest = z.infer<typeof metodoPagamentoCreateRequestSchema>;
+
+export const metodoPagamentoCreateResponseSchema = z.object({
+  metodoPagamento: metodoPagamentoSchema,
+});
+export type MetodoPagamentoCreateResponse = z.infer<typeof metodoPagamentoCreateResponseSchema>;
+
+export const metodoPagamentoParamsSchema = z.object({ id: z.string().uuid() });
+export type MetodoPagamentoParams = z.infer<typeof metodoPagamentoParamsSchema>;
+
+export const metodoPagamentoUpdateRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  tipo: metodoPagamentoTipoSchema,
+  dataFechamento: z.number().int().min(1).max(31).nullable().optional().default(null),
+  dataVencimento: z.number().int().min(1).max(31).nullable().optional().default(null),
+});
+export type MetodoPagamentoUpdateRequest = z.infer<typeof metodoPagamentoUpdateRequestSchema>;
+
+export const metodoPagamentoUpdateResponseSchema = metodoPagamentoCreateResponseSchema;
+export type MetodoPagamentoUpdateResponse = z.infer<typeof metodoPagamentoUpdateResponseSchema>;
+
+export const metodoPagamentoDeleteResponseSchema = metodoPagamentoCreateResponseSchema;
+export type MetodoPagamentoDeleteResponse = z.infer<typeof metodoPagamentoDeleteResponseSchema>;

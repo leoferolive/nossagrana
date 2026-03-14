@@ -97,6 +97,7 @@ export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
         dataFimRecorrencia: payload.dataFimRecorrencia ?? null,
       });
 
+      fastify.eventBus?.emit('transacao:alterada', { familiaId });
       return reply.code(201).send({ transacao: mapTransacao(transacao) });
     },
   );
@@ -180,6 +181,7 @@ export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
           dataFechamento,
         });
 
+        fastify.eventBus?.emit('transacao:alterada', { familiaId });
         return reply.code(200).send({ transacao: mapTransacao(transacao) });
       } catch (error) {
         if (error instanceof TransacaoNotFoundError) {
@@ -199,10 +201,9 @@ export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       try {
         const { id } = transacaoParamsSchema.parse(request.params);
-        await transacaoService.excluir({
-          id,
-          familiaId: request.familiaIdAtiva as string,
-        });
+        const familiaId = request.familiaIdAtiva as string;
+        await transacaoService.excluir({ id, familiaId });
+        fastify.eventBus?.emit('transacao:alterada', { familiaId });
         return reply.code(204).send(null);
       } catch (error) {
         if (error instanceof TransacaoNotFoundError) {

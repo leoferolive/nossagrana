@@ -66,16 +66,16 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ## Fase 3 — Família e Onboarding
 
 ### Backend
-- [ ] Rota `POST /familias` — criar família (UC05)
-- [ ] Rota `POST /familias/convites` — gerar código de convite (UC21)
-- [ ] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
-- [ ] Rota `POST /familias/solicitar` — solicitar entrada (UC04)
-- [ ] Rota `GET /familias/solicitacoes` — listar solicitações pendentes (Admin)
-- [ ] Rota `PATCH /familias/solicitacoes/:id` — aprovar/rejeitar (UC22)
-- [ ] Rota `GET /familias/:id/membros` — listar membros
-- [ ] Rota `DELETE /familias/:id/membros/:usuarioId` — remover membro (UC23)
-- [ ] Rota `DELETE /familias/:id` — excluir família (UC24)
-- [ ] Rota `POST /familias/alternar` — alternar família ativa (UC20)
+- [x] Rota `POST /familias` — criar família (UC05)
+- [x] Rota `POST /familias/convites` — gerar código de convite (UC21)
+- [x] Rota `POST /familias/entrar/:codigo` — entrar via convite (UC03)
+- [x] Rota `POST /familias/solicitar` — solicitar entrada (UC04)
+- [x] Rota `GET /familias/solicitacoes` — listar solicitações pendentes (Admin)
+- [x] Rota `PATCH /familias/solicitacoes/:id` — aprovar/rejeitar (UC22)
+- [x] Rota `GET /familias/:id/membros` — listar membros
+- [x] Rota `DELETE /familias/:id/membros/:usuarioId` — remover membro (UC23)
+- [x] Rota `DELETE /familias/:id` — excluir família (UC24)
+- [x] Rota `POST /familias/alternar` — alternar família ativa (UC20)
 
 ### Frontend
 - [ ] Fluxo de onboarding pós-cadastro (criar família / entrar com convite / solicitar)

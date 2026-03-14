@@ -28,14 +28,15 @@ interface InMemoryTransacao {
   categoriaId: string;
   mesReferencia: string;
   valor: string;
+  tipo: 'receita' | 'despesa';
 }
 
 export class InMemoryOrcamentoRepository implements OrcamentoRepository {
   private _orcamentos: InMemoryOrcamento[] = [];
   private _transacoes: InMemoryTransacao[] = [];
 
-  seedTransacao(t: { familiaId: string; categoriaId: string; mesReferencia: string; valor: string }): void {
-    this._transacoes.push(t);
+  seedTransacao(t: { familiaId: string; categoriaId: string; mesReferencia: string; valor: string; tipo?: 'receita' | 'despesa' }): void {
+    this._transacoes.push({ ...t, tipo: t.tipo ?? 'despesa' });
   }
 
   async listVigentes(familiaId: string, mesReferencia: string): Promise<OrcamentoVigenteRow[]> {
@@ -58,7 +59,7 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
 
   async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>> {
     const despesas = this._transacoes.filter(
-      (t) => t.familiaId === familiaId && t.mesReferencia === mesReferencia,
+      (t) => t.familiaId === familiaId && t.mesReferencia === mesReferencia && t.tipo === 'despesa',
     );
     const map = new Map<string, number>();
     for (const t of despesas) {

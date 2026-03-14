@@ -98,21 +98,21 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Rota `GET /categorias` — listar categorias da família
 - [x] Rota `POST /categorias` — criar categoria (UC17)
 - [x] Rota `PATCH /categorias/:id` — editar categoria
-- [ ] Rota `DELETE /categorias/:id` — desativar categoria (soft delete)
-- [ ] Seed de categorias padrão ao criar família
-- [ ] Rota `GET /metodos-pagamento` — listar métodos da família
-- [ ] Rota `POST /metodos-pagamento` — cadastrar método (UC18)
-- [ ] Rota `PATCH /metodos-pagamento/:id` — editar método
-- [ ] Rota `DELETE /metodos-pagamento/:id` — desativar método
-- [ ] Serviço de cálculo de mês de referência (UC31)
-- [ ] Rota `POST /transacoes` — registrar transação simples (UC06)
-- [ ] Serviço de geração de parcelas futuras (UC07 + UC29)
-- [ ] Serviço de geração de recorrências futuras (UC08 + UC30)
-- [ ] Rota `GET /transacoes` — listar transações com filtros (UC13)
-- [ ] Rota `GET /transacoes/:id` — detalhe da transação
-- [ ] Rota `PATCH /transacoes/:id` — editar transação (UC09)
-- [ ] Rota `DELETE /transacoes/:id` — excluir transação (UC10)
-- [ ] Rota `POST /transacoes/:id/antecipar` — antecipar parcelas (UC11)
+- [x] Rota `DELETE /categorias/:id` — desativar categoria (soft delete)
+- [x] Seed de categorias padrão ao criar família
+- [x] Rota `GET /metodos-pagamento` — listar métodos da família
+- [x] Rota `POST /metodos-pagamento` — cadastrar método (UC18)
+- [x] Rota `PATCH /metodos-pagamento/:id` — editar método
+- [x] Rota `DELETE /metodos-pagamento/:id` — desativar método
+- [x] Serviço de cálculo de mês de referência (UC31)
+- [x] Rota `POST /transacoes` — registrar transação simples (UC06)
+- [x] Serviço de geração de parcelas futuras (UC07 + UC29)
+- [x] Serviço de geração de recorrências futuras (UC08 + UC30)
+- [x] Rota `GET /transacoes` — listar transações com filtros (UC13)
+- [x] Rota `GET /transacoes/:id` — detalhe da transação
+- [x] Rota `PATCH /transacoes/:id` — editar transação (UC09)
+- [x] Rota `DELETE /transacoes/:id` — excluir transação (UC10)
+- [x] Rota `POST /transacoes/:id/antecipar` — antecipar parcelas (UC11)
 
 ### Frontend
 

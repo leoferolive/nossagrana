@@ -450,3 +450,65 @@ export const transacaoAnteciparRequestSchema = z.object({
   dataMinima: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data no formato YYYY-MM-DD'),
 });
 export type TransacaoAnteciparRequest = z.infer<typeof transacaoAnteciparRequestSchema>;
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
+export const dashboardQuerySchema = z.object({
+  mesReferencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+});
+export type DashboardQuery = z.infer<typeof dashboardQuerySchema>;
+
+export const dashboardMesAnteriorSchema = z.object({
+  mesReferencia: z.string(),
+  totalReceitas: z.string(),
+  totalDespesas: z.string(),
+  saldo: z.string(),
+  fonteSnapshot: z.boolean(),
+});
+export type DashboardMesAnterior = z.infer<typeof dashboardMesAnteriorSchema>;
+
+export const dashboardResumoResponseSchema = z.object({
+  mesReferencia: z.string(),
+  totalReceitas: z.string(),
+  totalDespesas: z.string(),
+  saldo: z.string(),
+  mesAnterior: dashboardMesAnteriorSchema.nullable(),
+});
+export type DashboardResumoResponse = z.infer<typeof dashboardResumoResponseSchema>;
+
+export const dashboardDistribuicaoCategoriaSchema = z.object({
+  categoriaId: z.string().uuid(),
+  categoriaNome: z.string(),
+  total: z.string(),
+  percentual: z.number(),
+});
+export type DashboardDistribuicaoCategoria = z.infer<typeof dashboardDistribuicaoCategoriaSchema>;
+
+export const dashboardEvolucaoDiariaSchema = z.object({
+  dia: z.string(),
+  totalDespesas: z.string(),
+  totalReceitas: z.string(),
+});
+export type DashboardEvolucaoDiaria = z.infer<typeof dashboardEvolucaoDiariaSchema>;
+
+export const dashboardGraficosResponseSchema = z.object({
+  distribuicaoCategorias: z.array(dashboardDistribuicaoCategoriaSchema),
+  evolucaoDiaria: z.array(dashboardEvolucaoDiariaSchema),
+});
+export type DashboardGraficosResponse = z.infer<typeof dashboardGraficosResponseSchema>;
+
+export const dashboardOrcamentoItemSchema = z.object({
+  categoriaId: z.string().uuid(),
+  categoriaNome: z.string(),
+  valorLimite: z.string(),
+  totalGasto: z.string(),
+  percentual: z.number(),
+  status: z.enum(['ok', 'warning', 'exceeded']),
+});
+export type DashboardOrcamentoItem = z.infer<typeof dashboardOrcamentoItemSchema>;
+
+export const dashboardOrcamentoResponseSchema = z.array(dashboardOrcamentoItemSchema);
+export type DashboardOrcamentoResponse = z.infer<typeof dashboardOrcamentoResponseSchema>;

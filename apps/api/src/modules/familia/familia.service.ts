@@ -1,3 +1,8 @@
+import {
+  CATEGORIAS_PADRAO_DESPESA,
+  CATEGORIAS_PADRAO_RECEITA,
+} from '../../db/seeds/categorias-padrao.js';
+import type { CategoriaRepository } from '../categoria/categoria.types.js';
 import type { FamiliaRepository } from './familia.types.js';
 
 interface CreateFamiliaInput {
@@ -81,13 +86,39 @@ export class FamiliaNotFoundError extends Error {
 }
 
 export class FamiliaService {
-  constructor(private readonly familiaRepository: FamiliaRepository) {}
+  constructor(
+    private readonly familiaRepository: FamiliaRepository,
+    private readonly categoriaRepository?: CategoriaRepository,
+  ) {}
 
   async create(input: CreateFamiliaInput) {
-    return this.familiaRepository.createWithAdminMembership({
+    const familia = await this.familiaRepository.createWithAdminMembership({
       nome: input.nome,
       usuarioId: input.usuarioId,
     });
+
+    if (this.categoriaRepository) {
+      await Promise.all([
+        ...CATEGORIAS_PADRAO_RECEITA.map((nome) =>
+          this.categoriaRepository!.create({
+            familiaId: familia.id,
+            nome,
+            tipo: 'receita',
+            criadoPor: input.usuarioId,
+          }),
+        ),
+        ...CATEGORIAS_PADRAO_DESPESA.map((nome) =>
+          this.categoriaRepository!.create({
+            familiaId: familia.id,
+            nome,
+            tipo: 'despesa',
+            criadoPor: input.usuarioId,
+          }),
+        ),
+      ]);
+    }
+
+    return familia;
   }
 
   async createInvite(input: CreateFamiliaInviteInput) {

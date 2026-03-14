@@ -152,6 +152,21 @@ describe('API health endpoint', () => {
     expect(refreshAfterLogoutResponse.statusCode).toBe(401);
   });
 
+  it('rejects invalid refresh token on logout', async () => {
+    const logoutResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      payload: {
+        refreshToken: 'invalid-token',
+      },
+    });
+
+    expect(logoutResponse.statusCode).toBe(401);
+    expect(logoutResponse.json()).toMatchObject({
+      message: 'Refresh token invalido',
+    });
+  });
+
   it('protects private route with JWT authentication', async () => {
     await app.inject({
       method: 'POST',

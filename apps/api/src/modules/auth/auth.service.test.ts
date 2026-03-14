@@ -42,6 +42,22 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(EmailAlreadyExistsError);
   });
 
+  it('maps unique constraint violation to EmailAlreadyExistsError', async () => {
+    const repository = buildRepository({
+      findByEmail: vi.fn().mockResolvedValue(null),
+      createUser: vi.fn().mockRejectedValue({ code: '23505' }),
+    });
+    const service = new AuthService(repository);
+
+    await expect(
+      service.register({
+        nome: 'Leo',
+        email: 'leo@example.com',
+        senha: 'password123',
+      }),
+    ).rejects.toBeInstanceOf(EmailAlreadyExistsError);
+  });
+
   it('throws when login password does not match', async () => {
     const repository = buildRepository({
       findByEmail: vi.fn().mockResolvedValue({

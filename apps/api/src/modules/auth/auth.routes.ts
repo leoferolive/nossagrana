@@ -28,7 +28,25 @@ const defaultAuthService = (): AuthService => {
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   const authService = defaultAuthService();
-  const revokedRefreshTokens = new Set<string>();
+  const revokedRefreshTokens = new Map<string, number>();
+  const maxRevokedRefreshTokens = 5000;
+
+  const cleanupRevokedRefreshTokens = (nowSeconds: number) => {
+    for (const [token, expiresAt] of revokedRefreshTokens.entries()) {
+      if (expiresAt <= nowSeconds) {
+        revokedRefreshTokens.delete(token);
+      }
+    }
+
+    while (revokedRefreshTokens.size > maxRevokedRefreshTokens) {
+      const oldestToken = revokedRefreshTokens.keys().next().value;
+      if (!oldestToken) {
+        break;
+      }
+
+      revokedRefreshTokens.delete(oldestToken);
+    }
+  };
 
   fastify.post('/auth/register', { schema: authRegisterSchema }, async (request, reply) => {
     try {
@@ -82,9 +100,15 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/auth/refresh', { schema: authRefreshSchema }, async (request, reply) => {
     try {
       const payload = authRefreshRequestSchema.parse(request.body);
-      if (revokedRefreshTokens.has(payload.refreshToken)) {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      cleanupRevokedRefreshTokens(nowSeconds);
+
+      const revokedExpiration = revokedRefreshTokens.get(payload.refreshToken);
+      if (revokedExpiration && revokedExpiration > nowSeconds) {
         return reply.code(401).send({ message: 'Refresh token invalido' });
       }
+
+      revokedRefreshTokens.delete(payload.refreshToken);
 
       const decodedToken = fastify.jwt.verify<{
         sub: string;
@@ -110,9 +134,29 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post('/auth/logout', { schema: authLogoutSchema }, async (request, reply) => {
-    const payload = authLogoutRequestSchema.parse(request.body);
-    revokedRefreshTokens.add(payload.refreshToken);
-    return reply.code(204).send();
+    try {
+      const payload = authLogoutRequestSchema.parse(request.body);
+
+      const decodedToken = fastify.jwt.verify<{
+        tokenType?: string;
+        exp?: number;
+      }>(payload.refreshToken, {
+        key: env.REFRESH_TOKEN_SECRET,
+      });
+
+      if (decodedToken.tokenType !== 'refresh') {
+        return reply.code(401).send({ message: 'Refresh token invalido' });
+      }
+
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const expiresAt = decodedToken.exp ?? nowSeconds;
+      revokedRefreshTokens.set(payload.refreshToken, expiresAt);
+      cleanupRevokedRefreshTokens(nowSeconds);
+
+      return reply.code(204).send();
+    } catch {
+      return reply.code(401).send({ message: 'Refresh token invalido' });
+    }
   });
 
   fastify.get(

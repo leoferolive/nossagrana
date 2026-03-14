@@ -19,6 +19,16 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+const isUniqueViolationError = (error: unknown): boolean => {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string' &&
+    (error as { code: string }).code === '23505'
+  );
+};
+
 export const hashPassword = async (password: string): Promise<string> => {
   const salt = randomBytes(16).toString('hex');
   const hash = scryptSync(password, salt, 64).toString('hex');
@@ -59,11 +69,20 @@ export class AuthService {
 
     const senhaHash = await this.hashFn(input.senha);
 
-    const createdUser = await this.repository.createUser({
-      nome: input.nome,
-      email: input.email,
-      senhaHash,
-    });
+    let createdUser;
+    try {
+      createdUser = await this.repository.createUser({
+        nome: input.nome,
+        email: input.email,
+        senhaHash,
+      });
+    } catch (error) {
+      if (isUniqueViolationError(error)) {
+        throw new EmailAlreadyExistsError();
+      }
+
+      throw error;
+    }
 
     return {
       id: createdUser.id,

@@ -42,6 +42,12 @@ export const authRefreshSchema = {
 
 export const authLogoutSchema = {
   body: authLogoutRequestSchema,
+  response: {
+    204: z.null(),
+    401: z.object({
+      message: z.literal('Refresh token invalido'),
+    }),
+  },
 };
 
 export const authMeSchema = {

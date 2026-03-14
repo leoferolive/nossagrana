@@ -48,7 +48,10 @@ export class OrcamentoService {
   async set(input: OrcamentoSetInput): Promise<void> {
     const aberto = await this.repo.findAberto(input.familiaId, input.categoriaId);
     if (aberto) {
-      await this.repo.encerrar(aberto.id, mesAnterior(input.vigenciaInicio));
+      const vigFimCandidate = mesAnterior(input.vigenciaInicio);
+      // Guard: vigenciaFim must not precede the record's own start (same-month edge case)
+      const vigFim = vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
+      await this.repo.encerrar(aberto.id, input.familiaId, vigFim);
     }
     await this.repo.insert(input);
   }

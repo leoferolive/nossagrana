@@ -30,7 +30,7 @@ export interface OrcamentoRepository {
   listVigentes(familiaId: string, mesReferencia: string): Promise<OrcamentoVigenteRow[]>;
   getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>>;
   findAberto(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow | null>;
-  encerrar(id: string, vigenciaFim: string): Promise<void>;
+  encerrar(id: string, familiaId: string, vigenciaFim: string): Promise<void>;
   insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow>;
   listHistorico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow[]>;
 }

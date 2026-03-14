@@ -87,7 +87,7 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
     };
   }
 
-  async encerrar(id: string, vigenciaFim: string): Promise<void> {
+  async encerrar(id: string, _familiaId: string, vigenciaFim: string): Promise<void> {
     const record = this._orcamentos.find((o) => o.id === id);
     if (record) {
       record.vigenciaFim = vigenciaFim;
@@ -206,11 +206,11 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
     return rows[0];
   }
 
-  async encerrar(id: string, vigenciaFim: string): Promise<void> {
+  async encerrar(id: string, familiaId: string, vigenciaFim: string): Promise<void> {
     await db
       .update(orcamentoCategoria)
       .set({ vigenciaFim })
-      .where(eq(orcamentoCategoria.id, id));
+      .where(and(eq(orcamentoCategoria.id, id), eq(orcamentoCategoria.familiaId, familiaId)));
   }
 
   async insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {

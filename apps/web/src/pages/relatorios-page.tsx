@@ -116,6 +116,7 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
     <div className="min-h-screen bg-bg p-4">
       <div className="mb-6 flex items-center gap-4">
         <button
+          type="button"
           aria-label="Voltar"
           onClick={onBack}
           className="rounded-lg bg-surface px-3 py-2 text-sm text-text-muted hover:bg-surface-hover"
@@ -130,6 +131,7 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            type="button"
             role="tab"
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}

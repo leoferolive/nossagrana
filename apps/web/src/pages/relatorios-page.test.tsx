@@ -69,9 +69,7 @@ describe('RelatoriosPage', () => {
   it('switches to por-membro tab', async () => {
     mockService.getRelatorioPorUsuario.mockResolvedValue({
       mesReferencia: '2026-03',
-      porUsuario: [
-        { usuarioId: 'u1', usuarioNome: 'Leo', total: '400.00', percentual: 80 },
-      ],
+      porUsuario: [{ usuarioId: 'u1', usuarioNome: 'Leo', total: '400.00', percentual: 80 }],
     });
     render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
     await waitFor(() => screen.getByRole('tab', { name: /por membro/i }));
@@ -83,9 +81,24 @@ describe('RelatoriosPage', () => {
   it('switches to tendencias tab and shows line chart', async () => {
     mockService.getRelatorioTendencias.mockResolvedValue({
       meses: [
-        { mesReferencia: '2026-01', totalReceitas: '5000.00', totalDespesas: '3000.00', saldo: '2000.00' },
-        { mesReferencia: '2026-02', totalReceitas: '4500.00', totalDespesas: '3200.00', saldo: '1300.00' },
-        { mesReferencia: '2026-03', totalReceitas: '5200.00', totalDespesas: '2800.00', saldo: '2400.00' },
+        {
+          mesReferencia: '2026-01',
+          totalReceitas: '5000.00',
+          totalDespesas: '3000.00',
+          saldo: '2000.00',
+        },
+        {
+          mesReferencia: '2026-02',
+          totalReceitas: '4500.00',
+          totalDespesas: '3200.00',
+          saldo: '1300.00',
+        },
+        {
+          mesReferencia: '2026-03',
+          totalReceitas: '5200.00',
+          totalDespesas: '2800.00',
+          saldo: '2400.00',
+        },
       ],
     });
     render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);

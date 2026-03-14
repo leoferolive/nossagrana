@@ -1762,9 +1762,7 @@ describe('Orcamento routes', () => {
 
   beforeAll(async () => {
     await app.ready();
-    ({ accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory(
-      'orc@example.com',
-    ));
+    ({ accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory('orc@example.com'));
   });
 
   afterAll(() => app.close());

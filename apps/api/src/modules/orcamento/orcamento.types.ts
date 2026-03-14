@@ -1,4 +1,8 @@
-import type { OrcamentoHistoricoResponse, OrcamentoItem, OrcamentoListResponse } from '@nossagrana/types';
+import type {
+  OrcamentoHistoricoResponse,
+  OrcamentoItem,
+  OrcamentoListResponse,
+} from '@nossagrana/types';
 
 export interface OrcamentoVigenteRow {
   id: string;

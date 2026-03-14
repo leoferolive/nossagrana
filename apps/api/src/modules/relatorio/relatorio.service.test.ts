@@ -22,8 +22,26 @@ describe('RelatorioService', () => {
   it('distribuicao calcula percentual por categoria', async () => {
     repo.seed({
       transacoes: [
-        { familiaId, tipo: 'despesa', valor: '200.00', categoriaId: 'cat-1', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
-        { familiaId, tipo: 'despesa', valor: '100.00', categoriaId: 'cat-2', categoriaNome: 'Lazer', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '200.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '100.00',
+          categoriaId: 'cat-2',
+          categoriaNome: 'Lazer',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
       ],
     });
     const result = await service.distribuicao(familiaId, '2026-03');
@@ -35,8 +53,26 @@ describe('RelatorioService', () => {
   it('porUsuario retorna gastos agrupados por usuario', async () => {
     repo.seed({
       transacoes: [
-        { familiaId, tipo: 'despesa', valor: '300.00', categoriaId: 'cat-1', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
-        { familiaId, tipo: 'despesa', valor: '100.00', categoriaId: 'cat-1', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-2', usuarioNome: 'Ana' },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '300.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '100.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-2',
+          usuarioNome: 'Ana',
+        },
       ],
     });
     const result = await service.porUsuario(familiaId, '2026-03');
@@ -49,8 +85,26 @@ describe('RelatorioService', () => {
   it('tendencias retorna N meses regressivos com totais', async () => {
     repo.seed({
       transacoes: [
-        { familiaId, tipo: 'receita', valor: '5000.00', categoriaId: 'cat-1', categoriaNome: 'Salário', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
-        { familiaId, tipo: 'despesa', valor: '2000.00', categoriaId: 'cat-2', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
+        {
+          familiaId,
+          tipo: 'receita',
+          valor: '5000.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Salário',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '2000.00',
+          categoriaId: 'cat-2',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
       ],
     });
     const result = await service.tendencias(familiaId, '2026-03', 3);

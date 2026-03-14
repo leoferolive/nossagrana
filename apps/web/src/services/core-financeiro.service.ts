@@ -179,21 +179,30 @@ export class TransacaoService {
 export class DashboardService {
   constructor(private readonly api: ApiClient) {}
 
-  async getDashboardResumo(familiaId: string, mesReferencia?: string): Promise<DashboardResumoResponse> {
+  async getDashboardResumo(
+    familiaId: string,
+    mesReferencia?: string,
+  ): Promise<DashboardResumoResponse> {
     const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
     return this.api.request<DashboardResumoResponse>(`/api/dashboard${qs}`, {
       headers: familiaHeader(familiaId),
     });
   }
 
-  async getDashboardGraficos(familiaId: string, mesReferencia?: string): Promise<DashboardGraficosResponse> {
+  async getDashboardGraficos(
+    familiaId: string,
+    mesReferencia?: string,
+  ): Promise<DashboardGraficosResponse> {
     const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
     return this.api.request<DashboardGraficosResponse>(`/api/dashboard/graficos${qs}`, {
       headers: familiaHeader(familiaId),
     });
   }
 
-  async getDashboardOrcamento(familiaId: string, mesReferencia?: string): Promise<DashboardOrcamentoResponse> {
+  async getDashboardOrcamento(
+    familiaId: string,
+    mesReferencia?: string,
+  ): Promise<DashboardOrcamentoResponse> {
     const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
     return this.api.request<DashboardOrcamentoResponse>(`/api/dashboard/orcamento${qs}`, {
       headers: familiaHeader(familiaId),
@@ -219,35 +228,50 @@ export class DashboardService {
     });
   }
 
-  async getOrcamentoHistorico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoResponse> {
-    return this.api.request<OrcamentoHistoricoResponse>(
-      `/api/orcamento/${categoriaId}/historico`,
-      { headers: familiaHeader(familiaId) },
-    );
+  async getOrcamentoHistorico(
+    familiaId: string,
+    categoriaId: string,
+  ): Promise<OrcamentoHistoricoResponse> {
+    return this.api.request<OrcamentoHistoricoResponse>(`/api/orcamento/${categoriaId}/historico`, {
+      headers: familiaHeader(familiaId),
+    });
   }
 
-  async getRelatorioDistribuicao(familiaId: string, mesReferencia?: string): Promise<RelatorioDistribuicaoResponse> {
+  async getRelatorioDistribuicao(
+    familiaId: string,
+    mesReferencia?: string,
+  ): Promise<RelatorioDistribuicaoResponse> {
     const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
     return this.api.request<RelatorioDistribuicaoResponse>(`/api/relatorios/distribuicao${qs}`, {
       headers: familiaHeader(familiaId),
     });
   }
 
-  async getRelatorioPorUsuario(familiaId: string, mesReferencia?: string): Promise<RelatorioPorUsuarioResponse> {
+  async getRelatorioPorUsuario(
+    familiaId: string,
+    mesReferencia?: string,
+  ): Promise<RelatorioPorUsuarioResponse> {
     const qs = mesReferencia ? `?mesReferencia=${mesReferencia}` : '';
     return this.api.request<RelatorioPorUsuarioResponse>(`/api/relatorios/por-usuario${qs}`, {
       headers: familiaHeader(familiaId),
     });
   }
 
-  async getRelatorioTendencias(familiaId: string, meses?: number): Promise<RelatorioTendenciasResponse> {
+  async getRelatorioTendencias(
+    familiaId: string,
+    meses?: number,
+  ): Promise<RelatorioTendenciasResponse> {
     const qs = meses ? `?meses=${meses}` : '';
     return this.api.request<RelatorioTendenciasResponse>(`/api/relatorios/tendencias${qs}`, {
       headers: familiaHeader(familiaId),
     });
   }
 
-  async getFatura(familiaId: string, metodoPagamentoId: string, mesReferencia: string): Promise<FaturaResponse> {
+  async getFatura(
+    familiaId: string,
+    metodoPagamentoId: string,
+    mesReferencia: string,
+  ): Promise<FaturaResponse> {
     return this.api.request<FaturaResponse>(
       `/api/cartoes/${metodoPagamentoId}/fatura/${mesReferencia}`,
       { headers: familiaHeader(familiaId) },

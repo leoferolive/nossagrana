@@ -16,7 +16,10 @@ function mesAntesN(mesReferencia: string, n: number): string {
 export class RelatorioService {
   constructor(private readonly repo: RelatorioRepository) {}
 
-  async distribuicao(familiaId: string, mesReferencia: string): Promise<RelatorioDistribuicaoResponse> {
+  async distribuicao(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<RelatorioDistribuicaoResponse> {
     const transacoes = await this.repo.getTransacoes(familiaId, mesReferencia);
     const despesas = transacoes.filter((t) => t.tipo === 'despesa');
 
@@ -66,7 +69,11 @@ export class RelatorioService {
     return { mesReferencia, porUsuario };
   }
 
-  async tendencias(familiaId: string, mesReferencia: string, meses: number): Promise<RelatorioTendenciasResponse> {
+  async tendencias(
+    familiaId: string,
+    mesReferencia: string,
+    meses: number,
+  ): Promise<RelatorioTendenciasResponse> {
     // Build array of YYYY-MM strings from oldest to newest
     const mesRefs = Array.from({ length: meses }, (_, i) =>
       mesAntesN(mesReferencia, meses - 1 - i),

@@ -22,7 +22,12 @@ const tendenciaMesZod = z.object({
 });
 
 export const relatorioDistribuicaoSchema = {
-  querystring: z.object({ mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional() }),
+  querystring: z.object({
+    mesReferencia: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
+  }),
   response: {
     200: z.object({
       mesReferencia: z.string(),
@@ -32,7 +37,12 @@ export const relatorioDistribuicaoSchema = {
 };
 
 export const relatorioPorUsuarioSchema = {
-  querystring: z.object({ mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional() }),
+  querystring: z.object({
+    mesReferencia: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
+  }),
   response: {
     200: z.object({
       mesReferencia: z.string(),

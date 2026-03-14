@@ -6,10 +6,7 @@ import {
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import {
-  DrizzleOrcamentoRepository,
-  InMemoryOrcamentoRepository,
-} from './orcamento.repository.js';
+import { DrizzleOrcamentoRepository, InMemoryOrcamentoRepository } from './orcamento.repository.js';
 import {
   orcamentoHistoricoSchema,
   orcamentoListSchema,
@@ -31,9 +28,7 @@ function getCurrentMes(): string {
 
 const defaultService = () => {
   const repo =
-    env.NODE_ENV === 'test'
-      ? new InMemoryOrcamentoRepository()
-      : new DrizzleOrcamentoRepository();
+    env.NODE_ENV === 'test' ? new InMemoryOrcamentoRepository() : new DrizzleOrcamentoRepository();
   return new OrcamentoService(repo);
 };
 
@@ -42,7 +37,10 @@ export const orcamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/orcamento',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: orcamentoListSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: orcamentoListSchema,
+    },
     async (request) => {
       const { mesReferencia: qMes } = orcamentoQuerySchema.parse(request.query);
       return service.list(request.familiaIdAtiva as string, qMes ?? getCurrentMes());
@@ -69,7 +67,10 @@ export const orcamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/orcamento/:categoriaId/historico',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: orcamentoHistoricoSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: orcamentoHistoricoSchema,
+    },
     async (request) => {
       const { categoriaId } = orcamentoCategoriaParamsSchema.parse(request.params);
       return service.historico(request.familiaIdAtiva as string, categoriaId);

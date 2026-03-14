@@ -21,7 +21,13 @@ describe('OrcamentoService', () => {
   });
 
   it('define orcamento para categoria e retorna na listagem', async () => {
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.list(familiaId, '2026-03');
     expect(result.orcamentos).toHaveLength(1);
     expect(result.orcamentos[0].categoriaId).toBe(categoriaId);
@@ -33,7 +39,13 @@ describe('OrcamentoService', () => {
 
   it('calcula percentual e status warning quando gasto >= 80%', async () => {
     repo.seedTransacao({ familiaId, categoriaId, mesReferencia: '2026-03', valor: '420.00' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.list(familiaId, '2026-03');
     expect(result.orcamentos[0].percentual).toBe(84);
     expect(result.orcamentos[0].status).toBe('warning');
@@ -41,14 +53,32 @@ describe('OrcamentoService', () => {
 
   it('calcula status exceeded quando gasto >= 100%', async () => {
     repo.seedTransacao({ familiaId, categoriaId, mesReferencia: '2026-03', valor: '600.00' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.list(familiaId, '2026-03');
     expect(result.orcamentos[0].status).toBe('exceeded');
   });
 
   it('encerra orcamento anterior ao definir novo com vigencia posterior', async () => {
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-01' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '800.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-01',
+    });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '800.00',
+      vigenciaInicio: '2026-03',
+    });
     const historico = await service.historico(familiaId, categoriaId);
     expect(historico.historico).toHaveLength(2);
     const anterior = historico.historico.find((h) => h.valorLimite === '500.00');
@@ -58,8 +88,20 @@ describe('OrcamentoService', () => {
   });
 
   it('retorna historico por categoria ordenado por vigenciaInicio desc', async () => {
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '300.00', vigenciaInicio: '2026-01' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '300.00',
+      vigenciaInicio: '2026-01',
+    });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.historico(familiaId, categoriaId);
     expect(result.historico[0].valorLimite).toBe('500.00');
     expect(result.historico[1].valorLimite).toBe('300.00');

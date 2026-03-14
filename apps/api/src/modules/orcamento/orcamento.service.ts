@@ -50,7 +50,8 @@ export class OrcamentoService {
     if (aberto) {
       const vigFimCandidate = mesAnterior(input.vigenciaInicio);
       // Guard: vigenciaFim must not precede the record's own start (same-month edge case)
-      const vigFim = vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
+      const vigFim =
+        vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
       await this.repo.encerrar(aberto.id, input.familiaId, vigFim);
     }
     await this.repo.insert(input);

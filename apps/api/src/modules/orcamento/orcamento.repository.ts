@@ -35,7 +35,13 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
   private _orcamentos: InMemoryOrcamento[] = [];
   private _transacoes: InMemoryTransacao[] = [];
 
-  seedTransacao(t: { familiaId: string; categoriaId: string; mesReferencia: string; valor: string; tipo?: 'receita' | 'despesa' }): void {
+  seedTransacao(t: {
+    familiaId: string;
+    categoriaId: string;
+    mesReferencia: string;
+    valor: string;
+    tipo?: 'receita' | 'despesa';
+  }): void {
     this._transacoes.push({ ...t, tipo: t.tipo ?? 'despesa' });
   }
 
@@ -57,7 +63,10 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
       }));
   }
 
-  async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>> {
+  async getGastosPorCategoria(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<Map<string, string>> {
     const despesas = this._transacoes.filter(
       (t) => t.familiaId === familiaId && t.mesReferencia === mesReferencia && t.tipo === 'despesa',
     );
@@ -159,7 +168,10 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
       );
   }
 
-  async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>> {
+  async getGastosPorCategoria(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<Map<string, string>> {
     const rows = await db
       .select({
         categoriaId: transacoes.categoriaId,

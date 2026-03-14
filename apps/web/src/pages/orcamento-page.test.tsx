@@ -26,7 +26,9 @@ beforeEach(() => {
 describe('OrcamentoPage', () => {
   it('renders heading', async () => {
     render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /orçamento/i })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /orçamento/i })).toBeInTheDocument(),
+    );
   });
 
   it('shows loading state', () => {

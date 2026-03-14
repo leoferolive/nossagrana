@@ -40,12 +40,7 @@ export class DrizzleRelatorioRepository implements RelatorioRepository {
       .from(transacoes)
       .innerJoin(categorias, eq(transacoes.categoriaId, categorias.id))
       .innerJoin(users, eq(transacoes.usuarioRegistrouId, users.id))
-      .where(
-        and(
-          eq(transacoes.familiaId, familiaId),
-          eq(transacoes.mesReferencia, mesReferencia),
-        ),
-      );
+      .where(and(eq(transacoes.familiaId, familiaId), eq(transacoes.mesReferencia, mesReferencia)));
 
     return rows;
   }

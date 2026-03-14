@@ -175,9 +175,8 @@ export class InMemoryMetodoPagamentoRepository implements MetodoPagamentoReposit
 
   async findById(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null> {
     return (
-      this.metodos.find(
-        (m) => m.id === input.id && m.familiaId === input.familiaId && m.ativo,
-      ) ?? null
+      this.metodos.find((m) => m.id === input.id && m.familiaId === input.familiaId && m.ativo) ??
+      null
     );
   }
 

@@ -96,7 +96,9 @@ export const App = () => {
   }
 
   if (screen === 'metodos-pagamento') {
-    return <MetodosPagamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
+    return (
+      <MetodosPagamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />
+    );
   }
 
   if (screen === 'orcamento') {
@@ -120,6 +122,9 @@ export const App = () => {
   }
 
   return (
-    <LoginPage onOpenSignUp={() => setScreen('sign-up')} onLoginSuccess={() => setScreen('dashboard')} />
+    <LoginPage
+      onOpenSignUp={() => setScreen('sign-up')}
+      onLoginSuccess={() => setScreen('dashboard')}
+    />
   );
 };

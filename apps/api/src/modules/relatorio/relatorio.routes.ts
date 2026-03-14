@@ -2,10 +2,7 @@ import { relatorioQuerySchema, relatorioTendenciasQuerySchema } from '@nossagran
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import {
-  DrizzleRelatorioRepository,
-  InMemoryRelatorioRepository,
-} from './relatorio.repository.js';
+import { DrizzleRelatorioRepository, InMemoryRelatorioRepository } from './relatorio.repository.js';
 import {
   relatorioDistribuicaoSchema,
   relatorioPorUsuarioSchema,
@@ -27,9 +24,7 @@ function getCurrentMes(): string {
 
 const defaultService = () => {
   const repo =
-    env.NODE_ENV === 'test'
-      ? new InMemoryRelatorioRepository()
-      : new DrizzleRelatorioRepository();
+    env.NODE_ENV === 'test' ? new InMemoryRelatorioRepository() : new DrizzleRelatorioRepository();
   return new RelatorioService(repo);
 };
 
@@ -38,16 +33,25 @@ export const relatorioRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/relatorios/distribuicao',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: relatorioDistribuicaoSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: relatorioDistribuicaoSchema,
+    },
     async (request) => {
       const { mesReferencia } = relatorioQuerySchema.parse(request.query);
-      return service.distribuicao(request.familiaIdAtiva as string, mesReferencia ?? getCurrentMes());
+      return service.distribuicao(
+        request.familiaIdAtiva as string,
+        mesReferencia ?? getCurrentMes(),
+      );
     },
   );
 
   fastify.get(
     '/relatorios/por-usuario',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: relatorioPorUsuarioSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: relatorioPorUsuarioSchema,
+    },
     async (request) => {
       const { mesReferencia } = relatorioQuerySchema.parse(request.query);
       return service.porUsuario(request.familiaIdAtiva as string, mesReferencia ?? getCurrentMes());
@@ -56,7 +60,10 @@ export const relatorioRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/relatorios/tendencias',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: relatorioTendenciasSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: relatorioTendenciasSchema,
+    },
     async (request) => {
       const { meses } = relatorioTendenciasQuerySchema.parse(request.query);
       return service.tendencias(request.familiaIdAtiva as string, getCurrentMes(), meses ?? 6);

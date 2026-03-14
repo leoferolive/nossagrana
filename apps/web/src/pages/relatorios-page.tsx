@@ -20,7 +20,16 @@ import type {
   RelatorioPorUsuarioItem,
 } from '@nossagrana/types';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+);
 
 type Tab = 'distribuicao' | 'por-membro' | 'tendencias';
 

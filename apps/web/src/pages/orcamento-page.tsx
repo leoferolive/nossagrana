@@ -103,7 +103,8 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                 <div className="mb-2 flex items-center justify-between">
                   <span className="font-semibold text-text">{item.categoriaNome}</span>
                   <span className="text-sm text-text-muted">
-                    {item.percentual.toFixed(0)}% — {formatBRL(item.totalGasto)}/{formatBRL(item.valorLimite)}
+                    {item.percentual.toFixed(0)}% — {formatBRL(item.totalGasto)}/
+                    {formatBRL(item.valorLimite)}
                   </span>
                 </div>
 

@@ -287,3 +287,166 @@ export type CategoriaUpdateRequest = z.infer<typeof categoriaUpdateRequestSchema
 export const categoriaUpdateResponseSchema = categoriaCreateResponseSchema;
 
 export type CategoriaUpdateResponse = z.infer<typeof categoriaUpdateResponseSchema>;
+
+export const categoriaDeleteParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CategoriaDeleteParams = z.infer<typeof categoriaDeleteParamsSchema>;
+
+export const categoriaDeleteResponseSchema = z.object({
+  categoria: z.object({
+    id: z.string().uuid(),
+    familiaId: z.string().uuid(),
+    nome: z.string().min(1),
+    tipo: categoriaTipoSchema,
+    ativo: z.boolean(),
+    criadoPor: z.string().uuid(),
+    criadoEm: z.string(),
+  }),
+});
+
+export type CategoriaDeleteResponse = z.infer<typeof categoriaDeleteResponseSchema>;
+
+// ─── Métodos de Pagamento ────────────────────────────────────────────────────
+
+export const metodoPagamentoTipoSchema = z.enum(['credito', 'debito', 'pix', 'dinheiro']);
+export type MetodoPagamentoTipo = z.infer<typeof metodoPagamentoTipoSchema>;
+
+const metodoPagamentoSchema = z.object({
+  id: z.string().uuid(),
+  familiaId: z.string().uuid(),
+  nome: z.string().min(1),
+  tipo: metodoPagamentoTipoSchema,
+  dataFechamento: z.number().int().min(1).max(31).nullable(),
+  dataVencimento: z.number().int().min(1).max(31).nullable(),
+  usuarioDonoId: z.string().uuid(),
+  ativo: z.boolean(),
+  criadoEm: z.string(),
+});
+
+export const metodoPagamentoListResponseSchema = z.object({
+  metodosPagamento: z.array(metodoPagamentoSchema),
+});
+export type MetodoPagamentoListResponse = z.infer<typeof metodoPagamentoListResponseSchema>;
+
+export const metodoPagamentoCreateRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  tipo: metodoPagamentoTipoSchema,
+  dataFechamento: z.number().int().min(1).max(31).nullable().optional().default(null),
+  dataVencimento: z.number().int().min(1).max(31).nullable().optional().default(null),
+});
+export type MetodoPagamentoCreateRequest = z.infer<typeof metodoPagamentoCreateRequestSchema>;
+
+export const metodoPagamentoCreateResponseSchema = z.object({
+  metodoPagamento: metodoPagamentoSchema,
+});
+export type MetodoPagamentoCreateResponse = z.infer<typeof metodoPagamentoCreateResponseSchema>;
+
+export const metodoPagamentoParamsSchema = z.object({ id: z.string().uuid() });
+export type MetodoPagamentoParams = z.infer<typeof metodoPagamentoParamsSchema>;
+
+export const metodoPagamentoUpdateRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  tipo: metodoPagamentoTipoSchema,
+  dataFechamento: z.number().int().min(1).max(31).nullable().optional().default(null),
+  dataVencimento: z.number().int().min(1).max(31).nullable().optional().default(null),
+});
+export type MetodoPagamentoUpdateRequest = z.infer<typeof metodoPagamentoUpdateRequestSchema>;
+
+export const metodoPagamentoUpdateResponseSchema = metodoPagamentoCreateResponseSchema;
+export type MetodoPagamentoUpdateResponse = z.infer<typeof metodoPagamentoUpdateResponseSchema>;
+
+export const metodoPagamentoDeleteResponseSchema = metodoPagamentoCreateResponseSchema;
+export type MetodoPagamentoDeleteResponse = z.infer<typeof metodoPagamentoDeleteResponseSchema>;
+
+// ─── Transações ──────────────────────────────────────────────────────────────
+
+export const transacaoTipoSchema = z.enum(['receita', 'despesa']);
+export type TransacaoTipo = z.infer<typeof transacaoTipoSchema>;
+
+export const transacaoFrequenciaSchema = z.enum(['mensal', 'semanal', 'quinzenal']);
+export type TransacaoFrequencia = z.infer<typeof transacaoFrequenciaSchema>;
+
+const transacaoSchema = z.object({
+  id: z.string().uuid(),
+  familiaId: z.string().uuid(),
+  tipo: transacaoTipoSchema,
+  valor: z.string(),
+  categoriaId: z.string().uuid(),
+  descricao: z.string().nullable(),
+  data: z.string(),
+  mesReferencia: z.string(),
+  metodoPagamentoId: z.string().uuid().nullable(),
+  usuarioRegistrouId: z.string().uuid(),
+  recorrente: z.boolean(),
+  frequencia: transacaoFrequenciaSchema.nullable(),
+  dataFimRecorrencia: z.string().nullable(),
+  parcelado: z.boolean(),
+  numeroParcelas: z.number().int().nullable(),
+  parcelaAtual: z.number().int().nullable(),
+  valorTotal: z.string().nullable(),
+  valorParcela: z.string().nullable(),
+  transacaoPaiId: z.string().uuid().nullable(),
+  criadoEm: z.string(),
+  atualizadoEm: z.string(),
+});
+
+export const transacaoCreateRequestSchema = z.object({
+  tipo: transacaoTipoSchema,
+  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  categoriaId: z.string().uuid(),
+  descricao: z.string().trim().optional().nullable(),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve ser YYYY-MM-DD'),
+  metodoPagamentoId: z.string().uuid().optional().nullable(),
+  parcelado: z.boolean().optional().default(false),
+  numeroParcelas: z.number().int().min(2).max(72).optional().nullable(),
+  recorrente: z.boolean().optional().default(false),
+  frequencia: transacaoFrequenciaSchema.optional().nullable(),
+  dataFimRecorrencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
+});
+export type TransacaoCreateRequest = z.infer<typeof transacaoCreateRequestSchema>;
+
+export const transacaoCreateResponseSchema = z.object({ transacao: transacaoSchema });
+export type TransacaoCreateResponse = z.infer<typeof transacaoCreateResponseSchema>;
+
+export const transacaoParamsSchema = z.object({ id: z.string().uuid() });
+export type TransacaoParams = z.infer<typeof transacaoParamsSchema>;
+
+export const transacaoListQuerySchema = z.object({
+  mesReferencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+  tipo: transacaoTipoSchema.optional(),
+  categoriaId: z.string().uuid().optional(),
+  usuarioRegistrouId: z.string().uuid().optional(),
+  metodoPagamentoId: z.string().uuid().optional(),
+});
+export type TransacaoListQuery = z.infer<typeof transacaoListQuerySchema>;
+
+export const transacaoListResponseSchema = z.object({ transacoes: z.array(transacaoSchema) });
+export type TransacaoListResponse = z.infer<typeof transacaoListResponseSchema>;
+
+export const transacaoResponseSchema = z.object({ transacao: transacaoSchema });
+export type TransacaoResponse = z.infer<typeof transacaoResponseSchema>;
+
+export const transacaoUpdateRequestSchema = z.object({
+  tipo: transacaoTipoSchema,
+  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  categoriaId: z.string().uuid(),
+  descricao: z.string().trim().optional().nullable(),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  metodoPagamentoId: z.string().uuid().optional().nullable(),
+});
+export type TransacaoUpdateRequest = z.infer<typeof transacaoUpdateRequestSchema>;
+
+export const transacaoAnteciparRequestSchema = z.object({
+  novoMesReferencia: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
+  dataMinima: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data no formato YYYY-MM-DD'),
+});
+export type TransacaoAnteciparRequest = z.infer<typeof transacaoAnteciparRequestSchema>;

@@ -14,6 +14,10 @@ import {
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
+import {
+  DrizzleCategoriaRepository,
+  InMemoryCategoriaRepository,
+} from '../categoria/categoria.repository.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 import {
   familiaCreateInviteSchema,
@@ -43,10 +47,10 @@ import {
 
 const defaultFamiliaService = (): FamiliaService => {
   if (env.NODE_ENV === 'test') {
-    return new FamiliaService(new InMemoryFamiliaRepository());
+    return new FamiliaService(new InMemoryFamiliaRepository(), new InMemoryCategoriaRepository());
   }
 
-  return new FamiliaService(new DrizzleFamiliaRepository());
+  return new FamiliaService(new DrizzleFamiliaRepository(), new DrizzleCategoriaRepository());
 };
 
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {

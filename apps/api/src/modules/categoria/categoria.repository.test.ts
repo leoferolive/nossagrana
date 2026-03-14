@@ -4,6 +4,7 @@ const mockDb = vi.hoisted(() => ({
   select: vi.fn(),
   insert: vi.fn(),
   update: vi.fn(),
+  delete: vi.fn(),
 }));
 
 vi.mock('../../db/client.js', () => ({
@@ -50,6 +51,15 @@ describe('InMemoryCategoriaRepository', () => {
       tipo: 'despesa',
     });
     expect(notFound).toBeNull();
+
+    const deactivated = await repository.deactivate({ id: created.id, familiaId: 'f1' });
+    expect(deactivated?.ativo).toBe(false);
+
+    const afterDeactivate = await repository.listByFamiliaId({ familiaId: 'f1' });
+    expect(afterDeactivate).toHaveLength(0);
+
+    const notFoundDeactivate = await repository.deactivate({ id: 'nao-existe', familiaId: 'f1' });
+    expect(notFoundDeactivate).toBeNull();
   });
 });
 
@@ -145,5 +155,25 @@ describe('DrizzleCategoriaRepository', () => {
       tipo: 'despesa',
     });
     expect(missing).toBeNull();
+
+    const deactivatedRow = { ...createdRow, ativo: false };
+    const deactivateReturningMock = vi.fn().mockResolvedValue([deactivatedRow]);
+    const deactivateWhereMock = vi.fn().mockReturnValue({
+      returning: deactivateReturningMock,
+    });
+    const deactivateSetMock = vi.fn().mockReturnValue({
+      where: deactivateWhereMock,
+    });
+    mockDb.update.mockReturnValueOnce({
+      set: deactivateSetMock,
+    });
+
+    const deactivated = await repository.deactivate({ id: 'c1', familiaId: 'f1' });
+    expect(deactivated?.ativo).toBe(false);
+
+    deactivateReturningMock.mockResolvedValueOnce([]);
+    mockDb.update.mockReturnValueOnce({ set: deactivateSetMock });
+    const notFoundDeactivate = await repository.deactivate({ id: 'missing', familiaId: 'f1' });
+    expect(notFoundDeactivate).toBeNull();
   });
 });

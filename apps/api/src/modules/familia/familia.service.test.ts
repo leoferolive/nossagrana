@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { InMemoryCategoriaRepository } from '../categoria/categoria.repository.js';
+import {
+  CATEGORIAS_PADRAO_DESPESA,
+  CATEGORIAS_PADRAO_RECEITA,
+} from '../../db/seeds/categorias-padrao.js';
 import {
   FamiliaMemberNotFoundError,
   FamiliaNotFoundError,
@@ -14,7 +19,7 @@ import {
 import type { FamiliaRepository } from './familia.types.js';
 
 const buildRepository = (overrides?: Partial<FamiliaRepository>): FamiliaRepository => ({
-  createWithAdminMembership: vi.fn(),
+  createWithAdminMembership: vi.fn().mockResolvedValue({ id: 'f1', nome: 'Familia Teste' }),
   isUserAdmin: vi.fn().mockResolvedValue(true),
   hasMembership: vi.fn().mockResolvedValue(true),
   createInvite: vi.fn(),
@@ -29,6 +34,22 @@ const buildRepository = (overrides?: Partial<FamiliaRepository>): FamiliaReposit
 });
 
 describe('FamiliaService', () => {
+  it('seeds default categories when creating a family', async () => {
+    const familiaRepository = buildRepository();
+    const categoriaRepository = new InMemoryCategoriaRepository();
+    const service = new FamiliaService(familiaRepository, categoriaRepository);
+
+    await service.create({ nome: 'Familia Teste', usuarioId: 'u1' });
+
+    const categorias = await categoriaRepository.listByFamiliaId({ familiaId: 'f1' });
+    const expectedTotal = CATEGORIAS_PADRAO_RECEITA.length + CATEGORIAS_PADRAO_DESPESA.length;
+    expect(categorias).toHaveLength(expectedTotal);
+
+    const nomes = categorias.map((c) => c.nome);
+    expect(nomes).toContain('Salario');
+    expect(nomes).toContain('Moradia');
+  });
+
   it('blocks invite creation for non-admin user', async () => {
     const repository = buildRepository({
       isUserAdmin: vi.fn().mockResolvedValue(false),

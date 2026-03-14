@@ -48,4 +48,17 @@ export class CategoriaService {
 
     return updated;
   }
+
+  async deactivate(input: { id: string; familiaId: string }) {
+    const deactivated = await this.categoriaRepository.deactivate({
+      id: input.id,
+      familiaId: input.familiaId,
+    });
+
+    if (!deactivated) {
+      throw new CategoriaNotFoundError();
+    }
+
+    return deactivated;
+  }
 }

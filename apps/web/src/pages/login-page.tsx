@@ -4,9 +4,10 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 
 interface LoginPageProps {
   onOpenSignUp: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export const LoginPage = ({ onOpenSignUp }: LoginPageProps) => {
+export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
   return (
     <AuthShell
       title="Entrar no NossaGrana"
@@ -24,7 +25,14 @@ export const LoginPage = ({ onOpenSignUp }: LoginPageProps) => {
         </>
       }
     >
-      <form className="space-y-4">
+      <form
+        aria-label="login"
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onLoginSuccess?.();
+        }}
+      >
         <FormField id="email" label="E-mail" type="email" autoComplete="email" />
         <FormField id="password" label="Senha" type="password" autoComplete="current-password" />
         <PrimaryButton type="submit">Entrar</PrimaryButton>

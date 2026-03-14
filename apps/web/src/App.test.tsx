@@ -129,4 +129,40 @@ describe('App', () => {
 
     expect(screen.getByText(/familia ativa: Familia Souza/i)).toBeInTheDocument();
   });
+
+  it('navega para tela inicial ao submeter login', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    expect(screen.getByRole('heading', { name: /nossagrana/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /extrato/i })).toBeInTheDocument();
+  });
+
+  it('navega para extrato a partir da tela inicial', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /extrato/i }));
+    expect(screen.getByRole('heading', { name: /^extrato$/i })).toBeInTheDocument();
+  });
+
+  it('navega para categorias a partir da tela inicial', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /categorias/i }));
+    expect(screen.getByRole('heading', { name: /^categorias$/i })).toBeInTheDocument();
+  });
+
+  it('navega para métodos de pagamento a partir da tela inicial', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /cartões/i }));
+    expect(screen.getByRole('heading', { name: /cartões e métodos/i })).toBeInTheDocument();
+  });
+
+  it('volta para tela inicial a partir do extrato', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /extrato/i }));
+    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
+    expect(screen.getByRole('button', { name: /extrato/i })).toBeInTheDocument();
+  });
 });

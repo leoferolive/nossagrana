@@ -11,13 +11,10 @@ type FormMode = 'idle' | 'create' | 'edit';
 
 export const CategoriasPage = ({ onBack }: CategoriasPageProps) => {
   const { categorias, carregando } = useCategoriaStore();
-  const setCategorias = useCategoriaStore((s) => s.setCategorias);
-  const addCategoria = useCategoriaStore((s) => s.addCategoria);
-  const updateCategoria = useCategoriaStore((s) => s.updateCategoria);
   const removeCategoria = useCategoriaStore((s) => s.removeCategoria);
 
   const [formMode, setFormMode] = useState<FormMode>('idle');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
 

@@ -39,7 +39,6 @@ describe('TransacaoModal', () => {
   it('toggle entre receita e despesa', () => {
     render(<TransacaoModal open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
     const receitaBtn = screen.getByRole('button', { name: /receita/i });
-    const despesaBtn = screen.getByRole('button', { name: /despesa/i });
 
     fireEvent.click(receitaBtn);
     expect(receitaBtn.className).toContain('success');

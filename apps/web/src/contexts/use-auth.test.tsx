@@ -13,6 +13,7 @@ describe('useAuth', () => {
           accessToken: 'token',
           refreshToken: 'refresh',
           isAuthenticated: true,
+          familiaIdAtiva: null,
           login: () => undefined,
           logout: () => undefined,
           setAccessToken: () => undefined,

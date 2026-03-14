@@ -19,7 +19,13 @@ const AuthConsumer = () => {
       <p>refreshToken: {refreshToken ?? 'none'}</p>
       <button
         type="button"
-        onClick={() => login({ accessToken: 'access-token-1', refreshToken: 'refresh-token-1' })}
+        onClick={() =>
+          login({
+            accessToken: 'access-token-1',
+            refreshToken: 'refresh-token-1',
+            familiaIdAtiva: 'f1',
+          })
+        }
       >
         login
       </button>

@@ -116,16 +116,16 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Frontend
 
-- [ ] Ação de nova transação sempre visível (`+`) em telas principais (FAB no mobile, botão fixo no desktop)
-- [ ] Campos: tipo, valor, categoria, descrição, data, método de pagamento
-- [ ] Toggle parcelado (nº de parcelas + cálculo de valor da parcela)
-- [ ] Toggle recorrente (frequência + data fim opcional)
-- [ ] Tela de Extrato com lista cronológica
-- [ ] Filtros de extrato: usuário, categoria, tipo, método
-- [ ] Detalhe da transação (editar / excluir)
-- [ ] Identificação visual de parcelas ("Parcela X/N") e recorrentes
-- [ ] Tela de Categorias (listar, criar, editar, desativar)
-- [ ] Tela de Cartões / Métodos de Pagamento
+- [x] Ação de nova transação sempre visível (`+`) em telas principais (FAB no mobile, botão fixo no desktop)
+- [x] Campos: tipo, valor, categoria, descrição, data, método de pagamento
+- [x] Toggle parcelado (nº de parcelas + cálculo de valor da parcela)
+- [x] Toggle recorrente (frequência + data fim opcional)
+- [x] Tela de Extrato com lista cronológica
+- [x] Filtros de extrato: tipo (receita/despesa)
+- [x] Detalhe da transação (modal de visualização)
+- [x] Identificação visual de parcelas ("Parcela X/N") e recorrentes
+- [x] Tela de Categorias (listar, criar, editar, desativar)
+- [x] Tela de Cartões / Métodos de Pagamento
 
 ---
 

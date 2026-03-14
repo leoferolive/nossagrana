@@ -1815,3 +1815,73 @@ describe('Orcamento routes', () => {
     expect(res.json().historico.length).toBeGreaterThan(0);
   });
 });
+
+describe('Relatorio routes', () => {
+  const app = buildApp();
+  let accessToken: string;
+  let familiaId: string;
+
+  async function setupLocalUserFamilyAndCategory(email: string) {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'User REL', email, senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email, senha: 'password123' },
+    });
+    const { accessToken: tok } = loginRes.json() as { accessToken: string };
+    const familyRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${tok}` },
+      payload: { nome: 'Familia REL' },
+    });
+    const { familia } = familyRes.json() as { familia: { id: string } };
+    return { accessToken: tok, familiaId: familia.id };
+  }
+
+  beforeAll(async () => {
+    await app.ready();
+    ({ accessToken, familiaId } = await setupLocalUserFamilyAndCategory('relatorio@example.com'));
+  });
+
+  afterAll(() => app.close());
+
+  it('GET /api/relatorios/distribuicao retorna 200 com lista vazia', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/relatorios/distribuicao?mesReferencia=2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ mesReferencia: '2026-03', distribuicao: [] });
+  });
+
+  it('GET /api/relatorios/por-usuario retorna 200 com lista vazia', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/relatorios/por-usuario?mesReferencia=2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ mesReferencia: '2026-03', porUsuario: [] });
+  });
+
+  it('GET /api/relatorios/tendencias retorna 200 com N meses', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/relatorios/tendencias?meses=3',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().meses).toHaveLength(3);
+  });
+
+  it('GET /api/relatorios/distribuicao sem JWT retorna 401', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/relatorios/distribuicao' });
+    expect(res.statusCode).toBe(401);
+  });
+});

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useWebSocketStore } from '../stores/websocket.store';
+
 import { AuthContext, type AuthContextValue } from './auth-context-store';
 
 interface AuthSession {
@@ -85,6 +87,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
   }, [session]);
+
+  const wsConnect = useWebSocketStore((s) => s.connect);
+  const wsDisconnect = useWebSocketStore((s) => s.disconnect);
+
+  useEffect(() => {
+    if (session && session.familiaIdAtiva) {
+      wsConnect({
+        getAccessToken: () => session.accessToken,
+        familiaId: session.familiaIdAtiva,
+        clearSession: logout,
+      });
+    } else {
+      wsDisconnect();
+    }
+  }, [session, wsConnect, wsDisconnect, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

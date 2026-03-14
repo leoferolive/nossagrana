@@ -22,6 +22,7 @@ export interface CategoriaRepository {
     nome: string;
     tipo: 'receita' | 'despesa';
   }): Promise<Categoria | null>;
+  deactivate(input: { id: string; familiaId: string }): Promise<Categoria | null>;
 }
 
 export const categoriaTypesRuntimeMarker = true;

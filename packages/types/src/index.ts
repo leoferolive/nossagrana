@@ -287,3 +287,23 @@ export type CategoriaUpdateRequest = z.infer<typeof categoriaUpdateRequestSchema
 export const categoriaUpdateResponseSchema = categoriaCreateResponseSchema;
 
 export type CategoriaUpdateResponse = z.infer<typeof categoriaUpdateResponseSchema>;
+
+export const categoriaDeleteParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CategoriaDeleteParams = z.infer<typeof categoriaDeleteParamsSchema>;
+
+export const categoriaDeleteResponseSchema = z.object({
+  categoria: z.object({
+    id: z.string().uuid(),
+    familiaId: z.string().uuid(),
+    nome: z.string().min(1),
+    tipo: categoriaTipoSchema,
+    ativo: z.boolean(),
+    criadoPor: z.string().uuid(),
+    criadoEm: z.string(),
+  }),
+});
+
+export type CategoriaDeleteResponse = z.infer<typeof categoriaDeleteResponseSchema>;

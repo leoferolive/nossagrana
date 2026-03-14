@@ -1,6 +1,8 @@
 import {
   categoriaCreateRequestSchema,
   categoriaCreateResponseSchema,
+  categoriaDeleteParamsSchema,
+  categoriaDeleteResponseSchema,
   categoriaListResponseSchema,
   categoriaUpdateParamsSchema,
   categoriaUpdateRequestSchema,
@@ -38,6 +40,22 @@ export const categoriaUpdateSchema = {
   body: categoriaUpdateRequestSchema,
   response: {
     200: categoriaUpdateResponseSchema,
+    400: z.object({
+      message: z.literal('familia_id invalido ou ausente'),
+    }),
+    401: z.object({
+      message: z.literal('Nao autenticado'),
+    }),
+    404: z.object({
+      message: z.literal('Categoria nao encontrada'),
+    }),
+  },
+};
+
+export const categoriaDeleteSchema = {
+  params: categoriaDeleteParamsSchema,
+  response: {
+    200: categoriaDeleteResponseSchema,
     400: z.object({
       message: z.literal('familia_id invalido ou ausente'),
     }),

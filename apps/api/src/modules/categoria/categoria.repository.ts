@@ -102,6 +102,39 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
       criadoEm: updated.criadoEm,
     };
   }
+
+  async deactivate(input: { id: string; familiaId: string }): Promise<Categoria | null> {
+    const [updated] = await db
+      .update(categorias)
+      .set({ ativo: false })
+      .where(
+        and(
+          eq(categorias.id, input.id),
+          eq(categorias.familiaId, input.familiaId),
+          eq(categorias.ativo, true),
+        ),
+      )
+      .returning({
+        id: categorias.id,
+        familiaId: categorias.familiaId,
+        nome: categorias.nome,
+        tipo: categorias.tipo,
+        ativo: categorias.ativo,
+        criadoPor: categorias.criadoPor,
+        criadoEm: categorias.criadoEm,
+      });
+
+    if (!updated) {
+      return null;
+    }
+
+    return {
+      ...updated,
+      tipo: updated.tipo as 'receita' | 'despesa',
+      ativo: updated.ativo,
+      criadoEm: updated.criadoEm,
+    };
+  }
 }
 
 export class InMemoryCategoriaRepository implements CategoriaRepository {
@@ -157,5 +190,21 @@ export class InMemoryCategoriaRepository implements CategoriaRepository {
     this.categorias[index] = updated;
 
     return updated;
+  }
+
+  async deactivate(input: { id: string; familiaId: string }): Promise<Categoria | null> {
+    const index = this.categorias.findIndex(
+      (categoria) =>
+        categoria.id === input.id && categoria.familiaId === input.familiaId && categoria.ativo,
+    );
+
+    if (index === -1) {
+      return null;
+    }
+
+    const deactivated: Categoria = { ...this.categorias[index], ativo: false };
+    this.categorias[index] = deactivated;
+
+    return deactivated;
   }
 }

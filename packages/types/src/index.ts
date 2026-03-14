@@ -554,6 +554,7 @@ export type OrcamentoListResponse = z.infer<typeof orcamentoListResponseSchema>;
 
 export const orcamentoHistoricoItemSchema = z.object({
   id: z.string().uuid(),
+  categoriaId: z.string().uuid(),
   valorLimite: z.string(),
   vigenciaInicio: z.string(),
   vigenciaFim: z.string().nullable(),
@@ -630,7 +631,7 @@ export type RelatorioTendenciasResponse = z.infer<typeof relatorioTendenciasResp
 // ─── Fatura ───────────────────────────────────────────────────────────────────
 
 export const faturaParamsSchema = z.object({
-  id: z.string().uuid(),
+  metodoPagamentoId: z.string().uuid(),
   mesReferencia: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
 });
 export type FaturaParams = z.infer<typeof faturaParamsSchema>;
@@ -643,8 +644,8 @@ export const faturaItemSchema = z.object({
   categoriaId: z.string().uuid(),
   categoriaNome: z.string(),
   usuarioNome: z.string(),
-  parcelaAtual: z.number().nullable(),
-  numeroParcelas: z.number().nullable(),
+  parcelaAtual: z.number().int().nullable(),
+  numeroParcelas: z.number().int().nullable(),
 });
 export type FaturaItem = z.infer<typeof faturaItemSchema>;
 

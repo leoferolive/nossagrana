@@ -1650,3 +1650,77 @@ describe('transacao routes', () => {
     expect(res.statusCode).toBe(404);
   });
 });
+
+describe('Dashboard routes', () => {
+  const app = buildApp();
+  let accessToken: string;
+  const familiaId = '00000000-0000-0000-0000-000000000001';
+
+  beforeAll(async () => {
+    await app.ready();
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'Dash User', email: 'dash@example.com', senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'dash@example.com', senha: 'password123' },
+    });
+    accessToken = loginRes.json().accessToken;
+  });
+
+  afterAll(() => app.close());
+
+  it('GET /api/dashboard sem JWT retorna 401', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/dashboard' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('GET /api/dashboard sem X-Familia-Id retorna 400', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/dashboard',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('GET /api/dashboard com família sem transações retorna zeros', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/dashboard?mesReferencia=2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.totalReceitas).toBe('0.00');
+    expect(body.totalDespesas).toBe('0.00');
+    expect(body.mesAnterior).toBeNull();
+  });
+
+  it('GET /api/dashboard/graficos retorna estrutura correta', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/dashboard/graficos?mesReferencia=2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty('distribuicaoCategorias');
+    expect(body).toHaveProperty('evolucaoDiaria');
+    expect(Array.isArray(body.distribuicaoCategorias)).toBe(true);
+    expect(body.evolucaoDiaria).toHaveLength(31); // Março tem 31 dias
+  });
+
+  it('GET /api/dashboard/orcamento sem orçamentos retorna []', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/dashboard/orcamento?mesReferencia=2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+});

@@ -512,3 +512,146 @@ export type DashboardOrcamentoItem = z.infer<typeof dashboardOrcamentoItemSchema
 
 export const dashboardOrcamentoResponseSchema = z.array(dashboardOrcamentoItemSchema);
 export type DashboardOrcamentoResponse = z.infer<typeof dashboardOrcamentoResponseSchema>;
+
+// ─── Orçamento ────────────────────────────────────────────────────────────────
+
+export const orcamentoQuerySchema = z.object({
+  mesReferencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+});
+export type OrcamentoQuery = z.infer<typeof orcamentoQuerySchema>;
+
+export const orcamentoCategoriaParamsSchema = z.object({
+  categoriaId: z.string().uuid(),
+});
+export type OrcamentoCategoriaParams = z.infer<typeof orcamentoCategoriaParamsSchema>;
+
+export const orcamentoSetRequestSchema = z.object({
+  valorLimite: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  vigenciaInicio: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
+});
+export type OrcamentoSetRequest = z.infer<typeof orcamentoSetRequestSchema>;
+
+export const orcamentoItemSchema = z.object({
+  id: z.string().uuid(),
+  categoriaId: z.string().uuid(),
+  categoriaNome: z.string(),
+  valorLimite: z.string(),
+  vigenciaInicio: z.string(),
+  vigenciaFim: z.string().nullable(),
+  totalGasto: z.string(),
+  percentual: z.number(),
+  status: z.enum(['ok', 'warning', 'exceeded']),
+});
+export type OrcamentoItem = z.infer<typeof orcamentoItemSchema>;
+
+export const orcamentoListResponseSchema = z.object({
+  orcamentos: z.array(orcamentoItemSchema),
+});
+export type OrcamentoListResponse = z.infer<typeof orcamentoListResponseSchema>;
+
+export const orcamentoHistoricoItemSchema = z.object({
+  id: z.string().uuid(),
+  valorLimite: z.string(),
+  vigenciaInicio: z.string(),
+  vigenciaFim: z.string().nullable(),
+  criadoEm: z.string(),
+});
+export type OrcamentoHistoricoItem = z.infer<typeof orcamentoHistoricoItemSchema>;
+
+export const orcamentoHistoricoResponseSchema = z.object({
+  historico: z.array(orcamentoHistoricoItemSchema),
+});
+export type OrcamentoHistoricoResponse = z.infer<typeof orcamentoHistoricoResponseSchema>;
+
+export const orcamentoSetResponseSchema = z.object({
+  orcamento: orcamentoHistoricoItemSchema,
+});
+export type OrcamentoSetResponse = z.infer<typeof orcamentoSetResponseSchema>;
+
+// ─── Relatórios ───────────────────────────────────────────────────────────────
+
+export const relatorioQuerySchema = z.object({
+  mesReferencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+});
+export type RelatorioQuery = z.infer<typeof relatorioQuerySchema>;
+
+export const relatorioTendenciasQuerySchema = z.object({
+  meses: z.coerce.number().int().min(1).max(24).optional().default(6),
+});
+export type RelatorioTendenciasQuery = z.infer<typeof relatorioTendenciasQuerySchema>;
+
+export const relatorioDistribuicaoItemSchema = z.object({
+  categoriaId: z.string().uuid(),
+  categoriaNome: z.string(),
+  total: z.string(),
+  percentual: z.number(),
+});
+export type RelatorioDistribuicaoItem = z.infer<typeof relatorioDistribuicaoItemSchema>;
+
+export const relatorioDistribuicaoResponseSchema = z.object({
+  mesReferencia: z.string(),
+  distribuicao: z.array(relatorioDistribuicaoItemSchema),
+});
+export type RelatorioDistribuicaoResponse = z.infer<typeof relatorioDistribuicaoResponseSchema>;
+
+export const relatorioPorUsuarioItemSchema = z.object({
+  usuarioId: z.string().uuid(),
+  usuarioNome: z.string(),
+  total: z.string(),
+  percentual: z.number(),
+});
+export type RelatorioPorUsuarioItem = z.infer<typeof relatorioPorUsuarioItemSchema>;
+
+export const relatorioPorUsuarioResponseSchema = z.object({
+  mesReferencia: z.string(),
+  porUsuario: z.array(relatorioPorUsuarioItemSchema),
+});
+export type RelatorioPorUsuarioResponse = z.infer<typeof relatorioPorUsuarioResponseSchema>;
+
+export const relatorioTendenciaMesSchema = z.object({
+  mesReferencia: z.string(),
+  totalReceitas: z.string(),
+  totalDespesas: z.string(),
+  saldo: z.string(),
+});
+export type RelatorioTendenciaMes = z.infer<typeof relatorioTendenciaMesSchema>;
+
+export const relatorioTendenciasResponseSchema = z.object({
+  meses: z.array(relatorioTendenciaMesSchema),
+});
+export type RelatorioTendenciasResponse = z.infer<typeof relatorioTendenciasResponseSchema>;
+
+// ─── Fatura ───────────────────────────────────────────────────────────────────
+
+export const faturaParamsSchema = z.object({
+  id: z.string().uuid(),
+  mesReferencia: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
+});
+export type FaturaParams = z.infer<typeof faturaParamsSchema>;
+
+export const faturaItemSchema = z.object({
+  id: z.string().uuid(),
+  descricao: z.string().nullable(),
+  valor: z.string(),
+  data: z.string(),
+  categoriaId: z.string().uuid(),
+  categoriaNome: z.string(),
+  usuarioNome: z.string(),
+  parcelaAtual: z.number().nullable(),
+  numeroParcelas: z.number().nullable(),
+});
+export type FaturaItem = z.infer<typeof faturaItemSchema>;
+
+export const faturaResponseSchema = z.object({
+  metodoPagamentoId: z.string().uuid(),
+  mesReferencia: z.string(),
+  total: z.string(),
+  transacoes: z.array(faturaItemSchema),
+});
+export type FaturaResponse = z.infer<typeof faturaResponseSchema>;

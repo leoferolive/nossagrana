@@ -1885,3 +1885,70 @@ describe('Relatorio routes', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe('Fatura routes', () => {
+  const app = buildApp();
+  let accessToken: string;
+  let familiaId: string;
+  let metodoPagamentoId: string;
+
+  async function setupLocalUserFamilyAndCategory(email: string) {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'User FAT', email, senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email, senha: 'password123' },
+    });
+    const { accessToken: tok } = loginRes.json() as { accessToken: string };
+    const familyRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${tok}` },
+      payload: { nome: 'Familia FAT' },
+    });
+    const { familia } = familyRes.json() as { familia: { id: string } };
+    return { accessToken: tok, familiaId: familia.id };
+  }
+
+  beforeAll(async () => {
+    await app.ready();
+    ({ accessToken, familiaId } = await setupLocalUserFamilyAndCategory('fatura@example.com'));
+    const mpRes = await app.inject({
+      method: 'POST',
+      url: '/api/metodos-pagamento',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { nome: 'Visa', tipo: 'credito', dataFechamento: 15, dataVencimento: 22 },
+    });
+    metodoPagamentoId = mpRes.json().metodoPagamento.id;
+  });
+
+  afterAll(() => app.close());
+
+  it('GET /api/cartoes/:metodoPagamentoId/fatura/:mesReferencia retorna fatura vazia', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/cartoes/${metodoPagamentoId}/fatura/2026-03`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      metodoPagamentoId,
+      mesReferencia: '2026-03',
+      total: '0.00',
+      transacoes: [],
+    });
+  });
+
+  it('GET /api/cartoes/:id/fatura retorna 404 para metodo inexistente', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/cartoes/00000000-0000-0000-0000-000000000000/fatura/2026-03`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});

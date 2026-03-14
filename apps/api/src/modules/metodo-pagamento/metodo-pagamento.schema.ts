@@ -52,3 +52,33 @@ export const metodoPagamentoDeleteSchema = {
     404: errorSchemas[404],
   },
 };
+
+export const metodoPagamentoFaturaSchema = {
+  params: z.object({
+    metodoPagamentoId: z.string().uuid(),
+    mesReferencia: z.string().regex(/^\d{4}-\d{2}$/),
+  }),
+  response: {
+    200: z.object({
+      metodoPagamentoId: z.string().uuid(),
+      mesReferencia: z.string(),
+      total: z.string(),
+      transacoes: z.array(
+        z.object({
+          id: z.string().uuid(),
+          descricao: z.string().nullable(),
+          valor: z.string(),
+          data: z.string(),
+          categoriaId: z.string().uuid(),
+          categoriaNome: z.string(),
+          usuarioNome: z.string(),
+          parcelaAtual: z.number().int().nullable(),
+          numeroParcelas: z.number().int().nullable(),
+        }),
+      ),
+    }),
+    400: errorSchemas[400],
+    401: errorSchemas[401],
+    404: errorSchemas[404],
+  },
+};

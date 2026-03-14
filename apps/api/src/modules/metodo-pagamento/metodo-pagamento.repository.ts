@@ -3,8 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import { metodosPagamento } from '../../db/schema.js';
-import type { MetodoPagamento, MetodoPagamentoRepository } from './metodo-pagamento.types.js';
+import { categorias, metodosPagamento, transacoes, users } from '../../db/schema.js';
+import type {
+  FaturaTransacaoRow,
+  MetodoPagamento,
+  MetodoPagamentoRepository,
+} from './metodo-pagamento.types.js';
 
 const RETURNING_FIELDS = {
   id: metodosPagamento.id,
@@ -43,6 +47,20 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
       );
 
     return rows.map(mapRow);
+  }
+
+  async findById(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null> {
+    const [row] = await db
+      .select(RETURNING_FIELDS)
+      .from(metodosPagamento)
+      .where(
+        and(
+          eq(metodosPagamento.id, input.id),
+          eq(metodosPagamento.familiaId, input.familiaId),
+          eq(metodosPagamento.ativo, true),
+        ),
+      );
+    return row ? mapRow(row) : null;
   }
 
   async create(input: {
@@ -112,13 +130,78 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
 
     return updated ? mapRow(updated) : null;
   }
+
+  async getFatura(
+    familiaId: string,
+    metodoPagamentoId: string,
+    mesReferencia: string,
+  ): Promise<FaturaTransacaoRow[]> {
+    return db
+      .select({
+        id: transacoes.id,
+        descricao: transacoes.descricao,
+        valor: transacoes.valor,
+        data: transacoes.data,
+        categoriaId: transacoes.categoriaId,
+        categoriaNome: categorias.nome,
+        usuarioNome: users.nome,
+        parcelaAtual: transacoes.parcelaAtual,
+        numeroParcelas: transacoes.numeroParcelas,
+      })
+      .from(transacoes)
+      .innerJoin(categorias, eq(transacoes.categoriaId, categorias.id))
+      .innerJoin(users, eq(transacoes.usuarioRegistrouId, users.id))
+      .where(
+        and(
+          eq(transacoes.familiaId, familiaId),
+          eq(transacoes.metodoPagamentoId, metodoPagamentoId),
+          eq(transacoes.mesReferencia, mesReferencia),
+          eq(transacoes.tipo, 'despesa'),
+        ),
+      )
+      .orderBy(transacoes.data);
+  }
 }
 
 export class InMemoryMetodoPagamentoRepository implements MetodoPagamentoRepository {
   private metodos: MetodoPagamento[] = [];
+  private _fatura: Array<
+    FaturaTransacaoRow & { familiaId: string; metodoPagamentoId: string; mesReferencia: string }
+  > = [];
 
   async listByFamiliaId(input: { familiaId: string }): Promise<MetodoPagamento[]> {
     return this.metodos.filter((m) => m.familiaId === input.familiaId && m.ativo);
+  }
+
+  async findById(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null> {
+    return (
+      this.metodos.find(
+        (m) => m.id === input.id && m.familiaId === input.familiaId && m.ativo,
+      ) ?? null
+    );
+  }
+
+  seedFatura(
+    t: FaturaTransacaoRow & {
+      familiaId: string;
+      metodoPagamentoId: string;
+      mesReferencia: string;
+    },
+  ): void {
+    this._fatura.push(t);
+  }
+
+  async getFatura(
+    familiaId: string,
+    metodoPagamentoId: string,
+    mesReferencia: string,
+  ): Promise<FaturaTransacaoRow[]> {
+    return this._fatura.filter(
+      (t) =>
+        t.familiaId === familiaId &&
+        t.metodoPagamentoId === metodoPagamentoId &&
+        t.mesReferencia === mesReferencia,
+    );
   }
 
   async create(input: {

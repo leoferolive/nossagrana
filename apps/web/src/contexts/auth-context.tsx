@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useWebSocketStore } from '../stores/websocket.store';
+
 import { AuthContext, type AuthContextValue } from './auth-context-store';
 
 interface AuthSession {
   accessToken: string;
   refreshToken: string;
+  familiaIdAtiva: string;
 }
 
 const AUTH_SESSION_STORAGE_KEY = 'nossagrana.auth.session';
@@ -29,6 +32,7 @@ const loadStoredSession = (): AuthSession | null => {
     return {
       accessToken: parsedValue.accessToken,
       refreshToken: parsedValue.refreshToken,
+      familiaIdAtiva: typeof parsedValue.familiaIdAtiva === 'string' ? parsedValue.familiaIdAtiva : '',
     };
   } catch {
     return null;
@@ -67,6 +71,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       isAuthenticated: session !== null,
       accessToken: session?.accessToken ?? null,
       refreshToken: session?.refreshToken ?? null,
+      familiaIdAtiva: session?.familiaIdAtiva ?? null,
       login,
       logout,
       setAccessToken,
@@ -82,6 +87,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
   }, [session]);
+
+  const wsConnect = useWebSocketStore((s) => s.connect);
+  const wsDisconnect = useWebSocketStore((s) => s.disconnect);
+
+  useEffect(() => {
+    if (session && session.familiaIdAtiva) {
+      wsConnect({
+        getAccessToken: () => session.accessToken,
+        familiaId: session.familiaIdAtiva,
+        clearSession: logout,
+      });
+    } else {
+      wsDisconnect();
+    }
+  }, [session, wsConnect, wsDisconnect, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

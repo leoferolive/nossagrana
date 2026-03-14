@@ -2,9 +2,9 @@ import { useState } from 'react';
 
 import { TransacaoModal } from '@/components/transacao-modal';
 import { CategoriasPage } from '@/pages/categorias-page';
+import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
-import { HomePage } from '@/pages/home-page';
 import { LoginPage } from '@/pages/login-page';
 import { MetodosPagamentoPage } from '@/pages/metodos-pagamento-page';
 import { OnboardingPage } from '@/pages/onboarding-page';
@@ -15,7 +15,7 @@ type Screen =
   | 'sign-up'
   | 'onboarding'
   | 'family-settings'
-  | 'home'
+  | 'dashboard'
   | 'extrato'
   | 'categorias'
   | 'metodos-pagamento';
@@ -49,14 +49,11 @@ export const App = () => {
     return <FamilySettingsPage onBackToOnboarding={() => setScreen('onboarding')} />;
   }
 
-  if (screen === 'home') {
+  if (screen === 'dashboard') {
     return (
       <>
-        <HomePage
+        <DashboardPage
           familiaId={DEMO_FAMILIA_ID}
-          onGoExtrato={() => setScreen('extrato')}
-          onGoCategorias={() => setScreen('categorias')}
-          onGoMetodos={() => setScreen('metodos-pagamento')}
           onNovaTransacao={() => setNovaTransacaoOpen(true)}
         />
         <TransacaoModal
@@ -94,6 +91,6 @@ export const App = () => {
   }
 
   return (
-    <LoginPage onOpenSignUp={() => setScreen('sign-up')} onLoginSuccess={() => setScreen('home')} />
+    <LoginPage onOpenSignUp={() => setScreen('sign-up')} onLoginSuccess={() => setScreen('dashboard')} />
   );
 };

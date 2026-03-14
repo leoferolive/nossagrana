@@ -1,0 +1,110 @@
+<h2>Layout do Dashboard</h2>
+<p class="subtitle">Como organizar os resumos, gráficos e orçamento na tela principal?</p>
+
+<div class="cards">
+
+  <!-- Opção A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A — Cards no topo, gráfico grande, orçamento embaixo</h3>
+      <p>Hierarquia clara: números primeiro, depois visual, depois detalhes. Bom para quem quer ver saldo de relance.</p>
+    </div>
+    <div class="card-image" style="padding:16px;background:#0f1117;border-radius:8px;font-family:monospace;font-size:11px;color:#aaa">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:#1e2433;border-radius:6px;padding:10px;text-align:center">
+          <div style="color:#4ade80;font-size:10px">RECEITAS</div>
+          <div style="color:#fff;font-size:14px;font-weight:bold">R$ 5.200</div>
+        </div>
+        <div style="background:#1e2433;border-radius:6px;padding:10px;text-align:center">
+          <div style="color:#f87171;font-size:10px">DESPESAS</div>
+          <div style="color:#fff;font-size:14px;font-weight:bold">R$ 3.800</div>
+        </div>
+        <div style="background:#1e2433;border-radius:6px;padding:10px;text-align:center">
+          <div style="color:#60a5fa;font-size:10px">SALDO</div>
+          <div style="color:#fff;font-size:14px;font-weight:bold">R$ 1.400</div>
+        </div>
+      </div>
+      <div style="background:#1e2433;border-radius:6px;padding:10px;margin-bottom:8px;text-align:center;height:80px;display:flex;align-items:center;justify-content:center">
+        <span style="color:#555">🍩 Gráfico pizza — gastos por categoria</span>
+      </div>
+      <div style="background:#1e2433;border-radius:6px;padding:10px;height:50px;display:flex;align-items:center;justify-content:center">
+        <span style="color:#555">📊 Linha — evolução do mês</span>
+      </div>
+      <div style="background:#1e2433;border-radius:6px;padding:10px;margin-top:8px">
+        <div style="color:#aaa;font-size:10px;margin-bottom:4px">ORÇAMENTO</div>
+        <div style="background:#2a3147;border-radius:3px;height:6px;margin-bottom:4px"><div style="background:#4ade80;width:60%;height:100%;border-radius:3px"></div></div>
+        <div style="background:#2a3147;border-radius:3px;height:6px"><div style="background:#facc15;width:82%;height:100%;border-radius:3px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opção B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B — Cards + gráfico pizza lado a lado, orçamento abaixo</h3>
+      <p>Aproveita melhor o espaço em telas maiores. Cards de resumo ao lado do donut chart. Bom equilíbrio no mobile também.</p>
+    </div>
+    <div class="card-image" style="padding:16px;background:#0f1117;border-radius:8px;font-family:monospace;font-size:11px;color:#aaa">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="background:#1e2433;border-radius:6px;padding:8px">
+            <div style="color:#4ade80;font-size:9px">RECEITAS</div>
+            <div style="color:#fff;font-size:13px;font-weight:bold">R$ 5.200</div>
+          </div>
+          <div style="background:#1e2433;border-radius:6px;padding:8px">
+            <div style="color:#f87171;font-size:9px">DESPESAS</div>
+            <div style="color:#fff;font-size:13px;font-weight:bold">R$ 3.800</div>
+          </div>
+          <div style="background:#1e2433;border-radius:6px;padding:8px">
+            <div style="color:#60a5fa;font-size:9px">SALDO</div>
+            <div style="color:#fff;font-size:13px;font-weight:bold">R$ 1.400</div>
+          </div>
+        </div>
+        <div style="background:#1e2433;border-radius:6px;padding:10px;display:flex;align-items:center;justify-content:center">
+          <span style="color:#555">🍩 Pizza</span>
+        </div>
+      </div>
+      <div style="background:#1e2433;border-radius:6px;padding:10px;margin-bottom:8px;height:50px;display:flex;align-items:center;justify-content:center">
+        <span style="color:#555">📊 Linha — evolução do mês</span>
+      </div>
+      <div style="background:#1e2433;border-radius:6px;padding:10px">
+        <div style="color:#aaa;font-size:10px;margin-bottom:4px">ORÇAMENTO</div>
+        <div style="background:#2a3147;border-radius:3px;height:6px;margin-bottom:4px"><div style="background:#4ade80;width:60%;height:100%;border-radius:3px"></div></div>
+        <div style="background:#2a3147;border-radius:3px;height:6px;margin-bottom:4px"><div style="background:#facc15;width:82%;height:100%;border-radius:3px"></div></div>
+        <div style="background:#2a3147;border-radius:3px;height:6px"><div style="background:#f87171;width:105%;height:100%;border-radius:3px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opção C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>C — Card de saldo em destaque + dois gráficos pequenos + orçamento</h3>
+      <p>Saldo em foco. Receitas/Despesas aparecem dentro do card de saldo. Gráficos menores ficam em linha. Mais compacto.</p>
+    </div>
+    <div class="card-image" style="padding:16px;background:#0f1117;border-radius:8px;font-family:monospace;font-size:11px;color:#aaa">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#1e2433);border-radius:8px;padding:12px;margin-bottom:8px;text-align:center">
+        <div style="color:#aaa;font-size:9px">SALDO DO MÊS</div>
+        <div style="color:#fff;font-size:20px;font-weight:bold">R$ 1.400</div>
+        <div style="display:flex;justify-content:space-around;margin-top:8px">
+          <div><div style="color:#4ade80;font-size:9px">↑ R$ 5.200</div><div style="color:#666;font-size:8px">receitas</div></div>
+          <div><div style="color:#f87171;font-size:9px">↓ R$ 3.800</div><div style="color:#666;font-size:8px">despesas</div></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:#1e2433;border-radius:6px;padding:8px;text-align:center;height:60px;display:flex;align-items:center;justify-content:center">
+          <span style="color:#555">🍩</span>
+        </div>
+        <div style="background:#1e2433;border-radius:6px;padding:8px;text-align:center;height:60px;display:flex;align-items:center;justify-content:center">
+          <span style="color:#555">📊</span>
+        </div>
+      </div>
+      <div style="background:#1e2433;border-radius:6px;padding:10px">
+        <div style="color:#aaa;font-size:10px;margin-bottom:4px">ORÇAMENTO</div>
+        <div style="background:#2a3147;border-radius:3px;height:6px;margin-bottom:4px"><div style="background:#4ade80;width:55%;height:100%;border-radius:3px"></div></div>
+        <div style="background:#2a3147;border-radius:3px;height:6px"><div style="background:#f87171;width:101%;height:100%;border-radius:3px"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>

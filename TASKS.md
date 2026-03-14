@@ -133,23 +133,23 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Backend
 
-- [ ] Rota `GET /dashboard` — resumo do mês (receitas, despesas, saldo)
-- [ ] Rota `GET /dashboard/graficos` — dados para gráficos
-- [ ] Rota `GET /dashboard/orcamento` — orçamento vs gasto por categoria
-- [ ] Plugin WebSocket no Fastify
-- [ ] Emitir evento ao salvar/editar/excluir transação (UC32)
-- [ ] Gerenciar rooms por `familia_id` no WebSocket
+- [x] Rota `GET /dashboard` — resumo do mês (receitas, despesas, saldo)
+- [x] Rota `GET /dashboard/graficos` — dados para gráficos
+- [x] Rota `GET /dashboard/orcamento` — orçamento vs gasto por categoria
+- [x] Plugin WebSocket no Fastify
+- [x] Emitir evento ao salvar/editar/excluir transação (UC32)
+- [x] Gerenciar rooms por `familia_id` no WebSocket
 
 ### Frontend
 
-- [ ] Tela de Dashboard (tela principal)
-- [ ] Cards de resumo: Receitas / Despesas / Saldo
-- [ ] Gráfico de despesas por categoria (pizza/donut)
-- [ ] Gráfico de evolução de gastos no mês (linha)
-- [ ] Comparação com mês anterior
-- [ ] Barras de progresso de orçamento com alertas visuais
-- [ ] Conexão WebSocket no cliente
-- [ ] Atualização automática do dashboard ao receber eventos
+- [x] Tela de Dashboard (tela principal)
+- [x] Cards de resumo: Receitas / Despesas / Saldo
+- [x] Gráfico de despesas por categoria (pizza/donut)
+- [x] Gráfico de evolução de gastos no mês (linha)
+- [x] Comparação com mês anterior
+- [x] Barras de progresso de orçamento com alertas visuais
+- [x] Conexão WebSocket no cliente
+- [x] Atualização automática do dashboard ao receber eventos
 
 ---
 

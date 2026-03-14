@@ -21,8 +21,24 @@ afterEach(() => {
 });
 
 const CATEGORIAS = [
-  { id: 'c1', nome: 'Mercado', tipo: 'despesa' as const, ativo: true, familiaId: 'f1', criadoPor: 'u1', criadoEm: '2026-01-01' },
-  { id: 'c2', nome: 'Salario', tipo: 'receita' as const, ativo: true, familiaId: 'f1', criadoPor: 'u1', criadoEm: '2026-01-01' },
+  {
+    id: 'c1',
+    nome: 'Mercado',
+    tipo: 'despesa' as const,
+    ativo: true,
+    familiaId: 'f1',
+    criadoPor: 'u1',
+    criadoEm: '2026-01-01',
+  },
+  {
+    id: 'c2',
+    nome: 'Salario',
+    tipo: 'receita' as const,
+    ativo: true,
+    familiaId: 'f1',
+    criadoPor: 'u1',
+    criadoEm: '2026-01-01',
+  },
 ];
 
 describe('CategoriasPage', () => {

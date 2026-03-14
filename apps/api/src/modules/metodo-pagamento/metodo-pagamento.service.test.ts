@@ -101,9 +101,9 @@ describe('MetodoPagamentoService', () => {
   it('lança MetodoPagamentoNotFoundError ao desativar inexistente', async () => {
     const { service } = buildService();
 
-    await expect(
-      service.deactivate({ id: 'nao-existe', familiaId: 'f1' }),
-    ).rejects.toThrow(MetodoPagamentoNotFoundError);
+    await expect(service.deactivate({ id: 'nao-existe', familiaId: 'f1' })).rejects.toThrow(
+      MetodoPagamentoNotFoundError,
+    );
   });
 
   it('não permite acesso entre famílias diferentes', async () => {

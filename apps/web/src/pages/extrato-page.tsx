@@ -35,9 +35,7 @@ const TransacaoDetalheModal = ({
   >
     <div className="w-full max-w-lg rounded-t-2xl bg-panel p-5 shadow-soft sm:rounded-2xl">
       <h2 className="mb-4 text-base font-bold text-text">{transacao.descricao ?? 'Transação'}</h2>
-      <p className="text-sm text-text-muted">
-        {formatValor(transacao.valor, transacao.tipo)}
-      </p>
+      <p className="text-sm text-text-muted">{formatValor(transacao.valor, transacao.tipo)}</p>
       <p className="mt-1 text-xs text-text-muted">{transacao.data}</p>
       <div className="mt-5">
         <button
@@ -119,9 +117,7 @@ export const ExtratoPage = ({ onBack, onNovaTransacao }: ExtratoPageProps) => {
 
       {/* Lista */}
       <main className="flex-1 p-4 pb-24">
-        {carregando && (
-          <p className="text-center text-sm text-text-muted">Carregando...</p>
-        )}
+        {carregando && <p className="text-center text-sm text-text-muted">Carregando...</p>}
 
         {!carregando && transacoesFiltradas.length === 0 && (
           <p className="text-center text-sm text-text-muted">Nenhuma transação encontrada.</p>

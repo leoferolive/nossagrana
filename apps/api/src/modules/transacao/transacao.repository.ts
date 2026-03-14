@@ -201,14 +201,14 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
       conditions.push(gte(transacoes.data, input.dataMinima));
     }
 
-    const deleted = await db.delete(transacoes).where(and(...conditions)).returning({ id: transacoes.id });
+    const deleted = await db
+      .delete(transacoes)
+      .where(and(...conditions))
+      .returning({ id: transacoes.id });
     return deleted.length;
   }
 
-  async listByPaiId(input: {
-    transacaoPaiId: string;
-    familiaId: string;
-  }): Promise<Transacao[]> {
+  async listByPaiId(input: { transacaoPaiId: string; familiaId: string }): Promise<Transacao[]> {
     const rows = await db
       .select(RETURNING_FIELDS)
       .from(transacoes)
@@ -227,10 +227,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
     familiaId: string;
     dataMinima?: string;
     fields: Partial<
-      Pick<
-        Transacao,
-        'mesReferencia' | 'valor' | 'categoriaId' | 'descricao' | 'metodoPagamentoId'
-      >
+      Pick<Transacao, 'mesReferencia' | 'valor' | 'categoriaId' | 'descricao' | 'metodoPagamentoId'>
     >;
   }): Promise<number> {
     const conditions = [
@@ -344,18 +341,14 @@ export class InMemoryTransacaoRepository implements TransacaoRepository {
   }): Promise<number> {
     const before = this.transacoes.length;
     this.transacoes = this.transacoes.filter((t) => {
-      if (t.transacaoPaiId !== input.transacaoPaiId || t.familiaId !== input.familiaId)
-        return true;
+      if (t.transacaoPaiId !== input.transacaoPaiId || t.familiaId !== input.familiaId) return true;
       if (input.dataMinima && t.data < input.dataMinima) return true;
       return false;
     });
     return before - this.transacoes.length;
   }
 
-  async listByPaiId(input: {
-    transacaoPaiId: string;
-    familiaId: string;
-  }): Promise<Transacao[]> {
+  async listByPaiId(input: { transacaoPaiId: string; familiaId: string }): Promise<Transacao[]> {
     return this.transacoes.filter(
       (t) => t.transacaoPaiId === input.transacaoPaiId && t.familiaId === input.familiaId,
     );
@@ -366,16 +359,12 @@ export class InMemoryTransacaoRepository implements TransacaoRepository {
     familiaId: string;
     dataMinima?: string;
     fields: Partial<
-      Pick<
-        Transacao,
-        'mesReferencia' | 'valor' | 'categoriaId' | 'descricao' | 'metodoPagamentoId'
-      >
+      Pick<Transacao, 'mesReferencia' | 'valor' | 'categoriaId' | 'descricao' | 'metodoPagamentoId'>
     >;
   }): Promise<number> {
     let count = 0;
     this.transacoes = this.transacoes.map((t) => {
-      if (t.transacaoPaiId !== input.transacaoPaiId || t.familiaId !== input.familiaId)
-        return t;
+      if (t.transacaoPaiId !== input.transacaoPaiId || t.familiaId !== input.familiaId) return t;
       if (input.dataMinima && t.data < input.dataMinima) return t;
       count++;
       return { ...t, ...input.fields, atualizadoEm: new Date() };

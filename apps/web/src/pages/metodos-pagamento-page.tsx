@@ -162,7 +162,9 @@ export const MetodosPagamentoPage = ({ onBack }: MetodosPagamentoPageProps) => {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-text">{m.nome}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${TIPO_COLOR[m.tipo]}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${TIPO_COLOR[m.tipo]}`}
+                  >
                     {TIPO_LABEL[m.tipo]}
                   </span>
                 </div>

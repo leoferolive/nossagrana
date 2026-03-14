@@ -17,26 +17,58 @@ describe('useCategoriaStore', () => {
 
   it('setCategorias atualiza lista', () => {
     useCategoriaStore.getState().setCategorias([
-      { id: 'c1', nome: 'Mercado', tipo: 'despesa', ativo: true, familiaId: 'f1', criadoPor: 'u1', criadoEm: '2026-01-01' },
+      {
+        id: 'c1',
+        nome: 'Mercado',
+        tipo: 'despesa',
+        ativo: true,
+        familiaId: 'f1',
+        criadoPor: 'u1',
+        criadoEm: '2026-01-01',
+      },
     ]);
     expect(useCategoriaStore.getState().categorias).toHaveLength(1);
   });
 
   it('addCategoria insere na lista', () => {
-    const cat = { id: 'c2', nome: 'Lazer', tipo: 'despesa' as const, ativo: true, familiaId: 'f1', criadoPor: 'u1', criadoEm: '2026-01-01' };
+    const cat = {
+      id: 'c2',
+      nome: 'Lazer',
+      tipo: 'despesa' as const,
+      ativo: true,
+      familiaId: 'f1',
+      criadoPor: 'u1',
+      criadoEm: '2026-01-01',
+    };
     useCategoriaStore.getState().addCategoria(cat);
     expect(useCategoriaStore.getState().categorias).toHaveLength(1);
   });
 
   it('updateCategoria substitui pelo id', () => {
-    const cat = { id: 'c1', nome: 'Mercado', tipo: 'despesa' as const, ativo: true, familiaId: 'f1', criadoPor: 'u1', criadoEm: '2026-01-01' };
+    const cat = {
+      id: 'c1',
+      nome: 'Mercado',
+      tipo: 'despesa' as const,
+      ativo: true,
+      familiaId: 'f1',
+      criadoPor: 'u1',
+      criadoEm: '2026-01-01',
+    };
     useCategoriaStore.getState().setCategorias([cat]);
     useCategoriaStore.getState().updateCategoria({ ...cat, nome: 'Supermercado' });
     expect(useCategoriaStore.getState().categorias[0]?.nome).toBe('Supermercado');
   });
 
   it('removeCategoria filtra pelo id', () => {
-    const cat = { id: 'c1', nome: 'Mercado', tipo: 'despesa' as const, ativo: true, familiaId: 'f1', criadoPor: 'u1', criadoEm: '2026-01-01' };
+    const cat = {
+      id: 'c1',
+      nome: 'Mercado',
+      tipo: 'despesa' as const,
+      ativo: true,
+      familiaId: 'f1',
+      criadoPor: 'u1',
+      criadoEm: '2026-01-01',
+    };
     useCategoriaStore.getState().setCategorias([cat]);
     useCategoriaStore.getState().removeCategoria('c1');
     expect(useCategoriaStore.getState().categorias).toHaveLength(0);
@@ -53,7 +85,17 @@ describe('useMetodoPagamentoStore', () => {
   });
 
   it('setMetodos / addMetodo / removeMetodo', () => {
-    const m = { id: 'm1', nome: 'Nubank', tipo: 'credito' as const, dataFechamento: 15, dataVencimento: 22, usuarioDonoId: 'u1', ativo: true, familiaId: 'f1', criadoEm: '2026-01-01' };
+    const m = {
+      id: 'm1',
+      nome: 'Nubank',
+      tipo: 'credito' as const,
+      dataFechamento: 15,
+      dataVencimento: 22,
+      usuarioDonoId: 'u1',
+      ativo: true,
+      familiaId: 'f1',
+      criadoEm: '2026-01-01',
+    };
     useMetodoPagamentoStore.getState().setMetodos([m]);
     expect(useMetodoPagamentoStore.getState().metodos).toHaveLength(1);
 
@@ -73,13 +115,27 @@ describe('useTransacaoStore', () => {
 
   it('setTransacoes / addTransacao / removeTransacao', () => {
     const t = {
-      id: 't1', tipo: 'despesa' as const, valor: '100.00', categoriaId: 'c1',
-      descricao: null, data: '2026-03-10', mesReferencia: '2026-03',
-      metodoPagamentoId: null, usuarioRegistrouId: 'u1',
-      recorrente: false, frequencia: null, dataFimRecorrencia: null,
-      parcelado: false, numeroParcelas: null, parcelaAtual: null,
-      valorTotal: null, valorParcela: null, transacaoPaiId: null,
-      familiaId: 'f1', criadoEm: '2026-03-10T00:00:00Z', atualizadoEm: '2026-03-10T00:00:00Z',
+      id: 't1',
+      tipo: 'despesa' as const,
+      valor: '100.00',
+      categoriaId: 'c1',
+      descricao: null,
+      data: '2026-03-10',
+      mesReferencia: '2026-03',
+      metodoPagamentoId: null,
+      usuarioRegistrouId: 'u1',
+      recorrente: false,
+      frequencia: null,
+      dataFimRecorrencia: null,
+      parcelado: false,
+      numeroParcelas: null,
+      parcelaAtual: null,
+      valorTotal: null,
+      valorParcela: null,
+      transacaoPaiId: null,
+      familiaId: 'f1',
+      criadoEm: '2026-03-10T00:00:00Z',
+      atualizadoEm: '2026-03-10T00:00:00Z',
     };
     useTransacaoStore.getState().setTransacoes([t]);
     expect(useTransacaoStore.getState().transacoes).toHaveLength(1);

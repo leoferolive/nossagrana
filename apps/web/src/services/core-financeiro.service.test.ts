@@ -28,7 +28,10 @@ describe('CategoriaService', () => {
     });
 
     const result = await service.listar('familia-x-id');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/categorias', expect.objectContaining({ headers: expect.anything() }));
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/categorias',
+      expect.objectContaining({ headers: expect.anything() }),
+    );
     expect(result.categorias).toHaveLength(1);
   });
 
@@ -38,7 +41,10 @@ describe('CategoriaService', () => {
     });
 
     const result = await service.criar({ nome: 'Lazer', tipo: 'despesa' }, 'familia-x-id');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/categorias', expect.objectContaining({ method: 'POST' }));
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/categorias',
+      expect.objectContaining({ method: 'POST' }),
+    );
     expect(result.categoria.nome).toBe('Lazer');
   });
 
@@ -48,7 +54,10 @@ describe('CategoriaService', () => {
     });
 
     await service.desativar('c1', 'familia-x-id');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/categorias/c1', expect.objectContaining({ method: 'DELETE' }));
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/categorias/c1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
   });
 });
 
@@ -69,14 +78,25 @@ describe('MetodoPagamentoService', () => {
 
   it('cria método de pagamento', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({ metodoPagamento: { id: 'm1' } });
-    await service.criar({ nome: 'Nubank', tipo: 'credito', dataFechamento: 15, dataVencimento: 22 }, 'fid');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/metodos-pagamento', expect.objectContaining({ method: 'POST' }));
+    await service.criar(
+      { nome: 'Nubank', tipo: 'credito', dataFechamento: 15, dataVencimento: 22 },
+      'fid',
+    );
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/metodos-pagamento',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
   it('desativa método', async () => {
-    vi.mocked(apiClient.request).mockResolvedValueOnce({ metodoPagamento: { id: 'm1', ativo: false } });
+    vi.mocked(apiClient.request).mockResolvedValueOnce({
+      metodoPagamento: { id: 'm1', ativo: false },
+    });
     await service.desativar('m1', 'fid');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/metodos-pagamento/m1', expect.objectContaining({ method: 'DELETE' }));
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/metodos-pagamento/m1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
   });
 });
 
@@ -100,20 +120,29 @@ describe('TransacaoService', () => {
 
   it('registra transação', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({ transacao: { id: 't1' } });
-    await service.registrar({
-      tipo: 'despesa',
-      valor: '100.00',
-      categoriaId: 'c1',
-      data: '2026-03-10',
-      parcelado: false,
-      recorrente: false,
-    }, 'fid');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/transacoes', expect.objectContaining({ method: 'POST' }));
+    await service.registrar(
+      {
+        tipo: 'despesa',
+        valor: '100.00',
+        categoriaId: 'c1',
+        data: '2026-03-10',
+        parcelado: false,
+        recorrente: false,
+      },
+      'fid',
+    );
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/transacoes',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
   it('exclui transação', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce(undefined);
     await service.excluir('t1', 'fid');
-    expect(apiClient.request).toHaveBeenCalledWith('/api/transacoes/t1', expect.objectContaining({ method: 'DELETE' }));
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/transacoes/t1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
   });
 });

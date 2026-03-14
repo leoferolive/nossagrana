@@ -24,16 +24,14 @@ export const useTransacaoStore = create<TransacaoState>((set) => ({
   erro: null,
   filtros: {},
   setTransacoes: (transacoes) => set({ transacoes }),
-  addTransacao: (transacao) =>
-    set((state) => ({ transacoes: [transacao, ...state.transacoes] })),
+  addTransacao: (transacao) => set((state) => ({ transacoes: [transacao, ...state.transacoes] })),
   updateTransacao: (transacao) =>
     set((state) => ({
       transacoes: state.transacoes.map((t) => (t.id === transacao.id ? transacao : t)),
     })),
   removeTransacao: (id) =>
     set((state) => ({ transacoes: state.transacoes.filter((t) => t.id !== id) })),
-  setFiltros: (filtros) =>
-    set((state) => ({ filtros: { ...state.filtros, ...filtros } })),
+  setFiltros: (filtros) => set((state) => ({ filtros: { ...state.filtros, ...filtros } })),
   setCarregando: (carregando) => set({ carregando }),
   setErro: (erro) => set({ erro }),
 }));

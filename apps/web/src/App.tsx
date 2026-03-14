@@ -86,27 +86,14 @@ export const App = () => {
   }
 
   if (screen === 'categorias') {
-    return (
-      <CategoriasPage
-        familiaId={DEMO_FAMILIA_ID}
-        onBack={() => setScreen('home')}
-      />
-    );
+    return <CategoriasPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('home')} />;
   }
 
   if (screen === 'metodos-pagamento') {
-    return (
-      <MetodosPagamentoPage
-        familiaId={DEMO_FAMILIA_ID}
-        onBack={() => setScreen('home')}
-      />
-    );
+    return <MetodosPagamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('home')} />;
   }
 
   return (
-    <LoginPage
-      onOpenSignUp={() => setScreen('sign-up')}
-      onLoginSuccess={() => setScreen('home')}
-    />
+    <LoginPage onOpenSignUp={() => setScreen('sign-up')} onLoginSuccess={() => setScreen('home')} />
   );
 };

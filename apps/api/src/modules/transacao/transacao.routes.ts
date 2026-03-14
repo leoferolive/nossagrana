@@ -22,10 +22,7 @@ import {
   transacaoListSchema,
   transacaoUpdateSchema,
 } from './transacao.schema.js';
-import {
-  DrizzleTransacaoRepository,
-  InMemoryTransacaoRepository,
-} from './transacao.repository.js';
+import { DrizzleTransacaoRepository, InMemoryTransacaoRepository } from './transacao.repository.js';
 import type { Transacao } from './transacao.types.js';
 import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
 
@@ -47,7 +44,8 @@ const defaultServices = () => {
   if (env.NODE_ENV === 'test') {
     return {
       transacaoService: new TransacaoService(new InMemoryTransacaoRepository()),
-      metodoPagamentoRepository: new InMemoryMetodoPagamentoRepository() as MetodoPagamentoRepository,
+      metodoPagamentoRepository:
+        new InMemoryMetodoPagamentoRepository() as MetodoPagamentoRepository,
     };
   }
   return {

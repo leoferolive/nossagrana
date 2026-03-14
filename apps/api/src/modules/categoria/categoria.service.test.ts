@@ -26,9 +26,9 @@ describe('CategoriaService', () => {
     const repository = new InMemoryCategoriaRepository();
     const service = new CategoriaService(repository);
 
-    await expect(
-      service.deactivate({ id: 'nao-existe', familiaId: 'f1' }),
-    ).rejects.toThrow(CategoriaNotFoundError);
+    await expect(service.deactivate({ id: 'nao-existe', familiaId: 'f1' })).rejects.toThrow(
+      CategoriaNotFoundError,
+    );
   });
 
   it('does not deactivate category from another family', async () => {

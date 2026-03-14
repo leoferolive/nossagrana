@@ -21,8 +21,7 @@ export const useCategoriaStore = create<CategoriaState>((set) => ({
   carregando: false,
   erro: null,
   setCategorias: (categorias) => set({ categorias }),
-  addCategoria: (categoria) =>
-    set((state) => ({ categorias: [...state.categorias, categoria] })),
+  addCategoria: (categoria) => set((state) => ({ categorias: [...state.categorias, categoria] })),
   updateCategoria: (categoria) =>
     set((state) => ({
       categorias: state.categorias.map((c) => (c.id === categoria.id ? categoria : c)),

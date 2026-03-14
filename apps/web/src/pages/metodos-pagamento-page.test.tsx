@@ -21,8 +21,28 @@ afterEach(() => {
 });
 
 const METODOS = [
-  { id: 'm1', nome: 'Nubank', tipo: 'credito' as const, dataFechamento: 15, dataVencimento: 22, usuarioDonoId: 'u1', ativo: true, familiaId: 'f1', criadoEm: '2026-01-01' },
-  { id: 'm2', nome: 'Pix pessoal', tipo: 'pix' as const, dataFechamento: null, dataVencimento: null, usuarioDonoId: 'u1', ativo: true, familiaId: 'f1', criadoEm: '2026-01-01' },
+  {
+    id: 'm1',
+    nome: 'Nubank',
+    tipo: 'credito' as const,
+    dataFechamento: 15,
+    dataVencimento: 22,
+    usuarioDonoId: 'u1',
+    ativo: true,
+    familiaId: 'f1',
+    criadoEm: '2026-01-01',
+  },
+  {
+    id: 'm2',
+    nome: 'Pix pessoal',
+    tipo: 'pix' as const,
+    dataFechamento: null,
+    dataVencimento: null,
+    usuarioDonoId: 'u1',
+    ativo: true,
+    familiaId: 'f1',
+    criadoEm: '2026-01-01',
+  },
 ];
 
 describe('MetodosPagamentoPage', () => {

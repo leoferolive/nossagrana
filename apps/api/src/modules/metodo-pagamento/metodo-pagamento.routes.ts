@@ -33,7 +33,10 @@ export const metodoPagamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/metodos-pagamento',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: metodoPagamentoListSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: metodoPagamentoListSchema,
+    },
     async (request, reply) => {
       const metodos = await service.listByFamiliaId({
         familiaId: request.familiaIdAtiva as string,
@@ -46,7 +49,10 @@ export const metodoPagamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post(
     '/metodos-pagamento',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: metodoPagamentoCreateSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: metodoPagamentoCreateSchema,
+    },
     async (request, reply) => {
       const payload = metodoPagamentoCreateRequestSchema.parse(request.body);
       const metodo = await service.create({
@@ -65,7 +71,10 @@ export const metodoPagamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.patch(
     '/metodos-pagamento/:id',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: metodoPagamentoUpdateSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: metodoPagamentoUpdateSchema,
+    },
     async (request, reply) => {
       try {
         const { id } = metodoPagamentoParamsSchema.parse(request.params);
@@ -92,7 +101,10 @@ export const metodoPagamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete(
     '/metodos-pagamento/:id',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: metodoPagamentoDeleteSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: metodoPagamentoDeleteSchema,
+    },
     async (request, reply) => {
       try {
         const { id } = metodoPagamentoParamsSchema.parse(request.params);

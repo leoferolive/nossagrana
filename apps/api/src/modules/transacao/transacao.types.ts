@@ -81,6 +81,8 @@ export interface TransacaoRepository {
     transacaoPaiId: string;
     familiaId: string;
     dataMinima?: string;
-    fields: Partial<Pick<Transacao, 'mesReferencia' | 'valor' | 'categoriaId' | 'descricao' | 'metodoPagamentoId'>>;
+    fields: Partial<
+      Pick<Transacao, 'mesReferencia' | 'valor' | 'categoriaId' | 'descricao' | 'metodoPagamentoId'>
+    >;
   }): Promise<number>;
 }

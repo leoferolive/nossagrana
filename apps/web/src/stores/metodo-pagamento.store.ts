@@ -21,14 +21,12 @@ export const useMetodoPagamentoStore = create<MetodoPagamentoState>((set) => ({
   carregando: false,
   erro: null,
   setMetodos: (metodos) => set({ metodos }),
-  addMetodo: (metodo) =>
-    set((state) => ({ metodos: [...state.metodos, metodo] })),
+  addMetodo: (metodo) => set((state) => ({ metodos: [...state.metodos, metodo] })),
   updateMetodo: (metodo) =>
     set((state) => ({
       metodos: state.metodos.map((m) => (m.id === metodo.id ? metodo : m)),
     })),
-  removeMetodo: (id) =>
-    set((state) => ({ metodos: state.metodos.filter((m) => m.id !== id) })),
+  removeMetodo: (id) => set((state) => ({ metodos: state.metodos.filter((m) => m.id !== id) })),
   setCarregando: (carregando) => set({ carregando }),
   setErro: (erro) => set({ erro }),
 }));

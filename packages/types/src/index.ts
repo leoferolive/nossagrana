@@ -418,7 +418,10 @@ export const transacaoParamsSchema = z.object({ id: z.string().uuid() });
 export type TransacaoParams = z.infer<typeof transacaoParamsSchema>;
 
 export const transacaoListQuerySchema = z.object({
-  mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+  mesReferencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
   tipo: transacaoTipoSchema.optional(),
   categoriaId: z.string().uuid().optional(),
   usuarioRegistrouId: z.string().uuid().optional(),

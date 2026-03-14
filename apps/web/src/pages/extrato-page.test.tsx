@@ -25,13 +25,27 @@ afterEach(() => {
 });
 
 const T = (overrides = {}) => ({
-  id: 't1', tipo: 'despesa' as const, valor: '150.00', categoriaId: 'c1',
-  descricao: 'Mercado', data: '2026-03-10', mesReferencia: '2026-03',
-  metodoPagamentoId: null, usuarioRegistrouId: 'u1',
-  recorrente: false, frequencia: null, dataFimRecorrencia: null,
-  parcelado: false, numeroParcelas: null, parcelaAtual: null,
-  valorTotal: null, valorParcela: null, transacaoPaiId: null,
-  familiaId: 'f1', criadoEm: '2026-03-10T00:00:00Z', atualizadoEm: '2026-03-10T00:00:00Z',
+  id: 't1',
+  tipo: 'despesa' as const,
+  valor: '150.00',
+  categoriaId: 'c1',
+  descricao: 'Mercado',
+  data: '2026-03-10',
+  mesReferencia: '2026-03',
+  metodoPagamentoId: null,
+  usuarioRegistrouId: 'u1',
+  recorrente: false,
+  frequencia: null,
+  dataFimRecorrencia: null,
+  parcelado: false,
+  numeroParcelas: null,
+  parcelaAtual: null,
+  valorTotal: null,
+  valorParcela: null,
+  transacaoPaiId: null,
+  familiaId: 'f1',
+  criadoEm: '2026-03-10T00:00:00Z',
+  atualizadoEm: '2026-03-10T00:00:00Z',
   ...overrides,
 });
 
@@ -42,7 +56,9 @@ describe('ExtratoPage', () => {
         T({ id: 't1', valor: '150.00', descricao: 'Mercado', tipo: 'despesa' }),
         T({ id: 't2', valor: '5000.00', descricao: 'Salario', tipo: 'receita' }),
       ],
-      carregando: false, erro: null, filtros: {},
+      carregando: false,
+      erro: null,
+      filtros: {},
     });
   });
 
@@ -72,8 +88,12 @@ describe('ExtratoPage', () => {
 
   it('exibe badge "Parcela X/N" para transação parcelada', () => {
     useTransacaoStore.setState({
-      transacoes: [T({ id: 't3', descricao: 'TV', parcelado: true, parcelaAtual: 2, numeroParcelas: 6 })],
-      carregando: false, erro: null, filtros: {},
+      transacoes: [
+        T({ id: 't3', descricao: 'TV', parcelado: true, parcelaAtual: 2, numeroParcelas: 6 }),
+      ],
+      carregando: false,
+      erro: null,
+      filtros: {},
     });
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     expect(screen.getByText('Parcela 2/6')).toBeInTheDocument();
@@ -82,7 +102,9 @@ describe('ExtratoPage', () => {
   it('exibe badge "Recorrente" para transação recorrente', () => {
     useTransacaoStore.setState({
       transacoes: [T({ id: 't4', descricao: 'Netflix', recorrente: true, frequencia: 'mensal' })],
-      carregando: false, erro: null, filtros: {},
+      carregando: false,
+      erro: null,
+      filtros: {},
     });
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     expect(screen.getByText(/recorrente/i)).toBeInTheDocument();

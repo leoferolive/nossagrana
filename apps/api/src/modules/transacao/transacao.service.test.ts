@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
-import {
-  TransacaoNotFoundError,
-  TransacaoService,
-} from './transacao.service.js';
+import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
 
 const buildService = () => {
   const repository = new InMemoryTransacaoRepository();
@@ -222,16 +219,16 @@ describe('TransacaoService', () => {
 
       await service.excluir({ id: t.id, familiaId: 'f1' });
 
-      await expect(
-        service.detalhe({ id: t.id, familiaId: 'f1' }),
-      ).rejects.toThrow(TransacaoNotFoundError);
+      await expect(service.detalhe({ id: t.id, familiaId: 'f1' })).rejects.toThrow(
+        TransacaoNotFoundError,
+      );
     });
 
     it('lança TransacaoNotFoundError ao excluir inexistente', async () => {
       const { service } = buildService();
-      await expect(
-        service.excluir({ id: 'nao-existe', familiaId: 'f1' }),
-      ).rejects.toThrow(TransacaoNotFoundError);
+      await expect(service.excluir({ id: 'nao-existe', familiaId: 'f1' })).rejects.toThrow(
+        TransacaoNotFoundError,
+      );
     });
   });
 

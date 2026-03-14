@@ -114,9 +114,7 @@ export const CategoriasPage = ({ onBack }: CategoriasPageProps) => {
 
       {/* Lista */}
       <main className="flex-1 p-4">
-        {carregando && (
-          <p className="text-center text-sm text-text-muted">Carregando...</p>
-        )}
+        {carregando && <p className="text-center text-sm text-text-muted">Carregando...</p>}
 
         {!carregando && categorias.length === 0 && (
           <p className="text-center text-sm text-text-muted">

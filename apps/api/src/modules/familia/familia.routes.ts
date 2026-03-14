@@ -14,7 +14,10 @@ import {
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import { DrizzleCategoriaRepository, InMemoryCategoriaRepository } from '../categoria/categoria.repository.js';
+import {
+  DrizzleCategoriaRepository,
+  InMemoryCategoriaRepository,
+} from '../categoria/categoria.repository.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 import {
   familiaCreateInviteSchema,

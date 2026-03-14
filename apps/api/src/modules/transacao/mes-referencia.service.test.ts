@@ -6,7 +6,9 @@ describe('calcularMesReferencia', () => {
   it('retorna mês da data para métodos não-crédito', () => {
     expect(calcularMesReferencia({ data: new Date('2026-03-10'), tipo: 'pix' })).toBe('2026-03');
     expect(calcularMesReferencia({ data: new Date('2026-03-10'), tipo: 'debito' })).toBe('2026-03');
-    expect(calcularMesReferencia({ data: new Date('2026-03-10'), tipo: 'dinheiro' })).toBe('2026-03');
+    expect(calcularMesReferencia({ data: new Date('2026-03-10'), tipo: 'dinheiro' })).toBe(
+      '2026-03',
+    );
     expect(calcularMesReferencia({ data: new Date('2026-03-10') })).toBe('2026-03');
   });
 
@@ -39,7 +41,11 @@ describe('calcularMesReferencia', () => {
 
   it('retorna mês da data quando crédito sem dataFechamento', () => {
     expect(
-      calcularMesReferencia({ data: new Date('2026-03-20'), tipo: 'credito', dataFechamento: null }),
+      calcularMesReferencia({
+        data: new Date('2026-03-20'),
+        tipo: 'credito',
+        dataFechamento: null,
+      }),
     ).toBe('2026-03');
   });
 });

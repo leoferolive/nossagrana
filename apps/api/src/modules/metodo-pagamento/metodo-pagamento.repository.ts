@@ -38,7 +38,9 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
     const rows = await db
       .select(RETURNING_FIELDS)
       .from(metodosPagamento)
-      .where(and(eq(metodosPagamento.familiaId, input.familiaId), eq(metodosPagamento.ativo, true)));
+      .where(
+        and(eq(metodosPagamento.familiaId, input.familiaId), eq(metodosPagamento.ativo, true)),
+      );
 
     return rows.map(mapRow);
   }

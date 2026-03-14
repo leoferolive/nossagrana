@@ -34,7 +34,10 @@ export class CategoriaService {
     });
   }
 
-  async criar(payload: CategoriaCreateRequest, familiaId: string): Promise<CategoriaCreateResponse> {
+  async criar(
+    payload: CategoriaCreateRequest,
+    familiaId: string,
+  ): Promise<CategoriaCreateResponse> {
     return this.api.request<CategoriaCreateResponse>('/api/categorias', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
@@ -42,7 +45,11 @@ export class CategoriaService {
     });
   }
 
-  async editar(id: string, payload: CategoriaUpdateRequest, familiaId: string): Promise<CategoriaUpdateResponse> {
+  async editar(
+    id: string,
+    payload: CategoriaUpdateRequest,
+    familiaId: string,
+  ): Promise<CategoriaUpdateResponse> {
     return this.api.request<CategoriaUpdateResponse>(`/api/categorias/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
@@ -69,7 +76,10 @@ export class MetodoPagamentoService {
     });
   }
 
-  async criar(payload: MetodoPagamentoCreateRequest, familiaId: string): Promise<MetodoPagamentoCreateResponse> {
+  async criar(
+    payload: MetodoPagamentoCreateRequest,
+    familiaId: string,
+  ): Promise<MetodoPagamentoCreateResponse> {
     return this.api.request<MetodoPagamentoCreateResponse>('/api/metodos-pagamento', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
@@ -77,7 +87,11 @@ export class MetodoPagamentoService {
     });
   }
 
-  async editar(id: string, payload: MetodoPagamentoUpdateRequest, familiaId: string): Promise<MetodoPagamentoUpdateResponse> {
+  async editar(
+    id: string,
+    payload: MetodoPagamentoUpdateRequest,
+    familiaId: string,
+  ): Promise<MetodoPagamentoUpdateResponse> {
     return this.api.request<MetodoPagamentoUpdateResponse>(`/api/metodos-pagamento/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
@@ -118,7 +132,10 @@ export class TransacaoService {
     });
   }
 
-  async registrar(payload: TransacaoCreateRequest, familiaId: string): Promise<TransacaoCreateResponse> {
+  async registrar(
+    payload: TransacaoCreateRequest,
+    familiaId: string,
+  ): Promise<TransacaoCreateResponse> {
     return this.api.request<TransacaoCreateResponse>('/api/transacoes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
@@ -126,7 +143,11 @@ export class TransacaoService {
     });
   }
 
-  async editar(id: string, payload: TransacaoUpdateRequest, familiaId: string): Promise<TransacaoResponse> {
+  async editar(
+    id: string,
+    payload: TransacaoUpdateRequest,
+    familiaId: string,
+  ): Promise<TransacaoResponse> {
     return this.api.request<TransacaoResponse>(`/api/transacoes/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },

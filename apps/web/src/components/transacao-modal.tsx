@@ -114,7 +114,9 @@ export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps)
             >
               <option value="">Selecione...</option>
               {categorias.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
               ))}
             </select>
           </label>
@@ -142,7 +144,9 @@ export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps)
             >
               <option value="">Sem método</option>
               {metodos.map((m) => (
-                <option key={m.id} value={m.id}>{m.nome}</option>
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
               ))}
             </select>
           </label>
@@ -164,9 +168,14 @@ export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps)
             <button
               type="button"
               aria-label="Parcelado"
-              onClick={() => { setParcelado(!parcelado); setRecorrente(false); }}
+              onClick={() => {
+                setParcelado(!parcelado);
+                setRecorrente(false);
+              }}
               className={`flex-1 rounded-lg border py-2 text-xs font-semibold transition ${
-                parcelado ? 'border-info bg-info/10 text-info' : 'border-border text-text-muted hover:text-text'
+                parcelado
+                  ? 'border-info bg-info/10 text-info'
+                  : 'border-border text-text-muted hover:text-text'
               }`}
             >
               Parcelado
@@ -174,9 +183,14 @@ export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps)
             <button
               type="button"
               aria-label="Recorrente"
-              onClick={() => { setRecorrente(!recorrente); setParcelado(false); }}
+              onClick={() => {
+                setRecorrente(!recorrente);
+                setParcelado(false);
+              }}
               className={`flex-1 rounded-lg border py-2 text-xs font-semibold transition ${
-                recorrente ? 'border-warning bg-warning/10 text-warning' : 'border-border text-text-muted hover:text-text'
+                recorrente
+                  ? 'border-warning bg-warning/10 text-warning'
+                  : 'border-border text-text-muted hover:text-text'
               }`}
             >
               Recorrente

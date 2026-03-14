@@ -1,4 +1,4 @@
-import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagrana/types';
+import type { OrcamentoHistoricoResponse, OrcamentoItem, OrcamentoListResponse } from '@nossagrana/types';
 
 export interface OrcamentoVigenteRow {
   id: string;
@@ -35,4 +35,4 @@ export interface OrcamentoRepository {
   listHistorico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow[]>;
 }
 
-export type { OrcamentoHistoricoResponse, OrcamentoListResponse };
+export type { OrcamentoHistoricoResponse, OrcamentoItem, OrcamentoListResponse };

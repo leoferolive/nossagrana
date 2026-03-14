@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte, gte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, lte, gte, or, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { categorias, orcamentoCategoria, transacoes } from '../../db/schema.js';
@@ -252,6 +252,6 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
           eq(orcamentoCategoria.categoriaId, categoriaId),
         ),
       )
-      .orderBy(sql`${orcamentoCategoria.vigenciaInicio} DESC`);
+      .orderBy(desc(orcamentoCategoria.vigenciaInicio));
   }
 }

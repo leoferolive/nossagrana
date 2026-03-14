@@ -63,7 +63,7 @@ Resposta:
 
 Query param opcional: `mesReferencia`.
 
-- `distribuicaoCategorias`: filtra apenas transações do tipo `despesa`. Retorna array ordenado por `total` decrescente. Se não houver despesas no mês, retorna `[]`.
+- `distribuicaoCategorias`: filtra apenas transações do tipo `despesa`. Retorna array ordenado por `total` decrescente. Se não houver despesas no mês, retorna `[]`. O campo `percentual` é calculado como `(total / somaTotalDespesas) * 100`; quando `somaTotalDespesas = 0`, o array é `[]` e a divisão por zero nunca ocorre — a guard está no service, não só no output.
 - `evolucaoDiaria`: array **denso** com todos os dias do mês (1 até último dia). Dias sem transações aparecem com `"0.00"`. Isso evita gaps no gráfico de linha do Chart.js.
 
 Resposta:
@@ -129,9 +129,9 @@ A validação ocorre **apenas no handshake** (connect time). Após conexão esta
 #### Reconexão no cliente
 
 Ao receber evento `close`, o cliente (`useWebSocketStore`):
-1. Obtém novo access token via endpoint de refresh (`/api/auth/refresh`)
-2. Reconecta com back-off exponencial (100ms, 200ms, 400ms, máx 5 tentativas)
-3. Emite evento `disconnected` se esgotar tentativas
+1. Lê o `accessToken` atual diretamente do `AuthContext` via `getAccessToken()` (closure injetada em `connect`) — o `ApiClient` já pode ter renovado o token via sua lógica interna de refresh-on-401; não há segundo caminho de refresh independente
+2. Reconecta com back-off exponencial (100ms, 200ms, 400ms, máx 5 tentativas) usando o token disponível no momento de cada tentativa
+3. Se o handshake falhar com `4001` (token expirado) em todas as tentativas, chama `clearSession()` (também injetada) para fazer logout coordenado — o mesmo fluxo que o `ApiClient` executa em falha de refresh
 
 #### `WebSocketManager`
 
@@ -162,10 +162,13 @@ Isso preserva os testes existentes de `TransacaoService` sem modificações.
 
 #### Rota WebSocket
 
-Registrada no arquivo `websocket.plugin.ts` (ou novo `ws.routes.ts`) como:
-```
-GET /ws  (prefixo /api aplicado em app.ts)
-```
+Registrada em novo arquivo `ws.routes.ts` como `GET /ws` (prefixo `/api` aplicado em `app.ts`).
+
+A rota **não reutiliza** `fastify.authenticate` nem `fastify.requireFamiliaScope` — ambos operam sobre headers HTTP que browsers não podem enviar em WebSocket. Em vez disso, o handler realiza inline:
+1. `fastify.jwt.verify(token)` sobre o query param `token`
+2. Consulta de membership equivalente ao `requireFamiliaScope`, porém lendo `familiaId` do query param
+
+Em `NODE_ENV=test`, o handler usa um stub mockado que aceita qualquer UUID válido como `familiaId`, seguindo o mesmo padrão do `familiaScopePlugin` (que bypassa o check de DB em test mode).
 
 #### Evento emitido aos clientes
 
@@ -235,23 +238,32 @@ interface DashboardStore {
 
 `fetchAll` dispara as 3 chamadas em paralelo via `Promise.all`.
 
+### `familiaId` no estado do cliente
+
+O `AuthContext` existente armazena apenas `accessToken` e `refreshToken`. Para suportar a Fase 5, o `login()` do `AuthContext` passa a aceitar também `familiaIdAtiva: string`, que é persistida junto com os tokens no `localStorage`. Isso torna o `familiaId` disponível para `useWebSocketStore` e para os headers `X-Familia-Id` de todas as chamadas HTTP, sem criar um segundo store.
+
 ### `useWebSocketStore` (Zustand)
 
 ```ts
 interface WebSocketStore {
   socket: WebSocket | null;
   status: 'disconnected' | 'connecting' | 'connected' | 'error';
-  connect(token: string, familiaId: string): void;  // familiaId necessário como query param
+  // Closures injetadas ao inicializar (via useEffect no AuthProvider)
+  connect(opts: {
+    getAccessToken: () => string | null;
+    familiaId: string;
+    clearSession: () => void;
+  }): void;
   disconnect(): void;
 }
 ```
 
-- `connect`: abre `WebSocket` para `/api/ws?token=<token>&familiaId=<familiaId>`
+- `connect`: abre `WebSocket` para `${WS_URL}/api/ws?token=<token>&familiaId=<familiaId>`, onde `token` é obtido chamando `getAccessToken()` no momento de cada tentativa (token pode ter sido renovado pelo `ApiClient`)
 - Ao receber `{ tipo: "transacao:alterada" }`: chama `useDashboardStore.getState().fetchAll()`
-- Ao receber `close`: executa lógica de reconexão com back-off
+- Ao receber `close`: executa reconexão com back-off exponencial; esgotadas as tentativas, chama `clearSession()` para logout coordenado
 - `disconnect`: fecha socket, limpa back-off timers
 
-Chamado ao fazer login (no `useAuthStore` após autenticação bem-sucedida) e desconectado ao fazer logout.
+**Quando é chamado:** `AuthProvider` usa `useEffect` para observar mudanças em `isAuthenticated`. Ao logar → `useWebSocketStore.connect(...)`. Ao deslogar → `useWebSocketStore.disconnect()`. Isso mantém o WebSocket alinhado ao ciclo de auth sem criar dependências circulares entre stores.
 
 ### Navegação
 
@@ -276,9 +288,14 @@ Chamado ao fazer login (no `useAuthStore` após autenticação bem-sucedida) e d
 - Timezone: `mesReferencia` default em America/Sao_Paulo
 
 **`app.test.ts` (rotas)**
-- `GET /api/dashboard` com JWT válido → 200
+
+Seguindo o padrão existente: testes usam `app.inject()` com `X-Familia-Id` como header. O `familiaScopePlugin` em `NODE_ENV=test` bypassa o check de DB e aceita qualquer UUID válido — o mesmo padrão atual em `transacao.routes.ts`. O `dashboard.repository` usa a mesma instância de `db` real (PostgreSQL em test) que os demais repositórios, sem need de `InMemoryDashboardRepository`.
+
+Cenários:
+- `GET /api/dashboard` com JWT válido + `X-Familia-Id` → 200
 - `GET /api/dashboard` sem JWT → 401
-- `GET /api/dashboard` com família sem transações → 200 com zeros
+- `GET /api/dashboard` sem `X-Familia-Id` → 400
+- `GET /api/dashboard` com família sem transações → 200 com zeros e `mesAnterior: null`
 - Mesmos cenários para `/graficos` e `/orcamento`
 - `/orcamento` sem orçamentos configurados → 200 com `[]`
 

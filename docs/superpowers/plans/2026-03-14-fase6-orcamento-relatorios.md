@@ -15,6 +15,7 @@
 ### Task 1: Add Orçamento + Relatórios + Fatura shared types
 
 **Files:**
+
 - Modify: `packages/types/src/index.ts`
 
 - [ ] **Step 1: Add schemas to `packages/types/src/index.ts`**
@@ -171,6 +172,7 @@ export type FaturaResponse = z.infer<typeof faturaResponseSchema>;
 ```bash
 pnpm --filter @nossagrana/types build
 ```
+
 Expected: success, no errors.
 
 - [ ] **Step 3: Commit**
@@ -185,6 +187,7 @@ git commit -m "feat(types): adicionar schemas de orcamento, relatorios e fatura"
 ### Task 2: Orçamento module — types and repository
 
 **Files:**
+
 - Create: `apps/api/src/modules/orcamento/orcamento.types.ts`
 - Create: `apps/api/src/modules/orcamento/orcamento.repository.ts`
 
@@ -216,7 +219,13 @@ describe('OrcamentoService', () => {
   });
 
   it('define orcamento para categoria e retorna na listagem', async () => {
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.list(familiaId, '2026-03');
     expect(result.orcamentos).toHaveLength(1);
     expect(result.orcamentos[0].categoriaId).toBe(categoriaId);
@@ -228,7 +237,13 @@ describe('OrcamentoService', () => {
 
   it('calcula percentual e status warning quando gasto >= 80%', async () => {
     repo.seedTransacao({ familiaId, categoriaId, mesReferencia: '2026-03', valor: '420.00' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.list(familiaId, '2026-03');
     expect(result.orcamentos[0].percentual).toBe(84);
     expect(result.orcamentos[0].status).toBe('warning');
@@ -236,14 +251,32 @@ describe('OrcamentoService', () => {
 
   it('calcula status exceeded quando gasto >= 100%', async () => {
     repo.seedTransacao({ familiaId, categoriaId, mesReferencia: '2026-03', valor: '600.00' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.list(familiaId, '2026-03');
     expect(result.orcamentos[0].status).toBe('exceeded');
   });
 
   it('encerra orcamento anterior ao definir novo com vigencia futura', async () => {
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-01' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '800.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-01',
+    });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '800.00',
+      vigenciaInicio: '2026-03',
+    });
     const historico = await service.historico(familiaId, categoriaId);
     expect(historico.historico).toHaveLength(2);
     // Anterior deve ter sido encerrado em 2026-02
@@ -255,8 +288,20 @@ describe('OrcamentoService', () => {
   });
 
   it('retorna historico por categoria ordenado por vigenciaInicio desc', async () => {
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '300.00', vigenciaInicio: '2026-01' });
-    await service.set({ familiaId, categoriaId, usuarioId, valorLimite: '500.00', vigenciaInicio: '2026-03' });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '300.00',
+      vigenciaInicio: '2026-01',
+    });
+    await service.set({
+      familiaId,
+      categoriaId,
+      usuarioId,
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
     const result = await service.historico(familiaId, categoriaId);
     expect(result.historico[0].valorLimite).toBe('500.00');
     expect(result.historico[1].valorLimite).toBe('300.00');
@@ -269,12 +314,17 @@ describe('OrcamentoService', () => {
 ```bash
 pnpm --filter api test -- --reporter=verbose orcamento.service
 ```
+
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Create `orcamento.types.ts`**
 
 ```typescript
-import type { OrcamentoHistoricoResponse, OrcamentoItem, OrcamentoListResponse } from '@nossagrana/types';
+import type {
+  OrcamentoHistoricoResponse,
+  OrcamentoItem,
+  OrcamentoListResponse,
+} from '@nossagrana/types';
 
 export interface OrcamentoVigenteRow {
   id: string;
@@ -368,7 +418,10 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
       }));
   }
 
-  async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>> {
+  async getGastosPorCategoria(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<Map<string, string>> {
     const map = new Map<string, number>();
     for (const t of this._transacoes) {
       if (t.familiaId === familiaId && t.mesReferencia === mesReferencia) {
@@ -439,12 +492,18 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
         and(
           eq(orcamentoCategoria.familiaId, familiaId),
           lte(orcamentoCategoria.vigenciaInicio, mesReferencia),
-          or(isNull(orcamentoCategoria.vigenciaFim), gte(orcamentoCategoria.vigenciaFim, mesReferencia)),
+          or(
+            isNull(orcamentoCategoria.vigenciaFim),
+            gte(orcamentoCategoria.vigenciaFim, mesReferencia),
+          ),
         ),
       );
   }
 
-  async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>> {
+  async getGastosPorCategoria(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<Map<string, string>> {
     const rows = await db
       .select({
         categoriaId: transacoes.categoriaId,
@@ -484,10 +543,7 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
   }
 
   async encerrar(id: string, vigenciaFim: string): Promise<void> {
-    await db
-      .update(orcamentoCategoria)
-      .set({ vigenciaFim })
-      .where(eq(orcamentoCategoria.id, id));
+    await db.update(orcamentoCategoria).set({ vigenciaFim }).where(eq(orcamentoCategoria.id, id));
   }
 
   async insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
@@ -537,6 +593,7 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
 ```bash
 pnpm --filter api test -- --reporter=verbose orcamento.service
 ```
+
 Expected: FAIL — OrcamentoService not found.
 
 ---
@@ -544,11 +601,13 @@ Expected: FAIL — OrcamentoService not found.
 ### Task 3: Orçamento service
 
 **Files:**
+
 - Create: `apps/api/src/modules/orcamento/orcamento.service.ts`
 
 - [ ] **Step 1: Create `orcamento.service.ts`**
 
 Helper — mês anterior de YYYY-MM:
+
 ```typescript
 function mesAnterior(mes: string): string {
   const [ano, m] = mes.split('-').map(Number);
@@ -564,8 +623,13 @@ function calcularStatus(percentual: number): 'ok' | 'warning' | 'exceeded' {
 ```
 
 Full service:
+
 ```typescript
-import type { OrcamentoHistoricoResponse, OrcamentoListResponse, OrcamentoSetInput } from '@nossagrana/types';
+import type {
+  OrcamentoHistoricoResponse,
+  OrcamentoListResponse,
+  OrcamentoSetInput,
+} from '@nossagrana/types';
 
 import type { OrcamentoRepository } from './orcamento.types.js';
 
@@ -612,7 +676,9 @@ export class OrcamentoService {
     return { orcamentos };
   }
 
-  async set(input: OrcamentoSetInput & { familiaId: string; categoriaId: string; usuarioId: string }): Promise<void> {
+  async set(
+    input: OrcamentoSetInput & { familiaId: string; categoriaId: string; usuarioId: string },
+  ): Promise<void> {
     const aberto = await this.repo.findAberto(input.familiaId, input.categoriaId);
     if (aberto) {
       await this.repo.encerrar(aberto.id, mesAnterior(input.vigenciaInicio));
@@ -638,6 +704,7 @@ export class OrcamentoService {
 Note: `OrcamentoSetInput` needs to include `familiaId`, `categoriaId`, `usuarioId`. The interface in types is simpler. Use the types.ts `OrcamentoSetInput` interface (from `orcamento.types.ts`, not `@nossagrana/types`).
 
 Correct import — use the interface from `orcamento.types.ts`:
+
 ```typescript
 import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagrana/types';
 import type { OrcamentoRepository, OrcamentoSetInput } from './orcamento.types.js';
@@ -648,6 +715,7 @@ import type { OrcamentoRepository, OrcamentoSetInput } from './orcamento.types.j
 ```bash
 pnpm --filter api test -- --reporter=verbose orcamento.service
 ```
+
 Expected: all 6 tests PASS.
 
 - [ ] **Step 3: Commit**
@@ -662,6 +730,7 @@ git commit -m "feat(api): adicionar OrcamentoService com InMemory e Drizzle repo
 ### Task 4: Orçamento routes + schema + app registration
 
 **Files:**
+
 - Create: `apps/api/src/modules/orcamento/orcamento.schema.ts`
 - Create: `apps/api/src/modules/orcamento/orcamento.routes.ts`
 - Modify: `apps/api/src/app.ts`
@@ -692,7 +761,12 @@ const orcamentoHistoricoItemZod = z.object({
 });
 
 export const orcamentoListSchema = {
-  querystring: z.object({ mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional() }),
+  querystring: z.object({
+    mesReferencia: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
+  }),
   response: { 200: z.object({ orcamentos: z.array(orcamentoItemZod) }) },
 };
 
@@ -722,10 +796,7 @@ import {
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import {
-  DrizzleOrcamentoRepository,
-  InMemoryOrcamentoRepository,
-} from './orcamento.repository.js';
+import { DrizzleOrcamentoRepository, InMemoryOrcamentoRepository } from './orcamento.repository.js';
 import {
   orcamentoHistoricoSchema,
   orcamentoListSchema,
@@ -735,9 +806,7 @@ import { OrcamentoService } from './orcamento.service.js';
 
 const defaultService = () => {
   const repo =
-    env.NODE_ENV === 'test'
-      ? new InMemoryOrcamentoRepository()
-      : new DrizzleOrcamentoRepository();
+    env.NODE_ENV === 'test' ? new InMemoryOrcamentoRepository() : new DrizzleOrcamentoRepository();
   return new OrcamentoService(repo);
 };
 
@@ -746,7 +815,10 @@ export const orcamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/orcamento',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: orcamentoListSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: orcamentoListSchema,
+    },
     async (request) => {
       const { mesReferencia: qMes } = orcamentoQuerySchema.parse(request.query);
       const mes = qMes ?? getCurrentMes();
@@ -774,7 +846,10 @@ export const orcamentoRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/orcamento/:categoriaId/historico',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: orcamentoHistoricoSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: orcamentoHistoricoSchema,
+    },
     async (request) => {
       const { categoriaId } = orcamentoCategoriaParamsSchema.parse(request.params);
       return service.historico(request.familiaIdAtiva as string, categoriaId);
@@ -798,6 +873,7 @@ function getCurrentMes(): string {
 - [ ] **Step 3: Register in `app.ts`**
 
 Add imports and registration:
+
 ```typescript
 import { orcamentoRoutes } from './modules/orcamento/orcamento.routes.js';
 // ...
@@ -807,6 +883,7 @@ app.register(orcamentoRoutes, { prefix: '/api' });
 - [ ] **Step 4: Write integration tests for orçamento routes in `app.test.ts`**
 
 Append a new `describe` block:
+
 ```typescript
 describe('Orçamento routes', () => {
   const app = buildApp();
@@ -865,6 +942,7 @@ describe('Orçamento routes', () => {
 ```bash
 pnpm --filter api test
 ```
+
 Expected: all pass.
 
 - [ ] **Step 6: Commit**
@@ -881,6 +959,7 @@ git commit -m "feat(api): adicionar rotas de orcamento (GET/POST/historico)"
 ### Task 5: Relatórios module
 
 **Files:**
+
 - Create: `apps/api/src/modules/relatorio/relatorio.types.ts`
 - Create: `apps/api/src/modules/relatorio/relatorio.repository.ts`
 - Create: `apps/api/src/modules/relatorio/relatorio.service.ts`
@@ -918,8 +997,26 @@ describe('RelatorioService', () => {
   it('distribuicao calcula percentual por categoria', async () => {
     repo.seed({
       transacoes: [
-        { familiaId, tipo: 'despesa', valor: '200.00', categoriaId: 'cat-1', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
-        { familiaId, tipo: 'despesa', valor: '100.00', categoriaId: 'cat-2', categoriaNome: 'Lazer', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '200.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '100.00',
+          categoriaId: 'cat-2',
+          categoriaNome: 'Lazer',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
       ],
     });
     const result = await service.distribuicao(familiaId, '2026-03');
@@ -931,8 +1028,26 @@ describe('RelatorioService', () => {
   it('porUsuario retorna gastos agrupados por usuario', async () => {
     repo.seed({
       transacoes: [
-        { familiaId, tipo: 'despesa', valor: '300.00', categoriaId: 'cat-1', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
-        { familiaId, tipo: 'despesa', valor: '100.00', categoriaId: 'cat-1', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-2', usuarioNome: 'Ana' },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '300.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '100.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-2',
+          usuarioNome: 'Ana',
+        },
       ],
     });
     const result = await service.porUsuario(familiaId, '2026-03');
@@ -945,8 +1060,26 @@ describe('RelatorioService', () => {
   it('tendencias retorna N meses regressivos com totais', async () => {
     repo.seed({
       transacoes: [
-        { familiaId, tipo: 'receita', valor: '5000.00', categoriaId: 'cat-1', categoriaNome: 'Salário', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
-        { familiaId, tipo: 'despesa', valor: '2000.00', categoriaId: 'cat-2', categoriaNome: 'Alimentação', mesReferencia: '2026-03', usuarioId: 'usr-1', usuarioNome: 'Leo' },
+        {
+          familiaId,
+          tipo: 'receita',
+          valor: '5000.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Salário',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '2000.00',
+          categoriaId: 'cat-2',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
       ],
     });
     const result = await service.tendencias(familiaId, '2026-03', 3);
@@ -964,6 +1097,7 @@ describe('RelatorioService', () => {
 ```bash
 pnpm --filter api test -- --reporter=verbose relatorio.service
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Create `relatorio.types.ts`**
@@ -1051,12 +1185,7 @@ export class DrizzleRelatorioRepository implements RelatorioRepository {
       .from(transacoes)
       .innerJoin(categorias, eq(transacoes.categoriaId, categorias.id))
       .innerJoin(users, eq(transacoes.usuarioRegistrouId, users.id))
-      .where(
-        and(
-          eq(transacoes.familiaId, familiaId),
-          eq(transacoes.mesReferencia, mesReferencia),
-        ),
-      );
+      .where(and(eq(transacoes.familiaId, familiaId), eq(transacoes.mesReferencia, mesReferencia)));
   }
 }
 ```
@@ -1081,7 +1210,10 @@ function mesAnteriorN(mesReferencia: string, n: number): string {
 export class RelatorioService {
   constructor(private readonly repo: RelatorioRepository) {}
 
-  async distribuicao(familiaId: string, mesReferencia: string): Promise<RelatorioDistribuicaoResponse> {
+  async distribuicao(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<RelatorioDistribuicaoResponse> {
     const transacoes = await this.repo.getTransacoes(familiaId, mesReferencia);
     const despesas = transacoes.filter((t) => t.tipo === 'despesa');
 
@@ -1131,7 +1263,11 @@ export class RelatorioService {
     return { mesReferencia, porUsuario };
   }
 
-  async tendencias(familiaId: string, mesReferencia: string, meses: number): Promise<RelatorioTendenciasResponse> {
+  async tendencias(
+    familiaId: string,
+    mesReferencia: string,
+    meses: number,
+  ): Promise<RelatorioTendenciasResponse> {
     const mesRefs = Array.from({ length: meses }, (_, i) =>
       mesAnteriorN(mesReferencia, meses - 1 - i),
     );
@@ -1164,6 +1300,7 @@ export class RelatorioService {
 ```bash
 pnpm --filter api test -- --reporter=verbose relatorio.service
 ```
+
 Expected: all 4 tests PASS.
 
 - [ ] **Step 7: Create `relatorio.schema.ts`**
@@ -1193,7 +1330,12 @@ const tendenciaMesZod = z.object({
 });
 
 export const relatorioDistribuicaoSchema = {
-  querystring: z.object({ mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional() }),
+  querystring: z.object({
+    mesReferencia: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
+  }),
   response: {
     200: z.object({
       mesReferencia: z.string(),
@@ -1203,7 +1345,12 @@ export const relatorioDistribuicaoSchema = {
 };
 
 export const relatorioPorUsuarioSchema = {
-  querystring: z.object({ mesReferencia: z.string().regex(/^\d{4}-\d{2}$/).optional() }),
+  querystring: z.object({
+    mesReferencia: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
+  }),
   response: {
     200: z.object({
       mesReferencia: z.string(),
@@ -1225,10 +1372,7 @@ import { relatorioQuerySchema, relatorioTendenciasQuerySchema } from '@nossagran
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import {
-  DrizzleRelatorioRepository,
-  InMemoryRelatorioRepository,
-} from './relatorio.repository.js';
+import { DrizzleRelatorioRepository, InMemoryRelatorioRepository } from './relatorio.repository.js';
 import {
   relatorioDistribuicaoSchema,
   relatorioPorUsuarioSchema,
@@ -1238,9 +1382,7 @@ import { RelatorioService } from './relatorio.service.js';
 
 const defaultService = () => {
   const repo =
-    env.NODE_ENV === 'test'
-      ? new InMemoryRelatorioRepository()
-      : new DrizzleRelatorioRepository();
+    env.NODE_ENV === 'test' ? new InMemoryRelatorioRepository() : new DrizzleRelatorioRepository();
   return new RelatorioService(repo);
 };
 
@@ -1261,7 +1403,10 @@ export const relatorioRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/relatorios/distribuicao',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: relatorioDistribuicaoSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: relatorioDistribuicaoSchema,
+    },
     async (request) => {
       const { mesReferencia: qMes } = relatorioQuerySchema.parse(request.query);
       return service.distribuicao(request.familiaIdAtiva as string, qMes ?? getCurrentMes());
@@ -1270,7 +1415,10 @@ export const relatorioRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/relatorios/por-usuario',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: relatorioPorUsuarioSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: relatorioPorUsuarioSchema,
+    },
     async (request) => {
       const { mesReferencia: qMes } = relatorioQuerySchema.parse(request.query);
       return service.porUsuario(request.familiaIdAtiva as string, qMes ?? getCurrentMes());
@@ -1279,7 +1427,10 @@ export const relatorioRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     '/relatorios/tendencias',
-    { preHandler: [fastify.authenticate, fastify.requireFamiliaScope], schema: relatorioTendenciasSchema },
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: relatorioTendenciasSchema,
+    },
     async (request) => {
       const { meses } = relatorioTendenciasQuerySchema.parse(request.query);
       return service.tendencias(request.familiaIdAtiva as string, getCurrentMes(), meses);
@@ -1353,6 +1504,7 @@ describe('Relatorio routes', () => {
 ```bash
 pnpm --filter api test
 ```
+
 Expected: all pass.
 
 - [ ] **Step 12: Commit**
@@ -1367,6 +1519,7 @@ git commit -m "feat(api): adicionar rotas de relatorios (distribuicao, por-usuar
 ### Task 6: Fatura route
 
 **Files:**
+
 - Modify: `apps/api/src/modules/metodo-pagamento/metodo-pagamento.routes.ts`
 - Modify: `apps/api/src/modules/metodo-pagamento/metodo-pagamento.repository.ts`
 - Modify: `apps/api/src/modules/metodo-pagamento/metodo-pagamento.types.ts`
@@ -1377,6 +1530,7 @@ git commit -m "feat(api): adicionar rotas de relatorios (distribuicao, por-usuar
 - [ ] **Step 1: Add fatura types to `metodo-pagamento.types.ts`**
 
 Append to the existing types file:
+
 ```typescript
 export interface FaturaTransacaoRow {
   id: string;
@@ -1394,6 +1548,7 @@ export interface FaturaTransacaoRow {
 - [ ] **Step 2: Add `getFatura` to the repository interface in `metodo-pagamento.types.ts`**
 
 Append to `MetodoPagamentoRepository` interface:
+
 ```typescript
 getFatura(familiaId: string, metodoPagamentoId: string, mesReferencia: string): Promise<FaturaTransacaoRow[]>;
 ```
@@ -1401,6 +1556,7 @@ getFatura(familiaId: string, metodoPagamentoId: string, mesReferencia: string): 
 - [ ] **Step 3: Implement `getFatura` in `InMemoryMetodoPagamentoRepository`**
 
 Add seed struct and method to InMemory:
+
 ```typescript
 // In InMemory class, add:
 private _fatura: FaturaTransacaoRow & { familiaId: string; metodoPagamentoId: string; mesReferencia: string }[] = [];
@@ -1514,11 +1670,7 @@ fastify.get(
   async (request, reply) => {
     try {
       const { id, mesReferencia } = faturaParamsSchema.parse(request.params);
-      const fatura = await service.getFatura(
-        request.familiaIdAtiva as string,
-        id,
-        mesReferencia,
-      );
+      const fatura = await service.getFatura(request.familiaIdAtiva as string, id, mesReferencia);
       return reply.code(200).send(fatura);
     } catch (error) {
       if (error instanceof MetodoPagamentoNotFoundError) {
@@ -1535,6 +1687,7 @@ Import `faturaParamsSchema` from `@nossagrana/types`.
 - [ ] **Step 8: Write integration test for fatura in `app.test.ts`**
 
 Add to the existing metodo-pagamento describe block, or create a new one:
+
 ```typescript
 describe('Fatura routes', () => {
   const app = buildApp();
@@ -1590,6 +1743,7 @@ describe('Fatura routes', () => {
 ```bash
 pnpm --filter api test
 ```
+
 Expected: all pass.
 
 - [ ] **Step 10: Commit**
@@ -1606,6 +1760,7 @@ git commit -m "feat(api): adicionar rota GET /cartoes/:id/fatura/:mesReferencia"
 ### Task 7: Frontend service methods for Orçamento, Relatórios e Fatura
 
 **Files:**
+
 - Modify: `apps/web/src/services/core-financeiro.service.ts`
 
 - [ ] **Step 1: Write failing tests**
@@ -1613,6 +1768,7 @@ git commit -m "feat(api): adicionar rota GET /cartoes/:id/fatura/:mesReferencia"
 Create `apps/web/src/services/core-financeiro.service.test.ts` (or check if it exists):
 
 Add to the existing test file (or create it):
+
 ```typescript
 // Add to existing tests or create new file
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -1694,6 +1850,7 @@ Import the new types from `@nossagrana/types`.
 ```bash
 pnpm --filter web exec tsc --noEmit
 ```
+
 Expected: no errors.
 
 - [ ] **Step 3: Commit**
@@ -1708,6 +1865,7 @@ git commit -m "feat(web): adicionar metodos de servico para orcamento, relatorio
 ### Task 8: OrcamentoPage
 
 **Files:**
+
 - Create: `apps/web/src/pages/orcamento-page.tsx`
 - Create: `apps/web/src/pages/orcamento-page.test.tsx`
 
@@ -1828,6 +1986,7 @@ describe('OrcamentoPage', () => {
 ```bash
 pnpm --filter web test -- --reporter=verbose orcamento-page
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Create `orcamento-page.tsx`**
@@ -1973,6 +2132,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
 ```bash
 pnpm --filter web test -- --reporter=verbose orcamento-page
 ```
+
 Expected: all pass.
 
 - [ ] **Step 5: Commit**
@@ -1987,6 +2147,7 @@ git commit -m "feat(web): adicionar OrcamentoPage com edição de limites"
 ### Task 9: RelatoriosPage
 
 **Files:**
+
 - Create: `apps/web/src/pages/relatorios-page.tsx`
 - Create: `apps/web/src/pages/relatorios-page.test.tsx`
 
@@ -2094,6 +2255,7 @@ describe('RelatoriosPage', () => {
 ```bash
 pnpm --filter web test -- --reporter=verbose relatorios-page
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Create `relatorios-page.tsx`**
@@ -2273,6 +2435,7 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
 ```bash
 pnpm --filter web test -- --reporter=verbose relatorios-page
 ```
+
 Expected: all pass.
 
 - [ ] **Step 5: Commit**
@@ -2287,6 +2450,7 @@ git commit -m "feat(web): adicionar RelatoriosPage com abas distribuicao, por-me
 ### Task 10: FaturaPage
 
 **Files:**
+
 - Create: `apps/web/src/pages/fatura-page.tsx`
 - Create: `apps/web/src/pages/fatura-page.test.tsx`
 
@@ -2401,6 +2565,7 @@ describe('FaturaPage', () => {
 ```bash
 pnpm --filter web test -- --reporter=verbose fatura-page
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Create `fatura-page.tsx`**
@@ -2505,6 +2670,7 @@ export const FaturaPage = ({
 ```bash
 pnpm --filter web test -- --reporter=verbose fatura-page
 ```
+
 Expected: all pass.
 
 - [ ] **Step 5: Commit**
@@ -2519,6 +2685,7 @@ git commit -m "feat(web): adicionar FaturaPage"
 ### Task 11: Navigation integration
 
 **Files:**
+
 - Modify: `apps/web/src/App.tsx`
 - Modify: `apps/web/src/App.test.tsx`
 
@@ -2544,6 +2711,7 @@ type Screen =
 Fix existing `'home'` references (lines ~73, ~87, ~91) to `'dashboard'`.
 
 Add imports:
+
 ```typescript
 import { FaturaPage } from '@/pages/fatura-page';
 import { OrcamentoPage } from '@/pages/orcamento-page';
@@ -2551,6 +2719,7 @@ import { RelatoriosPage } from '@/pages/relatorios-page';
 ```
 
 Add state for fatura navigation:
+
 ```typescript
 const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
 const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
@@ -2558,6 +2727,7 @@ const [faturaMes, setFaturaMes] = useState<string>('');
 ```
 
 Add screen blocks:
+
 ```typescript
 if (screen === 'orcamento') {
   return <OrcamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
@@ -2585,6 +2755,7 @@ Fix `onBack` in `extrato`, `categorias`, and `metodos-pagamento` from `() => set
 - [ ] **Step 2: Update `App.test.tsx`**
 
 Add navigation tests:
+
 ```typescript
 it('navega para tela de orcamento via dashboard', () => {
   // This test verifies screen type is valid — basic smoke test
@@ -2602,6 +2773,7 @@ Verify existing App tests still pass after the Screen type change.
 ```bash
 pnpm --filter web exec tsc --noEmit
 ```
+
 Expected: no errors (the `'home'` references are now `'dashboard'`).
 
 - [ ] **Step 4: Run all frontend tests**
@@ -2609,6 +2781,7 @@ Expected: no errors (the `'home'` references are now `'dashboard'`).
 ```bash
 pnpm --filter web test
 ```
+
 Expected: all pass.
 
 - [ ] **Step 5: Run full CI simulation**
@@ -2624,6 +2797,7 @@ pnpm --filter web lint
 pnpm --filter api test
 pnpm --filter web test
 ```
+
 Expected: all pass.
 
 - [ ] **Step 6: Commit**

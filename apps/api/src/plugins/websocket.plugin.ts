@@ -30,7 +30,7 @@ export const websocketPlugin = fp(async (fastify) => {
   const PONG_TIMEOUT = 10_000;
 
   const heartbeatTimer = setInterval(() => {
-    for (const [familiaId, room] of (wsManager as any).rooms as Map<string, Set<any>>) {
+    for (const [familiaId, room] of wsManager.entries()) {
       for (const ws of room) {
         if (ws.readyState !== 1) {
           wsManager.leave(familiaId, ws);

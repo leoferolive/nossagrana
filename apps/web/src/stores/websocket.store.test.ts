@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Mock global WebSocket
 const mockWs = {
   close: vi.fn(),
-  onopen: null as any,
-  onclose: null as any,
-  onmessage: null as any,
+  onopen: null as ((event: Event) => void) | null,
+  onclose: null as ((event: CloseEvent) => void) | null,
+  onmessage: null as ((event: MessageEvent) => void) | null,
   readyState: 1,
 };
 vi.stubGlobal('WebSocket', vi.fn(() => mockWs));
@@ -58,9 +58,9 @@ describe('useWebSocketStore', () => {
         clearSession: vi.fn(),
       });
       // Simula onopen
-      mockWs.onopen?.({} as any);
+      mockWs.onopen?.(new Event('open'));
       // Simula mensagem
-      mockWs.onmessage?.({ data: JSON.stringify({ tipo: 'transacao:alterada', familiaId: 'f1' }) } as any);
+      mockWs.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ tipo: 'transacao:alterada', familiaId: 'f1' }) }));
     });
     expect(mockFetchAll).toHaveBeenCalledWith('f1');
   });

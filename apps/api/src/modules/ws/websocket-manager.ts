@@ -28,4 +28,8 @@ export class WebSocketManager {
   roomSize(familiaId: string): number {
     return this.rooms.get(familiaId)?.size ?? 0;
   }
+
+  entries(): IterableIterator<[string, Set<WebSocket>]> {
+    return this.rooms.entries();
+  }
 }

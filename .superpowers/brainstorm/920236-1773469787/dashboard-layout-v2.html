@@ -1,0 +1,98 @@
+<h2>Layout do Dashboard</h2>
+<p class="subtitle">Escolha como organizar os cards, gráficos e barras de orçamento.</p>
+
+<style>
+  .opt { border:2px solid var(--border);border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.15s;margin-bottom:1rem }
+  .opt:hover { border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1) }
+  .opt.selected { border-color:var(--selected-border);background:var(--selected-bg) }
+  .opt-header { display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem }
+  .letter2 { width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0 }
+  .wf { background:var(--bg-primary);border-radius:8px;padding:10px;font-size:11px }
+  .wf-row { display:grid;gap:5px;margin-bottom:5px }
+  .wf-box { background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px }
+  .wf-bar-wrap { background:var(--bg-tertiary);border-radius:3px;height:5px;margin-top:3px }
+  .tag { display:inline-block;font-size:8px;font-weight:700;letter-spacing:.05em }
+</style>
+
+<!-- A -->
+<div class="opt" data-choice="a" onclick="toggleSelect(this)">
+  <div class="opt-header">
+    <div class="letter2">A</div>
+    <div>
+      <h3 style="margin:0">Sequencial vertical</h3>
+      <p style="color:var(--text-secondary);font-size:.82rem;margin:0">3 cards → pizza grande → linha → orçamento</p>
+    </div>
+  </div>
+  <div class="wf">
+    <div class="wf-row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="wf-box" style="text-align:center"><span class="tag" style="color:#34c759">RECEITAS</span><br><b>R$ 5.200</b></div>
+      <div class="wf-box" style="text-align:center"><span class="tag" style="color:#ff3b30">DESPESAS</span><br><b>R$ 3.800</b></div>
+      <div class="wf-box" style="text-align:center"><span class="tag" style="color:#0a84ff">SALDO</span><br><b>R$ 1.400</b></div>
+    </div>
+    <div class="wf-box" style="text-align:center;height:70px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);margin-bottom:5px">🍩 Pizza — gastos por categoria</div>
+    <div class="wf-box" style="text-align:center;height:45px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);margin-bottom:5px">📈 Linha — evolução do mês</div>
+    <div class="wf-box">
+      <span class="tag" style="color:var(--text-secondary)">ORÇAMENTO</span>
+      <div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-secondary)"><span>Alimentação</span><span>60%</span></div><div class="wf-bar-wrap"><div style="background:#34c759;width:60%;height:100%;border-radius:3px"></div></div></div>
+      <div style="margin-top:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-secondary)"><span>Lazer</span><span>85%</span></div><div class="wf-bar-wrap"><div style="background:#ff9f0a;width:85%;height:100%;border-radius:3px"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- B -->
+<div class="opt" data-choice="b" onclick="toggleSelect(this)">
+  <div class="opt-header">
+    <div class="letter2">B</div>
+    <div>
+      <h3 style="margin:0">Cards + pizza lado a lado</h3>
+      <p style="color:var(--text-secondary);font-size:.82rem;margin:0">Aproveita a largura — ótimo em tablet/desktop</p>
+    </div>
+  </div>
+  <div class="wf">
+    <div class="wf-row" style="grid-template-columns:1fr 1fr;margin-bottom:5px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="wf-box"><span class="tag" style="color:#34c759">RECEITAS</span> <b>R$ 5.200</b></div>
+        <div class="wf-box"><span class="tag" style="color:#ff3b30">DESPESAS</span> <b>R$ 3.800</b></div>
+        <div class="wf-box"><span class="tag" style="color:#0a84ff">SALDO</span> <b>R$ 1.400</b></div>
+      </div>
+      <div class="wf-box" style="display:flex;align-items:center;justify-content:center;color:var(--text-tertiary)">🍩 Pizza</div>
+    </div>
+    <div class="wf-box" style="text-align:center;height:45px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);margin-bottom:5px">📈 Linha</div>
+    <div class="wf-box">
+      <span class="tag" style="color:var(--text-secondary)">ORÇAMENTO</span>
+      <div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-secondary)"><span>Alimentação</span><span>60%</span></div><div class="wf-bar-wrap"><div style="background:#34c759;width:60%;height:100%;border-radius:3px"></div></div></div>
+      <div style="margin-top:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-secondary)"><span>Transporte</span><span>103%</span></div><div class="wf-bar-wrap"><div style="background:#ff3b30;width:100%;height:100%;border-radius:3px"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- C -->
+<div class="opt" data-choice="c" onclick="toggleSelect(this)">
+  <div class="opt-header">
+    <div class="letter2">C</div>
+    <div>
+      <h3 style="margin:0">Card hero de saldo</h3>
+      <p style="color:var(--text-secondary);font-size:.82rem;margin:0">Saldo em foco; receitas/despesas dentro do card</p>
+    </div>
+  </div>
+  <div class="wf">
+    <div class="wf-box" style="text-align:center;background:linear-gradient(135deg,rgba(10,132,255,.12),rgba(52,199,89,.12));margin-bottom:5px">
+      <span class="tag" style="color:var(--text-secondary)">SALDO DO MÊS</span>
+      <div style="font-size:20px;font-weight:bold;margin:4px 0">R$ 1.400</div>
+      <div style="display:flex;justify-content:space-around">
+        <div><div style="color:#34c759;font-size:9px;font-weight:700">↑ R$ 5.200</div><div style="color:var(--text-tertiary);font-size:8px">receitas</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div><div style="color:#ff3b30;font-size:9px;font-weight:700">↓ R$ 3.800</div><div style="color:var(--text-tertiary);font-size:8px">despesas</div></div>
+      </div>
+    </div>
+    <div class="wf-row" style="grid-template-columns:1fr 1fr;margin-bottom:5px">
+      <div class="wf-box" style="height:65px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary)">🍩 Pizza</div>
+      <div class="wf-box" style="height:65px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary)">📈 Linha</div>
+    </div>
+    <div class="wf-box">
+      <span class="tag" style="color:var(--text-secondary)">ORÇAMENTO</span>
+      <div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-secondary)"><span>Alimentação</span><span>60%</span></div><div class="wf-bar-wrap"><div style="background:#34c759;width:60%;height:100%;border-radius:3px"></div></div></div>
+      <div style="margin-top:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-secondary)"><span>Transporte</span><span>103%</span></div><div class="wf-bar-wrap"><div style="background:#ff3b30;width:100%;height:100%;border-radius:3px"></div></div></div>
+    </div>
+  </div>
+</div>

@@ -24,21 +24,21 @@ describe('WebSocketManager', () => {
   });
 
   it('join adiciona socket ao room', () => {
-    const ws = mockSocket() as any;
+    const ws = mockSocket() as unknown as import('ws').WebSocket;
     manager.join('f1', ws);
     expect(manager.roomSize('f1')).toBe(1);
   });
 
   it('leave remove socket do room', () => {
-    const ws = mockSocket() as any;
+    const ws = mockSocket() as unknown as import('ws').WebSocket;
     manager.join('f1', ws);
     manager.leave('f1', ws);
     expect(manager.roomSize('f1')).toBe(0);
   });
 
   it('broadcast envia mensagem a todos sockets OPEN do room', () => {
-    const ws1 = mockSocket() as any;
-    const ws2 = mockSocket() as any;
+    const ws1 = mockSocket() as unknown as import('ws').WebSocket;
+    const ws2 = mockSocket() as unknown as import('ws').WebSocket;
     manager.join('f1', ws1);
     manager.join('f1', ws2);
     manager.broadcast('f1', { tipo: 'transacao:alterada' });
@@ -47,8 +47,8 @@ describe('WebSocketManager', () => {
   });
 
   it('broadcast ignora sockets não-OPEN (readyState !== 1)', () => {
-    const wsOpen = mockSocket(1) as any;
-    const wsClosing = mockSocket(2) as any;
+    const wsOpen = mockSocket(1) as unknown as import('ws').WebSocket;
+    const wsClosing = mockSocket(2) as unknown as import('ws').WebSocket;
     manager.join('f1', wsOpen);
     manager.join('f1', wsClosing);
     manager.broadcast('f1', { tipo: 'test' });

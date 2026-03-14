@@ -1240,4 +1240,413 @@ describe('API health endpoint', () => {
       },
     });
   });
+
+  it('retorna 404 ao atualizar categoria inexistente', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'Admin Cat 404', email: 'cat-update-404@example.com', senha: 'password123' },
+    });
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'cat-update-404@example.com', senha: 'password123' },
+    });
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia Cat 404' },
+    });
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/categorias/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familia.id },
+      payload: { nome: 'X', tipo: 'despesa' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('desativa categoria e retorna 404 ao tentar desativar inexistente', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'Admin Cat Del', email: 'cat-delete@example.com', senha: 'password123' },
+    });
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'cat-delete@example.com', senha: 'password123' },
+    });
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+    const familyResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia Cat Del' },
+    });
+    const { familia } = familyResponse.json() as { familia: { id: string } };
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/categorias',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familia.id },
+      payload: { nome: 'Categoria Para Deletar', tipo: 'despesa' },
+    });
+    const { categoria } = createResponse.json() as { categoria: { id: string } };
+
+    const deleteResponse = await app.inject({
+      method: 'DELETE',
+      url: `/api/categorias/${categoria.id}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familia.id },
+    });
+    expect(deleteResponse.statusCode).toBe(200);
+    expect(deleteResponse.json().categoria.ativo).toBe(false);
+
+    const notFoundResponse = await app.inject({
+      method: 'DELETE',
+      url: '/api/categorias/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familia.id },
+    });
+    expect(notFoundResponse.statusCode).toBe(404);
+  });
+});
+
+// ─── Métodos de Pagamento ────────────────────────────────────────────────────
+
+describe('métodos de pagamento routes', () => {
+  const app = buildApp();
+
+  beforeAll(async () => {
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  async function setupUserAndFamily(email: string) {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'User MP', email, senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email, senha: 'password123' },
+    });
+    const { accessToken } = loginRes.json() as { accessToken: string };
+    const familyRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia MP' },
+    });
+    const { familia } = familyRes.json() as { familia: { id: string } };
+    return { accessToken, familiaId: familia.id };
+  }
+
+  it('cria, lista, atualiza e desativa método de pagamento', async () => {
+    const { accessToken, familiaId } = await setupUserAndFamily('mp-crud@example.com');
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/metodos-pagamento',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { nome: 'Nubank', tipo: 'credito', dataFechamento: 15, dataVencimento: 22 },
+    });
+    expect(createRes.statusCode).toBe(201);
+    const { metodoPagamento } = createRes.json() as { metodoPagamento: { id: string } };
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/api/metodos-pagamento',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json().metodosPagamento).toHaveLength(1);
+
+    const updateRes = await app.inject({
+      method: 'PATCH',
+      url: `/api/metodos-pagamento/${metodoPagamento.id}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { nome: 'Nubank Black', tipo: 'credito', dataFechamento: 20, dataVencimento: 27 },
+    });
+    expect(updateRes.statusCode).toBe(200);
+    expect(updateRes.json().metodoPagamento.nome).toBe('Nubank Black');
+
+    const deleteRes = await app.inject({
+      method: 'DELETE',
+      url: `/api/metodos-pagamento/${metodoPagamento.id}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(deleteRes.statusCode).toBe(200);
+    expect(deleteRes.json().metodoPagamento.ativo).toBe(false);
+  });
+
+  it('retorna 404 ao atualizar método inexistente', async () => {
+    const { accessToken, familiaId } = await setupUserAndFamily('mp-notfound@example.com');
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/metodos-pagamento/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { nome: 'X', tipo: 'pix', dataFechamento: null, dataVencimento: null },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('retorna 404 ao desativar método inexistente', async () => {
+    const { accessToken, familiaId } = await setupUserAndFamily('mp-del-notfound@example.com');
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/api/metodos-pagamento/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});
+
+// ─── Transações ──────────────────────────────────────────────────────────────
+
+describe('transacao routes', () => {
+  const app = buildApp();
+
+  beforeAll(async () => {
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  async function setupUserFamilyAndCategory(email: string) {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'User TX', email, senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email, senha: 'password123' },
+    });
+    const { accessToken } = loginRes.json() as { accessToken: string };
+    const familyRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia TX' },
+    });
+    const { familia } = familyRes.json() as { familia: { id: string } };
+
+    // Criar categoria via API (InMemory repo da rota de categorias é instância separada)
+    const createCatRes = await app.inject({
+      method: 'POST',
+      url: '/api/categorias',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familia.id },
+      payload: { nome: 'Alimentacao', tipo: 'despesa' },
+    });
+    const { categoria } = createCatRes.json() as { categoria: { id: string } };
+
+    return { accessToken, familiaId: familia.id, categoriaId: categoria.id };
+  }
+
+  it('cria, lista, detalha, edita e exclui transação simples', async () => {
+    const { accessToken, familiaId, categoriaId } =
+      await setupUserFamilyAndCategory('tx-crud@example.com');
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/transacoes',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: {
+        tipo: 'despesa',
+        valor: '150.00',
+        categoriaId,
+        data: '2026-03-10',
+        parcelado: false,
+        recorrente: false,
+      },
+    });
+    expect(createRes.statusCode).toBe(201);
+    const { transacao } = createRes.json() as { transacao: { id: string } };
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/api/transacoes',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json().transacoes.length).toBeGreaterThan(0);
+
+    const detailRes = await app.inject({
+      method: 'GET',
+      url: `/api/transacoes/${transacao.id}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(detailRes.statusCode).toBe(200);
+    expect(detailRes.json().transacao.id).toBe(transacao.id);
+
+    const updateRes = await app.inject({
+      method: 'PATCH',
+      url: `/api/transacoes/${transacao.id}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: {
+        tipo: 'despesa',
+        valor: '200.00',
+        categoriaId,
+        data: '2026-03-10',
+      },
+    });
+    expect(updateRes.statusCode).toBe(200);
+    expect(updateRes.json().transacao.valor).toBe('200.00');
+
+    const deleteRes = await app.inject({
+      method: 'DELETE',
+      url: `/api/transacoes/${transacao.id}`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(deleteRes.statusCode).toBe(204);
+  });
+
+  it('lista transações com filtros de querystring', async () => {
+    const { accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory(
+      'tx-list-filters@example.com',
+    );
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/transacoes',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: {
+        tipo: 'receita',
+        valor: '5000.00',
+        categoriaId,
+        data: '2026-03-01',
+        parcelado: false,
+        recorrente: false,
+      },
+    });
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: `/api/transacoes?tipo=receita&mesReferencia=2026-03`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json().transacoes.length).toBeGreaterThan(0);
+  });
+
+  it('retorna 404 ao detalhar transação inexistente', async () => {
+    const { accessToken, familiaId } = await setupUserFamilyAndCategory(
+      'tx-detail-404@example.com',
+    );
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/transacoes/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('retorna 404 ao editar transação inexistente', async () => {
+    const { accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory(
+      'tx-update-404@example.com',
+    );
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/transacoes/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { tipo: 'despesa', valor: '10.00', categoriaId, data: '2026-03-10' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('retorna 404 ao excluir transação inexistente', async () => {
+    const { accessToken, familiaId } = await setupUserFamilyAndCategory(
+      'tx-delete-404@example.com',
+    );
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/api/transacoes/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('cria transação parcelada gerando parcelas', async () => {
+    const { accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory(
+      'tx-parcelada@example.com',
+    );
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/transacoes',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: {
+        tipo: 'despesa',
+        valor: '600.00',
+        categoriaId,
+        data: '2026-03-10',
+        parcelado: true,
+        numeroParcelas: 3,
+        recorrente: false,
+      },
+    });
+    expect(createRes.statusCode).toBe(201);
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/api/transacoes',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(listRes.json().transacoes.length).toBe(3);
+  });
+
+  it('adianta parcelas com POST /antecipar', async () => {
+    const { accessToken, familiaId, categoriaId } = await setupUserFamilyAndCategory(
+      'tx-antecipar@example.com',
+    );
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/transacoes',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: {
+        tipo: 'despesa',
+        valor: '400.00',
+        categoriaId,
+        data: '2026-03-10',
+        parcelado: true,
+        numeroParcelas: 2,
+        recorrente: false,
+      },
+    });
+    const { transacao } = createRes.json() as { transacao: { id: string } };
+
+    const anteciparRes = await app.inject({
+      method: 'POST',
+      url: `/api/transacoes/${transacao.id}/antecipar`,
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { novoMesReferencia: '2026-03', dataMinima: '2026-03-10' },
+    });
+    expect(anteciparRes.statusCode).toBe(200);
+  });
+
+  it('retorna 404 ao antecipar transação inexistente', async () => {
+    const { accessToken, familiaId } = await setupUserFamilyAndCategory(
+      'tx-antecipar-404@example.com',
+    );
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transacoes/00000000-0000-0000-0000-000000000000/antecipar',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+      payload: { novoMesReferencia: '2026-03', dataMinima: '2026-03-10' },
+    });
+    expect(res.statusCode).toBe(404);
+  });
 });

@@ -113,8 +113,52 @@ describe('TransacaoService', () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({ transacoes: [] });
     await service.listar({ mesReferencia: '2026-03' }, 'fid');
     expect(apiClient.request).toHaveBeenCalledWith(
-      expect.stringContaining('/api/transacoes'),
+      expect.stringContaining('mesReferencia=2026-03'),
       expect.anything(),
+    );
+  });
+
+  it('lista transações com todos os filtros', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ transacoes: [] });
+    await service.listar(
+      {
+        mesReferencia: '2026-03',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        usuarioRegistrouId: 'u1',
+        metodoPagamentoId: 'mp1',
+      },
+      'fid',
+    );
+    const url = vi.mocked(apiClient.request).mock.calls[0][0] as string;
+    expect(url).toContain('tipo=despesa');
+    expect(url).toContain('categoriaId=c1');
+    expect(url).toContain('usuarioRegistrouId=u1');
+    expect(url).toContain('metodoPagamentoId=mp1');
+  });
+
+  it('lista transações sem filtros usa url base', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ transacoes: [] });
+    await service.listar({}, 'fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/transacoes', expect.anything());
+  });
+
+  it('busca detalhe de transação', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ transacao: { id: 't1' } });
+    await service.detalhe('t1', 'fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/transacoes/t1', expect.anything());
+  });
+
+  it('edita transação', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ transacao: { id: 't1' } });
+    await service.editar(
+      't1',
+      { tipo: 'despesa', valor: '200.00', categoriaId: 'c1', data: '2026-03-10' },
+      'fid',
+    );
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/transacoes/t1',
+      expect.objectContaining({ method: 'PATCH' }),
     );
   });
 

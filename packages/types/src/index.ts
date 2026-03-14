@@ -441,3 +441,9 @@ export const transacaoUpdateRequestSchema = z.object({
   metodoPagamentoId: z.string().uuid().optional().nullable(),
 });
 export type TransacaoUpdateRequest = z.infer<typeof transacaoUpdateRequestSchema>;
+
+export const transacaoAnteciparRequestSchema = z.object({
+  novoMesReferencia: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
+  dataMinima: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data no formato YYYY-MM-DD'),
+});
+export type TransacaoAnteciparRequest = z.infer<typeof transacaoAnteciparRequestSchema>;

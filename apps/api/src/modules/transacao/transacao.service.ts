@@ -242,4 +242,21 @@ export class TransacaoService {
     const deleted = await this.repository.delete(input);
     if (!deleted) throw new TransacaoNotFoundError();
   }
+
+  async anteciparParcelas(input: {
+    transacaoPaiId: string;
+    familiaId: string;
+    novoMesReferencia: string;
+    dataMinima: string;
+  }) {
+    const updated = await this.repository.updateManyByPaiId({
+      transacaoPaiId: input.transacaoPaiId,
+      familiaId: input.familiaId,
+      dataMinima: input.dataMinima,
+      fields: { mesReferencia: input.novoMesReferencia },
+    });
+
+    if (updated === 0) throw new TransacaoNotFoundError();
+    return updated;
+  }
 }

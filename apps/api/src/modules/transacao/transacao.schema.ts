@@ -1,4 +1,5 @@
 import {
+  transacaoAnteciparRequestSchema,
   transacaoCreateRequestSchema,
   transacaoCreateResponseSchema,
   transacaoListQuerySchema,
@@ -60,3 +61,16 @@ export const transacaoDeleteSchema = {
     404: errorSchemas[404],
   },
 };
+
+export const transacaoAnteciparSchema = {
+  params: transacaoParamsSchema,
+  body: transacaoAnteciparRequestSchema,
+  response: {
+    200: z.object({ antecipadas: z.number().int() }),
+    400: errorSchemas[400],
+    401: errorSchemas[401],
+    404: errorSchemas[404],
+  },
+};
+
+export { transacaoAnteciparRequestSchema };

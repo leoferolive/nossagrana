@@ -235,6 +235,53 @@ describe('TransacaoService', () => {
     });
   });
 
+  describe('UC11 — Antecipar parcelas', () => {
+    it('antecipa parcelas restantes para o mês atual', async () => {
+      const { repository, service } = buildService();
+
+      const pai = await service.registrar({
+        familiaId: 'f1',
+        tipo: 'despesa',
+        valor: '300.00',
+        categoriaId: 'cat1',
+        data: '2026-03-10',
+        metodoPagamentoId: 'mp1',
+        metodoPagamentoTipo: 'credito',
+        dataFechamento: 15,
+        usuarioRegistrouId: 'u1',
+        parcelado: true,
+        numeroParcelas: 3,
+      });
+
+      // Antecipar a partir da 2ª parcela: muda mesReferencia para '2026-04'
+      const antecipadas = await service.anteciparParcelas({
+        transacaoPaiId: pai.id,
+        familiaId: 'f1',
+        novoMesReferencia: '2026-04',
+        dataMinima: '2026-04-01',
+      });
+
+      expect(antecipadas).toBeGreaterThan(0);
+
+      const filhos = await repository.listByPaiId({ transacaoPaiId: pai.id, familiaId: 'f1' });
+      const antecipadas2 = filhos.filter((p) => p.mesReferencia === '2026-04');
+      expect(antecipadas2.length).toBeGreaterThan(0);
+    });
+
+    it('lança TransacaoNotFoundError se nenhuma parcela encontrada', async () => {
+      const { service } = buildService();
+
+      await expect(
+        service.anteciparParcelas({
+          transacaoPaiId: 'nao-existe',
+          familiaId: 'f1',
+          novoMesReferencia: '2026-04',
+          dataMinima: '2026-04-01',
+        }),
+      ).rejects.toThrow(TransacaoNotFoundError);
+    });
+  });
+
   describe('UC09 — Editar transação', () => {
     it('edita transação simples', async () => {
       const { service } = buildService();

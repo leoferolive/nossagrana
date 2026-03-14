@@ -4,6 +4,7 @@ import {
   transacaoParamsSchema,
   transacaoUpdateRequestSchema,
 } from '@nossagrana/types';
+// transacaoAnteciparRequestSchema is imported from schema.ts re-export
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
@@ -13,6 +14,8 @@ import {
 } from '../metodo-pagamento/metodo-pagamento.repository.js';
 import type { MetodoPagamentoRepository } from '../metodo-pagamento/metodo-pagamento.types.js';
 import {
+  transacaoAnteciparRequestSchema,
+  transacaoAnteciparSchema,
   transacaoCreateSchema,
   transacaoDeleteSchema,
   transacaoGetSchema,
@@ -203,6 +206,34 @@ export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
           familiaId: request.familiaIdAtiva as string,
         });
         return reply.code(204).send(null);
+      } catch (error) {
+        if (error instanceof TransacaoNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+        throw error;
+      }
+    },
+  );
+
+  fastify.post(
+    '/transacoes/:id/antecipar',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: transacaoAnteciparSchema,
+    },
+    async (request, reply) => {
+      try {
+        const { id } = transacaoParamsSchema.parse(request.params);
+        const payload = transacaoAnteciparRequestSchema.parse(request.body);
+
+        const antecipadas = await transacaoService.anteciparParcelas({
+          transacaoPaiId: id,
+          familiaId: request.familiaIdAtiva as string,
+          novoMesReferencia: payload.novoMesReferencia,
+          dataMinima: payload.dataMinima,
+        });
+
+        return reply.code(200).send({ antecipadas });
       } catch (error) {
         if (error instanceof TransacaoNotFoundError) {
           return reply.code(404).send({ message: error.message });

@@ -26,8 +26,18 @@ interface HistoricoPageProps {
 }
 
 const MES_NOMES = [
-  'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
-  'jul', 'ago', 'set', 'out', 'nov', 'dez',
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
 ];
 
 const formatMes = (mesReferencia: string): string => {
@@ -78,9 +88,20 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
         tourKey="historico"
         steps={[
           { title: 'Histórico', description: 'Veja um resumo financeiro de cada mês passado.' },
-          { title: 'Snapshot', description: 'Meses fechados têm um snapshot que preserva os dados do período.' },
-          { title: 'Divergente', description: 'Se uma transação for editada após o fechamento, o mês fica marcado como divergente.' },
-          { title: 'Tendência', description: 'O gráfico de tendência mostra a evolução de receitas, despesas e saldo ao longo do tempo.' },
+          {
+            title: 'Snapshot',
+            description: 'Meses fechados têm um snapshot que preserva os dados do período.',
+          },
+          {
+            title: 'Divergente',
+            description:
+              'Se uma transação for editada após o fechamento, o mês fica marcado como divergente.',
+          },
+          {
+            title: 'Tendência',
+            description:
+              'O gráfico de tendência mostra a evolução de receitas, despesas e saldo ao longo do tempo.',
+          },
         ]}
       />
       <ErrorBanner error={erro} />
@@ -140,7 +161,9 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
               }}
               options={{
                 plugins: { legend: { position: 'bottom' } },
-                scales: { y: { ticks: { callback: (v) => `R$${Number(v).toLocaleString('pt-BR')}` } } },
+                scales: {
+                  y: { ticks: { callback: (v) => `R$${Number(v).toLocaleString('pt-BR')}` } },
+                },
                 maintainAspectRatio: true,
               }}
             />
@@ -173,7 +196,13 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                   <div className="text-right text-sm">
                     <div className="text-success">+{formatBRL(mes.totalReceitas)}</div>
                     <div className="text-danger">-{formatBRL(mes.totalDespesas)}</div>
-                    <div className={parseFloat(mes.saldo) >= 0 ? 'text-success font-semibold' : 'text-danger font-semibold'}>
+                    <div
+                      className={
+                        parseFloat(mes.saldo) >= 0
+                          ? 'text-success font-semibold'
+                          : 'text-danger font-semibold'
+                      }
+                    >
                       {formatBRL(mes.saldo)}
                     </div>
                   </div>
@@ -193,7 +222,10 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 </h2>
                 <button
                   type="button"
-                  onClick={() => { setMesSelecionado(null); setDetalhe(null); }}
+                  onClick={() => {
+                    setMesSelecionado(null);
+                    setDetalhe(null);
+                  }}
                   className="text-text-muted hover:text-text"
                 >
                   ✕
@@ -206,19 +238,27 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 <div className="space-y-4">
                   {/* Valores atuais */}
                   <div className="rounded-xl border border-border p-4">
-                    <p className="text-xs text-text-muted mb-2 font-semibold uppercase">Valores Atuais</p>
+                    <p className="text-xs text-text-muted mb-2 font-semibold uppercase">
+                      Valores Atuais
+                    </p>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
                         <p className="text-text-muted">Receitas</p>
-                        <p className="font-semibold text-success">{formatBRL(detalhe.atual.totalReceitas)}</p>
+                        <p className="font-semibold text-success">
+                          {formatBRL(detalhe.atual.totalReceitas)}
+                        </p>
                       </div>
                       <div>
                         <p className="text-text-muted">Despesas</p>
-                        <p className="font-semibold text-danger">{formatBRL(detalhe.atual.totalDespesas)}</p>
+                        <p className="font-semibold text-danger">
+                          {formatBRL(detalhe.atual.totalDespesas)}
+                        </p>
                       </div>
                       <div>
                         <p className="text-text-muted">Saldo</p>
-                        <p className={`font-semibold ${parseFloat(detalhe.atual.saldo) >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <p
+                          className={`font-semibold ${parseFloat(detalhe.atual.saldo) >= 0 ? 'text-success' : 'text-danger'}`}
+                        >
                           {formatBRL(detalhe.atual.saldo)}
                         </p>
                       </div>
@@ -229,23 +269,34 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                   {detalhe.snapshot ? (
                     <div className="rounded-xl border border-border p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs text-text-muted font-semibold uppercase">Snapshot ({new Date(detalhe.snapshot.geradoEm).toLocaleDateString('pt-BR')})</p>
+                        <p className="text-xs text-text-muted font-semibold uppercase">
+                          Snapshot (
+                          {new Date(detalhe.snapshot.geradoEm).toLocaleDateString('pt-BR')})
+                        </p>
                         {detalhe.snapshot.divergente && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-warning/20 text-warning font-medium">divergente</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-warning/20 text-warning font-medium">
+                            divergente
+                          </span>
                         )}
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm mb-4">
                         <div>
                           <p className="text-text-muted">Receitas</p>
-                          <p className="font-semibold text-success">{formatBRL(detalhe.snapshot.totalReceitas)}</p>
+                          <p className="font-semibold text-success">
+                            {formatBRL(detalhe.snapshot.totalReceitas)}
+                          </p>
                         </div>
                         <div>
                           <p className="text-text-muted">Despesas</p>
-                          <p className="font-semibold text-danger">{formatBRL(detalhe.snapshot.totalDespesas)}</p>
+                          <p className="font-semibold text-danger">
+                            {formatBRL(detalhe.snapshot.totalDespesas)}
+                          </p>
                         </div>
                         <div>
                           <p className="text-text-muted">Saldo</p>
-                          <p className={`font-semibold ${parseFloat(detalhe.snapshot.saldo) >= 0 ? 'text-success' : 'text-danger'}`}>
+                          <p
+                            className={`font-semibold ${parseFloat(detalhe.snapshot.saldo) >= 0 ? 'text-success' : 'text-danger'}`}
+                          >
                             {formatBRL(detalhe.snapshot.saldo)}
                           </p>
                         </div>
@@ -253,7 +304,9 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
 
                       {detalhe.snapshot.dadosCategorias.length > 0 && (
                         <div>
-                          <p className="text-xs text-text-muted font-semibold mb-2">Por Categoria</p>
+                          <p className="text-xs text-text-muted font-semibold mb-2">
+                            Por Categoria
+                          </p>
                           <div className="space-y-1">
                             {detalhe.snapshot.dadosCategorias.map((cat) => (
                               <div key={cat.categoriaId} className="flex justify-between text-sm">

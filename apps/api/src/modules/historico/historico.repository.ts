@@ -32,7 +32,12 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
   private _transacoesResumo: InMemoryTransacaoResumo[] = [];
   private _snapshotData = new Map<string, InMemoryTransacaoSnapshotData>();
 
-  seedTransacao(t: { familiaId: string; mesReferencia: string; totalReceitas: string; totalDespesas: string }): void {
+  seedTransacao(t: {
+    familiaId: string;
+    mesReferencia: string;
+    totalReceitas: string;
+    totalDespesas: string;
+  }): void {
     this._transacoesResumo.push(t);
   }
 
@@ -50,7 +55,11 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
     this._snapshots.push({ id: crypto.randomUUID(), ...s });
   }
 
-  seedTransacaoParaSnapshot(familiaId: string, mesReferencia: string, data: InMemoryTransacaoSnapshotData): void {
+  seedTransacaoParaSnapshot(
+    familiaId: string,
+    mesReferencia: string,
+    data: InMemoryTransacaoSnapshotData,
+  ): void {
     this._transacoesResumo.push({
       familiaId,
       mesReferencia,
@@ -67,11 +76,19 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
   }
 
   async findSnapshot(familiaId: string, mesReferencia: string): Promise<SnapshotRow | null> {
-    return this._snapshots.find((s) => s.familiaId === familiaId && s.mesReferencia === mesReferencia) ?? null;
+    return (
+      this._snapshots.find((s) => s.familiaId === familiaId && s.mesReferencia === mesReferencia) ??
+      null
+    );
   }
 
-  async getResumoTransacoesMes(familiaId: string, mesReferencia: string): Promise<TransacaoResumoRow> {
-    const t = this._transacoesResumo.find((r) => r.familiaId === familiaId && r.mesReferencia === mesReferencia);
+  async getResumoTransacoesMes(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<TransacaoResumoRow> {
+    const t = this._transacoesResumo.find(
+      (r) => r.familiaId === familiaId && r.mesReferencia === mesReferencia,
+    );
     if (!t) return { mesReferencia, totalReceitas: '0.00', totalDespesas: '0.00', saldo: '0.00' };
     const saldo = (parseFloat(t.totalReceitas) - parseFloat(t.totalDespesas)).toFixed(2);
     return { mesReferencia, totalReceitas: t.totalReceitas, totalDespesas: t.totalDespesas, saldo };
@@ -89,7 +106,9 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
   }
 
   async marcarDivergente(familiaId: string, mesReferencia: string): Promise<void> {
-    const snap = this._snapshots.find((s) => s.familiaId === familiaId && s.mesReferencia === mesReferencia);
+    const snap = this._snapshots.find(
+      (s) => s.familiaId === familiaId && s.mesReferencia === mesReferencia,
+    );
     if (snap) snap.divergente = true;
   }
 
@@ -110,12 +129,18 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
     return row;
   }
 
-  async getTransacoesPorCategoria(familiaId: string, mesReferencia: string): Promise<TransacaoCategoriaSumaRow[]> {
+  async getTransacoesPorCategoria(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<TransacaoCategoriaSumaRow[]> {
     const data = this._snapshotData.get(`${familiaId}:${mesReferencia}`);
     return (data?.porCategoria ?? []).map((r) => ({ mesReferencia, ...r }));
   }
 
-  async getTransacoesPorUsuario(familiaId: string, mesReferencia: string): Promise<TransacaoUsuarioSumaRow[]> {
+  async getTransacoesPorUsuario(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<TransacaoUsuarioSumaRow[]> {
     const data = this._snapshotData.get(`${familiaId}:${mesReferencia}`);
     return (data?.porUsuario ?? []).map((r) => ({ mesReferencia, ...r }));
   }
@@ -149,7 +174,12 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     const [row] = await db
       .select()
       .from(snapshotsMensais)
-      .where(and(eq(snapshotsMensais.familiaId, familiaId), eq(snapshotsMensais.mesReferencia, mesReferencia)))
+      .where(
+        and(
+          eq(snapshotsMensais.familiaId, familiaId),
+          eq(snapshotsMensais.mesReferencia, mesReferencia),
+        ),
+      )
       .limit(1);
 
     if (!row) return null;
@@ -167,19 +197,17 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     };
   }
 
-  async getResumoTransacoesMes(familiaId: string, mesReferencia: string): Promise<TransacaoResumoRow> {
+  async getResumoTransacoesMes(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<TransacaoResumoRow> {
     const [row] = await db
       .select({
         totalReceitas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'receita' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
         totalDespesas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'despesa' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
       })
       .from(transacoes)
-      .where(
-        and(
-          eq(transacoes.familiaId, familiaId),
-          eq(transacoes.mesReferencia, mesReferencia),
-        ),
-      );
+      .where(and(eq(transacoes.familiaId, familiaId), eq(transacoes.mesReferencia, mesReferencia)));
 
     const totalReceitas = parseFloat(row?.totalReceitas ?? '0').toFixed(2);
     const totalDespesas = parseFloat(row?.totalDespesas ?? '0').toFixed(2);
@@ -246,7 +274,10 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     };
   }
 
-  async getTransacoesPorCategoria(familiaId: string, mesReferencia: string): Promise<TransacaoCategoriaSumaRow[]> {
+  async getTransacoesPorCategoria(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<TransacaoCategoriaSumaRow[]> {
     const rows = await db
       .select({
         categoriaId: transacoes.categoriaId,
@@ -272,7 +303,10 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     }));
   }
 
-  async getTransacoesPorUsuario(familiaId: string, mesReferencia: string): Promise<TransacaoUsuarioSumaRow[]> {
+  async getTransacoesPorUsuario(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<TransacaoUsuarioSumaRow[]> {
     const rows = await db
       .select({
         usuarioId: transacoes.usuarioRegistrouId,

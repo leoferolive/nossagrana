@@ -82,14 +82,19 @@ export const AjudaPage = ({ onBack }: AjudaPageProps) => {
                 {perguntas.map((faq) => {
                   const idx = FAQ.indexOf(faq);
                   return (
-                    <div key={idx} className="rounded-xl border border-border bg-panel overflow-hidden">
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-border bg-panel overflow-hidden"
+                    >
                       <button
                         type="button"
                         onClick={() => toggle(idx)}
                         className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-surface/50 transition-colors flex justify-between items-center"
                       >
                         <span>{faq.pergunta}</span>
-                        <span className="text-text-muted ml-2">{openIndex === idx ? '▲' : '▼'}</span>
+                        <span className="text-text-muted ml-2">
+                          {openIndex === idx ? '▲' : '▼'}
+                        </span>
                       </button>
                       {openIndex === idx && (
                         <div className="px-4 pb-3 text-sm text-text-muted border-t border-border">

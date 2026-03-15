@@ -118,10 +118,23 @@ export const DashboardPage = ({
   };
 
   const dashboardTourSteps = [
-    { title: 'Bem-vindo ao NossaGrana!', description: 'Esta é a tela principal. Aqui você vê o resumo financeiro do mês.' },
-    { title: 'Receitas e Despesas', description: 'Os cards mostram o total de receitas, despesas e saldo do mês atual.' },
-    { title: 'Nova Transação', description: 'Toque no botão "+" para registrar uma nova receita ou despesa.' },
-    { title: 'Navegar', description: 'Use o menu inferior para acessar Extrato, Orçamento, Relatórios, Histórico e Ajuda.' },
+    {
+      title: 'Bem-vindo ao NossaGrana!',
+      description: 'Esta é a tela principal. Aqui você vê o resumo financeiro do mês.',
+    },
+    {
+      title: 'Receitas e Despesas',
+      description: 'Os cards mostram o total de receitas, despesas e saldo do mês atual.',
+    },
+    {
+      title: 'Nova Transação',
+      description: 'Toque no botão "+" para registrar uma nova receita ou despesa.',
+    },
+    {
+      title: 'Navegar',
+      description:
+        'Use o menu inferior para acessar Extrato, Orçamento, Relatórios, Histórico e Ajuda.',
+    },
   ];
 
   return (

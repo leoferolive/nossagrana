@@ -20,7 +20,12 @@ describe('HistoricoService', () => {
     });
 
     it('retorna meses com transações sem snapshot', async () => {
-      repo.seedTransacao({ familiaId: FAM, mesReferencia: '2026-01', totalReceitas: '1000.00', totalDespesas: '500.00' });
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-01',
+        totalReceitas: '1000.00',
+        totalDespesas: '500.00',
+      });
       const result = await service.list(FAM);
       expect(result.meses).toHaveLength(1);
       expect(result.meses[0]).toMatchObject({
@@ -72,8 +77,18 @@ describe('HistoricoService', () => {
     });
 
     it('retorna meses em ordem decrescente', async () => {
-      repo.seedTransacao({ familiaId: FAM, mesReferencia: '2026-01', totalReceitas: '100.00', totalDespesas: '50.00' });
-      repo.seedTransacao({ familiaId: FAM, mesReferencia: '2026-03', totalReceitas: '200.00', totalDespesas: '100.00' });
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-01',
+        totalReceitas: '100.00',
+        totalDespesas: '50.00',
+      });
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-03',
+        totalReceitas: '200.00',
+        totalDespesas: '100.00',
+      });
       repo.seedSnapshot({
         familiaId: FAM,
         mesReferencia: '2026-02',
@@ -92,7 +107,12 @@ describe('HistoricoService', () => {
 
   describe('detalhe', () => {
     it('retorna atual calculado e snapshot null quando não há snapshot', async () => {
-      repo.seedTransacao({ familiaId: FAM, mesReferencia: '2026-02', totalReceitas: '800.00', totalDespesas: '400.00' });
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-02',
+        totalReceitas: '800.00',
+        totalDespesas: '400.00',
+      });
       const result = await service.detalhe(FAM, '2026-02');
       expect(result.mesReferencia).toBe('2026-02');
       expect(result.atual.totalReceitas).toBe('800.00');
@@ -100,7 +120,12 @@ describe('HistoricoService', () => {
     });
 
     it('retorna snapshot quando existe', async () => {
-      repo.seedTransacao({ familiaId: FAM, mesReferencia: '2026-01', totalReceitas: '900.00', totalDespesas: '500.00' });
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-01',
+        totalReceitas: '900.00',
+        totalDespesas: '500.00',
+      });
       repo.seedSnapshot({
         familiaId: FAM,
         mesReferencia: '2026-01',

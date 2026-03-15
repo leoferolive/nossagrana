@@ -42,12 +42,46 @@ export const ConfiguracoesPage = ({
   onGoToPerfil,
 }: ConfiguracoesPageProps) => {
   const items: MenuItem[] = [
-    ...(onGoToPerfil ? [{ label: 'Perfil e Conta', description: 'Edite seu nome e senha', icon: IconPerfil, onClick: onGoToPerfil }] : []),
-    { label: 'Categorias', description: 'Gerencie as categorias de gastos', icon: IconExtrato, onClick: onGoToCategorias },
-    { label: 'Cartões e Pagamentos', description: 'Métodos de pagamento cadastrados', icon: IconCartao, onClick: onGoToMetodosPagamento },
-    { label: 'Orçamento', description: 'Limites de gasto por categoria', icon: IconOrcamento, onClick: onGoToOrcamento },
-    { label: 'Família', description: 'Membros, convites e configurações', icon: IconFamilia, onClick: onGoToFamilia },
-    { label: 'Histórico', description: 'Meses fechados e snapshots', icon: IconHistorico, onClick: onGoToHistorico },
+    ...(onGoToPerfil
+      ? [
+          {
+            label: 'Perfil e Conta',
+            description: 'Edite seu nome e senha',
+            icon: IconPerfil,
+            onClick: onGoToPerfil,
+          },
+        ]
+      : []),
+    {
+      label: 'Categorias',
+      description: 'Gerencie as categorias de gastos',
+      icon: IconExtrato,
+      onClick: onGoToCategorias,
+    },
+    {
+      label: 'Cartões e Pagamentos',
+      description: 'Métodos de pagamento cadastrados',
+      icon: IconCartao,
+      onClick: onGoToMetodosPagamento,
+    },
+    {
+      label: 'Orçamento',
+      description: 'Limites de gasto por categoria',
+      icon: IconOrcamento,
+      onClick: onGoToOrcamento,
+    },
+    {
+      label: 'Família',
+      description: 'Membros, convites e configurações',
+      icon: IconFamilia,
+      onClick: onGoToFamilia,
+    },
+    {
+      label: 'Histórico',
+      description: 'Meses fechados e snapshots',
+      icon: IconHistorico,
+      onClick: onGoToHistorico,
+    },
     { label: 'Ajuda', description: 'FAQ e guia de uso', icon: IconAjuda, onClick: onGoToAjuda },
   ];
 
@@ -56,7 +90,10 @@ export const ConfiguracoesPage = ({
       <FirstTimeTour
         tourKey="configuracoes"
         steps={[
-          { title: 'Configurações', description: 'Acesse rapidamente todas as seções do app por aqui.' },
+          {
+            title: 'Configurações',
+            description: 'Acesse rapidamente todas as seções do app por aqui.',
+          },
         ]}
       />
 

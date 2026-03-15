@@ -23,9 +23,7 @@ export async function gerarSnapshotsParaTodasFamilias(): Promise<void> {
   const service = new SnapshotService(repo);
 
   const todasFamilias = await db.select({ id: familias.id }).from(familias);
-  await Promise.allSettled(
-    todasFamilias.map((f) => service.gerarSnapshot(f.id, mesReferencia)),
-  );
+  await Promise.allSettled(todasFamilias.map((f) => service.gerarSnapshot(f.id, mesReferencia)));
 }
 
 // Executa às 23:55 do último dia do mês (checa se amanhã é dia 1)

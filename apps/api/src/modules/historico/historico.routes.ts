@@ -35,7 +35,11 @@ export const historicoRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const { mesReferencia } = historicoMesParamsSchema.parse(request.params);
       const result = await service.detalhe(request.familiaIdAtiva as string, mesReferencia);
-      if (result.atual.totalReceitas === '0.00' && result.atual.totalDespesas === '0.00' && !result.snapshot) {
+      if (
+        result.atual.totalReceitas === '0.00' &&
+        result.atual.totalDespesas === '0.00' &&
+        !result.snapshot
+      ) {
         return reply.code(404).send({ message: 'Mês não encontrado' });
       }
       return result;

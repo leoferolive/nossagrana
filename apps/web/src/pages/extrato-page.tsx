@@ -71,7 +71,10 @@ export const ExtratoPage = ({ onBack, onNovaTransacao }: ExtratoPageProps) => {
           { title: 'Extrato', description: 'Aqui você vê todas as suas transações registradas.' },
           { title: 'Filtros', description: 'Use os filtros para ver só receitas ou só despesas.' },
           { title: 'Detalhe', description: 'Toque em uma transação para ver os detalhes.' },
-          { title: 'Nova transação', description: 'Use o botão "+" para registrar uma nova transação.' },
+          {
+            title: 'Nova transação',
+            description: 'Use o botão "+" para registrar uma nova transação.',
+          },
         ]}
       />
       {/* Header */}

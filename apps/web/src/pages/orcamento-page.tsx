@@ -90,9 +90,18 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
       <FirstTimeTour
         tourKey="orcamento"
         steps={[
-          { title: 'Orçamento', description: 'Defina limites de gasto por categoria para controlar suas finanças.' },
-          { title: 'Progresso', description: 'A barra mostra quanto do limite já foi utilizado no mês.' },
-          { title: 'Editar limite', description: 'Toque em "Editar limite" para ajustar o valor máximo de cada categoria.' },
+          {
+            title: 'Orçamento',
+            description: 'Defina limites de gasto por categoria para controlar suas finanças.',
+          },
+          {
+            title: 'Progresso',
+            description: 'A barra mostra quanto do limite já foi utilizado no mês.',
+          },
+          {
+            title: 'Editar limite',
+            description: 'Toque em "Editar limite" para ajustar o valor máximo de cada categoria.',
+          },
         ]}
       />
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">

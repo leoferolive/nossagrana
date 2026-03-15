@@ -7,9 +7,7 @@ import { useTransacaoStore } from '@/stores/transacao.store';
 import { ExtratoPage } from './extrato-page';
 
 vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => (
-    <div data-testid={`tour-${tourKey}`} />
-  ),
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
 }));
 
 vi.mock('@/contexts/use-auth', () => ({

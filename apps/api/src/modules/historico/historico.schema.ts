@@ -1,7 +1,4 @@
-import {
-  historicoDetalheResponseSchema,
-  historicoListResponseSchema,
-} from '@nossagrana/types';
+import { historicoDetalheResponseSchema, historicoListResponseSchema } from '@nossagrana/types';
 import { z } from 'zod';
 
 const errorSchemas = {

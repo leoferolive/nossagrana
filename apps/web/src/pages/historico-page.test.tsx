@@ -11,16 +11,18 @@ vi.mock('../services/core-financeiro.service', () => ({
 }));
 
 vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => (
-    <div data-testid={`tour-${tourKey}`} />
-  ),
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
 }));
 
 vi.mock('react-chartjs-2', () => ({
   Line: ({ data }: { data: { labels: string[]; datasets: { label: string }[] } }) => (
     <div data-testid="chart-tendencia">
-      {data.labels.map((l: string) => <span key={l}>{l}</span>)}
-      {data.datasets.map((d: { label: string }) => <span key={d.label}>{d.label}</span>)}
+      {data.labels.map((l: string) => (
+        <span key={l}>{l}</span>
+      ))}
+      {data.datasets.map((d: { label: string }) => (
+        <span key={d.label}>{d.label}</span>
+      ))}
     </div>
   ),
 }));
@@ -54,9 +56,7 @@ describe('HistoricoPage', () => {
 
   it('mostra mensagem de empty state quando não há meses', async () => {
     render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getByText(/nenhum histórico/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/nenhum histórico/i)).toBeInTheDocument());
   });
 
   it('lista meses com snapshot e sem snapshot', async () => {
@@ -83,9 +83,7 @@ describe('HistoricoPage', () => {
       ],
     });
     render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0),
-    );
+    await waitFor(() => expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0));
     expect(screen.getAllByText(/jan.*2026/i).length).toBeGreaterThan(0);
   });
 
@@ -147,18 +145,14 @@ describe('HistoricoPage', () => {
     await waitFor(() => expect(screen.getByText(/fev.*2026/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText(/fev.*2026/i));
 
-    await waitFor(() =>
-      expect(screen.getByText(/alimentação/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/alimentação/i)).toBeInTheDocument());
     expect(mockService.getHistoricoDetalhe).toHaveBeenCalledWith(familiaId, '2026-02');
   });
 
   it('exibe banner de erro quando a requisição falha', async () => {
     mockService.getHistorico.mockRejectedValue(new Error('network'));
     render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getByRole('alert')).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
   });
 
   it('exibe o tour de histórico', async () => {
@@ -200,9 +194,7 @@ describe('HistoricoPage', () => {
     it('renderiza o gráfico de tendência quando há 2 ou mais meses', async () => {
       mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
       render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
-      await waitFor(() =>
-        expect(screen.getByTestId('chart-tendencia')).toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.getByTestId('chart-tendencia')).toBeInTheDocument());
     });
 
     it('não renderiza o gráfico quando há menos de 2 meses', async () => {

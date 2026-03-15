@@ -11,9 +11,7 @@ vi.mock('../services/core-financeiro.service', () => ({
 }));
 
 vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => (
-    <div data-testid={`tour-${tourKey}`} />
-  ),
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
 }));
 
 import { OrcamentoPage } from './orcamento-page';

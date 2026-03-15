@@ -225,8 +225,8 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Rota de recuperação de família excluída (UC25)
 - [ ] Rota de impersonação de usuário (UC26)
 - [x] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
-- [ ] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
-- [ ] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
+- [x] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
+- [x] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
 - [ ] Tela de Configurações gerais (perfil, conta)
 - [ ] Revisão de mensagens de erro e feedback visual
 - [ ] Testes de carga básicos no Raspberry Pi

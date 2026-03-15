@@ -1,32 +1,68 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AuthShell } from '@/components/ui/auth-shell';
+import { familiaService } from '@/services/auth.service';
+import type {
+  FamiliaListJoinRequestsResponse,
+  FamiliaListMembersResponse,
+} from '@nossagrana/types';
 
 interface FamilySettingsPageProps {
   onBackToOnboarding: () => void;
+  familiaId: string;
 }
 
-export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPageProps) => {
-  const [membros, setMembros] = useState([
-    { id: '1', nome: 'Leo', role: 'admin' as const },
-    { id: '2', nome: 'Maria', role: 'membro' as const },
-  ]);
-  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([{ id: 'r1', nome: 'Joao' }]);
+export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySettingsPageProps) => {
+  const [membros, setMembros] = useState<FamiliaListMembersResponse['membros']>([]);
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<
+    FamiliaListJoinRequestsResponse['solicitacoes']
+  >([]);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [isInviteCopied, setIsInviteCopied] = useState(false);
 
-  const removeMember = (memberId: string) => {
-    setMembros((currentMembers) => currentMembers.filter((member) => member.id !== memberId));
+  useEffect(() => {
+    if (!familiaId) return;
+    familiaService
+      .listarMembros(familiaId)
+      .then((res) => setMembros(res.membros))
+      .catch(() => {});
+    familiaService
+      .listarSolicitacoes(familiaId)
+      .then((res) => setSolicitacoesPendentes(res.solicitacoes))
+      .catch(() => {});
+  }, [familiaId]);
+
+  const removeMember = async (usuarioId: string) => {
+    if (!familiaId) return;
+    try {
+      await familiaService.removerMembro(familiaId, usuarioId);
+      setMembros((current) => current.filter((m) => m.usuarioId !== usuarioId));
+    } catch {
+      // silently ignore removal errors
+    }
   };
-  const handlePendingRequest = (requestId: string) => {
-    setSolicitacoesPendentes((currentRequests) =>
-      currentRequests.filter((request) => request.id !== requestId),
-    );
+
+  const handleRevisarSolicitacao = async (id: string, acao: 'aprovar' | 'rejeitar') => {
+    if (!familiaId) return;
+    try {
+      await familiaService.revisarSolicitacao(id, acao, familiaId);
+      setSolicitacoesPendentes((current) => current.filter((s) => s.id !== id));
+    } catch {
+      // silently ignore review errors
+    }
   };
-  const generateInviteCode = () => {
-    setInviteCode('FAM-LEO-2026');
-    setIsInviteCopied(false);
+
+  const generateInviteCode = async () => {
+    if (!familiaId) return;
+    try {
+      const res = await familiaService.gerarConvite(familiaId);
+      setInviteCode(res.convite.codigo);
+      setIsInviteCopied(false);
+    } catch {
+      // silently ignore invite errors
+    }
   };
+
   const copyInviteCode = async () => {
     if (!inviteCode || !navigator.clipboard?.writeText) {
       return;
@@ -55,21 +91,23 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
         <ul className="space-y-2">
           {membros.map((membro) => (
             <li
-              key={membro.id}
+              key={membro.usuarioId}
               className="flex items-center justify-between rounded-md border border-border px-3 py-2"
             >
               <span>
-                {membro.nome}{' '}
+                {membro.usuarioId}{' '}
                 <span className="text-xs uppercase text-text-dim">({membro.role})</span>
               </span>
 
               {membro.role !== 'admin' && (
                 <button
                   type="button"
-                  onClick={() => removeMember(membro.id)}
+                  onClick={() => {
+                    void removeMember(membro.usuarioId);
+                  }}
                   className="text-xs font-semibold text-danger transition hover:underline"
                 >
-                  Remover {membro.nome}
+                  Remover {membro.usuarioId}
                 </button>
               )}
             </li>
@@ -84,21 +122,21 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
                 key={solicitacao.id}
                 className="flex items-center justify-between rounded-md border border-border px-3 py-2"
               >
-                <span>{solicitacao.nome}</span>
+                <span>{solicitacao.usuarioId}</span>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => handlePendingRequest(solicitacao.id)}
+                    onClick={() => void handleRevisarSolicitacao(solicitacao.id, 'aprovar')}
                     className="text-xs font-semibold text-success transition hover:underline"
                   >
-                    Aprovar {solicitacao.nome}
+                    Aprovar
                   </button>
                   <button
                     type="button"
-                    onClick={() => handlePendingRequest(solicitacao.id)}
+                    onClick={() => void handleRevisarSolicitacao(solicitacao.id, 'rejeitar')}
                     className="text-xs font-semibold text-danger transition hover:underline"
                   >
-                    Rejeitar {solicitacao.nome}
+                    Rejeitar
                   </button>
                 </div>
               </li>
@@ -109,7 +147,9 @@ export const FamilySettingsPage = ({ onBackToOnboarding }: FamilySettingsPagePro
           <p className="font-semibold text-text">Convites</p>
           <button
             type="button"
-            onClick={generateInviteCode}
+            onClick={() => {
+              void generateInviteCode();
+            }}
             className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-info transition hover:border-info"
           >
             Gerar codigo de convite

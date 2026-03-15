@@ -42,6 +42,41 @@ vi.mock('./services/auth.service', () => ({
     buscar: vi.fn(),
     entrarPorConvite: vi.fn(),
     solicitarEntrada: vi.fn(),
+    listarMembros: vi.fn().mockResolvedValue({
+      membros: [
+        { usuarioId: 'Leo', familiaId: 'fam-test', role: 'admin', dataEntrada: '2026-01-01' },
+        { usuarioId: 'Maria', familiaId: 'fam-test', role: 'membro', dataEntrada: '2026-01-02' },
+      ],
+    }),
+    listarSolicitacoes: vi
+      .fn()
+      .mockResolvedValue({
+        solicitacoes: [
+          {
+            id: 'r1',
+            familiaId: 'fam-test',
+            usuarioId: 'Joao',
+            status: 'pendente',
+            solicitadoEm: '2026-01-01',
+          },
+        ],
+      }),
+    gerarConvite: vi
+      .fn()
+      .mockResolvedValue({
+        convite: {
+          id: 'c1',
+          codigo: 'FAM-LEO-2026',
+          familiaId: 'fam-test',
+          criadoPor: 'Leo',
+          expiraEm: '2026-02-01',
+          dataCriacao: '2026-01-01',
+        },
+      }),
+    removerMembro: vi.fn().mockResolvedValue(undefined),
+    revisarSolicitacao: vi
+      .fn()
+      .mockResolvedValue({ solicitacao: { id: 'r1', status: 'aprovada' } }),
   },
 }));
 
@@ -191,12 +226,16 @@ describe('App', () => {
       ).toBeInTheDocument(),
     );
 
-    expect(screen.getByText(/leo/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByText(/leo/i).length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /remover maria/i }));
 
-    expect(screen.queryByRole('button', { name: /remover maria/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /remover maria/i })).not.toBeInTheDocument();
+    });
   });
 
   it('manages pending requests in family settings', async () => {
@@ -222,13 +261,17 @@ describe('App', () => {
       ).toBeInTheDocument(),
     );
 
-    expect(screen.getByRole('button', { name: /aprovar joao/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /rejeitar joao/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^aprovar$/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^rejeitar$/i })).toBeInTheDocument();
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: /aprovar joao/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^aprovar$/i }));
 
-    expect(screen.queryByRole('button', { name: /aprovar joao/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /rejeitar joao/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /^aprovar$/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^rejeitar$/i })).not.toBeInTheDocument();
+    });
   });
 
   it('generates and copies invite code in family settings', async () => {
@@ -262,8 +305,10 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /gerar codigo de convite/i }));
 
-    expect(screen.getByText(/codigo: FAM-LEO-2026/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /copiar codigo/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/codigo: FAM-LEO-2026/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /copiar codigo/i })).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /copiar codigo/i }));
 

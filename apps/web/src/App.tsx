@@ -74,7 +74,12 @@ export const App = () => {
   }
 
   if (screen === 'family-settings') {
-    return <FamilySettingsPage onBackToOnboarding={() => setScreen('onboarding')} />;
+    return (
+      <FamilySettingsPage
+        onBackToOnboarding={() => setScreen('onboarding')}
+        familiaId={familiaId}
+      />
+    );
   }
 
   if (screen === 'dashboard') {

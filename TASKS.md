@@ -224,7 +224,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [ ] Interface administrativa para System Admin
 - [ ] Rota de recuperação de família excluída (UC25)
 - [ ] Rota de impersonação de usuário (UC26)
-- [ ] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
+- [x] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
 - [ ] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
 - [ ] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
 - [ ] Tela de Configurações gerais (perfil, conta)

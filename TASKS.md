@@ -192,7 +192,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ### Frontend
 
 - [x] Tela de Histórico de Meses
-- [ ] Gráfico de tendência (receita × despesa × saldo)
+- [x] Gráfico de tendência (receita × despesa × saldo)
 - [x] Lista de meses com indicador de divergência
 - [x] Detalhe do mês: relatório completo + comparação snapshot vs atual
 

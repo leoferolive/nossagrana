@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./services/core-financeiro.service', () => ({
+  lazyApiClient: { request: vi.fn() },
   coreFinanceiroService: {
     getOrcamentos: vi.fn().mockResolvedValue({ orcamentos: [] }),
     getRelatorioDistribuicao: vi.fn().mockResolvedValue({ distribuicao: [] }),
@@ -10,6 +11,31 @@ vi.mock('./services/core-financeiro.service', () => ({
     getPerfil: vi.fn().mockResolvedValue({ nome: 'Demo', email: 'demo@example.com' }),
     getHistorico: vi.fn().mockResolvedValue({ meses: [] }),
   },
+}));
+
+vi.mock('./services/auth.service', () => ({
+  authService: {
+    login: vi.fn().mockResolvedValue({ accessToken: 'at', refreshToken: 'rt' }),
+    register: vi.fn().mockResolvedValue({ user: {} }),
+    logout: vi.fn().mockResolvedValue(undefined),
+  },
+  familiaService: {
+    criar: vi.fn(),
+    alternar: vi.fn(),
+    buscar: vi.fn(),
+  },
+}));
+
+vi.mock('./contexts/use-auth', () => ({
+  useAuth: vi.fn(() => ({
+    isAuthenticated: false,
+    accessToken: null,
+    refreshToken: null,
+    familiaIdAtiva: null,
+    login: vi.fn(),
+    logout: vi.fn(),
+    setAccessToken: vi.fn(),
+  })),
 }));
 
 vi.mock('./stores/dashboard.store', () => ({
@@ -47,7 +73,7 @@ describe('App', () => {
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
-    expect(screen.getByText(/nao tem conta\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/não tem conta\?/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cadastre-se/i })).toBeInTheDocument();
   });
 
@@ -161,37 +187,43 @@ describe('App', () => {
     expect(screen.getByText(/familia ativa: Familia Souza/i)).toBeInTheDocument();
   });
 
-  it('navega para dashboard ao submeter login', () => {
+  it('navega para dashboard ao submeter login', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
-    expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0);
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() =>
+      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+    );
     expect(screen.getAllByRole('button', { name: /nova/i }).length).toBeGreaterThan(0);
   });
 
-  it('navega para ExtratoPage ao clicar em Extrato', () => {
+  it('navega para ExtratoPage ao clicar em Extrato', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
     expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
   });
 
-  it('navega para CategoriasPage ao clicar em Categorias', () => {
+  it('navega para CategoriasPage ao clicar em Categorias', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver categorias/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver categorias/i }));
     expect(screen.getByRole('heading', { name: /categorias/i })).toBeInTheDocument();
   });
 
-  it('navega para MetodosPagamentoPage ao clicar em Cartões', () => {
+  it('navega para MetodosPagamentoPage ao clicar em Cartões', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver métodos de pagamento/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver métodos de pagamento/i }));
     expect(screen.getByRole('heading', { name: /cart.es e m.todos/i })).toBeInTheDocument();
   });
 
   it('navega para OrcamentoPage ao clicar em Orçamento', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver orçamentos/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver orçamentos/i }));
     await waitFor(() =>
       expect(screen.getAllByRole('heading', { name: /orçamento/i }).length).toBeGreaterThan(0),
@@ -200,30 +232,34 @@ describe('App', () => {
 
   it('navega para RelatoriosPage ao clicar em Relatórios', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver relatórios/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver relatórios/i }));
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /relatórios/i })).toBeInTheDocument(),
     );
   });
 
-  it('navega para HistoricoPage ao clicar em Ver histórico', () => {
+  it('navega para HistoricoPage ao clicar em Ver histórico', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver histórico/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver histórico/i }));
     expect(screen.getAllByRole('heading', { name: /histórico/i }).length).toBeGreaterThan(0);
   });
 
-  it('navega para ConfiguracoesPage ao clicar em Ver configurações', () => {
+  it('navega para ConfiguracoesPage ao clicar em Ver configurações', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     expect(screen.getAllByRole('heading', { name: /configurações/i }).length).toBeGreaterThan(0);
   });
 
   it('navega para PerfilPage a partir das configurações', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /perfil e conta/i }));
     await waitFor(() =>
@@ -231,9 +267,10 @@ describe('App', () => {
     );
   });
 
-  it('navega para AjudaPage a partir das configurações', () => {
+  it('navega para AjudaPage a partir das configurações', async () => {
     render(<App />);
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ajuda/i }));
     expect(screen.getAllByRole('heading', { name: /ajuda/i }).length).toBeGreaterThan(0);

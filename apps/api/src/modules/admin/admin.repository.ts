@@ -1,4 +1,4 @@
-import { eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { familias, users } from '../../db/schema.js';

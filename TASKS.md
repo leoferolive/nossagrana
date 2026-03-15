@@ -211,7 +211,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 ### Guia In-App
 
 - [x] Componente de First-time Tour (por tela, flag por usuário)
-- [~] Tours: Dashboard, Modal de Transação, Orçamento, Extrato, Histórico
+- [x] Tours: Dashboard, Modal de Transação, Orçamento, Extrato, Histórico
 - [x] Componente de Tooltip contextual ("?")
 - [x] Tooltips: mês de referência, parcelado, recorrente, divergente
 - [x] Empty states educativos em todas as telas

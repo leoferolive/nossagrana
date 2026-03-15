@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
 import { AjudaPage } from '@/pages/ajuda-page';
+import { ConfiguracoesPage } from '@/pages/configuracoes-page';
 import { FaturaPage } from '@/pages/fatura-page';
 import { HistoricoPage } from '@/pages/historico-page';
 import { LoginPage } from '@/pages/login-page';
@@ -28,7 +29,8 @@ type Screen =
   | 'relatorios'
   | 'fatura'
   | 'historico'
-  | 'ajuda';
+  | 'ajuda'
+  | 'configuracoes';
 
 // Demo familiaId until real auth is wired up
 const DEMO_FAMILIA_ID = 'familia-oliveira';
@@ -75,6 +77,7 @@ export const App = () => {
           onGoToRelatorios={() => setScreen('relatorios')}
           onGoToHistorico={() => setScreen('historico')}
           onGoToAjuda={() => setScreen('ajuda')}
+          onGoToConfiguracoes={() => setScreen('configuracoes')}
         />
         <TransacaoModal
           open={novaTransacaoOpen}
@@ -134,7 +137,21 @@ export const App = () => {
   }
 
   if (screen === 'ajuda') {
-    return <AjudaPage onBack={() => setScreen('dashboard')} />;
+    return <AjudaPage onBack={() => setScreen('configuracoes')} />;
+  }
+
+  if (screen === 'configuracoes') {
+    return (
+      <ConfiguracoesPage
+        onBack={() => setScreen('dashboard')}
+        onGoToCategorias={() => setScreen('categorias')}
+        onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
+        onGoToOrcamento={() => setScreen('orcamento')}
+        onGoToFamilia={() => setScreen('family-settings')}
+        onGoToHistorico={() => setScreen('historico')}
+        onGoToAjuda={() => setScreen('ajuda')}
+      />
+    );
   }
 
   if (screen === 'fatura' && faturaMetodoId) {

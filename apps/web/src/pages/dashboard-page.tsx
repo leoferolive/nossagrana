@@ -45,6 +45,7 @@ interface DashboardPageProps {
   onGoToRelatorios?: () => void;
   onGoToHistorico?: () => void;
   onGoToAjuda?: () => void;
+  onGoToConfiguracoes?: () => void;
 }
 
 export const DashboardPage = ({
@@ -57,6 +58,7 @@ export const DashboardPage = ({
   onGoToRelatorios,
   onGoToHistorico,
   onGoToAjuda,
+  onGoToConfiguracoes,
 }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, fetchAll } = useDashboardStore();
 
@@ -286,6 +288,16 @@ export const DashboardPage = ({
             className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
           >
             Ajuda
+          </button>
+        )}
+        {onGoToConfiguracoes && (
+          <button
+            type="button"
+            onClick={onGoToConfiguracoes}
+            aria-label="Ver configurações"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Configurações
           </button>
         )}
       </nav>

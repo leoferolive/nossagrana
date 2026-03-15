@@ -162,7 +162,7 @@ describe('App', () => {
   it('navega para dashboard ao submeter login', () => {
     render(<App />);
     fireEvent.submit(screen.getByRole('form'));
-    expect(screen.getByRole('heading', { name: /nossagrana/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /nova/i }).length).toBeGreaterThan(0);
   });
 

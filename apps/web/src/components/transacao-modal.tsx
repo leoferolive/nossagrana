@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { TransacaoCreateRequest } from '@nossagrana/types';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
+import { TooltipHelp } from './tooltip-help';
 
 interface TransacaoModalProps {
   open: boolean;
@@ -164,7 +165,9 @@ export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps)
           </label>
 
           {/* Toggles: parcelado / recorrente */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <TooltipHelp text="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão." />
+            <TooltipHelp text="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente." />
             <button
               type="button"
               aria-label="Parcelado"

@@ -12,6 +12,7 @@ import {
 import { useEffect } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
 
+import { FirstTimeTour } from '../components/first-time-tour';
 import { useDashboardStore } from '../stores/dashboard.store';
 
 ChartJS.register(
@@ -43,6 +44,7 @@ interface DashboardPageProps {
   onGoToOrcamento?: () => void;
   onGoToRelatorios?: () => void;
   onGoToHistorico?: () => void;
+  onGoToAjuda?: () => void;
 }
 
 export const DashboardPage = ({
@@ -54,6 +56,7 @@ export const DashboardPage = ({
   onGoToOrcamento,
   onGoToRelatorios,
   onGoToHistorico,
+  onGoToAjuda,
 }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, fetchAll } = useDashboardStore();
 
@@ -112,8 +115,16 @@ export const DashboardPage = ({
     ],
   };
 
+  const dashboardTourSteps = [
+    { title: 'Bem-vindo ao NossaGrana!', description: 'Esta é a tela principal. Aqui você vê o resumo financeiro do mês.' },
+    { title: 'Receitas e Despesas', description: 'Os cards mostram o total de receitas, despesas e saldo do mês atual.' },
+    { title: 'Nova Transação', description: 'Toque no botão "+" para registrar uma nova receita ou despesa.' },
+    { title: 'Navegar', description: 'Use o menu inferior para acessar Extrato, Orçamento, Relatórios, Histórico e Ajuda.' },
+  ];
+
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      <FirstTimeTour tourKey="dashboard" steps={dashboardTourSteps} />
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <div>
           <h1 className="text-xl font-bold text-text">NossaGrana</h1>
@@ -265,6 +276,16 @@ export const DashboardPage = ({
             className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
           >
             Histórico
+          </button>
+        )}
+        {onGoToAjuda && (
+          <button
+            type="button"
+            onClick={onGoToAjuda}
+            aria-label="Ver ajuda"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Ajuda
           </button>
         )}
       </nav>

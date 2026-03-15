@@ -182,19 +182,19 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Backend
 
-- [ ] Rota `GET /historico` — listar meses com snapshots (UC15)
-- [ ] Rota `GET /historico/:mesReferencia` — detalhe do mês
-- [ ] Serviço de geração de snapshot mensal (UC27)
-- [ ] Job agendado com node-cron (último dia do mês)
-- [ ] Serviço de marcação de divergência (UC28)
-- [ ] Trigger de divergência ao editar/excluir transação de mês com snapshot
+- [x] Rota `GET /historico` — listar meses com snapshots (UC15)
+- [x] Rota `GET /historico/:mesReferencia` — detalhe do mês
+- [x] Serviço de geração de snapshot mensal (UC27)
+- [x] Job agendado com node-cron (último dia do mês)
+- [x] Serviço de marcação de divergência (UC28)
+- [x] Trigger de divergência ao editar/excluir transação de mês com snapshot
 
 ### Frontend
 
-- [ ] Tela de Histórico de Meses
+- [x] Tela de Histórico de Meses
 - [ ] Gráfico de tendência (receita × despesa × saldo)
-- [ ] Lista de meses com indicador de divergência
-- [ ] Detalhe do mês: relatório completo + comparação snapshot vs atual
+- [x] Lista de meses com indicador de divergência
+- [x] Detalhe do mês: relatório completo + comparação snapshot vs atual
 
 ---
 
@@ -202,10 +202,10 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### PWA
 
-- [ ] Configurar vite-plugin-pwa (manifest + service worker)
-- [ ] Ícones para instalação (192x192, 512x512)
-- [ ] Estratégia de cache (assets estáticos)
-- [ ] Suporte a instalação no celular (add to home screen)
+- [x] Configurar vite-plugin-pwa (manifest + service worker)
+- [x] Ícones para instalação (192x192, 512x512)
+- [x] Estratégia de cache (assets estáticos)
+- [x] Suporte a instalação no celular (add to home screen)
 - [ ] Testar offline básico
 
 ### Guia In-App

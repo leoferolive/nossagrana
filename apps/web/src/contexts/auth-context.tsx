@@ -32,7 +32,8 @@ const loadStoredSession = (): AuthSession | null => {
     return {
       accessToken: parsedValue.accessToken,
       refreshToken: parsedValue.refreshToken,
-      familiaIdAtiva: typeof parsedValue.familiaIdAtiva === 'string' ? parsedValue.familiaIdAtiva : '',
+      familiaIdAtiva:
+        typeof parsedValue.familiaIdAtiva === 'string' ? parsedValue.familiaIdAtiva : '',
     };
   } catch {
     return null;
@@ -66,6 +67,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
   }, []);
 
+  const updateFamiliaIdAtiva = useCallback((familiaIdAtiva: string) => {
+    setSession((s) => (s ? { ...s, familiaIdAtiva } : null));
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       isAuthenticated: session !== null,
@@ -75,8 +80,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       login,
       logout,
       setAccessToken,
+      updateFamiliaIdAtiva,
     }),
-    [login, logout, session, setAccessToken],
+    [login, logout, session, setAccessToken, updateFamiliaIdAtiva],
   );
 
   useEffect(() => {

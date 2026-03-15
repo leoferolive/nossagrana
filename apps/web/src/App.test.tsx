@@ -20,9 +20,13 @@ vi.mock('./services/auth.service', () => ({
     logout: vi.fn().mockResolvedValue(undefined),
   },
   familiaService: {
-    criar: vi.fn(),
-    alternar: vi.fn(),
+    criar: vi
+      .fn()
+      .mockResolvedValue({ familia: { id: 'fam-1', nome: 'Test', dataCriacao: '2026-01-01' } }),
+    alternar: vi.fn().mockResolvedValue({ familiaIdAtiva: 'fam-1' }),
     buscar: vi.fn(),
+    entrarPorConvite: vi.fn(),
+    solicitarEntrada: vi.fn(),
   },
 }));
 
@@ -35,6 +39,7 @@ vi.mock('./contexts/use-auth', () => ({
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
+    updateFamiliaIdAtiva: vi.fn(),
   })),
 }));
 
@@ -123,7 +128,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /buscar e solicitar/i })).toBeInTheDocument();
   });
 
-  it('opens family settings screen from onboarding', async () => {
+  it('opens family settings screen from onboarding via criar familia', async () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
@@ -134,9 +139,17 @@ describe('App', () => {
         screen.getByRole('heading', { name: /como deseja entrar na sua familia/i }),
       ).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
 
-    expect(screen.getByRole('heading', { name: /configuracoes da familia/i })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      target: { value: 'Familia Test' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: /criar familia/i }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: /configuracoes da familia/i }),
+      ).toBeInTheDocument(),
+    );
     expect(screen.getByText(/gestao de membros, convites e solicitacoes/i)).toBeInTheDocument();
   });
 
@@ -151,7 +164,17 @@ describe('App', () => {
         screen.getByRole('heading', { name: /como deseja entrar na sua familia/i }),
       ).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      target: { value: 'Familia Test' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: /criar familia/i }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: /configuracoes da familia/i }),
+      ).toBeInTheDocument(),
+    );
 
     expect(screen.getByText(/leo/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
@@ -172,7 +195,17 @@ describe('App', () => {
         screen.getByRole('heading', { name: /como deseja entrar na sua familia/i }),
       ).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      target: { value: 'Familia Test' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: /criar familia/i }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: /configuracoes da familia/i }),
+      ).toBeInTheDocument(),
+    );
 
     expect(screen.getByRole('button', { name: /aprovar joao/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /rejeitar joao/i })).toBeInTheDocument();
@@ -200,7 +233,17 @@ describe('App', () => {
         screen.getByRole('heading', { name: /como deseja entrar na sua familia/i }),
       ).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole('button', { name: /configuracoes da familia/i }));
+
+    fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      target: { value: 'Familia Test' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: /criar familia/i }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: /configuracoes da familia/i }),
+      ).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /gerar codigo de convite/i }));
 
@@ -211,25 +254,6 @@ describe('App', () => {
 
     expect(writeText).toHaveBeenCalledWith('FAM-LEO-2026');
     expect(await screen.findByText(/codigo copiado/i)).toBeInTheDocument();
-  });
-
-  it('switches active family from onboarding selector', async () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
-    fillSignUpForm();
-    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
-
-    await waitFor(() =>
-      expect(screen.getByText(/familia ativa: Familia Oliveira/i)).toBeInTheDocument(),
-    );
-
-    fireEvent.change(screen.getByLabelText(/selecionar familia ativa/i), {
-      target: { value: 'familia-souza' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /alternar familia/i }));
-
-    expect(screen.getByText(/familia ativa: Familia Souza/i)).toBeInTheDocument();
   });
 
   it('navega para dashboard ao submeter login', async () => {

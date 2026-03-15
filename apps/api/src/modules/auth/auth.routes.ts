@@ -9,12 +9,15 @@ import type { FastifyPluginAsync } from 'fastify';
 import { env } from '../../config/env.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
 import {
-  authLoginSchema,
   authFamiliaContextSchema,
+  authLoginSchema,
   authLogoutSchema,
   authMeSchema,
+  authPerfilSchema,
   authRefreshSchema,
   authRegisterSchema,
+  authUpdatePerfilSchema,
+  authUpdateSenhaSchema,
 } from './auth.schema.js';
 import { AuthService, EmailAlreadyExistsError, InvalidCredentialsError } from './auth.service.js';
 
@@ -169,6 +172,40 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           email: request.user.email,
         },
       };
+    },
+  );
+
+  fastify.get(
+    '/auth/perfil',
+    { preHandler: [fastify.authenticate], schema: authPerfilSchema },
+    async (request) => {
+      return authService.getPerfil(request.user.sub);
+    },
+  );
+
+  fastify.patch(
+    '/auth/perfil',
+    { preHandler: [fastify.authenticate], schema: authUpdatePerfilSchema },
+    async (request) => {
+      const { nome } = request.body as { nome: string };
+      return authService.updatePerfil(request.user.sub, nome);
+    },
+  );
+
+  fastify.patch(
+    '/auth/senha',
+    { preHandler: [fastify.authenticate], schema: authUpdateSenhaSchema },
+    async (request, reply) => {
+      const { senhaAtual, novaSenha } = request.body as {
+        senhaAtual: string;
+        novaSenha: string;
+      };
+      try {
+        await authService.updateSenha(request.user.sub, senhaAtual, novaSenha);
+        return reply.code(204).send();
+      } catch {
+        return reply.code(401).send({ message: 'Senha atual incorreta' });
+      }
     },
   );
 

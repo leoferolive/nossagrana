@@ -10,6 +10,10 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
+vi.mock('../components/first-time-tour', () => ({
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
+}));
+
 import { OrcamentoPage } from './orcamento-page';
 
 const familiaId = 'fam-1';
@@ -102,5 +106,10 @@ describe('OrcamentoPage', () => {
         expect.objectContaining({ valorLimite: '800' }),
       ),
     );
+  });
+
+  it('exibe o tour de orçamento', async () => {
+    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() => expect(screen.getByTestId('tour-orcamento')).toBeInTheDocument());
   });
 });

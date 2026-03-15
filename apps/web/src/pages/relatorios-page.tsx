@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
 
+import { ErrorBanner } from '../components/error-banner';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 
 import type {
@@ -46,6 +47,7 @@ const formatBRL = (valor: string) =>
 export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('distribuicao');
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   const [distribuicao, setDistribuicao] = useState<RelatorioDistribuicaoItem[]>([]);
   const [porUsuario, setPorUsuario] = useState<RelatorioPorUsuarioItem[]>([]);
@@ -63,6 +65,7 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
         setPorUsuario(porUser.porUsuario);
         setTendencias(tend.meses);
       })
+      .catch(() => setErro('Erro ao carregar relatórios. Tente novamente.'))
       .finally(() => setLoading(false));
   }, [familiaId]);
 
@@ -123,6 +126,7 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
 
   return (
     <div className="min-h-screen bg-bg p-4">
+      <ErrorBanner error={erro} />
       <div className="mb-6 flex items-center gap-4">
         <button
           type="button"

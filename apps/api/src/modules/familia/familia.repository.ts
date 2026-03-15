@@ -3,17 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import {
-  categorias,
-  convites,
-  familias,
-  metodosPagamento,
-  orcamentoCategoria,
-  snapshotsMensais,
-  solicitacoesEntrada,
-  transacoes,
-  usuarioFamilia,
-} from '../../db/schema.js';
+import { convites, familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
 import type {
   CreatedFamilia,
   CreatedFamiliaInvite,
@@ -303,25 +293,12 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
   }
 
   async deleteFamily(input: { familiaId: string }): Promise<boolean> {
-    return db.transaction(async (tx) => {
-      await tx.delete(transacoes).where(eq(transacoes.familiaId, input.familiaId));
-      await tx.delete(orcamentoCategoria).where(eq(orcamentoCategoria.familiaId, input.familiaId));
-      await tx.delete(snapshotsMensais).where(eq(snapshotsMensais.familiaId, input.familiaId));
-      await tx.delete(convites).where(eq(convites.familiaId, input.familiaId));
-      await tx
-        .delete(solicitacoesEntrada)
-        .where(eq(solicitacoesEntrada.familiaId, input.familiaId));
-      await tx.delete(usuarioFamilia).where(eq(usuarioFamilia.familiaId, input.familiaId));
-      await tx.delete(metodosPagamento).where(eq(metodosPagamento.familiaId, input.familiaId));
-      await tx.delete(categorias).where(eq(categorias.familiaId, input.familiaId));
-
-      const deletedFamilia = await tx
-        .delete(familias)
-        .where(eq(familias.id, input.familiaId))
-        .returning({ id: familias.id });
-
-      return deletedFamilia.length > 0;
-    });
+    const result = await db
+      .update(familias)
+      .set({ deletedAt: new Date() })
+      .where(eq(familias.id, input.familiaId))
+      .returning({ id: familias.id });
+    return result.length > 0;
   }
 }
 

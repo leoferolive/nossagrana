@@ -9,6 +9,8 @@ import type {
   DashboardOrcamentoResponse,
   DashboardResumoResponse,
   FaturaResponse,
+  HistoricoDetalheResponse,
+  HistoricoListResponse,
   MetodoPagamentoCreateRequest,
   MetodoPagamentoCreateResponse,
   MetodoPagamentoDeleteResponse,
@@ -276,6 +278,39 @@ export class DashboardService {
       `/api/cartoes/${metodoPagamentoId}/fatura/${mesReferencia}`,
       { headers: familiaHeader(familiaId) },
     );
+  }
+
+  async getHistorico(familiaId: string): Promise<HistoricoListResponse> {
+    return this.api.request<HistoricoListResponse>('/api/historico', {
+      headers: familiaHeader(familiaId),
+    });
+  }
+
+  async getHistoricoDetalhe(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<HistoricoDetalheResponse> {
+    return this.api.request<HistoricoDetalheResponse>(`/api/historico/${mesReferencia}`, {
+      headers: familiaHeader(familiaId),
+    });
+  }
+
+  async getPerfil(): Promise<{ nome: string; email: string }> {
+    return this.api.request<{ nome: string; email: string }>('/api/auth/perfil');
+  }
+
+  async updatePerfil(data: { nome: string }): Promise<{ nome: string; email: string }> {
+    return this.api.request<{ nome: string; email: string }>('/api/auth/perfil', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSenha(data: { senhaAtual: string; novaSenha: string }): Promise<void> {
+    await this.api.request<void>('/api/auth/senha', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 }
 

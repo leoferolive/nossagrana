@@ -9,11 +9,13 @@ declare module '@fastify/jwt' {
       sub: string;
       email: string;
       tokenType?: string;
+      impersonated?: boolean;
     };
     user: {
       sub: string;
       email: string;
       tokenType?: string;
+      impersonated?: boolean;
     };
   }
 }

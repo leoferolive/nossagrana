@@ -1,6 +1,7 @@
 import { calcularMesReferencia } from './mes-referencia.service.js';
 import type {
   CreateTransacaoInput,
+  SnapshotNotifier,
   TransacaoFiltros,
   TransacaoRepository,
 } from './transacao.types.js';
@@ -63,7 +64,10 @@ function calcularValorParcela(valorTotal: string, numeroParcelas: number): strin
 }
 
 export class TransacaoService {
-  constructor(private readonly repository: TransacaoRepository) {}
+  constructor(
+    private readonly repository: TransacaoRepository,
+    private readonly snapshotNotifier?: SnapshotNotifier,
+  ) {}
 
   async registrar(input: RegistrarInput) {
     const dataObj = new Date(`${input.data}T12:00:00Z`);
@@ -226,6 +230,9 @@ export class TransacaoService {
       dataFechamento: input.dataFechamento ?? null,
     });
 
+    const existing = await this.repository.findById({ id: input.id, familiaId: input.familiaId });
+    if (!existing) throw new TransacaoNotFoundError();
+
     const updated = await this.repository.update({
       id: input.id,
       familiaId: input.familiaId,
@@ -239,12 +246,20 @@ export class TransacaoService {
     });
 
     if (!updated) throw new TransacaoNotFoundError();
+
+    await this.snapshotNotifier?.marcarDivergente(input.familiaId, existing.mesReferencia);
+
     return updated;
   }
 
   async excluir(input: { id: string; familiaId: string }) {
+    const existing = await this.repository.findById(input);
+    if (!existing) throw new TransacaoNotFoundError();
+
     const deleted = await this.repository.delete(input);
     if (!deleted) throw new TransacaoNotFoundError();
+
+    await this.snapshotNotifier?.marcarDivergente(input.familiaId, existing.mesReferencia);
   }
 
   async anteciparParcelas(input: {

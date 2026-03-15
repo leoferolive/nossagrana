@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { ErrorBanner } from '../components/error-banner';
+import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 
 interface OrcamentoItem {
@@ -38,14 +40,18 @@ const formatBRL = (valor: string) =>
 export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
   const [orcamentos, setOrcamentos] = useState<OrcamentoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [novoLimite, setNovoLimite] = useState('');
 
   const loadOrcamentos = async () => {
     setLoading(true);
+    setErro(null);
     try {
       const result = await coreFinanceiroService.getOrcamentos(familiaId);
       setOrcamentos(result.orcamentos as OrcamentoItem[]);
+    } catch {
+      setErro('Erro ao carregar orçamentos. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -81,6 +87,23 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      <FirstTimeTour
+        tourKey="orcamento"
+        steps={[
+          {
+            title: 'Orçamento',
+            description: 'Defina limites de gasto por categoria para controlar suas finanças.',
+          },
+          {
+            title: 'Progresso',
+            description: 'A barra mostra quanto do limite já foi utilizado no mês.',
+          },
+          {
+            title: 'Editar limite',
+            description: 'Toque em "Editar limite" para ajustar o valor máximo de cada categoria.',
+          },
+        ]}
+      />
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
         <button
           type="button"
@@ -93,6 +116,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
         <h1 className="text-xl font-bold text-text">Orçamento</h1>
       </header>
 
+      <ErrorBanner error={erro} />
       <main className="flex flex-1 flex-col gap-4 p-4">
         {orcamentos.length === 0 ? (
           <p className="text-sm text-text-muted">Nenhum orçamento configurado.</p>

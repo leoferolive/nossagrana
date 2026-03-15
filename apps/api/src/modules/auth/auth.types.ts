@@ -26,11 +26,14 @@ export interface AuthRepositoryUser {
 
 export interface AuthRepository {
   findByEmail(email: string): Promise<AuthRepositoryUser | null>;
+  findById(id: string): Promise<AuthRepositoryUser | null>;
   createUser(input: {
     nome: string;
     email: string;
     senhaHash: string;
   }): Promise<AuthRepositoryUser>;
+  updateNome(id: string, nome: string): Promise<AuthRepositoryUser>;
+  updateSenhaHash(id: string, senhaHash: string): Promise<void>;
 }
 
 export const authTypesRuntimeMarker = true;

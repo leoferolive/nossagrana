@@ -157,24 +157,24 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Backend
 
-- [ ] Rota `GET /orcamento` — listar orçamentos vigentes por categoria
-- [ ] Rota `POST /orcamento/:categoriaId` — definir/alterar limite (UC19)
-- [ ] Rota `GET /orcamento/:categoriaId/historico` — histórico de vigências
-- [ ] Rota `GET /relatorios/distribuicao` — gastos por categoria (UC14)
-- [ ] Rota `GET /relatorios/por-usuario` — gastos por membro
-- [ ] Rota `GET /relatorios/tendencias` — comparação mensal e insights
-- [ ] Rota `GET /cartoes/:id/fatura/:mesReferencia` — fatura do cartão (UC16)
+- [x] Rota `GET /orcamento` — listar orçamentos vigentes por categoria
+- [x] Rota `POST /orcamento/:categoriaId` — definir/alterar limite (UC19)
+- [x] Rota `GET /orcamento/:categoriaId/historico` — histórico de vigências
+- [x] Rota `GET /relatorios/distribuicao` — gastos por categoria (UC14)
+- [x] Rota `GET /relatorios/por-usuario` — gastos por membro
+- [x] Rota `GET /relatorios/tendencias` — comparação mensal e insights
+- [x] Rota `GET /cartoes/:id/fatura/:mesReferencia` — fatura do cartão (UC16)
 
 ### Frontend
 
-- [ ] Tela de Orçamento (tabela categoria × limite × % utilizado)
-- [ ] Formulário de edição de limite por categoria
-- [ ] Histórico de alterações de limite
-- [ ] Tela de Relatórios
-- [ ] Gráfico de distribuição por categoria
-- [ ] Breakdown por membro
-- [ ] Tendências e insights automáticos
-- [ ] Tela de Fatura do Cartão
+- [x] Tela de Orçamento (tabela categoria × limite × % utilizado)
+- [x] Formulário de edição de limite por categoria
+- [x] Histórico de alterações de limite
+- [x] Tela de Relatórios
+- [x] Gráfico de distribuição por categoria
+- [x] Breakdown por membro
+- [x] Tendências e insights automáticos
+- [x] Tela de Fatura do Cartão
 
 ---
 
@@ -182,19 +182,19 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Backend
 
-- [ ] Rota `GET /historico` — listar meses com snapshots (UC15)
-- [ ] Rota `GET /historico/:mesReferencia` — detalhe do mês
-- [ ] Serviço de geração de snapshot mensal (UC27)
-- [ ] Job agendado com node-cron (último dia do mês)
-- [ ] Serviço de marcação de divergência (UC28)
-- [ ] Trigger de divergência ao editar/excluir transação de mês com snapshot
+- [x] Rota `GET /historico` — listar meses com snapshots (UC15)
+- [x] Rota `GET /historico/:mesReferencia` — detalhe do mês
+- [x] Serviço de geração de snapshot mensal (UC27)
+- [x] Job agendado com node-cron (último dia do mês)
+- [x] Serviço de marcação de divergência (UC28)
+- [x] Trigger de divergência ao editar/excluir transação de mês com snapshot
 
 ### Frontend
 
-- [ ] Tela de Histórico de Meses
-- [ ] Gráfico de tendência (receita × despesa × saldo)
-- [ ] Lista de meses com indicador de divergência
-- [ ] Detalhe do mês: relatório completo + comparação snapshot vs atual
+- [x] Tela de Histórico de Meses
+- [x] Gráfico de tendência (receita × despesa × saldo)
+- [x] Lista de meses com indicador de divergência
+- [x] Detalhe do mês: relatório completo + comparação snapshot vs atual
 
 ---
 
@@ -202,33 +202,33 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### PWA
 
-- [ ] Configurar vite-plugin-pwa (manifest + service worker)
-- [ ] Ícones para instalação (192x192, 512x512)
-- [ ] Estratégia de cache (assets estáticos)
-- [ ] Suporte a instalação no celular (add to home screen)
+- [x] Configurar vite-plugin-pwa (manifest + service worker)
+- [x] Ícones para instalação (192x192, 512x512)
+- [x] Estratégia de cache (assets estáticos)
+- [x] Suporte a instalação no celular (add to home screen)
 - [ ] Testar offline básico
 
 ### Guia In-App
 
-- [ ] Componente de First-time Tour (por tela, flag por usuário)
-- [ ] Tours: Dashboard, Modal de Transação, Orçamento, Extrato, Histórico
-- [ ] Componente de Tooltip contextual ("?")
-- [ ] Tooltips: mês de referência, parcelado, recorrente, divergente
-- [ ] Empty states educativos em todas as telas
-- [ ] Tela de Ajuda / FAQ (Configurações > Ajuda)
+- [x] Componente de First-time Tour (por tela, flag por usuário)
+- [x] Tours: Dashboard, Modal de Transação, Orçamento, Extrato, Histórico
+- [x] Componente de Tooltip contextual ("?")
+- [x] Tooltips: mês de referência, parcelado, recorrente, divergente
+- [x] Empty states educativos em todas as telas
+- [x] Tela de Ajuda / FAQ (Configurações > Ajuda)
 
 ---
 
 ## Fase 9 — System Admin e Polimento
 
-- [ ] Interface administrativa para System Admin
-- [ ] Rota de recuperação de família excluída (UC25)
-- [ ] Rota de impersonação de usuário (UC26)
-- [ ] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
-- [ ] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
-- [ ] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
-- [ ] Tela de Configurações gerais (perfil, conta)
-- [ ] Revisão de mensagens de erro e feedback visual
+- [x] Interface administrativa para System Admin
+- [x] Rota de recuperação de família excluída (UC25)
+- [x] Rota de impersonação de usuário (UC26)
+- [x] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
+- [x] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
+- [x] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
+- [x] Tela de Configurações gerais (perfil, conta)
+- [x] Revisão de mensagens de erro e feedback visual
 - [ ] Testes de carga básicos no Raspberry Pi
-- [ ] Revisão de segurança (isolamento multi-tenant)
-- [ ] Documentação de uso (README atualizado)
+- [x] Revisão de segurança (isolamento multi-tenant)
+- [x] Documentação de uso (README atualizado)

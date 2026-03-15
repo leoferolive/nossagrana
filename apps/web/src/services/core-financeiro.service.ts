@@ -339,3 +339,8 @@ const lazyApiClient = new ApiClient({
 });
 
 export const coreFinanceiroService = new DashboardService(lazyApiClient);
+export const categoriaService = new CategoriaService(lazyApiClient);
+export const metodoPagamentoService = new MetodoPagamentoService(lazyApiClient);
+export const transacaoService = new TransacaoService(lazyApiClient);
+
+export { lazyApiClient };

@@ -54,24 +54,24 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4">
+    <div className="min-h-screen bg-bg text-text p-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 text-sm"
+            className="px-3 py-1.5 rounded-lg bg-surface text-text-muted hover:bg-surface/80 text-sm"
           >
             Voltar
           </button>
           <h1 className="text-xl font-bold">Histórico</h1>
         </div>
 
-        {loading && <p className="text-muted-foreground text-center py-8">Carregando...</p>}
+        {loading && <p className="text-text-muted text-center py-8">Carregando...</p>}
 
         {!loading && meses.length === 0 && (
-          <p className="text-muted-foreground text-center py-8">
+          <p className="text-text-muted text-center py-8">
             Nenhum histórico disponível ainda. Registre transações para ver os meses aqui.
           </p>
         )}
@@ -83,7 +83,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 key={mes.mesReferencia}
                 type="button"
                 onClick={() => handleSelectMes(mes.mesReferencia)}
-                className="w-full text-left rounded-xl border border-border bg-card p-4 hover:bg-muted/50 transition-colors"
+                className="w-full text-left rounded-xl border border-border bg-panel p-4 hover:bg-surface/50 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -115,7 +115,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
         {/* Detalhe do mês */}
         {mesSelecionado && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card rounded-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+            <div className="bg-panel rounded-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold capitalize">
                   Detalhe — {formatMes(mesSelecionado)}
@@ -123,30 +123,30 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 <button
                   type="button"
                   onClick={() => { setMesSelecionado(null); setDetalhe(null); }}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-text-muted hover:text-text"
                 >
                   ✕
                 </button>
               </div>
 
-              {detalheLoading && <p className="text-muted-foreground">Carregando detalhe...</p>}
+              {detalheLoading && <p className="text-text-muted">Carregando detalhe...</p>}
 
               {!detalheLoading && detalhe && (
                 <div className="space-y-4">
                   {/* Valores atuais */}
                   <div className="rounded-xl border border-border p-4">
-                    <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase">Valores Atuais</p>
+                    <p className="text-xs text-text-muted mb-2 font-semibold uppercase">Valores Atuais</p>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Receitas</p>
+                        <p className="text-text-muted">Receitas</p>
                         <p className="font-semibold text-success">{formatBRL(detalhe.atual.totalReceitas)}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Despesas</p>
+                        <p className="text-text-muted">Despesas</p>
                         <p className="font-semibold text-danger">{formatBRL(detalhe.atual.totalDespesas)}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Saldo</p>
+                        <p className="text-text-muted">Saldo</p>
                         <p className={`font-semibold ${parseFloat(detalhe.atual.saldo) >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatBRL(detalhe.atual.saldo)}
                         </p>
@@ -158,22 +158,22 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                   {detalhe.snapshot ? (
                     <div className="rounded-xl border border-border p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs text-muted-foreground font-semibold uppercase">Snapshot ({new Date(detalhe.snapshot.geradoEm).toLocaleDateString('pt-BR')})</p>
+                        <p className="text-xs text-text-muted font-semibold uppercase">Snapshot ({new Date(detalhe.snapshot.geradoEm).toLocaleDateString('pt-BR')})</p>
                         {detalhe.snapshot.divergente && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-warning/20 text-warning font-medium">divergente</span>
                         )}
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm mb-4">
                         <div>
-                          <p className="text-muted-foreground">Receitas</p>
+                          <p className="text-text-muted">Receitas</p>
                           <p className="font-semibold text-success">{formatBRL(detalhe.snapshot.totalReceitas)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Despesas</p>
+                          <p className="text-text-muted">Despesas</p>
                           <p className="font-semibold text-danger">{formatBRL(detalhe.snapshot.totalDespesas)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Saldo</p>
+                          <p className="text-text-muted">Saldo</p>
                           <p className={`font-semibold ${parseFloat(detalhe.snapshot.saldo) >= 0 ? 'text-success' : 'text-danger'}`}>
                             {formatBRL(detalhe.snapshot.saldo)}
                           </p>
@@ -182,7 +182,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
 
                       {detalhe.snapshot.dadosCategorias.length > 0 && (
                         <div>
-                          <p className="text-xs text-muted-foreground font-semibold mb-2">Por Categoria</p>
+                          <p className="text-xs text-text-muted font-semibold mb-2">Por Categoria</p>
                           <div className="space-y-1">
                             {detalhe.snapshot.dadosCategorias.map((cat) => (
                               <div key={cat.categoriaId} className="flex justify-between text-sm">
@@ -196,7 +196,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
 
                       {detalhe.snapshot.dadosUsuarios.length > 0 && (
                         <div className="mt-3">
-                          <p className="text-xs text-muted-foreground font-semibold mb-2">Por Membro</p>
+                          <p className="text-xs text-text-muted font-semibold mb-2">Por Membro</p>
                           <div className="space-y-1">
                             {detalhe.snapshot.dadosUsuarios.map((usr) => (
                               <div key={usr.usuarioId} className="flex justify-between text-sm">
@@ -209,7 +209,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       )}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground text-sm">Nenhum snapshot gerado para este mês.</p>
+                    <p className="text-text-muted text-sm">Nenhum snapshot gerado para este mês.</p>
                   )}
                 </div>
               )}

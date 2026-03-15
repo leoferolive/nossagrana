@@ -57,13 +57,13 @@ export const AjudaPage = ({ onBack }: AjudaPageProps) => {
   const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4">
+    <div className="min-h-screen bg-bg text-text p-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 text-sm"
+            className="px-3 py-1.5 rounded-lg bg-surface text-text-muted hover:bg-surface/80 text-sm"
           >
             Voltar
           </button>
@@ -75,24 +75,24 @@ export const AjudaPage = ({ onBack }: AjudaPageProps) => {
           if (perguntas.length === 0) return null;
           return (
             <div key={secao} className="mb-6">
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 {secao}
               </h2>
               <div className="space-y-1">
                 {perguntas.map((faq) => {
                   const idx = FAQ.indexOf(faq);
                   return (
-                    <div key={idx} className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div key={idx} className="rounded-xl border border-border bg-panel overflow-hidden">
                       <button
                         type="button"
                         onClick={() => toggle(idx)}
-                        className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors flex justify-between items-center"
+                        className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-surface/50 transition-colors flex justify-between items-center"
                       >
                         <span>{faq.pergunta}</span>
-                        <span className="text-muted-foreground ml-2">{openIndex === idx ? '▲' : '▼'}</span>
+                        <span className="text-text-muted ml-2">{openIndex === idx ? '▲' : '▼'}</span>
                       </button>
                       {openIndex === idx && (
-                        <div className="px-4 pb-3 text-sm text-muted-foreground border-t border-border">
+                        <div className="px-4 pb-3 text-sm text-text-muted border-t border-border">
                           <p className="pt-2">{faq.resposta}</p>
                         </div>
                       )}

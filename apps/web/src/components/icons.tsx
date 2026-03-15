@@ -28,6 +28,7 @@ export {
   // Família / Usuário
   Users as IconFamilia,
   UserPlus as IconConvite,
+  UserCircle as IconPerfil,
   Settings as IconConfiguracoes,
 
   // Informação

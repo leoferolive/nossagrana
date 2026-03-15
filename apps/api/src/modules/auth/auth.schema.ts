@@ -63,3 +63,33 @@ export const authFamiliaContextSchema = {
     }),
   },
 };
+
+export const authPerfilSchema = {
+  response: {
+    200: z.object({
+      nome: z.string(),
+      email: z.string().email(),
+    }),
+  },
+};
+
+export const authUpdatePerfilSchema = {
+  body: z.object({ nome: z.string().min(1) }),
+  response: {
+    200: z.object({
+      nome: z.string(),
+      email: z.string().email(),
+    }),
+  },
+};
+
+export const authUpdateSenhaSchema = {
+  body: z.object({
+    senhaAtual: z.string(),
+    novaSenha: z.string().min(6),
+  }),
+  response: {
+    204: z.null(),
+    401: z.object({ message: z.string() }),
+  },
+};

@@ -294,6 +294,24 @@ export class DashboardService {
       headers: familiaHeader(familiaId),
     });
   }
+
+  async getPerfil(): Promise<{ nome: string; email: string }> {
+    return this.api.request<{ nome: string; email: string }>('/api/auth/perfil');
+  }
+
+  async updatePerfil(data: { nome: string }): Promise<{ nome: string; email: string }> {
+    return this.api.request<{ nome: string; email: string }>('/api/auth/perfil', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSenha(data: { senhaAtual: string; novaSenha: string }): Promise<void> {
+    await this.api.request<void>('/api/auth/senha', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 // ─── Singleton ─────────────────────────────────────────────────────────────────

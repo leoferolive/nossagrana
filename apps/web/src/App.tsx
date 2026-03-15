@@ -7,6 +7,7 @@ import { ExtratoPage } from '@/pages/extrato-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
 import { AjudaPage } from '@/pages/ajuda-page';
 import { ConfiguracoesPage } from '@/pages/configuracoes-page';
+import { PerfilPage } from '@/pages/perfil-page';
 import { FaturaPage } from '@/pages/fatura-page';
 import { HistoricoPage } from '@/pages/historico-page';
 import { LoginPage } from '@/pages/login-page';
@@ -30,7 +31,8 @@ type Screen =
   | 'fatura'
   | 'historico'
   | 'ajuda'
-  | 'configuracoes';
+  | 'configuracoes'
+  | 'perfil';
 
 // Demo familiaId until real auth is wired up
 const DEMO_FAMILIA_ID = 'familia-oliveira';
@@ -150,8 +152,13 @@ export const App = () => {
         onGoToFamilia={() => setScreen('family-settings')}
         onGoToHistorico={() => setScreen('historico')}
         onGoToAjuda={() => setScreen('ajuda')}
+        onGoToPerfil={() => setScreen('perfil')}
       />
     );
+  }
+
+  if (screen === 'perfil') {
+    return <PerfilPage onBack={() => setScreen('configuracoes')} />;
   }
 
   if (screen === 'fatura' && faturaMetodoId) {

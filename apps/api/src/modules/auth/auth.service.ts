@@ -92,6 +92,26 @@ export class AuthService {
     };
   }
 
+  async getPerfil(userId: string): Promise<{ nome: string; email: string }> {
+    const user = await this.repository.findById(userId);
+    if (!user) throw new InvalidCredentialsError();
+    return { nome: user.nome, email: user.email };
+  }
+
+  async updatePerfil(userId: string, nome: string): Promise<{ nome: string; email: string }> {
+    const updated = await this.repository.updateNome(userId, nome);
+    return { nome: updated.nome, email: updated.email };
+  }
+
+  async updateSenha(userId: string, senhaAtual: string, novaSenha: string): Promise<void> {
+    const user = await this.repository.findById(userId);
+    if (!user) throw new InvalidCredentialsError();
+    const ok = await this.verifyFn(senhaAtual, user.senhaHash);
+    if (!ok) throw new InvalidCredentialsError();
+    const novoHash = await this.hashFn(novaSenha);
+    await this.repository.updateSenhaHash(userId, novoHash);
+  }
+
   async login(input: LoginInput): Promise<{ id: string; email: string }> {
     const user = await this.repository.findByEmail(input.email);
     if (!user) {

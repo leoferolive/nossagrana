@@ -9,6 +9,7 @@ import {
   IconFamilia,
   IconHistorico,
   IconOrcamento,
+  IconPerfil,
   IconVoltar,
 } from '../components/icons';
 
@@ -20,6 +21,7 @@ interface ConfiguracoesPageProps {
   onGoToFamilia: () => void;
   onGoToHistorico: () => void;
   onGoToAjuda: () => void;
+  onGoToPerfil?: () => void;
 }
 
 interface MenuItem {
@@ -37,8 +39,10 @@ export const ConfiguracoesPage = ({
   onGoToFamilia,
   onGoToHistorico,
   onGoToAjuda,
+  onGoToPerfil,
 }: ConfiguracoesPageProps) => {
   const items: MenuItem[] = [
+    ...(onGoToPerfil ? [{ label: 'Perfil e Conta', description: 'Edite seu nome e senha', icon: IconPerfil, onClick: onGoToPerfil }] : []),
     { label: 'Categorias', description: 'Gerencie as categorias de gastos', icon: IconExtrato, onClick: onGoToCategorias },
     { label: 'Cartões e Pagamentos', description: 'Métodos de pagamento cadastrados', icon: IconCartao, onClick: onGoToMetodosPagamento },
     { label: 'Orçamento', description: 'Limites de gasto por categoria', icon: IconOrcamento, onClick: onGoToOrcamento },

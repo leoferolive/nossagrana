@@ -42,6 +42,7 @@ interface DashboardPageProps {
   onGoToMetodosPagamento?: () => void;
   onGoToOrcamento?: () => void;
   onGoToRelatorios?: () => void;
+  onGoToHistorico?: () => void;
 }
 
 export const DashboardPage = ({
@@ -52,6 +53,7 @@ export const DashboardPage = ({
   onGoToMetodosPagamento,
   onGoToOrcamento,
   onGoToRelatorios,
+  onGoToHistorico,
 }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, fetchAll } = useDashboardStore();
 
@@ -253,6 +255,16 @@ export const DashboardPage = ({
             className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
           >
             Relatórios
+          </button>
+        )}
+        {onGoToHistorico && (
+          <button
+            type="button"
+            onClick={onGoToHistorico}
+            aria-label="Ver histórico"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Histórico
           </button>
         )}
       </nav>

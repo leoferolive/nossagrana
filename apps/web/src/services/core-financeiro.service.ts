@@ -9,6 +9,8 @@ import type {
   DashboardOrcamentoResponse,
   DashboardResumoResponse,
   FaturaResponse,
+  HistoricoDetalheResponse,
+  HistoricoListResponse,
   MetodoPagamentoCreateRequest,
   MetodoPagamentoCreateResponse,
   MetodoPagamentoDeleteResponse,
@@ -276,6 +278,21 @@ export class DashboardService {
       `/api/cartoes/${metodoPagamentoId}/fatura/${mesReferencia}`,
       { headers: familiaHeader(familiaId) },
     );
+  }
+
+  async getHistorico(familiaId: string): Promise<HistoricoListResponse> {
+    return this.api.request<HistoricoListResponse>('/api/historico', {
+      headers: familiaHeader(familiaId),
+    });
+  }
+
+  async getHistoricoDetalhe(
+    familiaId: string,
+    mesReferencia: string,
+  ): Promise<HistoricoDetalheResponse> {
+    return this.api.request<HistoricoDetalheResponse>(`/api/historico/${mesReferencia}`, {
+      headers: familiaHeader(familiaId),
+    });
   }
 }
 

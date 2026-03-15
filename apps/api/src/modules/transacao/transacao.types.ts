@@ -64,6 +64,10 @@ export interface TransacaoFiltros {
   metodoPagamentoId?: string;
 }
 
+export interface SnapshotNotifier {
+  marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
+}
+
 export interface TransacaoRepository {
   create(input: CreateTransacaoInput): Promise<Transacao>;
   createMany(inputs: CreateTransacaoInput[]): Promise<Transacao[]>;

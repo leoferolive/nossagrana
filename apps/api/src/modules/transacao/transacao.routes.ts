@@ -9,6 +9,11 @@ import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import {
+  DrizzleHistoricoRepository,
+  InMemoryHistoricoRepository,
+} from '../historico/historico.repository.js';
+import { SnapshotService } from '../historico/snapshot.service.js';
+import {
   DrizzleMetodoPagamentoRepository,
   InMemoryMetodoPagamentoRepository,
 } from '../metodo-pagamento/metodo-pagamento.repository.js';
@@ -43,13 +48,19 @@ async function resolveMetodoPagamento(
 const defaultServices = () => {
   if (env.NODE_ENV === 'test') {
     return {
-      transacaoService: new TransacaoService(new InMemoryTransacaoRepository()),
+      transacaoService: new TransacaoService(
+        new InMemoryTransacaoRepository(),
+        new SnapshotService(new InMemoryHistoricoRepository()),
+      ),
       metodoPagamentoRepository:
         new InMemoryMetodoPagamentoRepository() as MetodoPagamentoRepository,
     };
   }
   return {
-    transacaoService: new TransacaoService(new DrizzleTransacaoRepository()),
+    transacaoService: new TransacaoService(
+      new DrizzleTransacaoRepository(),
+      new SnapshotService(new DrizzleHistoricoRepository()),
+    ),
     metodoPagamentoRepository: new DrizzleMetodoPagamentoRepository() as MetodoPagamentoRepository,
   };
 };

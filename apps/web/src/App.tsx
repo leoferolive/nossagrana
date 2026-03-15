@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
 import { FaturaPage } from '@/pages/fatura-page';
+import { HistoricoPage } from '@/pages/historico-page';
 import { LoginPage } from '@/pages/login-page';
 import { MetodosPagamentoPage } from '@/pages/metodos-pagamento-page';
 import { OnboardingPage } from '@/pages/onboarding-page';
@@ -24,7 +25,8 @@ type Screen =
   | 'metodos-pagamento'
   | 'orcamento'
   | 'relatorios'
-  | 'fatura';
+  | 'fatura'
+  | 'historico';
 
 // Demo familiaId until real auth is wired up
 const DEMO_FAMILIA_ID = 'familia-oliveira';
@@ -69,6 +71,7 @@ export const App = () => {
           onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
           onGoToOrcamento={() => setScreen('orcamento')}
           onGoToRelatorios={() => setScreen('relatorios')}
+          onGoToHistorico={() => setScreen('historico')}
         />
         <TransacaoModal
           open={novaTransacaoOpen}
@@ -121,6 +124,10 @@ export const App = () => {
 
   if (screen === 'relatorios') {
     return <RelatoriosPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
+  }
+
+  if (screen === 'historico') {
+    return <HistoricoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
   }
 
   if (screen === 'fatura' && faturaMetodoId) {

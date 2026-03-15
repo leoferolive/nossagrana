@@ -11,6 +11,7 @@ import { transacaoRoutes } from './modules/transacao/transacao.routes.js';
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js';
 import { orcamentoRoutes } from './modules/orcamento/orcamento.routes.js';
 import { relatorioRoutes } from './modules/relatorio/relatorio.routes.js';
+import { historicoRoutes } from './modules/historico/historico.routes.js';
 import { wsRoutes } from './modules/ws/ws.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
@@ -42,6 +43,7 @@ export const buildApp = () => {
   app.register(dashboardRoutes, { prefix: '/api' });
   app.register(orcamentoRoutes, { prefix: '/api' });
   app.register(relatorioRoutes, { prefix: '/api' });
+  app.register(historicoRoutes, { prefix: '/api' });
   app.register(wsRoutes, { prefix: '/api' });
 
   return app;

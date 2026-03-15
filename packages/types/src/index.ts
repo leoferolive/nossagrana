@@ -656,3 +656,62 @@ export const faturaResponseSchema = z.object({
   transacoes: z.array(faturaItemSchema),
 });
 export type FaturaResponse = z.infer<typeof faturaResponseSchema>;
+
+// ─── Histórico / Snapshot ─────────────────────────────────────────────────────
+
+export const historicoMesItemSchema = z.object({
+  mesReferencia: z.string(),
+  totalReceitas: z.string(),
+  totalDespesas: z.string(),
+  saldo: z.string(),
+  temSnapshot: z.boolean(),
+  divergente: z.boolean(),
+  geradoEm: z.string().nullable(),
+});
+export type HistoricoMesItem = z.infer<typeof historicoMesItemSchema>;
+
+export const historicoListResponseSchema = z.object({
+  meses: z.array(historicoMesItemSchema),
+});
+export type HistoricoListResponse = z.infer<typeof historicoListResponseSchema>;
+
+export const historicoMesParamsSchema = z.object({
+  mesReferencia: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
+});
+export type HistoricoMesParams = z.infer<typeof historicoMesParamsSchema>;
+
+export const snapshotDadosCategoriaSchema = z.object({
+  categoriaId: z.string().uuid(),
+  categoriaNome: z.string(),
+  total: z.string(),
+});
+export type SnapshotDadosCategoria = z.infer<typeof snapshotDadosCategoriaSchema>;
+
+export const snapshotDadosUsuarioSchema = z.object({
+  usuarioId: z.string().uuid(),
+  usuarioNome: z.string(),
+  total: z.string(),
+});
+export type SnapshotDadosUsuario = z.infer<typeof snapshotDadosUsuarioSchema>;
+
+export const historicoSnapshotSchema = z.object({
+  totalReceitas: z.string(),
+  totalDespesas: z.string(),
+  saldo: z.string(),
+  geradoEm: z.string(),
+  divergente: z.boolean(),
+  dadosCategorias: z.array(snapshotDadosCategoriaSchema),
+  dadosUsuarios: z.array(snapshotDadosUsuarioSchema),
+});
+export type HistoricoSnapshot = z.infer<typeof historicoSnapshotSchema>;
+
+export const historicoDetalheResponseSchema = z.object({
+  mesReferencia: z.string(),
+  atual: z.object({
+    totalReceitas: z.string(),
+    totalDespesas: z.string(),
+    saldo: z.string(),
+  }),
+  snapshot: historicoSnapshotSchema.nullable(),
+});
+export type HistoricoDetalheResponse = z.infer<typeof historicoDetalheResponseSchema>;

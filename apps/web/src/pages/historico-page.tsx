@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 
+import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
@@ -40,6 +41,7 @@ const formatBRL = (valor: string) =>
 export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
   const [meses, setMeses] = useState<HistoricoMesItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [detalhe, setDetalhe] = useState<HistoricoDetalheResponse | null>(null);
   const [detalheLoading, setDetalheLoading] = useState(false);
   const [mesSelecionado, setMesSelecionado] = useState<string | null>(null);
@@ -50,6 +52,8 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
       try {
         const result = await coreFinanceiroService.getHistorico(familiaId);
         setMeses(result.meses);
+      } catch {
+        setErro('Erro ao carregar histórico. Tente novamente.');
       } finally {
         setLoading(false);
       }
@@ -79,6 +83,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
           { title: 'Tendência', description: 'O gráfico de tendência mostra a evolução de receitas, despesas e saldo ao longo do tempo.' },
         ]}
       />
+      <ErrorBanner error={erro} />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">

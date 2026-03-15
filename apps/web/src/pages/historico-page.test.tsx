@@ -153,6 +153,14 @@ describe('HistoricoPage', () => {
     expect(mockService.getHistoricoDetalhe).toHaveBeenCalledWith(familiaId, '2026-02');
   });
 
+  it('exibe banner de erro quando a requisição falha', async () => {
+    mockService.getHistorico.mockRejectedValue(new Error('network'));
+    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toBeInTheDocument(),
+    );
+  });
+
   it('exibe o tour de histórico', async () => {
     render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId('tour-historico')).toBeInTheDocument());

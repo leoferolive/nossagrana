@@ -221,14 +221,14 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ## Fase 9 — System Admin e Polimento
 
-- [ ] Interface administrativa para System Admin
-- [ ] Rota de recuperação de família excluída (UC25)
-- [ ] Rota de impersonação de usuário (UC26)
+- [x] Interface administrativa para System Admin
+- [x] Rota de recuperação de família excluída (UC25)
+- [x] Rota de impersonação de usuário (UC26)
 - [x] Definir e aplicar design tokens globais (paleta semântica, tipografia, espaçamento, raio e sombras) no frontend
 - [x] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
 - [x] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
-- [ ] Tela de Configurações gerais (perfil, conta)
+- [x] Tela de Configurações gerais (perfil, conta)
 - [ ] Revisão de mensagens de erro e feedback visual
 - [ ] Testes de carga básicos no Raspberry Pi
-- [ ] Revisão de segurança (isolamento multi-tenant)
+- [x] Revisão de segurança (isolamento multi-tenant)
 - [ ] Documentação de uso (README atualizado)

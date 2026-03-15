@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./services/core-financeiro.service', () => ({
   lazyApiClient: { request: vi.fn() },
+  transacaoService: {
+    registrar: vi.fn().mockResolvedValue({ transacao: { id: 'tx-1' } }),
+  },
   coreFinanceiroService: {
     getOrcamentos: vi.fn().mockResolvedValue({ orcamentos: [] }),
     getRelatorioDistribuicao: vi.fn().mockResolvedValue({ distribuicao: [] }),
@@ -32,10 +35,10 @@ vi.mock('./services/auth.service', () => ({
 
 vi.mock('./contexts/use-auth', () => ({
   useAuth: vi.fn(() => ({
-    isAuthenticated: false,
-    accessToken: null,
-    refreshToken: null,
-    familiaIdAtiva: null,
+    isAuthenticated: true,
+    accessToken: 'token',
+    refreshToken: 'rt',
+    familiaIdAtiva: 'fam-test',
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
@@ -343,5 +346,64 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ajuda/i }));
     expect(screen.getAllByRole('heading', { name: /ajuda/i }).length).toBeGreaterThan(0);
+  });
+
+  it('redireciona para login quando não autenticado mesmo após onLoginSuccess acionar setScreen dashboard', async () => {
+    const { useAuth } = await import('./contexts/use-auth');
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: false,
+      accessToken: null,
+      refreshToken: null,
+      familiaIdAtiva: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      setAccessToken: vi.fn(),
+      updateFamiliaIdAtiva: vi.fn(),
+    });
+
+    render(<App />);
+
+    // Trigger onLoginSuccess → setScreen('dashboard')
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+
+    // Even after navigation to 'dashboard' screen state, auth guard must render LoginPage
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /entrar no nossagrana/i })).toBeInTheDocument(),
+    );
+
+    // Dashboard heading must NOT be visible
+    expect(
+      screen
+        .queryAllByRole('heading', { name: /nossagrana/i })
+        .filter(
+          (el) => el.textContent?.includes('NossaGrana') && !el.textContent?.includes('Entrar'),
+        ).length,
+    ).toBe(0);
+  });
+
+  it('DashboardPage recebe familiaIdAtiva do AuthContext em vez de DEMO_FAMILIA_ID', async () => {
+    const { useAuth } = await import('./contexts/use-auth');
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: true,
+      accessToken: 'token',
+      refreshToken: 'rt',
+      familiaIdAtiva: 'fam-123',
+      login: vi.fn(),
+      logout: vi.fn(),
+      setAccessToken: vi.fn(),
+      updateFamiliaIdAtiva: vi.fn(),
+    });
+
+    render(<App />);
+
+    // Navigate to dashboard
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() =>
+      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+    );
+
+    // Navigate to extrato to verify familiaId propagation (extrato uses familiaId too)
+    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
   });
 });

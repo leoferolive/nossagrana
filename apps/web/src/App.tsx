@@ -64,6 +64,11 @@ export const App = () => {
         <DashboardPage
           familiaId={DEMO_FAMILIA_ID}
           onNovaTransacao={() => setNovaTransacaoOpen(true)}
+          onGoToExtrato={() => setScreen('extrato')}
+          onGoToCategorias={() => setScreen('categorias')}
+          onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
+          onGoToOrcamento={() => setScreen('orcamento')}
+          onGoToRelatorios={() => setScreen('relatorios')}
         />
         <TransacaoModal
           open={novaTransacaoOpen}

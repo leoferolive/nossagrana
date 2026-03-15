@@ -1,5 +1,14 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('./services/core-financeiro.service', () => ({
+  coreFinanceiroService: {
+    getOrcamentos: vi.fn().mockResolvedValue({ orcamentos: [] }),
+    getRelatorioDistribuicao: vi.fn().mockResolvedValue({ distribuicao: [] }),
+    getRelatorioPorUsuario: vi.fn().mockResolvedValue({ porUsuario: [] }),
+    getRelatorioTendencias: vi.fn().mockResolvedValue({ meses: [] }),
+  },
+}));
 
 vi.mock('./stores/dashboard.store', () => ({
   useDashboardStore: vi.fn(() => ({
@@ -155,5 +164,44 @@ describe('App', () => {
     fireEvent.submit(screen.getByRole('form'));
     expect(screen.getByRole('heading', { name: /nossagrana/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /nova/i }).length).toBeGreaterThan(0);
+  });
+
+  it('navega para ExtratoPage ao clicar em Extrato', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    expect(screen.getByRole('heading', { name: /extrato/i })).toBeInTheDocument();
+  });
+
+  it('navega para CategoriasPage ao clicar em Categorias', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver categorias/i }));
+    expect(screen.getByRole('heading', { name: /categorias/i })).toBeInTheDocument();
+  });
+
+  it('navega para MetodosPagamentoPage ao clicar em Cartões', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver métodos de pagamento/i }));
+    expect(screen.getByRole('heading', { name: /cart.es e m.todos/i })).toBeInTheDocument();
+  });
+
+  it('navega para OrcamentoPage ao clicar em Orçamento', async () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver orçamentos/i }));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /orçamento/i })).toBeInTheDocument(),
+    );
+  });
+
+  it('navega para RelatoriosPage ao clicar em Relatórios', async () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver relatórios/i }));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /relatórios/i })).toBeInTheDocument(),
+    );
   });
 });

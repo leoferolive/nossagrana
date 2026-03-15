@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApiClient } from './api-client';
 import {
   CategoriaService,
+  DashboardService,
   MetodoPagamentoService,
   TransacaoService,
 } from './core-financeiro.service';
@@ -187,6 +188,115 @@ describe('TransacaoService', () => {
     expect(apiClient.request).toHaveBeenCalledWith(
       '/api/transacoes/t1',
       expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+});
+
+describe('DashboardService', () => {
+  let apiClient: ApiClient;
+  let service: DashboardService;
+
+  beforeEach(() => {
+    apiClient = buildApiClient();
+    service = new DashboardService(apiClient);
+  });
+
+  it('getDashboardResumo chama /api/dashboard', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({});
+    await service.getDashboardResumo('fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/dashboard', expect.anything());
+  });
+
+  it('getDashboardResumo inclui mesReferencia', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({});
+    await service.getDashboardResumo('fid', '2026-03');
+    const url = vi.mocked(apiClient.request).mock.calls[0][0] as string;
+    expect(url).toContain('mesReferencia=2026-03');
+  });
+
+  it('getDashboardGraficos chama /api/dashboard/graficos', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({});
+    await service.getDashboardGraficos('fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/dashboard/graficos', expect.anything());
+  });
+
+  it('getDashboardOrcamento chama /api/dashboard/orcamento', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({});
+    await service.getDashboardOrcamento('fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/dashboard/orcamento', expect.anything());
+  });
+
+  it('getOrcamentos chama /api/orcamento sem qs quando sem mesReferencia', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ orcamentos: [] });
+    await service.getOrcamentos('fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/orcamento', expect.anything());
+  });
+
+  it('getOrcamentos inclui mesReferencia na query string', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ orcamentos: [] });
+    await service.getOrcamentos('fid', '2026-03');
+    const url = vi.mocked(apiClient.request).mock.calls[0][0] as string;
+    expect(url).toContain('mesReferencia=2026-03');
+  });
+
+  it('setOrcamento envia POST para /api/orcamento/:categoriaId', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ id: 'oc1' });
+    await service.setOrcamento('fid', 'cat-1', {
+      valorLimite: '500.00',
+      vigenciaInicio: '2026-03',
+    });
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/orcamento/cat-1',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('getOrcamentoHistorico chama /api/orcamento/:categoriaId/historico', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ historico: [] });
+    await service.getOrcamentoHistorico('fid', 'cat-1');
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/orcamento/cat-1/historico',
+      expect.anything(),
+    );
+  });
+
+  it('getRelatorioDistribuicao chama /api/relatorios/distribuicao', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ distribuicao: [] });
+    await service.getRelatorioDistribuicao('fid');
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/relatorios/distribuicao',
+      expect.anything(),
+    );
+  });
+
+  it('getRelatorioPorUsuario chama /api/relatorios/por-usuario', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ porUsuario: [] });
+    await service.getRelatorioPorUsuario('fid');
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/relatorios/por-usuario',
+      expect.anything(),
+    );
+  });
+
+  it('getRelatorioTendencias inclui meses na qs quando fornecido', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ meses: [] });
+    await service.getRelatorioTendencias('fid', 6);
+    const url = vi.mocked(apiClient.request).mock.calls[0][0] as string;
+    expect(url).toContain('meses=6');
+  });
+
+  it('getRelatorioTendencias sem meses usa url base', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ meses: [] });
+    await service.getRelatorioTendencias('fid');
+    expect(apiClient.request).toHaveBeenCalledWith('/api/relatorios/tendencias', expect.anything());
+  });
+
+  it('getFatura chama /api/cartoes/:id/fatura/:mes', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ total: '0.00', transacoes: [] });
+    await service.getFatura('fid', 'mp1', '2026-03');
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/cartoes/mp1/fatura/2026-03',
+      expect.anything(),
     );
   });
 });

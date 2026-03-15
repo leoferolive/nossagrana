@@ -11,10 +11,7 @@ vi.mock('../../db/client.js', () => ({
   db: mockDb,
 }));
 
-import {
-  DrizzleHistoricoRepository,
-  InMemoryHistoricoRepository,
-} from './historico.repository.js';
+import { DrizzleHistoricoRepository, InMemoryHistoricoRepository } from './historico.repository.js';
 
 const makeSnapshotRow = (overrides = {}) => ({
   id: 'snap-1',

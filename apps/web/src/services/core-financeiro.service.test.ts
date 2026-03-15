@@ -312,10 +312,7 @@ describe('DashboardService', () => {
   it('getHistoricoDetalhe chama /api/historico/:mesReferencia', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({ mesReferencia: '2026-03' });
     await service.getHistoricoDetalhe('fid', '2026-03');
-    expect(apiClient.request).toHaveBeenCalledWith(
-      '/api/historico/2026-03',
-      expect.anything(),
-    );
+    expect(apiClient.request).toHaveBeenCalledWith('/api/historico/2026-03', expect.anything());
   });
 
   it('getPerfil chama /api/auth/perfil', async () => {
@@ -325,11 +322,17 @@ describe('DashboardService', () => {
   });
 
   it('updatePerfil envia PATCH para /api/auth/perfil com body', async () => {
-    vi.mocked(apiClient.request).mockResolvedValueOnce({ nome: 'Leo Atualizado', email: 'leo@example.com' });
+    vi.mocked(apiClient.request).mockResolvedValueOnce({
+      nome: 'Leo Atualizado',
+      email: 'leo@example.com',
+    });
     await service.updatePerfil({ nome: 'Leo Atualizado' });
     expect(apiClient.request).toHaveBeenCalledWith(
       '/api/auth/perfil',
-      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ nome: 'Leo Atualizado' }) }),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ nome: 'Leo Atualizado' }),
+      }),
     );
   });
 
@@ -338,7 +341,10 @@ describe('DashboardService', () => {
     await service.updateSenha({ senhaAtual: 'oldPass', novaSenha: 'newPass' });
     expect(apiClient.request).toHaveBeenCalledWith(
       '/api/auth/senha',
-      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ senhaAtual: 'oldPass', novaSenha: 'newPass' }) }),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ senhaAtual: 'oldPass', novaSenha: 'newPass' }),
+      }),
     );
   });
 });

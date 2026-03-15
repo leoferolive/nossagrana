@@ -30,7 +30,7 @@ describe('database schema', () => {
   it('defines familias table with required columns', () => {
     const columns = getTableColumns(familias);
 
-    expect(Object.keys(columns)).toEqual(['id', 'nome', 'dataCriacao']);
+    expect(Object.keys(columns)).toEqual(['id', 'nome', 'dataCriacao', 'deletedAt']);
     expect(columns.id.notNull).toBe(true);
     expect(columns.nome.notNull).toBe(true);
     expect(columns.dataCriacao.notNull).toBe(true);

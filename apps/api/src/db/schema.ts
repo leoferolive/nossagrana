@@ -32,6 +32,7 @@ export const familias = pgTable('familias', {
   id: uuid('id').defaultRandom().primaryKey(),
   nome: text('nome').notNull(),
   dataCriacao: timestamp('data_criacao', { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
 });
 
 export const usuarioFamiliaRole = pgEnum('usuario_familia_role', ['admin', 'membro']);

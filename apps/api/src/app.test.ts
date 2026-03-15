@@ -1950,3 +1950,115 @@ describe('Fatura routes', () => {
     expect(res.statusCode).toBe(404);
   });
 });
+
+describe('Admin routes', () => {
+  const adminSecret = 'changeme-admin-secret';
+  let app: Awaited<ReturnType<typeof buildApp>>;
+  let userId: string;
+  let familiaId: string;
+  let accessToken: string;
+
+  beforeAll(async () => {
+    app = buildApp();
+    await app.ready();
+
+    const reg = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'Admin Test', email: 'admin-test@example.com', senha: 'senha123' },
+    });
+    userId = reg.json().user.id;
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'admin-test@example.com', senha: 'senha123' },
+    });
+    accessToken = login.json().accessToken;
+
+    const fam = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      payload: { nome: 'Familia Admin Test' },
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    familiaId = fam.json().familia.id;
+  });
+
+  afterAll(() => app.close());
+
+  it('PATCH /api/admin/familias/:id/recuperar retorna 403 sem secret', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/familias/${familiaId}/recuperar`,
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('PATCH /api/admin/familias/:id/recuperar retorna 404 se familia nao esta excluida', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/familias/${familiaId}/recuperar`,
+      headers: { 'x-admin-secret': adminSecret },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('POST /api/admin/usuarios/:id/impersonar retorna 403 sem secret', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/admin/usuarios/${userId}/impersonar`,
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('POST /api/admin/usuarios/:id/impersonar retorna 404 para usuario inexistente', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/admin/usuarios/00000000-0000-0000-0000-000000000000/impersonar`,
+      headers: { 'x-admin-secret': adminSecret },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /api/auth/perfil retorna nome e email', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/auth/perfil',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ nome: 'Admin Test', email: 'admin-test@example.com' });
+  });
+
+  it('PATCH /api/auth/perfil atualiza nome', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/auth/perfil',
+      payload: { nome: 'Admin Atualizado' },
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ nome: 'Admin Atualizado' });
+  });
+
+  it('PATCH /api/auth/senha retorna 401 com senha atual incorreta', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/auth/senha',
+      payload: { senhaAtual: 'errada', novaSenha: 'nova123' },
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('PATCH /api/auth/senha atualiza senha com sucesso', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/auth/senha',
+      payload: { senhaAtual: 'senha123', novaSenha: 'novaSenha456' },
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(204);
+  });
+});

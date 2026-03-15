@@ -336,6 +336,14 @@ describe('DrizzleFamiliaRepository', () => {
       }),
     });
 
+    mockDb.update.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'f1' }]),
+        }),
+      }),
+    });
+
     const repository = new DrizzleFamiliaRepository();
 
     const joined = await repository.joinByInvite({

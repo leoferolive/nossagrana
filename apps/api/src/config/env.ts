@@ -12,6 +12,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string().min(8),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
+  ADMIN_SECRET: z.string().default('changeme-admin-secret'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

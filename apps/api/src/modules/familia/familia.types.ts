@@ -77,6 +77,7 @@ export interface FamiliaRepository {
   listMembers(input: { familiaId: string }): Promise<FamiliaMember[]>;
   removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   deleteFamily(input: { familiaId: string }): Promise<boolean>;
+  buscarPorNome(nome: string): Promise<Array<{ id: string; nome: string }>>;
 }
 
 export const familiaTypesRuntimeMarker = true;

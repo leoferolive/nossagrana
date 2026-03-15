@@ -715,3 +715,20 @@ export const historicoDetalheResponseSchema = z.object({
   snapshot: historicoSnapshotSchema.nullable(),
 });
 export type HistoricoDetalheResponse = z.infer<typeof historicoDetalheResponseSchema>;
+
+// ─── Familia Buscar ───────────────────────────────────────────────────────────
+
+export const familiaBuscarQuerySchema = z.object({
+  nome: z.string().trim().min(1),
+});
+export type FamiliaBuscarQuery = z.infer<typeof familiaBuscarQuerySchema>;
+
+export const familiaBuscarResponseSchema = z.object({
+  familias: z.array(
+    z.object({
+      id: z.string().uuid(),
+      nome: z.string(),
+    }),
+  ),
+});
+export type FamiliaBuscarResponse = z.infer<typeof familiaBuscarResponseSchema>;

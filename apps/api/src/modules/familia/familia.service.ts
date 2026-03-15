@@ -264,4 +264,8 @@ export class FamiliaService {
       throw new FamiliaNotFoundError();
     }
   }
+
+  async buscarPorNome(input: { nome: string }) {
+    return this.familiaRepository.buscarPorNome(input.nome);
+  }
 }

@@ -3,6 +3,7 @@ import type {
   AuthLoginResponse,
   AuthRegisterRequest,
   AuthRegisterResponse,
+  FamiliaBuscarResponse,
   FamiliaCreateInviteResponse,
   FamiliaCreateRequest,
   FamiliaCreateResponse,
@@ -16,15 +17,6 @@ import type {
 
 import { ApiClient } from './api-client';
 import { lazyApiClient } from './core-financeiro.service';
-
-interface FamiliaBuscarResult {
-  id: string;
-  nome: string;
-}
-
-export interface FamiliaBuscarResponse {
-  familias: FamiliaBuscarResult[];
-}
 
 const familiaHeader = (familiaId: string): Record<string, string> => ({
   'X-Familia-Id': familiaId,

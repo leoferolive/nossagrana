@@ -7,6 +7,12 @@ vi.mock('./services/core-financeiro.service', () => ({
     listar: vi.fn().mockResolvedValue({ transacoes: [] }),
     registrar: vi.fn().mockResolvedValue({ transacao: { id: 'tx-1' } }),
   },
+  categoriaService: {
+    listar: vi.fn().mockResolvedValue({ categorias: [] }),
+    criar: vi.fn().mockResolvedValue({ categoria: {} }),
+    editar: vi.fn().mockResolvedValue({ categoria: {} }),
+    desativar: vi.fn().mockResolvedValue({ success: true }),
+  },
   coreFinanceiroService: {
     getOrcamentos: vi.fn().mockResolvedValue({ orcamentos: [] }),
     getRelatorioDistribuicao: vi.fn().mockResolvedValue({ distribuicao: [] }),

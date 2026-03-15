@@ -13,9 +13,9 @@
    Do instead: `git diff --name-only origin/main...HEAD | xargs pnpm exec prettier --write --ignore-unknown` — a CI checa todos os arquivos do PR, não só o último commit.
 2. **[2026-03-14] Sempre fazer `git fetch origin && git log origin/main` antes de iniciar qualquer task**
    Do instead: verificar o estado real do `origin/main` no início de cada sessão para não reimplementar trabalho já mergeado.
-2. **[2026-03-12] `tsc -b` no frontend pode gerar JS em `src/` se `noEmit` nao estiver ativo**
+3. **[2026-03-12] `tsc -b` no frontend pode gerar JS em `src/` se `noEmit` nao estiver ativo**
    Do instead: usar `tsc --noEmit` nos scripts de build/type-check do web para evitar artefatos versionaveis.
-3. **[2026-03-11] Validate critical flows after every meaningful code change**
+4. **[2026-03-11] Validate critical flows after every meaningful code change**
    Do instead: run the smallest relevant automated checks first, then broaden only if needed.
 
 ## Shell & Command Reliability

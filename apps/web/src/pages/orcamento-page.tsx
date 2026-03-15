@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 
 interface OrcamentoItem {
@@ -81,6 +82,14 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      <FirstTimeTour
+        tourKey="orcamento"
+        steps={[
+          { title: 'Orçamento', description: 'Defina limites de gasto por categoria para controlar suas finanças.' },
+          { title: 'Progresso', description: 'A barra mostra quanto do limite já foi utilizado no mês.' },
+          { title: 'Editar limite', description: 'Toque em "Editar limite" para ajustar o valor máximo de cada categoria.' },
+        ]}
+      />
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
         <button
           type="button"

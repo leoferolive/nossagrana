@@ -170,7 +170,7 @@ describe('App', () => {
     render(<App />);
     fireEvent.submit(screen.getByRole('form'));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
-    expect(screen.getByRole('heading', { name: /extrato/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
   });
 
   it('navega para CategoriasPage ao clicar em Categorias', () => {
@@ -192,7 +192,7 @@ describe('App', () => {
     fireEvent.submit(screen.getByRole('form'));
     fireEvent.click(screen.getByRole('button', { name: /ver orçamentos/i }));
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /orçamento/i })).toBeInTheDocument(),
+      expect(screen.getAllByRole('heading', { name: /orçamento/i }).length).toBeGreaterThan(0),
     );
   });
 

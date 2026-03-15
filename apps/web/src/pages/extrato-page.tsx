@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { FirstTimeTour } from '../components/first-time-tour';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
 interface ExtratoPageProps {
@@ -63,6 +64,15 @@ export const ExtratoPage = ({ onBack, onNovaTransacao }: ExtratoPageProps) => {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      <FirstTimeTour
+        tourKey="extrato"
+        steps={[
+          { title: 'Extrato', description: 'Aqui você vê todas as suas transações registradas.' },
+          { title: 'Filtros', description: 'Use os filtros para ver só receitas ou só despesas.' },
+          { title: 'Detalhe', description: 'Toque em uma transação para ver os detalhes.' },
+          { title: 'Nova transação', description: 'Use o botão "+" para registrar uma nova transação.' },
+        ]}
+      />
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
         <button

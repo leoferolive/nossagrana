@@ -11,6 +11,8 @@ import {
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 
+import { FirstTimeTour } from '../components/first-time-tour';
+
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
@@ -68,6 +70,15 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
 
   return (
     <div className="min-h-screen bg-bg text-text p-4">
+      <FirstTimeTour
+        tourKey="historico"
+        steps={[
+          { title: 'Histórico', description: 'Veja um resumo financeiro de cada mês passado.' },
+          { title: 'Snapshot', description: 'Meses fechados têm um snapshot que preserva os dados do período.' },
+          { title: 'Divergente', description: 'Se uma transação for editada após o fechamento, o mês fica marcado como divergente.' },
+          { title: 'Tendência', description: 'O gráfico de tendência mostra a evolução de receitas, despesas e saldo ao longo do tempo.' },
+        ]}
+      />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">

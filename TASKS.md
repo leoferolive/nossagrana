@@ -157,24 +157,24 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 
 ### Backend
 
-- [ ] Rota `GET /orcamento` — listar orçamentos vigentes por categoria
-- [ ] Rota `POST /orcamento/:categoriaId` — definir/alterar limite (UC19)
-- [ ] Rota `GET /orcamento/:categoriaId/historico` — histórico de vigências
-- [ ] Rota `GET /relatorios/distribuicao` — gastos por categoria (UC14)
-- [ ] Rota `GET /relatorios/por-usuario` — gastos por membro
-- [ ] Rota `GET /relatorios/tendencias` — comparação mensal e insights
-- [ ] Rota `GET /cartoes/:id/fatura/:mesReferencia` — fatura do cartão (UC16)
+- [x] Rota `GET /orcamento` — listar orçamentos vigentes por categoria
+- [x] Rota `POST /orcamento/:categoriaId` — definir/alterar limite (UC19)
+- [x] Rota `GET /orcamento/:categoriaId/historico` — histórico de vigências
+- [x] Rota `GET /relatorios/distribuicao` — gastos por categoria (UC14)
+- [x] Rota `GET /relatorios/por-usuario` — gastos por membro
+- [x] Rota `GET /relatorios/tendencias` — comparação mensal e insights
+- [x] Rota `GET /cartoes/:id/fatura/:mesReferencia` — fatura do cartão (UC16)
 
 ### Frontend
 
-- [ ] Tela de Orçamento (tabela categoria × limite × % utilizado)
-- [ ] Formulário de edição de limite por categoria
-- [ ] Histórico de alterações de limite
-- [ ] Tela de Relatórios
-- [ ] Gráfico de distribuição por categoria
-- [ ] Breakdown por membro
-- [ ] Tendências e insights automáticos
-- [ ] Tela de Fatura do Cartão
+- [x] Tela de Orçamento (tabela categoria × limite × % utilizado)
+- [x] Formulário de edição de limite por categoria
+- [x] Histórico de alterações de limite
+- [x] Tela de Relatórios
+- [x] Gráfico de distribuição por categoria
+- [x] Breakdown por membro
+- [x] Tendências e insights automáticos
+- [x] Tela de Fatura do Cartão
 
 ---
 

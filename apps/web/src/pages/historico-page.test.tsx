@@ -10,6 +10,12 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
+vi.mock('../components/first-time-tour', () => ({
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => (
+    <div data-testid={`tour-${tourKey}`} />
+  ),
+}));
+
 vi.mock('react-chartjs-2', () => ({
   Line: ({ data }: { data: { labels: string[]; datasets: { label: string }[] } }) => (
     <div data-testid="chart-tendencia">
@@ -145,6 +151,11 @@ describe('HistoricoPage', () => {
       expect(screen.getByText(/alimentação/i)).toBeInTheDocument(),
     );
     expect(mockService.getHistoricoDetalhe).toHaveBeenCalledWith(familiaId, '2026-02');
+  });
+
+  it('exibe o tour de histórico', async () => {
+    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() => expect(screen.getByTestId('tour-historico')).toBeInTheDocument());
   });
 
   describe('gráfico de tendência', () => {

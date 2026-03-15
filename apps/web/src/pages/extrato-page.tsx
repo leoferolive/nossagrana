@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { FirstTimeTour } from '../components/first-time-tour';
+import { IconAdicionar, IconVoltar } from '../components/icons';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
 interface ExtratoPageProps {
@@ -81,7 +82,7 @@ export const ExtratoPage = ({ onBack, onNovaTransacao }: ExtratoPageProps) => {
           aria-label="Voltar"
           className="text-text-muted transition hover:text-text"
         >
-          ←
+          <IconVoltar size={20} />
         </button>
         <h1 className="text-lg font-bold text-text">Extrato</h1>
       </header>
@@ -173,9 +174,9 @@ export const ExtratoPage = ({ onBack, onNovaTransacao }: ExtratoPageProps) => {
         type="button"
         aria-label="Nova transação"
         onClick={onNovaTransacao}
-        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-success text-2xl font-bold text-white shadow-lg transition hover:bg-success-strong"
+        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-success text-white shadow-lg transition hover:bg-success-strong"
       >
-        +
+        <IconAdicionar size={28} />
       </button>
 
       {/* Modal de detalhe */}

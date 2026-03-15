@@ -1,8 +1,21 @@
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from 'chart.js';
 import { useEffect, useState } from 'react';
+import { Line } from 'react-chartjs-2';
 
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 interface HistoricoPageProps {
   familiaId: string;
@@ -74,6 +87,48 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
           <p className="text-text-muted text-center py-8">
             Nenhum histórico disponível ainda. Registre transações para ver os meses aqui.
           </p>
+        )}
+
+        {!loading && meses.length >= 2 && (
+          <div className="rounded-xl border border-border bg-panel p-4 mb-4">
+            <p className="mb-3 text-xs font-semibold text-text-muted uppercase">Tendência</p>
+            <Line
+              data={{
+                labels: [...meses].reverse().map((m) => formatMes(m.mesReferencia)),
+                datasets: [
+                  {
+                    label: 'Receitas',
+                    data: [...meses].reverse().map((m) => parseFloat(m.totalReceitas)),
+                    borderColor: 'rgb(34,197,94)',
+                    backgroundColor: 'rgba(34,197,94,0.1)',
+                    fill: false,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'Despesas',
+                    data: [...meses].reverse().map((m) => parseFloat(m.totalDespesas)),
+                    borderColor: 'rgb(239,68,68)',
+                    backgroundColor: 'rgba(239,68,68,0.1)',
+                    fill: false,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'Saldo',
+                    data: [...meses].reverse().map((m) => parseFloat(m.saldo)),
+                    borderColor: 'rgb(59,130,246)',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    fill: false,
+                    tension: 0.3,
+                  },
+                ],
+              }}
+              options={{
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { ticks: { callback: (v) => `R$${Number(v).toLocaleString('pt-BR')}` } } },
+                maintainAspectRatio: true,
+              }}
+            />
+          </div>
         )}
 
         {!loading && meses.length > 0 && (

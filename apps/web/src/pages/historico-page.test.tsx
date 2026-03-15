@@ -10,6 +10,15 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
+vi.mock('react-chartjs-2', () => ({
+  Line: ({ data }: { data: { labels: string[]; datasets: { label: string }[] } }) => (
+    <div data-testid="chart-tendencia">
+      {data.labels.map((l: string) => <span key={l}>{l}</span>)}
+      {data.datasets.map((d: { label: string }) => <span key={d.label}>{d.label}</span>)}
+    </div>
+  ),
+}));
+
 import { HistoricoPage } from './historico-page';
 
 const familiaId = 'fam-1';
@@ -68,8 +77,10 @@ describe('HistoricoPage', () => {
       ],
     });
     render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText(/fev.*2026/i)).toBeInTheDocument());
-    expect(screen.getByText(/jan.*2026/i)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0),
+    );
+    expect(screen.getAllByText(/jan.*2026/i).length).toBeGreaterThan(0);
   });
 
   it('indica divergente com indicador visual', async () => {
@@ -134,5 +145,74 @@ describe('HistoricoPage', () => {
       expect(screen.getByText(/alimentação/i)).toBeInTheDocument(),
     );
     expect(mockService.getHistoricoDetalhe).toHaveBeenCalledWith(familiaId, '2026-02');
+  });
+
+  describe('gráfico de tendência', () => {
+    const mesesComDados = [
+      {
+        mesReferencia: '2026-03',
+        totalReceitas: '2200.00',
+        totalDespesas: '1400.00',
+        saldo: '800.00',
+        temSnapshot: false,
+        divergente: false,
+        geradoEm: null,
+      },
+      {
+        mesReferencia: '2026-02',
+        totalReceitas: '2000.00',
+        totalDespesas: '1200.00',
+        saldo: '800.00',
+        temSnapshot: true,
+        divergente: false,
+        geradoEm: '2026-02-28T23:55:00.000Z',
+      },
+      {
+        mesReferencia: '2026-01',
+        totalReceitas: '1800.00',
+        totalDespesas: '900.00',
+        saldo: '900.00',
+        temSnapshot: true,
+        divergente: false,
+        geradoEm: '2026-01-31T23:55:00.000Z',
+      },
+    ];
+
+    it('renderiza o gráfico de tendência quando há 2 ou mais meses', async () => {
+      mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
+      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      await waitFor(() =>
+        expect(screen.getByTestId('chart-tendencia')).toBeInTheDocument(),
+      );
+    });
+
+    it('não renderiza o gráfico quando há menos de 2 meses', async () => {
+      mockService.getHistorico.mockResolvedValue({ meses: [mesesComDados[0]] });
+      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      await waitFor(() => screen.getByText(/mar.*2026/i));
+      expect(screen.queryByTestId('chart-tendencia')).not.toBeInTheDocument();
+    });
+
+    it('o gráfico inclui as séries de receitas, despesas e saldo', async () => {
+      mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
+      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      await waitFor(() => screen.getByTestId('chart-tendencia'));
+      expect(screen.getByText(/receitas/i)).toBeInTheDocument();
+      expect(screen.getByText(/despesas/i)).toBeInTheDocument();
+      expect(screen.getByText(/saldo/i)).toBeInTheDocument();
+    });
+
+    it('os labels do gráfico estão em ordem cronológica crescente', async () => {
+      mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
+      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      await waitFor(() => screen.getByTestId('chart-tendencia'));
+      const labels = screen.getAllByText(/jan|fev|mar/i);
+      const texts = labels.map((el) => el.textContent ?? '');
+      const janIdx = texts.findIndex((t) => /jan/i.test(t));
+      const fevIdx = texts.findIndex((t) => /fev/i.test(t));
+      const marIdx = texts.findIndex((t) => /mar/i.test(t));
+      expect(janIdx).toBeLessThan(fevIdx);
+      expect(fevIdx).toBeLessThan(marIdx);
+    });
   });
 });

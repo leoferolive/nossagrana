@@ -31,9 +31,13 @@
 
 ## Domain Behavior Guardrails
 
-1. **[2026-03-12] Frontend `apps/web` deve versionar apenas fontes TS/TSX**
+1. **[2026-03-14] Usar tokens semânticos do projeto em novas páginas/componentes**
+   Do instead: usar `bg-bg`, `bg-panel`, `bg-surface`, `text-text`, `text-text-muted`, `border-border` — nunca `bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground` (não existem no tailwind.config).
+2. **[2026-03-14] `getByText` falha com múltiplos matches em seções + títulos de FAQ**
+   Do instead: usar `getAllByText(...).length` ou buscar por role/label mais específico quando há duplicatas esperadas.
+3. **[2026-03-12] Frontend `apps/web` deve versionar apenas fontes TS/TSX**
    Do instead: remover artefatos JS gerados (`src/**/*.js`, `vite.config.js`, `.d.ts` gerado) e bloquear no `.gitignore`.
-2. **[2026-03-11] Preserve unrelated local changes**
+4. **[2026-03-11] Preserve unrelated local changes**
    Do instead: edit only task-related files and never revert existing user changes unless explicitly requested.
 
 ## User Directives

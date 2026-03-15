@@ -21,6 +21,11 @@ vi.mock('./services/core-financeiro.service', () => ({
     getPerfil: vi.fn().mockResolvedValue({ nome: 'Demo', email: 'demo@example.com' }),
     getHistorico: vi.fn().mockResolvedValue({ meses: [] }),
   },
+  metodoPagamentoService: {
+    listar: vi.fn().mockResolvedValue({ metodosPagamento: [] }),
+    criar: vi.fn().mockResolvedValue({ metodoPagamento: {} }),
+    desativar: vi.fn().mockResolvedValue({ success: true }),
+  },
 }));
 
 vi.mock('./services/auth.service', () => ({

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('./services/core-financeiro.service', () => ({
   lazyApiClient: { request: vi.fn() },
   transacaoService: {
+    listar: vi.fn().mockResolvedValue({ transacoes: [] }),
     registrar: vi.fn().mockResolvedValue({ transacao: { id: 'tx-1' } }),
   },
   coreFinanceiroService: {

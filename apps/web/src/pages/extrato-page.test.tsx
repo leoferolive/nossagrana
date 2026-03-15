@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { transacaoService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
@@ -21,8 +22,15 @@ vi.mock('@/contexts/use-auth', () => ({
   }),
 }));
 
+vi.mock('@/services/core-financeiro.service', () => ({
+  transacaoService: {
+    listar: vi.fn(),
+  },
+}));
+
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
   useTransacaoStore.setState({ transacoes: [], carregando: false, erro: null, filtros: {} });
   useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
   useMetodoPagamentoStore.setState({ metodos: [], carregando: false, erro: null });
@@ -55,6 +63,7 @@ const T = (overrides = {}) => ({
 
 describe('ExtratoPage', () => {
   beforeEach(() => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
     useTransacaoStore.setState({
       transacoes: [
         T({ id: 't1', valor: '150.00', descricao: 'Mercado', tipo: 'despesa' }),
@@ -129,5 +138,67 @@ describe('ExtratoPage', () => {
   it('exibe o tour de extrato', () => {
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     expect(screen.getByTestId('tour-extrato')).toBeInTheDocument();
+  });
+});
+
+describe('ExtratoPage — carregamento via API', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    useTransacaoStore.setState({ transacoes: [], carregando: false, erro: null, filtros: {} });
+  });
+
+  it('chama transacaoService.listar ao montar com familiaId', async () => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    await waitFor(() => {
+      expect(transacaoService.listar).toHaveBeenCalledWith({}, 'f1');
+    });
+  });
+
+  it('não chama transacaoService.listar quando familiaId está vazio', async () => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
+    render(<ExtratoPage familiaId="" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    await waitFor(() => {
+      expect(transacaoService.listar).not.toHaveBeenCalled();
+    });
+  });
+
+  it('exibe transações retornadas pela API', async () => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({
+      transacoes: [T({ id: 'api1', descricao: 'Jantar API', valor: '80.00', tipo: 'despesa' })],
+    });
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('Jantar API')).toBeInTheDocument();
+    });
+  });
+
+  it('exibe "Carregando..." durante o carregamento', async () => {
+    let resolve: (v: { transacoes: ReturnType<typeof T>[] }) => void;
+    vi.mocked(transacaoService.listar).mockImplementation(
+      () =>
+        new Promise((res) => {
+          resolve = res;
+        }),
+    );
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    expect(screen.getByText('Carregando...')).toBeInTheDocument();
+    resolve!({ transacoes: [] });
+  });
+
+  it('exibe "Nenhuma transação encontrada." quando lista está vazia', async () => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('Nenhuma transação encontrada.')).toBeInTheDocument();
+    });
+  });
+
+  it('exibe "Nenhuma transação encontrada." quando a API falha', async () => {
+    vi.mocked(transacaoService.listar).mockRejectedValue(new Error('Erro de rede'));
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByText('Nenhuma transação encontrada.')).toBeInTheDocument();
+    });
   });
 });

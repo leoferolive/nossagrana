@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FirstTimeTour } from '../components/first-time-tour';
 import { IconAdicionar, IconVoltar } from '../components/icons';
+import { transacaoService } from '@/services/core-financeiro.service';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
 interface ExtratoPageProps {
@@ -52,8 +53,20 @@ const TransacaoDetalheModal = ({
   </div>
 );
 
-export const ExtratoPage = ({ onBack, onNovaTransacao }: ExtratoPageProps) => {
+export const ExtratoPage = ({ familiaId, onBack, onNovaTransacao }: ExtratoPageProps) => {
   const { transacoes, carregando } = useTransacaoStore();
+  const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
+  const setCarregando = useTransacaoStore((s) => s.setCarregando);
+
+  useEffect(() => {
+    if (!familiaId) return;
+    setCarregando(true);
+    transacaoService
+      .listar({}, familiaId)
+      .then((res) => setTransacoes(res.transacoes))
+      .catch(() => setTransacoes([]))
+      .finally(() => setCarregando(false));
+  }, [familiaId, setCarregando, setTransacoes]);
 
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
   const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);

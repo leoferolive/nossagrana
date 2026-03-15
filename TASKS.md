@@ -228,7 +228,7 @@ Backlog organizado por fase de desenvolvimento. Cada fase deve ser validada ante
 - [x] Padronizar biblioteca de ícones e mapear ícones por domínio/tela (dashboard, extrato, orçamento, família, ajuda)
 - [x] Hub de Configurações (mobile): atalhos para categorias, cartões/pagamentos, orçamento, família, histórico, perfil e ajuda
 - [x] Tela de Configurações gerais (perfil, conta)
-- [ ] Revisão de mensagens de erro e feedback visual
+- [x] Revisão de mensagens de erro e feedback visual
 - [ ] Testes de carga básicos no Raspberry Pi
 - [x] Revisão de segurança (isolamento multi-tenant)
-- [ ] Documentação de uso (README atualizado)
+- [x] Documentação de uso (README atualizado)

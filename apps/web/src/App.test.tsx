@@ -7,6 +7,8 @@ vi.mock('./services/core-financeiro.service', () => ({
     getRelatorioDistribuicao: vi.fn().mockResolvedValue({ distribuicao: [] }),
     getRelatorioPorUsuario: vi.fn().mockResolvedValue({ porUsuario: [] }),
     getRelatorioTendencias: vi.fn().mockResolvedValue({ meses: [] }),
+    getPerfil: vi.fn().mockResolvedValue({ nome: 'Demo', email: 'demo@example.com' }),
+    getHistorico: vi.fn().mockResolvedValue({ meses: [] }),
   },
 }));
 
@@ -203,5 +205,37 @@ describe('App', () => {
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /relatórios/i })).toBeInTheDocument(),
     );
+  });
+
+  it('navega para HistoricoPage ao clicar em Ver histórico', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver histórico/i }));
+    expect(screen.getAllByRole('heading', { name: /histórico/i }).length).toBeGreaterThan(0);
+  });
+
+  it('navega para ConfiguracoesPage ao clicar em Ver configurações', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    expect(screen.getAllByRole('heading', { name: /configurações/i }).length).toBeGreaterThan(0);
+  });
+
+  it('navega para PerfilPage a partir das configurações', async () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /perfil e conta/i }));
+    await waitFor(() =>
+      expect(screen.getAllByRole('heading', { name: /perfil/i }).length).toBeGreaterThan(0),
+    );
+  });
+
+  it('navega para AjudaPage a partir das configurações', () => {
+    render(<App />);
+    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ajuda/i }));
+    expect(screen.getAllByRole('heading', { name: /ajuda/i }).length).toBeGreaterThan(0);
   });
 });

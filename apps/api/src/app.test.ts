@@ -2062,3 +2062,52 @@ describe('Admin routes', () => {
     expect(res.statusCode).toBe(204);
   });
 });
+
+describe('Historico routes', () => {
+  const app = buildApp();
+  let accessToken: string;
+  let familiaId: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { nome: 'Hist User', email: 'hist@example.com', senha: 'password123' },
+    });
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'hist@example.com', senha: 'password123' },
+    });
+    accessToken = loginRes.json().accessToken;
+    const familyRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia Historico' },
+    });
+    familiaId = familyRes.json().familia.id;
+  });
+
+  afterAll(() => app.close());
+
+  it('GET /api/historico retorna { meses: [] } inicialmente', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/historico',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ meses: [] });
+  });
+
+  it('GET /api/historico/:mesReferencia retorna 404 quando mês não existe', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/historico/2025-01',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});

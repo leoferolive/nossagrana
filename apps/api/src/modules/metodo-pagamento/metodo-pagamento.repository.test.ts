@@ -83,6 +83,40 @@ describe('InMemoryMetodoPagamentoRepository', () => {
     const result = await repo.deactivate({ id: 'nao-existe', familiaId: 'f1' });
     expect(result).toBeNull();
   });
+
+  it('findById retorna metodo quando encontrado', async () => {
+    const created = await repo.create(baseInput);
+    const found = await repo.findById({ id: created.id, familiaId: 'f1' });
+    expect(found).not.toBeNull();
+    expect(found?.nome).toBe('Nubank');
+  });
+
+  it('findById retorna null quando nao encontrado', async () => {
+    const result = await repo.findById({ id: 'nao-existe', familiaId: 'f1' });
+    expect(result).toBeNull();
+  });
+
+  it('getFatura retorna transacoes filtradas', async () => {
+    const created = await repo.create(baseInput);
+    const fakeTransacao = {
+      id: 't1',
+      descricao: 'Mercado',
+      valor: '200.00',
+      data: '2026-03-10',
+      categoriaId: 'c1',
+      categoriaNome: 'Alimentação',
+      usuarioNome: 'Leo',
+      parcelaAtual: null,
+      numeroParcelas: null,
+      familiaId: 'f1',
+      metodoPagamentoId: created.id,
+      mesReferencia: '2026-03',
+    };
+    repo.seedFatura(fakeTransacao);
+    const result = await repo.getFatura('f1', created.id, '2026-03');
+    expect(result).toHaveLength(1);
+    expect(result[0].descricao).toBe('Mercado');
+  });
 });
 
 // ─── Drizzle (mockDb) ────────────────────────────────────────────────────────
@@ -201,5 +235,54 @@ describe('DrizzleMetodoPagamentoRepository', () => {
 
     const result = await repo.deactivate({ id: 'nao-existe', familiaId: 'f1' });
     expect(result).toBeNull();
+  });
+
+  it('findById executa select e retorna metodo', async () => {
+    mockDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([fakeRow]),
+      }),
+    });
+    const result = await repo.findById({ id: 'mp1', familiaId: 'f1' });
+    expect(result).not.toBeNull();
+    expect(result?.nome).toBe('Nubank');
+  });
+
+  it('findById retorna null quando nao encontrado', async () => {
+    mockDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([]),
+      }),
+    });
+    const result = await repo.findById({ id: 'nao-existe', familiaId: 'f1' });
+    expect(result).toBeNull();
+  });
+
+  it('getFatura executa select com joins e retorna transacoes', async () => {
+    const fakeTransacao = {
+      id: 't1',
+      descricao: 'Mercado',
+      valor: '200.00',
+      data: '2026-03-10',
+      categoriaId: 'c1',
+      categoriaNome: 'Alimentação',
+      usuarioNome: 'Leo',
+      parcelaAtual: null,
+      numeroParcelas: null,
+    };
+    mockDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([fakeTransacao]),
+            }),
+          }),
+        }),
+      }),
+    });
+    const result = await repo.getFatura('f1', 'mp1', '2026-03');
+    expect(result).toHaveLength(1);
+    expect(result[0].descricao).toBe('Mercado');
   });
 });

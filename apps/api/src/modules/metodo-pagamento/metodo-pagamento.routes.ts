@@ -1,4 +1,5 @@
 import {
+  faturaParamsSchema,
   metodoPagamentoCreateRequestSchema,
   metodoPagamentoParamsSchema,
   metodoPagamentoUpdateRequestSchema,
@@ -13,6 +14,7 @@ import {
 import {
   metodoPagamentoCreateSchema,
   metodoPagamentoDeleteSchema,
+  metodoPagamentoFaturaSchema,
   metodoPagamentoListSchema,
   metodoPagamentoUpdateSchema,
 } from './metodo-pagamento.schema.js';
@@ -115,6 +117,30 @@ export const metodoPagamentoRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(200).send({
           metodoPagamento: { ...metodo, criadoEm: metodo.criadoEm.toISOString() },
         });
+      } catch (error) {
+        if (error instanceof MetodoPagamentoNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+        throw error;
+      }
+    },
+  );
+
+  fastify.get(
+    '/cartoes/:metodoPagamentoId/fatura/:mesReferencia',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: metodoPagamentoFaturaSchema,
+    },
+    async (request, reply) => {
+      try {
+        const { metodoPagamentoId, mesReferencia } = faturaParamsSchema.parse(request.params);
+        const fatura = await service.getFatura(
+          request.familiaIdAtiva as string,
+          metodoPagamentoId,
+          mesReferencia,
+        );
+        return reply.code(200).send(fatura);
       } catch (error) {
         if (error instanceof MetodoPagamentoNotFoundError) {
           return reply.code(404).send({ message: error.message });

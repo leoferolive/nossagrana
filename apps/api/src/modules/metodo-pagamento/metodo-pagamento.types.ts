@@ -12,6 +12,7 @@ export interface MetodoPagamento {
 
 export interface MetodoPagamentoRepository {
   listByFamiliaId(input: { familiaId: string }): Promise<MetodoPagamento[]>;
+  findById(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null>;
   create(input: {
     familiaId: string;
     nome: string;
@@ -29,4 +30,21 @@ export interface MetodoPagamentoRepository {
     dataVencimento: number | null;
   }): Promise<MetodoPagamento | null>;
   deactivate(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null>;
+  getFatura(
+    familiaId: string,
+    metodoPagamentoId: string,
+    mesReferencia: string,
+  ): Promise<FaturaTransacaoRow[]>;
+}
+
+export interface FaturaTransacaoRow {
+  id: string;
+  descricao: string | null;
+  valor: string;
+  data: string;
+  categoriaId: string;
+  categoriaNome: string;
+  usuarioNome: string;
+  parcelaAtual: number | null;
+  numeroParcelas: number | null;
 }

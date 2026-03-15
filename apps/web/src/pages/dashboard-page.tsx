@@ -14,7 +14,16 @@ import { Doughnut, Line } from 'react-chartjs-2';
 
 import { useDashboardStore } from '../stores/dashboard.store';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+);
 
 const formatBRL = (valor: string) =>
   parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -28,9 +37,22 @@ const statusColor: Record<string, string> = {
 interface DashboardPageProps {
   familiaId: string;
   onNovaTransacao: () => void;
+  onGoToExtrato?: () => void;
+  onGoToCategorias?: () => void;
+  onGoToMetodosPagamento?: () => void;
+  onGoToOrcamento?: () => void;
+  onGoToRelatorios?: () => void;
 }
 
-export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps) => {
+export const DashboardPage = ({
+  familiaId,
+  onNovaTransacao,
+  onGoToExtrato,
+  onGoToCategorias,
+  onGoToMetodosPagamento,
+  onGoToOrcamento,
+  onGoToRelatorios,
+}: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, fetchAll } = useDashboardStore();
 
   useEffect(() => {
@@ -49,7 +71,10 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
     resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
 
   const mesLabel = resumo?.mesReferencia
-    ? new Date(`${resumo.mesReferencia}-01`).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
+    ? new Date(`${resumo.mesReferencia}-01`).toLocaleString('pt-BR', {
+        month: 'long',
+        year: 'numeric',
+      })
     : '';
 
   const donutData = {
@@ -106,11 +131,15 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
           <div className="flex flex-col gap-2">
             <div className="rounded-xl border border-border bg-panel p-3">
               <p className="text-xs font-semibold text-success">RECEITAS</p>
-              <p className="text-lg font-bold text-text">{formatBRL(resumo?.totalReceitas ?? '0')}</p>
+              <p className="text-lg font-bold text-text">
+                {formatBRL(resumo?.totalReceitas ?? '0')}
+              </p>
             </div>
             <div className="rounded-xl border border-border bg-panel p-3">
               <p className="text-xs font-semibold text-danger">DESPESAS</p>
-              <p className="text-lg font-bold text-text">{formatBRL(resumo?.totalDespesas ?? '0')}</p>
+              <p className="text-lg font-bold text-text">
+                {formatBRL(resumo?.totalDespesas ?? '0')}
+              </p>
             </div>
             <div className="rounded-xl border border-border bg-panel p-3">
               <p className="text-xs font-semibold text-primary">SALDO</p>
@@ -174,6 +203,59 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
           )}
         </div>
       </main>
+
+      <nav className="flex flex-wrap gap-2 border-t border-border px-4 py-3">
+        {onGoToExtrato && (
+          <button
+            type="button"
+            onClick={onGoToExtrato}
+            aria-label="Ver extrato"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Extrato
+          </button>
+        )}
+        {onGoToCategorias && (
+          <button
+            type="button"
+            onClick={onGoToCategorias}
+            aria-label="Ver categorias"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Categorias
+          </button>
+        )}
+        {onGoToMetodosPagamento && (
+          <button
+            type="button"
+            onClick={onGoToMetodosPagamento}
+            aria-label="Ver métodos de pagamento"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Cartões
+          </button>
+        )}
+        {onGoToOrcamento && (
+          <button
+            type="button"
+            onClick={onGoToOrcamento}
+            aria-label="Ver orçamentos"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Orçamento
+          </button>
+        )}
+        {onGoToRelatorios && (
+          <button
+            type="button"
+            onClick={onGoToRelatorios}
+            aria-label="Ver relatórios"
+            className="flex-1 rounded-lg bg-surface py-2 text-sm font-medium text-text-muted hover:bg-surface-hover"
+          >
+            Relatórios
+          </button>
+        )}
+      </nav>
 
       <button
         type="button"

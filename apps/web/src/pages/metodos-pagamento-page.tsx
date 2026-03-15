@@ -5,6 +5,7 @@ import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 interface MetodosPagamentoPageProps {
   familiaId: string;
   onBack: () => void;
+  onVerFatura?: (id: string, nome: string, mes: string) => void;
 }
 
 type TipoMetodo = 'credito' | 'debito' | 'pix' | 'dinheiro';
@@ -23,7 +24,7 @@ const TIPO_COLOR: Record<TipoMetodo, string> = {
   dinheiro: 'bg-text-dim/10 text-text-muted',
 };
 
-export const MetodosPagamentoPage = ({ onBack }: MetodosPagamentoPageProps) => {
+export const MetodosPagamentoPage = ({ onBack, onVerFatura }: MetodosPagamentoPageProps) => {
   const { metodos, carregando } = useMetodoPagamentoStore();
   const removeMetodo = useMetodoPagamentoStore((s) => s.removeMetodo);
 
@@ -175,14 +176,37 @@ export const MetodosPagamentoPage = ({ onBack }: MetodosPagamentoPageProps) => {
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => removeMetodo(m.id)}
-                aria-label={`Desativar ${m.nome}`}
-                className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
-              >
-                Desativar
-              </button>
+              <div className="flex items-center gap-2">
+                {m.tipo === 'credito' && onVerFatura && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const mes = new Intl.DateTimeFormat('pt-BR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        timeZone: 'America/Sao_Paulo',
+                      })
+                        .format(new Date())
+                        .split('/')
+                        .reverse()
+                        .join('-');
+                      onVerFatura(m.id, m.nome, mes);
+                    }}
+                    aria-label={`Ver fatura de ${m.nome}`}
+                    className="rounded-lg px-3 py-1 text-xs text-info transition hover:bg-info/10"
+                  >
+                    Ver fatura
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeMetodo(m.id)}
+                  aria-label={`Desativar ${m.nome}`}
+                  className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
+                >
+                  Desativar
+                </button>
+              </div>
             </li>
           ))}
         </ul>

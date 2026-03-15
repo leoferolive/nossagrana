@@ -5,9 +5,12 @@ import { CategoriasPage } from '@/pages/categorias-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
+import { FaturaPage } from '@/pages/fatura-page';
 import { LoginPage } from '@/pages/login-page';
 import { MetodosPagamentoPage } from '@/pages/metodos-pagamento-page';
 import { OnboardingPage } from '@/pages/onboarding-page';
+import { OrcamentoPage } from '@/pages/orcamento-page';
+import { RelatoriosPage } from '@/pages/relatorios-page';
 import { SignUpPage } from '@/pages/sign-up-page';
 
 type Screen =
@@ -18,7 +21,10 @@ type Screen =
   | 'dashboard'
   | 'extrato'
   | 'categorias'
-  | 'metodos-pagamento';
+  | 'metodos-pagamento'
+  | 'orcamento'
+  | 'relatorios'
+  | 'fatura';
 
 // Demo familiaId until real auth is wired up
 const DEMO_FAMILIA_ID = 'familia-oliveira';
@@ -26,6 +32,9 @@ const DEMO_FAMILIA_ID = 'familia-oliveira';
 export const App = () => {
   const [screen, setScreen] = useState<Screen>('login');
   const [novaTransacaoOpen, setNovaTransacaoOpen] = useState(false);
+  const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
+  const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
+  const [faturaMes, setFaturaMes] = useState<string>('');
 
   if (screen === 'sign-up') {
     return (
@@ -55,6 +64,11 @@ export const App = () => {
         <DashboardPage
           familiaId={DEMO_FAMILIA_ID}
           onNovaTransacao={() => setNovaTransacaoOpen(true)}
+          onGoToExtrato={() => setScreen('extrato')}
+          onGoToCategorias={() => setScreen('categorias')}
+          onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
+          onGoToOrcamento={() => setScreen('orcamento')}
+          onGoToRelatorios={() => setScreen('relatorios')}
         />
         <TransacaoModal
           open={novaTransacaoOpen}
@@ -70,7 +84,7 @@ export const App = () => {
       <>
         <ExtratoPage
           familiaId={DEMO_FAMILIA_ID}
-          onBack={() => setScreen('home')}
+          onBack={() => setScreen('dashboard')}
           onNovaTransacao={() => setNovaTransacaoOpen(true)}
         />
         <TransacaoModal
@@ -83,14 +97,48 @@ export const App = () => {
   }
 
   if (screen === 'categorias') {
-    return <CategoriasPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('home')} />;
+    return <CategoriasPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
   }
 
   if (screen === 'metodos-pagamento') {
-    return <MetodosPagamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('home')} />;
+    return (
+      <MetodosPagamentoPage
+        familiaId={DEMO_FAMILIA_ID}
+        onBack={() => setScreen('dashboard')}
+        onVerFatura={(id, nome, mes) => {
+          setFaturaMetodoId(id);
+          setFaturaMetodoNome(nome);
+          setFaturaMes(mes);
+          setScreen('fatura');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'orcamento') {
+    return <OrcamentoPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
+  }
+
+  if (screen === 'relatorios') {
+    return <RelatoriosPage familiaId={DEMO_FAMILIA_ID} onBack={() => setScreen('dashboard')} />;
+  }
+
+  if (screen === 'fatura' && faturaMetodoId) {
+    return (
+      <FaturaPage
+        familiaId={DEMO_FAMILIA_ID}
+        metodoPagamentoId={faturaMetodoId}
+        metodoPagamentoNome={faturaMetodoNome}
+        mesReferencia={faturaMes}
+        onBack={() => setScreen('dashboard')}
+      />
+    );
   }
 
   return (
-    <LoginPage onOpenSignUp={() => setScreen('sign-up')} onLoginSuccess={() => setScreen('dashboard')} />
+    <LoginPage
+      onOpenSignUp={() => setScreen('sign-up')}
+      onLoginSuccess={() => setScreen('dashboard')}
+    />
   );
 };

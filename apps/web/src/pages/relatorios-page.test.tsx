@@ -81,9 +81,7 @@ describe('RelatoriosPage', () => {
   it('exibe banner de erro quando a requisição falha', async () => {
     mockService.getRelatorioDistribuicao.mockRejectedValue(new Error('network'));
     render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getByRole('alert')).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
   });
 
   it('switches to tendencias tab and shows line chart', async () => {

@@ -3,12 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import {
-  convites,
-  familias,
-  solicitacoesEntrada,
-  usuarioFamilia,
-} from '../../db/schema.js';
+import { convites, familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
 import type {
   CreatedFamilia,
   CreatedFamiliaInvite,

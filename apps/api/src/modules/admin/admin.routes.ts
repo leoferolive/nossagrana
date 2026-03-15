@@ -3,11 +3,7 @@ import { z } from 'zod';
 
 import { env } from '../../config/env.js';
 import { DrizzleAdminRepository, InMemoryAdminRepository } from './admin.repository.js';
-import {
-  AdminService,
-  FamiliaNotFoundOrActiveError,
-  UserNotFoundError,
-} from './admin.service.js';
+import { AdminService, FamiliaNotFoundOrActiveError, UserNotFoundError } from './admin.service.js';
 
 export const adminRoutes: FastifyPluginAsync = async (fastify) => {
   const repo =

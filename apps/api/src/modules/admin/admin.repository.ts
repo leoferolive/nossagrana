@@ -27,9 +27,7 @@ export class DrizzleAdminRepository implements AdminRepository {
     return result.length > 0;
   }
 
-  async findUserById(
-    userId: string,
-  ): Promise<{ id: string; email: string; nome?: string } | null> {
+  async findUserById(userId: string): Promise<{ id: string; email: string; nome?: string } | null> {
     const [user] = await db
       .select({ id: users.id, email: users.email, nome: users.nome })
       .from(users)
@@ -63,9 +61,7 @@ export class InMemoryAdminRepository implements AdminRepository {
     return exists;
   }
 
-  async findUserById(
-    userId: string,
-  ): Promise<{ id: string; email: string; nome?: string } | null> {
+  async findUserById(userId: string): Promise<{ id: string; email: string; nome?: string } | null> {
     return this.usersMap.get(userId) ?? null;
   }
 }

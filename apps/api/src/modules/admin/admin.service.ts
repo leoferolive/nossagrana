@@ -11,7 +11,9 @@ export class UserNotFoundError extends Error {
 }
 
 export interface AdminRepository {
-  findFamiliaDeleted(familiaId: string): Promise<{ id: string; nome: string; deletedAt: Date } | null>;
+  findFamiliaDeleted(
+    familiaId: string,
+  ): Promise<{ id: string; nome: string; deletedAt: Date } | null>;
   recuperarFamilia(familiaId: string): Promise<boolean>;
   findUserById(userId: string): Promise<{ id: string; email: string; nome?: string } | null>;
 }

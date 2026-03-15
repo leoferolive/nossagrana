@@ -13,7 +13,9 @@ describe('AdminService.recuperarFamilia', () => {
   it('lança FamiliaNotFoundOrActiveError se família não encontrada como excluída', async () => {
     const repo = buildAdminRepo({ findFamiliaDeleted: vi.fn().mockResolvedValue(null) });
     const svc = new AdminService(repo);
-    await expect(svc.recuperarFamilia('fam-1')).rejects.toBeInstanceOf(FamiliaNotFoundOrActiveError);
+    await expect(svc.recuperarFamilia('fam-1')).rejects.toBeInstanceOf(
+      FamiliaNotFoundOrActiveError,
+    );
   });
 
   it('chama recuperarFamilia no repositório quando família existe', async () => {

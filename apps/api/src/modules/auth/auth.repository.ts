@@ -39,17 +39,13 @@ export class DrizzleAuthRepository implements AuthRepository {
   }
 
   async updateNome(id: string, nome: string): Promise<AuthRepositoryUser> {
-    const [user] = await db
-      .update(users)
-      .set({ nome })
-      .where(eq(users.id, id))
-      .returning({
-        id: users.id,
-        nome: users.nome,
-        email: users.email,
-        senhaHash: users.senhaHash,
-        dataCriacao: users.dataCriacao,
-      });
+    const [user] = await db.update(users).set({ nome }).where(eq(users.id, id)).returning({
+      id: users.id,
+      nome: users.nome,
+      email: users.email,
+      senhaHash: users.senhaHash,
+      dataCriacao: users.dataCriacao,
+    });
     return user;
   }
 

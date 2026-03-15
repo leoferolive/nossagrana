@@ -2,9 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => (
-    <div data-testid={`tour-${tourKey}`} />
-  ),
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
 }));
 
 vi.mock('@/contexts/use-auth', () => ({
@@ -78,7 +76,10 @@ describe('PerfilPage', () => {
     fireEvent.change(screen.getByLabelText(/nova senha/i), { target: { value: 'new456' } });
     fireEvent.click(screen.getByRole('button', { name: /alterar senha/i }));
     await waitFor(() =>
-      expect(mockService.updateSenha).toHaveBeenCalledWith({ senhaAtual: 'old123', novaSenha: 'new456' }),
+      expect(mockService.updateSenha).toHaveBeenCalledWith({
+        senhaAtual: 'old123',
+        novaSenha: 'new456',
+      }),
     );
   });
 

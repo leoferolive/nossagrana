@@ -22,17 +22,17 @@ e visualize relatórios e insights financeiros.
 
 ## Stack
 
-| Camada      | Tecnologia                                       |
-| ----------- | ------------------------------------------------ |
-| Backend     | Node.js + Fastify + TypeScript                   |
-| ORM         | Drizzle ORM + Drizzle Kit                        |
-| Banco       | PostgreSQL                                       |
-| Frontend    | React + Vite + TypeScript + Tailwind CSS         |
-| PWA         | vite-plugin-pwa                                  |
-| Tempo real  | WebSocket (fastify-websocket)                    |
-| Agendamento | node-cron                                        |
-| Auth        | JWT (15 min) + Refresh Token (7 dias)            |
-| Monorepo    | pnpm workspaces + Turborepo                      |
+| Camada      | Tecnologia                               |
+| ----------- | ---------------------------------------- |
+| Backend     | Node.js + Fastify + TypeScript           |
+| ORM         | Drizzle ORM + Drizzle Kit                |
+| Banco       | PostgreSQL                               |
+| Frontend    | React + Vite + TypeScript + Tailwind CSS |
+| PWA         | vite-plugin-pwa                          |
+| Tempo real  | WebSocket (fastify-websocket)            |
+| Agendamento | node-cron                                |
+| Auth        | JWT (15 min) + Refresh Token (7 dias)    |
+| Monorepo    | pnpm workspaces + Turborepo              |
 
 ## Como iniciar localmente
 
@@ -118,20 +118,20 @@ pnpm deps:check    # verificação de dependências desatualizadas
 Algumas operações de sistema admin requerem o header `X-Admin-Secret` com o
 valor configurado em `ADMIN_SECRET`:
 
-| Método | Rota                                         | Descrição                      |
-| ------ | -------------------------------------------- | ------------------------------ |
-| PATCH  | `/admin/familias/:familiaId/recuperar`       | Recuperar família excluída     |
-| POST   | `/admin/usuarios/:userId/impersonar`         | Gerar JWT de impersonação      |
+| Método | Rota                                   | Descrição                  |
+| ------ | -------------------------------------- | -------------------------- |
+| PATCH  | `/admin/familias/:familiaId/recuperar` | Recuperar família excluída |
+| POST   | `/admin/usuarios/:userId/impersonar`   | Gerar JWT de impersonação  |
 
 ## Troubleshooting
 
-| Sintoma | Solução |
-| ------- | ------- |
-| `pnpm` não encontrado | `corepack enable && corepack prepare pnpm@9.15.0 --activate` |
-| API falha ao iniciar | Confirme `DATABASE_URL`, `JWT_SECRET` e `REFRESH_TOKEN_SECRET` em `apps/api/.env` |
+| Sintoma                  | Solução                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| `pnpm` não encontrado    | `corepack enable && corepack prepare pnpm@9.15.0 --activate`                                |
+| API falha ao iniciar     | Confirme `DATABASE_URL`, `JWT_SECRET` e `REFRESH_TOKEN_SECRET` em `apps/api/.env`           |
 | Erro de conexão ao banco | Verifique host/porta/credenciais; confirme que o container `nossagrana-db` está em execução |
-| Web não conecta na API | Confirme `VITE_API_URL` e `VITE_WS_URL` em `apps/web/.env` |
-| Migrations pendentes | `pnpm --filter api db:migrate` |
+| Web não conecta na API   | Confirme `VITE_API_URL` e `VITE_WS_URL` em `apps/web/.env`                                  |
+| Migrations pendentes     | `pnpm --filter api db:migrate`                                                              |
 
 ## Deploy (K3s no Raspberry Pi)
 

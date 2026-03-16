@@ -22,6 +22,11 @@ const buildRepository = (overrides?: Partial<AuthRepository>): AuthRepository =>
   createUser: vi.fn().mockResolvedValue(defaultUser),
   updateNome: vi.fn().mockResolvedValue(defaultUser),
   updateSenhaHash: vi.fn().mockResolvedValue(undefined),
+  findFamiliasByUserId: vi.fn().mockResolvedValue([]),
+  countFamiliaMembers: vi.fn().mockResolvedValue(0),
+  deleteFamiliaAndAllData: vi.fn().mockResolvedValue(undefined),
+  removeUserFromFamilia: vi.fn().mockResolvedValue(undefined),
+  deleteUser: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 

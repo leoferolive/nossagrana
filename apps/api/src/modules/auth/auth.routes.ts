@@ -9,6 +9,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { env } from '../../config/env.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
 import {
+  authDeleteAccountSchema,
   authFamiliaContextSchema,
   authLoginSchema,
   authLogoutSchema,
@@ -217,6 +218,15 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       return { familiaId: request.familiaIdAtiva };
+    },
+  );
+
+  fastify.delete(
+    '/auth/account',
+    { preHandler: [fastify.authenticate], schema: authDeleteAccountSchema },
+    async (request, reply) => {
+      await authService.deleteAccount(request.user.sub);
+      return reply.code(204).send();
     },
   );
 };

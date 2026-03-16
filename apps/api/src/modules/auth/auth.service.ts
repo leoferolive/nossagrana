@@ -128,4 +128,19 @@ export class AuthService {
       email: user.email,
     };
   }
+
+  async deleteAccount(userId: string): Promise<void> {
+    const familias = await this.repository.findFamiliasByUserId(userId);
+
+    for (const { familiaId } of familias) {
+      const memberCount = await this.repository.countFamiliaMembers(familiaId);
+      if (memberCount <= 1) {
+        await this.repository.deleteFamiliaAndAllData(familiaId);
+      } else {
+        await this.repository.removeUserFromFamilia(userId, familiaId);
+      }
+    }
+
+    await this.repository.deleteUser(userId);
+  }
 }

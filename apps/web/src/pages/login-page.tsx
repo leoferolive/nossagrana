@@ -3,7 +3,7 @@ import { type FormEvent, useState } from 'react';
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
 import { useAuth } from '@/contexts/use-auth';
-import { authService } from '@/services/auth.service';
+import { authService, familiaService } from '@/services/auth.service';
 
 interface LoginPageProps {
   onOpenSignUp: () => void;
@@ -11,7 +11,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
-  const { login } = useAuth();
+  const { login, updateFamiliaIdAtiva } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -29,6 +29,11 @@ export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
         refreshToken: response.refreshToken,
         familiaIdAtiva: '',
       });
+      const minhas = await familiaService.listarMinhas();
+      if (minhas.familias.length > 0) {
+        const resultado = await familiaService.alternar(minhas.familias[0].id);
+        updateFamiliaIdAtiva(resultado.familiaIdAtiva);
+      }
       onLoginSuccess?.();
     } catch {
       setErro('E-mail ou senha incorretos. Tente novamente.');

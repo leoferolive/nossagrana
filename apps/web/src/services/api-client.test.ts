@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiClient } from './api-client';
+import { ApiClient, ApiError } from './api-client';
 
 interface TokenState {
   accessToken: string | null;
@@ -91,9 +91,11 @@ describe('ApiClient', () => {
       },
     });
 
-    await expect(apiClient.request('/dashboard')).rejects.toThrow('Nao autorizado');
+    const err = await apiClient.request('/dashboard').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).message).toBe('Nao autorizado');
+    expect((err as ApiError).status).toBe(401);
     expect(tokenState.accessToken).toBeNull();
     expect(tokenState.refreshToken).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

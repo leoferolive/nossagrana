@@ -42,6 +42,7 @@ vi.mock('./services/auth.service', () => ({
     buscar: vi.fn(),
     entrarPorConvite: vi.fn(),
     solicitarEntrada: vi.fn(),
+    listarMinhas: vi.fn().mockResolvedValue({ familias: [] }),
     listarMembros: vi.fn().mockResolvedValue({
       membros: [
         { usuarioId: 'Leo', familiaId: 'fam-test', role: 'admin', dataEntrada: '2026-01-01' },

@@ -5,6 +5,10 @@ vi.mock('@/services/auth.service', () => ({
   authService: {
     login: vi.fn(),
   },
+  familiaService: {
+    listarMinhas: vi.fn().mockResolvedValue({ familias: [] }),
+    alternar: vi.fn(),
+  },
 }));
 
 vi.mock('@/contexts/use-auth', () => ({

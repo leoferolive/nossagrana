@@ -268,4 +268,8 @@ export class FamiliaService {
   async buscarPorNome(input: { nome: string }) {
     return this.familiaRepository.buscarPorNome(input.nome);
   }
+
+  async listarDoUsuario(input: { usuarioId: string }) {
+    return this.familiaRepository.listarDoUsuario(input.usuarioId);
+  }
 }

@@ -308,6 +308,16 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       .where(and(ilike(familias.nome, `%${nome}%`), isNull(familias.deletedAt)))
       .limit(20);
   }
+
+  async listarDoUsuario(
+    usuarioId: string,
+  ): Promise<Array<{ id: string; nome: string; role: 'admin' | 'membro' }>> {
+    return db
+      .select({ id: familias.id, nome: familias.nome, role: usuarioFamilia.role })
+      .from(familias)
+      .innerJoin(usuarioFamilia, eq(usuarioFamilia.familiaId, familias.id))
+      .where(and(eq(usuarioFamilia.usuarioId, usuarioId), isNull(familias.deletedAt)));
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
@@ -506,5 +516,19 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
       .filter((f) => f.nome.toLowerCase().includes(lower))
       .map((f) => ({ id: f.id, nome: f.nome }))
       .slice(0, 20);
+  }
+
+  async listarDoUsuario(
+    usuarioId: string,
+  ): Promise<Array<{ id: string; nome: string; role: 'admin' | 'membro' }>> {
+    const result: Array<{ id: string; nome: string; role: 'admin' | 'membro' }> = [];
+    for (const [familiaId, memberships] of this.membershipsByFamiliaId.entries()) {
+      const membership = memberships.get(usuarioId);
+      if (!membership) continue;
+      const familia = this.familiasById.get(familiaId);
+      if (!familia) continue;
+      result.push({ id: familia.id, nome: familia.nome, role: membership.role });
+    }
+    return result;
   }
 }

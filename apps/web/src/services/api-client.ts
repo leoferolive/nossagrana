@@ -1,5 +1,15 @@
 import type { AuthRefreshRequest, AuthRefreshResponse } from '@nossagrana/types';
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 interface ApiClientOptions {
   baseUrl: string;
   fetchFn?: typeof fetch;
@@ -47,7 +57,10 @@ export class ApiClient {
     }
 
     if (!response.ok) {
-      throw new Error(response.status === 401 ? 'Nao autorizado' : 'Erro ao processar requisicao');
+      throw new ApiError(
+        response.status === 401 ? 'Nao autorizado' : 'Erro ao processar requisicao',
+        response.status,
+      );
     }
 
     if (response.status === 204) {

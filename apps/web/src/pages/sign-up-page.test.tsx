@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ApiError } from '@/services/api-client';
+
 vi.mock('@/services/auth.service', () => ({
   authService: {
     register: vi.fn(),
@@ -166,8 +168,7 @@ describe('SignUpPage', () => {
   });
 
   it('exibe mensagem de e-mail já cadastrado quando API retorna erro 409', async () => {
-    const error = new Error('Conflict');
-    (error as Error & { status: number }).status = 409;
+    const error = new ApiError('Conflict', 409);
     vi.mocked(authService.register).mockRejectedValueOnce(error);
 
     renderPage();

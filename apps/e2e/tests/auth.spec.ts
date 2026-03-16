@@ -53,7 +53,9 @@ test.describe('Autenticação', () => {
 
     await page.getByLabel('Nome completo').fill('Usuário E2E Registro');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Senha').fill('Senha@E2E123');
+    // Use exact:true to avoid matching 'Confirmar senha' (partial match would
+    // resolve to 2 elements and cause a strict-mode violation).
+    await page.getByLabel('Senha', { exact: true }).fill('Senha@E2E123');
     await page.getByLabel('Confirmar senha').fill('Senha@E2E123');
 
     await page
@@ -82,7 +84,7 @@ test.describe('Autenticação', () => {
     await page.getByRole('form', { name: 'login' }).getByRole('button', { name: 'Entrar' }).click();
 
     // After login the app navigates to the dashboard.
-    await expect(page.getByRole('heading', { name: 'NossaGrana' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
       timeout: 10_000,
     });
 

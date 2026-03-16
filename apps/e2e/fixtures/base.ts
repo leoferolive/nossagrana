@@ -9,6 +9,14 @@
  *
  * Cleanup (deleteAccount) runs automatically after each test that uses any of
  * these fixtures.
+ *
+ * ## Navigation strategy
+ *
+ * The NossaGrana frontend reads the localStorage session during the initial
+ * render of `App.tsx` via a lazy initializer on the `screen` useState.
+ * Injecting auth tokens into localStorage and reloading the page is therefore
+ * sufficient to land on `screen = 'dashboard'` (when familiaIdAtiva is set) or
+ * `screen = 'onboarding'` (when familiaIdAtiva is empty).
  */
 
 import { test as base, expect, type Page } from '@playwright/test';
@@ -25,6 +33,8 @@ interface AuthContext {
     nome: string;
     email: string;
   };
+  /** The plaintext password used during registration (needed for UI login). */
+  password: string;
 }
 
 // ─── Fixture definitions ──────────────────────────────────────────────────────
@@ -64,6 +74,7 @@ export const test = base.extend<E2EFixtures>({
     const context: AuthContext = {
       accessToken: loginResponse.accessToken,
       refreshToken: loginResponse.refreshToken,
+      password: senha,
       user: {
         id: registerResponse.user.id,
         nome: registerResponse.user.nome,
@@ -95,35 +106,42 @@ export const test = base.extend<E2EFixtures>({
   },
 
   /**
-   * Returns a Playwright Page with authentication tokens pre-loaded into
-   * localStorage so the React app treats the user as already signed in.
+   * Returns a Playwright Page with the user authenticated and on the dashboard
+   * screen (familiaIdAtiva is set to the familia created by the `familiaId`
+   * fixture).
    *
-   * The auth context is stored under the key `nossagrana.auth.session` as a
-   * JSON object matching the shape expected by the `AuthProvider`:
-   *   { accessToken, refreshToken, familiaIdAtiva }
+   * Auth tokens and familiaIdAtiva are injected into localStorage before
+   * loading the app. The App.tsx lazy initializer reads the session on first
+   * render and navigates directly to screen = 'dashboard'.
    *
-   * Navigates to the baseURL once to establish a browsing context, injects the
-   * session, then lets the test proceed.
-   *
-   * Depends on `authContext`.
+   * Depends on `authContext` and `familiaId`.
    */
-  authenticatedPage: async ({ page, authContext }, use) => {
-    // Navigate to the app root to get a document under the right origin before
-    // accessing localStorage.
+  authenticatedPage: async ({ page, authContext, familiaId }, use) => {
     await page.goto('/');
-
     await page.evaluate(
-      ({ accessToken, refreshToken }: { accessToken: string; refreshToken: string }) => {
+      ([accessToken, refreshToken, fid]) => {
         localStorage.setItem(
           'nossagrana.auth.session',
-          JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: '' }),
+          JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
         );
+        // Suppress all first-time tours so they do not block UI interactions.
+        for (const key of [
+          'dashboard',
+          'extrato',
+          'historico',
+          'orcamento',
+          'configuracoes',
+          'perfil',
+        ]) {
+          localStorage.setItem(`tour-${key}`, 'true');
+        }
       },
-      {
-        accessToken: authContext.accessToken,
-        refreshToken: authContext.refreshToken,
-      },
+      [authContext.accessToken, authContext.refreshToken, familiaId],
     );
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     await use(page);
   },

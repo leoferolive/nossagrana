@@ -17,42 +17,49 @@
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const AUTH_KEY = 'nossagrana.auth.session';
-
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
+/** Minimal shape of the authContext fixture used in navigation helpers. */
+interface AuthCtx {
+  accessToken: string;
+  refreshToken: string;
+  password: string;
+  user: { id: string; nome: string; email: string };
+}
+
 /**
- * Navigates to the app and injects a fully authenticated session that
- * includes a `familiaIdAtiva` so the app lands on the dashboard on reload.
+ * Navigates to the app, injects auth tokens and familiaIdAtiva into
+ * localStorage, reloads the page so the App.tsx lazy initializer reads the
+ * session and navigates directly to screen = 'dashboard'.
  */
 async function gotoDashboard(
   page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string },
+  ctx: AuthCtx,
   familiaId: string,
 ) {
   await page.goto('/');
-
   await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
+    ([accessToken, refreshToken, fid]) => {
+      localStorage.setItem(
+        'nossagrana.auth.session',
+        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+      );
+      // Suppress all first-time tours so they do not block UI interactions.
+      for (const key of [
+        'dashboard',
+        'extrato',
+        'historico',
+        'orcamento',
+        'configuracoes',
+        'perfil',
+      ]) {
+        localStorage.setItem(`tour-${key}`, 'true');
+      }
     },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        familiaIdAtiva: familiaId,
-      },
-    },
+    [ctx.accessToken, ctx.refreshToken, familiaId],
   );
-
-  // Reload so the React app reads the session (including familiaIdAtiva) on mount.
   await page.reload();
-
-  // Wait until the dashboard is rendered.
-  await expect(page.getByRole('heading', { name: 'NossaGrana' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
     timeout: 15_000,
   });
 }
@@ -62,7 +69,9 @@ async function gotoDashboard(
  */
 async function gotoExtrato(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Ver extrato' }).click();
-  await expect(page.getByRole('heading', { name: 'Extrato' })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'Extrato', level: 1 })).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 /**
@@ -92,8 +101,9 @@ test.describe('Transações', () => {
     await gotoExtrato(page);
     await openNovaTransacaoModal(page);
 
-    // Select "Receita" type.
-    await page.getByRole('button', { name: 'Receita' }).click();
+    // Select "Receita" type (scoped to dialog to avoid matching the "Filtrar
+    // receitas" filter button in the extrato page behind the modal).
+    await page.getByRole('dialog').getByRole('button', { name: 'Receita', exact: true }).click();
 
     // Fill in the form fields.
     await page.getByRole('spinbutton', { name: 'Valor' }).fill('1500.00');
@@ -229,7 +239,7 @@ test.describe('Transações', () => {
 
     // Navigate to extrato and verify the badge "Recorrente" is shown.
     await gotoExtrato(page);
-    await expect(page.getByText('Netflix E2E')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Netflix E2E').first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('Recorrente').first()).toBeVisible({ timeout: 5_000 });
   });
 
@@ -293,25 +303,9 @@ test.describe('Transações', () => {
 
     expect(patchRes.status()).toBe(200);
 
-    // Reload the extrato to force a fresh fetch.
-    await page.reload();
-    await page.evaluate(
-      ({ key, value }) => {
-        localStorage.setItem(key, JSON.stringify(value));
-      },
-      {
-        key: AUTH_KEY,
-        value: {
-          accessToken: authContext.accessToken,
-          refreshToken: authContext.refreshToken,
-          familiaIdAtiva: familiaId,
-        },
-      },
-    );
-    await page.reload();
-    await expect(page.getByRole('heading', { name: 'NossaGrana' })).toBeVisible({
-      timeout: 15_000,
-    });
+    // Navigate back to the dashboard and then the extrato to force a fresh
+    // fetch of the updated transactions.
+    await gotoDashboard(page, authContext, familiaId);
     await gotoExtrato(page);
 
     // The updated description must be visible in the extrato.

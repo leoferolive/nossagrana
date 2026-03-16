@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { TransacaoModal } from '@/components/transacao-modal';
 import { useAuth } from '@/contexts/use-auth';
+import { useTransacaoStore } from '@/stores/transacao.store';
 import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
 import { ConfiguracoesPage } from '@/pages/configuracoes-page';
@@ -40,7 +41,20 @@ export const App = () => {
   const { familiaIdAtiva, isAuthenticated } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
 
-  const [screen, setScreen] = useState<Screen>('login');
+  const [screen, setScreen] = useState<Screen>(() => {
+    const sessionRaw = localStorage.getItem('nossagrana.auth.session');
+    if (sessionRaw) {
+      try {
+        const session = JSON.parse(sessionRaw) as { accessToken?: string; familiaIdAtiva?: string };
+        if (session.accessToken) {
+          return session.familiaIdAtiva ? 'dashboard' : 'onboarding';
+        }
+      } catch {
+        // sessão inválida no localStorage — começar no login
+      }
+    }
+    return 'login';
+  });
   const [novaTransacaoOpen, setNovaTransacaoOpen] = useState(false);
   const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
@@ -98,6 +112,7 @@ export const App = () => {
           onGoToConfiguracoes={() => setScreen('configuracoes')}
         />
         <TransacaoModal
+          familiaId={familiaId}
           open={novaTransacaoOpen}
           onClose={() => setNovaTransacaoOpen(false)}
           onSubmit={async (payload) => {
@@ -119,12 +134,18 @@ export const App = () => {
           onNovaTransacao={() => setNovaTransacaoOpen(true)}
         />
         <TransacaoModal
+          familiaId={familiaId}
           open={novaTransacaoOpen}
           onClose={() => setNovaTransacaoOpen(false)}
           onSubmit={async (payload) => {
             if (!familiaId) return;
             await transacaoService.registrar(payload, familiaId);
             setNovaTransacaoOpen(false);
+            // Re-fetch so ExtratoPage reflects the new transaction immediately.
+            transacaoService
+              .listar({}, familiaId)
+              .then((res) => useTransacaoStore.getState().setTransacoes(res.transacoes))
+              .catch(() => {});
           }}
         />
       </>

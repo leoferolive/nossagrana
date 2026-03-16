@@ -144,9 +144,14 @@ async function request<T>(
     body?: unknown;
   } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+
+  // Only set Content-Type when we are actually sending a body, so that
+  // body-less requests (e.g. DELETE) do not trigger a Fastify 400 error
+  // ("Body cannot be empty when content-type is set to 'application/json'").
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (options.token) {
     headers['Authorization'] = `Bearer ${options.token}`;

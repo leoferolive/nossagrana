@@ -19,47 +19,43 @@
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const AUTH_KEY = 'nossagrana.auth.session';
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function uniqueEmail(label: string): string {
   return `e2e+familia+${label}+${Date.now()}+${Math.random().toString(36).slice(2, 7)}@test.com`;
 }
 
-/**
- * Navigates to "/" and injects an authenticated session WITHOUT a
- * familiaIdAtiva so the app lands on the onboarding screen after reload.
- */
-async function gotoOnboarding(
-  page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string },
-) {
-  await page.goto('/');
-
-  await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
-    },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        familiaIdAtiva: '',
-      },
-    },
-  );
-
-  await page.reload();
+/** Minimal shape of the authContext fixture used in navigation helpers. */
+interface AuthCtx {
+  accessToken: string;
+  refreshToken: string;
+  password: string;
+  user: { id: string; nome: string; email: string };
 }
 
 /**
- * Navigates to "/" and injects a fully authenticated session with a
- * familiaIdAtiva so the app lands on the dashboard after reload.
- * Then navigates to the FamilySettingsPage via screen state.
+ * Injects auth tokens without a familiaIdAtiva into localStorage and reloads
+ * the page so the App.tsx lazy initializer navigates to screen = 'onboarding'.
+ */
+async function gotoOnboarding(page: import('@playwright/test').Page, ctx: AuthCtx) {
+  await page.goto('/');
+  await page.evaluate(
+    ([accessToken, refreshToken]) => {
+      localStorage.setItem(
+        'nossagrana.auth.session',
+        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: '' }),
+      );
+    },
+    [ctx.accessToken, ctx.refreshToken],
+  );
+  await page.reload();
+  await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * Injects auth tokens and familiaIdAtiva into localStorage, reloads the page
+ * to land on screen = 'dashboard', then navigates to FamilySettingsPage via
+ * ConfiguracoesPage.
  *
  * The FamilySettingsPage is only reachable from:
  *   - Onboarding (after creating a familia)
@@ -70,35 +66,40 @@ async function gotoOnboarding(
  */
 async function gotoFamilySettings(
   page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string },
+  ctx: AuthCtx,
   familiaId: string,
 ) {
   await page.goto('/');
-
   await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
+    ([accessToken, refreshToken, fid]) => {
+      localStorage.setItem(
+        'nossagrana.auth.session',
+        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+      );
+      // Suppress all first-time tours so they do not block UI interactions.
+      for (const key of [
+        'dashboard',
+        'extrato',
+        'historico',
+        'orcamento',
+        'configuracoes',
+        'perfil',
+      ]) {
+        localStorage.setItem(`tour-${key}`, 'true');
+      }
     },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        familiaIdAtiva: familiaId,
-      },
-    },
+    [ctx.accessToken, ctx.refreshToken, familiaId],
   );
-
   await page.reload();
 
   // Wait for dashboard.
-  await expect(page.getByRole('heading', { name: 'NossaGrana' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
     timeout: 15_000,
   });
 
   // Navigate to Configurações.
   await page.getByRole('button', { name: 'Ver configurações' }).click();
-  await expect(page.getByRole('heading', { name: 'Configurações' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Configurações', level: 1 })).toBeVisible({
     timeout: 10_000,
   });
 
@@ -138,11 +139,11 @@ test.describe('Família', () => {
     });
 
     // The session must now contain a familiaIdAtiva.
-    const session = await page.evaluate((key: string) => {
-      const raw = localStorage.getItem(key);
+    const session = await page.evaluate(() => {
+      const raw = localStorage.getItem('nossagrana.auth.session');
       if (!raw) return null;
       return JSON.parse(raw) as { familiaIdAtiva?: string };
-    }, AUTH_KEY);
+    });
 
     expect(session?.familiaIdAtiva).toBeTruthy();
   });

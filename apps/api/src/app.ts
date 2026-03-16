@@ -29,6 +29,7 @@ export const buildApp = () => {
   app.register(import('@fastify/cors'), {
     origin: env.CORS_ORIGIN,
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
 
   app.register(authPlugin);

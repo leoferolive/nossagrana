@@ -20,41 +20,49 @@
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const AUTH_KEY = 'nossagrana.auth.session';
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Minimal shape of the authContext fixture used in navigation helpers. */
+interface AuthCtx {
+  accessToken: string;
+  refreshToken: string;
+  password: string;
+  user: { id: string; nome: string; email: string };
+}
+
 /**
- * Injects a fully-authenticated session (with familiaIdAtiva) into localStorage
- * and reloads the page so React reads the session on mount, landing on the
- * dashboard.
+ * Injects auth tokens and familiaIdAtiva into localStorage, reloads the page
+ * so the App.tsx lazy initializer reads the session and navigates directly to
+ * screen = 'dashboard'.
  */
 async function gotoDashboard(
   page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string },
+  ctx: AuthCtx,
   familiaId: string,
 ) {
   await page.goto('/');
-
   await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
+    ([accessToken, refreshToken, fid]) => {
+      localStorage.setItem(
+        'nossagrana.auth.session',
+        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+      );
+      // Suppress all first-time tours so they do not block UI interactions.
+      for (const key of [
+        'dashboard',
+        'extrato',
+        'historico',
+        'orcamento',
+        'configuracoes',
+        'perfil',
+      ]) {
+        localStorage.setItem(`tour-${key}`, 'true');
+      }
     },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        familiaIdAtiva: familiaId,
-      },
-    },
+    [ctx.accessToken, ctx.refreshToken, familiaId],
   );
-
   await page.reload();
-
-  await expect(page.getByRole('heading', { name: 'NossaGrana' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
     timeout: 15_000,
   });
 }
@@ -64,7 +72,7 @@ async function gotoDashboard(
  */
 async function gotoRelatorios(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Ver relatórios' }).click();
-  await expect(page.getByRole('heading', { name: 'Relatórios' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible({
     timeout: 10_000,
   });
 }
@@ -74,7 +82,7 @@ async function gotoRelatorios(page: import('@playwright/test').Page) {
  */
 async function gotoHistorico(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Ver histórico' }).click();
-  await expect(page.getByRole('heading', { name: 'Histórico' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Histórico', level: 1 })).toBeVisible({
     timeout: 10_000,
   });
 }
@@ -204,7 +212,7 @@ test.describe('Relatórios', () => {
     await expect(page.getByText('Total')).toBeVisible({ timeout: 5_000 });
 
     // Sanity: the month reference rendered in the subtitle matches the expected format.
-    await expect(page.getByText(mesReferencia)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(mesReferencia, { exact: true })).toBeVisible({ timeout: 5_000 });
   });
 
   // ── 4. Histórico de meses → lista de meses exibida ────────────────────────

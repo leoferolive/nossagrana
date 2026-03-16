@@ -123,6 +123,11 @@ export class DrizzleAuthRepository implements AuthRepository {
   }
 
   async deleteUser(userId: string): Promise<void> {
+    // Remove all records referencing this user before deleting to avoid FK
+    // constraint violations.
+    await db.delete(solicitacoesEntrada).where(eq(solicitacoesEntrada.usuarioId, userId));
+    await db.delete(convites).where(eq(convites.criadoPor, userId));
+    await db.delete(convites).where(eq(convites.usadoPor, userId));
     await db.delete(users).where(eq(users.id, userId));
   }
 }

@@ -19,40 +19,51 @@ import * as api from '../helpers/api-client.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const AUTH_KEY = 'nossagrana.auth.session';
 const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Minimal shape of the authContext fixture used in navigation helpers. */
+interface AuthCtx {
+  accessToken: string;
+  refreshToken: string;
+  password: string;
+  user: { id: string; nome: string; email: string };
+}
+
 /**
- * Injects a fully-authenticated session (with familiaIdAtiva) into localStorage
- * and reloads the page so React reads the session on mount, landing on the
- * dashboard.
+ * Injects auth tokens and familiaIdAtiva into localStorage, reloads the page
+ * so the App.tsx lazy initializer reads the session and navigates directly to
+ * screen = 'dashboard'.
  */
 async function gotoDashboard(
   page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string },
+  ctx: AuthCtx,
   familiaId: string,
 ) {
   await page.goto('/');
-
   await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
+    ([accessToken, refreshToken, fid]) => {
+      localStorage.setItem(
+        'nossagrana.auth.session',
+        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+      );
+      // Suppress all first-time tours so they do not block UI interactions.
+      for (const key of [
+        'dashboard',
+        'extrato',
+        'historico',
+        'orcamento',
+        'configuracoes',
+        'perfil',
+      ]) {
+        localStorage.setItem(`tour-${key}`, 'true');
+      }
     },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        familiaIdAtiva: familiaId,
-      },
-    },
+    [ctx.accessToken, ctx.refreshToken, familiaId],
   );
-
   await page.reload();
-
-  await expect(page.getByRole('heading', { name: 'NossaGrana' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
     timeout: 15_000,
   });
 }
@@ -62,7 +73,7 @@ async function gotoDashboard(
  */
 async function gotoOrcamento(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Ver orçamentos' }).click();
-  await expect(page.getByRole('heading', { name: 'Orçamento' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Orçamento', level: 1 })).toBeVisible({
     timeout: 10_000,
   });
 }
@@ -116,7 +127,9 @@ test.describe('Orçamento', () => {
     await gotoOrcamento(page);
 
     // The category should be listed with a budget item.
-    await expect(page.getByText('Alimentação Orçamento E2E')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Alimentação Orçamento E2E').first()).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Click "Editar limite" for that category.
     await page.getByRole('button', { name: 'Editar limite' }).first().click();
@@ -134,7 +147,9 @@ test.describe('Orçamento', () => {
 
     // The input should disappear (form closes) and the category still visible.
     await expect(input).not.toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText('Alimentação Orçamento E2E')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Alimentação Orçamento E2E').first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   // ── 2. Despesas que ultrapassam o limite exibem indicador visual ───────────

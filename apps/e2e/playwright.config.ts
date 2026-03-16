@@ -11,6 +11,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL ?? 'http://localhost:5173',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    serviceWorkers: 'block',
   },
   projects: [
     {

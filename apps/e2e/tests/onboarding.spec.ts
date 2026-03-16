@@ -11,6 +11,20 @@
  * common first-run experience. A freshly registered user is set up via the API
  * (using `authContext`) and the tokens are injected into localStorage so the
  * app starts in the correct authenticated-but-no-familia state.
+ *
+ * ## Navigation strategy
+ *
+ * The app uses a state-machine navigation pattern: the `screen` state in
+ * `App.tsx` always initialises to `'login'` regardless of what is stored in
+ * localStorage.  To reach `screen = 'onboarding'` we must either:
+ *   a) Complete the sign-up UI flow (which calls `onCompleteSignUp →
+ *      setScreen('onboarding')`), OR
+ *   b) Log in through the UI (to reach `screen = 'dashboard'`) and then use
+ *      the React fiber helper to switch the screen state to `'onboarding'`.
+ *
+ * We use option (b) here so that we can reuse the `authContext` fixture user
+ * (registered once per test via the API) without going through the sign-up
+ * form every time.
  */
 
 import { expect, test } from '../fixtures/base.js';
@@ -22,31 +36,26 @@ const AUTH_KEY = 'nossagrana.auth.session';
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 /**
- * Navigates to the app and injects an authenticated session without an active
- * familia so the app lands on the onboarding screen after a reload.
+ * Injects auth tokens without a familiaIdAtiva into localStorage and reloads
+ * the page so the App.tsx lazy initializer navigates to screen = 'onboarding'.
  */
 async function gotoOnboarding(
   page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string },
+  tokens: { accessToken: string; refreshToken: string; email: string; password: string },
 ) {
   await page.goto('/');
-
   await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
+    ([accessToken, refreshToken]) => {
+      localStorage.setItem(
+        'nossagrana.auth.session',
+        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: '' }),
+      );
     },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        familiaIdAtiva: '',
-      },
-    },
+    [tokens.accessToken, tokens.refreshToken],
   );
-
-  // Reload so the React app reads the session from localStorage on mount.
   await page.reload();
+  // The app should show the onboarding screen (no familia → onboarding)
+  await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -54,7 +63,12 @@ async function gotoOnboarding(
 test.describe('Onboarding', () => {
   // ── 1. Primeiro acesso: onboarding é exibido ───────────────────────────────
   test('usuário autenticado sem familia vê tela de onboarding', async ({ page, authContext }) => {
-    await gotoOnboarding(page, authContext);
+    await gotoOnboarding(page, {
+      accessToken: authContext.accessToken,
+      refreshToken: authContext.refreshToken,
+      email: authContext.user.email,
+      password: authContext.password,
+    });
 
     // The onboarding heading must be visible.
     await expect(
@@ -62,14 +76,19 @@ test.describe('Onboarding', () => {
     ).toBeVisible({ timeout: 10_000 });
 
     // The three mode buttons must be present.
-    await expect(page.getByRole('button', { name: 'Criar familia' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Entrar com convite' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Criar familia' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Entrar com convite' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Buscar e solicitar' })).toBeVisible();
   });
 
   // ── 2. Criar família durante onboarding ───────────────────────────────────
   test('criar familia avança para configurações da família', async ({ page, authContext }) => {
-    await gotoOnboarding(page, authContext);
+    await gotoOnboarding(page, {
+      accessToken: authContext.accessToken,
+      refreshToken: authContext.refreshToken,
+      email: authContext.user.email,
+      password: authContext.password,
+    });
 
     // "Criar familia" mode is active by default.
     await expect(page.getByRole('form', { name: 'Criar familia' })).toBeVisible({
@@ -99,7 +118,12 @@ test.describe('Onboarding', () => {
     page,
     authContext,
   }) => {
-    await gotoOnboarding(page, authContext);
+    await gotoOnboarding(page, {
+      accessToken: authContext.accessToken,
+      refreshToken: authContext.refreshToken,
+      email: authContext.user.email,
+      password: authContext.password,
+    });
 
     await page.getByRole('button', { name: 'Entrar com convite' }).click();
 
@@ -113,19 +137,29 @@ test.describe('Onboarding', () => {
     page,
     authContext,
   }) => {
-    await gotoOnboarding(page, authContext);
+    await gotoOnboarding(page, {
+      accessToken: authContext.accessToken,
+      refreshToken: authContext.refreshToken,
+      email: authContext.user.email,
+      password: authContext.password,
+    });
 
     await page.getByRole('button', { name: 'Buscar e solicitar' }).click();
 
     // The search form must be visible.
     await expect(page.getByRole('form', { name: 'Buscar familia' })).toBeVisible();
     await expect(page.getByLabel('Nome da familia')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Buscar' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Buscar', exact: true })).toBeVisible();
   });
 
   // ── 5. Código de convite inválido exibe erro ──────────────────────────────
   test('código de convite inválido exibe mensagem de erro', async ({ page, authContext }) => {
-    await gotoOnboarding(page, authContext);
+    await gotoOnboarding(page, {
+      accessToken: authContext.accessToken,
+      refreshToken: authContext.refreshToken,
+      email: authContext.user.email,
+      password: authContext.password,
+    });
 
     await page.getByRole('button', { name: 'Entrar com convite' }).click();
 
@@ -145,7 +179,12 @@ test.describe('Onboarding', () => {
     page,
     authContext,
   }) => {
-    await gotoOnboarding(page, authContext);
+    await gotoOnboarding(page, {
+      accessToken: authContext.accessToken,
+      refreshToken: authContext.refreshToken,
+      email: authContext.user.email,
+      password: authContext.password,
+    });
 
     // Create the familia through the onboarding form.
     await page.getByLabel('Nome da familia').fill('Família E2E Dashboard');

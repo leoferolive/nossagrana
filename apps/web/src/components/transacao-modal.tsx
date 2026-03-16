@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { TransacaoCreateRequest } from '@nossagrana/types';
+import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { TooltipHelp } from './tooltip-help';
 
 interface TransacaoModalProps {
+  familiaId: string;
   open: boolean;
   onClose: () => void;
   onSubmit: (payload: TransacaoCreateRequest) => void;
@@ -13,9 +15,23 @@ interface TransacaoModalProps {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps) => {
+export const TransacaoModal = ({ familiaId, open, onClose, onSubmit }: TransacaoModalProps) => {
   const categorias = useCategoriaStore((s) => s.categorias);
+  const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const metodos = useMetodoPagamentoStore((s) => s.metodos);
+  const setMetodos = useMetodoPagamentoStore((s) => s.setMetodos);
+
+  useEffect(() => {
+    if (!open || !familiaId) return;
+    categoriaService
+      .listar(familiaId)
+      .then((res) => setCategorias(res.categorias))
+      .catch(() => {});
+    metodoPagamentoService
+      .listar(familiaId)
+      .then((res) => setMetodos(res.metodosPagamento))
+      .catch(() => {});
+  }, [open, familiaId, setCategorias, setMetodos]);
 
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
   const [valor, setValor] = useState('');

@@ -48,31 +48,27 @@ vi.mock('./services/auth.service', () => ({
         { usuarioId: 'Maria', familiaId: 'fam-test', role: 'membro', dataEntrada: '2026-01-02' },
       ],
     }),
-    listarSolicitacoes: vi
-      .fn()
-      .mockResolvedValue({
-        solicitacoes: [
-          {
-            id: 'r1',
-            familiaId: 'fam-test',
-            usuarioId: 'Joao',
-            status: 'pendente',
-            solicitadoEm: '2026-01-01',
-          },
-        ],
-      }),
-    gerarConvite: vi
-      .fn()
-      .mockResolvedValue({
-        convite: {
-          id: 'c1',
-          codigo: 'FAM-LEO-2026',
+    listarSolicitacoes: vi.fn().mockResolvedValue({
+      solicitacoes: [
+        {
+          id: 'r1',
           familiaId: 'fam-test',
-          criadoPor: 'Leo',
-          expiraEm: '2026-02-01',
-          dataCriacao: '2026-01-01',
+          usuarioId: 'Joao',
+          status: 'pendente',
+          solicitadoEm: '2026-01-01',
         },
-      }),
+      ],
+    }),
+    gerarConvite: vi.fn().mockResolvedValue({
+      convite: {
+        id: 'c1',
+        codigo: 'FAM-LEO-2026',
+        familiaId: 'fam-test',
+        criadoPor: 'Leo',
+        expiraEm: '2026-02-01',
+        dataCriacao: '2026-01-01',
+      },
+    }),
     removerMembro: vi.fn().mockResolvedValue(undefined),
     revisarSolicitacao: vi
       .fn()

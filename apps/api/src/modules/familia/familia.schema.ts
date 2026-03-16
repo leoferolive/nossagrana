@@ -1,4 +1,6 @@
 import {
+  familiaBuscarQuerySchema,
+  familiaBuscarResponseSchema,
   familiaCreateInviteRequestSchema,
   familiaCreateInviteResponseSchema,
   familiaDeleteParamsSchema,
@@ -20,6 +22,14 @@ import {
   familiaCreateResponseSchema,
 } from '@nossagrana/types';
 import { z } from 'zod';
+
+export const familiaBuscarSchema = {
+  querystring: familiaBuscarQuerySchema,
+  response: {
+    200: familiaBuscarResponseSchema,
+    401: z.object({ message: z.literal('Nao autenticado') }),
+  },
+};
 
 export const familiaCreateSchema = {
   body: familiaCreateRequestSchema,

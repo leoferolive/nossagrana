@@ -17,6 +17,7 @@ describe('useAuth', () => {
           login: () => undefined,
           logout: () => undefined,
           setAccessToken: () => undefined,
+          updateFamiliaIdAtiva: () => undefined,
         }}
       >
         {children}

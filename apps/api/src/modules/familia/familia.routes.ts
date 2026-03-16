@@ -1,4 +1,5 @@
 import {
+  familiaBuscarQuerySchema,
   familiaCreateInviteRequestSchema,
   familiaCreateRequestSchema,
   familiaDeleteParamsSchema,
@@ -20,6 +21,7 @@ import {
 } from '../categoria/categoria.repository.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 import {
+  familiaBuscarSchema,
   familiaCreateInviteSchema,
   familiaCreateSchema,
   familiaDeleteSchema,
@@ -55,6 +57,19 @@ const defaultFamiliaService = (): FamiliaService => {
 
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
   const familiaService = defaultFamiliaService();
+
+  fastify.get(
+    '/familias/buscar',
+    {
+      preHandler: [fastify.authenticate],
+      schema: familiaBuscarSchema,
+    },
+    async (request, reply) => {
+      const query = familiaBuscarQuerySchema.parse(request.query);
+      const familias = await familiaService.buscarPorNome({ nome: query.nome });
+      return reply.code(200).send({ familias });
+    },
+  );
 
   fastify.post(
     '/familias',

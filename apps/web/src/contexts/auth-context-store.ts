@@ -14,6 +14,7 @@ export interface AuthContextValue {
   login: (session: AuthSession) => void;
   logout: () => void;
   setAccessToken: (accessToken: string) => void;
+  updateFamiliaIdAtiva: (familiaIdAtiva: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

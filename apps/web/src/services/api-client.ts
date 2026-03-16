@@ -39,7 +39,7 @@ export class ApiClient {
       headers: this.withAuthHeader(headers, accessToken),
     });
 
-    if (response.status === 401 && !skipAuthRetry && path !== '/auth/refresh') {
+    if (response.status === 401 && !skipAuthRetry && path !== '/api/auth/refresh') {
       const refreshed = await this.refreshAccessToken();
       if (refreshed) {
         return this.request<T>(path, { ...options, skipAuthRetry: true });
@@ -65,7 +65,7 @@ export class ApiClient {
     }
 
     const payload: AuthRefreshRequest = { refreshToken };
-    const response = await this.fetchFn(`${this.baseUrl}/auth/refresh`, {
+    const response = await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

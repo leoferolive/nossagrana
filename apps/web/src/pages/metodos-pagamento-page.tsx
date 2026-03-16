@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
+
+import type { MetodoPagamentoCreateRequest } from '@nossagrana/types';
 
 interface MetodosPagamentoPageProps {
   familiaId: string;
@@ -24,9 +27,16 @@ const TIPO_COLOR: Record<TipoMetodo, string> = {
   dinheiro: 'bg-text-dim/10 text-text-muted',
 };
 
-export const MetodosPagamentoPage = ({ onBack, onVerFatura }: MetodosPagamentoPageProps) => {
+export const MetodosPagamentoPage = ({
+  familiaId,
+  onBack,
+  onVerFatura,
+}: MetodosPagamentoPageProps) => {
   const { metodos, carregando } = useMetodoPagamentoStore();
+  const setMetodos = useMetodoPagamentoStore((s) => s.setMetodos);
+  const addMetodo = useMetodoPagamentoStore((s) => s.addMetodo);
   const removeMetodo = useMetodoPagamentoStore((s) => s.removeMetodo);
+  const setCarregando = useMetodoPagamentoStore((s) => s.setCarregando);
 
   const [formOpen, setFormOpen] = useState(false);
   const [nome, setNome] = useState('');
@@ -34,12 +44,50 @@ export const MetodosPagamentoPage = ({ onBack, onVerFatura }: MetodosPagamentoPa
   const [dataFechamento, setDataFechamento] = useState('');
   const [dataVencimento, setDataVencimento] = useState('');
 
+  useEffect(() => {
+    if (!familiaId) return;
+    setCarregando(true);
+    metodoPagamentoService
+      .listar(familiaId)
+      .then((res) => setMetodos(res.metodosPagamento))
+      .catch(() => {})
+      .finally(() => setCarregando(false));
+  }, [familiaId, setCarregando, setMetodos]);
+
   const handleCloseForm = () => {
     setFormOpen(false);
     setNome('');
     setTipo('credito');
     setDataFechamento('');
     setDataVencimento('');
+  };
+
+  const handleSave = async () => {
+    setCarregando(true);
+    try {
+      const payload: MetodoPagamentoCreateRequest = {
+        nome,
+        tipo,
+        dataFechamento: tipo === 'credito' && dataFechamento ? parseInt(dataFechamento) : null,
+        dataVencimento: tipo === 'credito' && dataVencimento ? parseInt(dataVencimento) : null,
+      };
+      const res = await metodoPagamentoService.criar(payload, familiaId);
+      addMetodo(res.metodoPagamento);
+      handleCloseForm();
+    } catch {
+      // silencioso por ora
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const handleDesativar = async (id: string) => {
+    try {
+      await metodoPagamentoService.desativar(id, familiaId);
+      removeMetodo(id);
+    } catch {
+      // silencioso por ora
+    }
   };
 
   return (
@@ -134,7 +182,7 @@ export const MetodosPagamentoPage = ({ onBack, onVerFatura }: MetodosPagamentoPa
               </button>
               <button
                 type="button"
-                onClick={handleCloseForm}
+                onClick={() => void handleSave()}
                 className="flex-1 rounded-lg bg-success py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
               >
                 Salvar
@@ -200,7 +248,7 @@ export const MetodosPagamentoPage = ({ onBack, onVerFatura }: MetodosPagamentoPa
                 )}
                 <button
                   type="button"
-                  onClick={() => removeMetodo(m.id)}
+                  onClick={() => void handleDesativar(m.id)}
                   aria-label={`Desativar ${m.nome}`}
                   className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
                 >

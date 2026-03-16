@@ -97,6 +97,21 @@ describe('InMemoryFamiliaRepository', () => {
     expect(await repository.deleteFamily({ familiaId: familia.id })).toBe(true);
     expect(await repository.deleteFamily({ familiaId: 'missing' })).toBe(false);
   });
+
+  it('buscarPorNome returns matching families case-insensitively', async () => {
+    const repo = new InMemoryFamiliaRepository();
+    await repo.createWithAdminMembership({ nome: 'Familia Silva', usuarioId: 'u1' });
+    await repo.createWithAdminMembership({ nome: 'Familia Santos', usuarioId: 'u2' });
+    await repo.createWithAdminMembership({ nome: 'Outros Membros', usuarioId: 'u3' });
+
+    const result = await repo.buscarPorNome('familia');
+    expect(result).toHaveLength(2);
+    expect(result.map((f) => f.nome)).toContain('Familia Silva');
+    expect(result.map((f) => f.nome)).toContain('Familia Santos');
+
+    const noResult = await repo.buscarPorNome('inexistente');
+    expect(noResult).toHaveLength(0);
+  });
 });
 
 describe('DrizzleFamiliaRepository', () => {

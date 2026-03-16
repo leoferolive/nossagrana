@@ -22,3 +22,4 @@ apps/web/coverage/
 
 # K8s secrets reais (nunca commitar)
 k8s/secrets-real.yaml
+.worktrees/

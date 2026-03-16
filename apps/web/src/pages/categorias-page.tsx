@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 
 interface CategoriasPageProps {
@@ -9,14 +10,28 @@ interface CategoriasPageProps {
 
 type FormMode = 'idle' | 'create' | 'edit';
 
-export const CategoriasPage = ({ onBack }: CategoriasPageProps) => {
+export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
   const { categorias, carregando } = useCategoriaStore();
+  const setCategorias = useCategoriaStore((s) => s.setCategorias);
+  const addCategoria = useCategoriaStore((s) => s.addCategoria);
+  const updateCategoria = useCategoriaStore((s) => s.updateCategoria);
   const removeCategoria = useCategoriaStore((s) => s.removeCategoria);
+  const setCarregando = useCategoriaStore((s) => s.setCarregando);
 
   const [formMode, setFormMode] = useState<FormMode>('idle');
-  const [, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
+
+  useEffect(() => {
+    if (!familiaId) return;
+    setCarregando(true);
+    categoriaService
+      .listar(familiaId)
+      .then((res) => setCategorias(res.categorias))
+      .catch(() => {})
+      .finally(() => setCarregando(false));
+  }, [familiaId, setCategorias, setCarregando]);
 
   const handleOpenCreate = () => {
     setNome('');
@@ -37,6 +52,33 @@ export const CategoriasPage = ({ onBack }: CategoriasPageProps) => {
   const handleCloseForm = () => {
     setFormMode('idle');
     setEditingId(null);
+  };
+
+  const handleSave = async () => {
+    setCarregando(true);
+    try {
+      if (formMode === 'create') {
+        const res = await categoriaService.criar({ nome, tipo }, familiaId);
+        addCategoria(res.categoria);
+      } else if (formMode === 'edit' && editingId) {
+        const res = await categoriaService.editar(editingId, { nome, tipo }, familiaId);
+        updateCategoria(res.categoria);
+      }
+      handleCloseForm();
+    } catch {
+      // silencioso por ora
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const handleDesativar = async (id: string) => {
+    try {
+      await categoriaService.desativar(id, familiaId);
+      removeCategoria(id);
+    } catch {
+      // silencioso por ora
+    }
   };
 
   return (
@@ -102,7 +144,7 @@ export const CategoriasPage = ({ onBack }: CategoriasPageProps) => {
               </button>
               <button
                 type="button"
-                onClick={handleCloseForm}
+                onClick={() => void handleSave()}
                 className="flex-1 rounded-lg bg-success py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
               >
                 Salvar
@@ -151,7 +193,7 @@ export const CategoriasPage = ({ onBack }: CategoriasPageProps) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => removeCategoria(cat.id)}
+                  onClick={() => void handleDesativar(cat.id)}
                   aria-label="Desativar"
                   className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
                 >

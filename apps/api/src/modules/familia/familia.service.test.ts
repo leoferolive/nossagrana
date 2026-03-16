@@ -30,6 +30,7 @@ const buildRepository = (overrides?: Partial<FamiliaRepository>): FamiliaReposit
   listMembers: vi.fn(),
   removeMember: vi.fn().mockResolvedValue(true),
   deleteFamily: vi.fn().mockResolvedValue(true),
+  buscarPorNome: vi.fn().mockResolvedValue([]),
   ...overrides,
 });
 
@@ -163,5 +164,17 @@ describe('FamiliaService', () => {
         usuarioId: 'u1',
       }),
     ).rejects.toBeInstanceOf(FamiliaNotFoundError);
+  });
+
+  it('buscarPorNome delegates to repository', async () => {
+    const mockResult = [{ id: 'f1', nome: 'Familia Silva' }];
+    const repository = buildRepository({
+      buscarPorNome: vi.fn().mockResolvedValue(mockResult),
+    });
+    const service = new FamiliaService(repository);
+
+    const result = await service.buscarPorNome({ nome: 'Silva' });
+    expect(result).toEqual(mockResult);
+    expect(repository.buscarPorNome).toHaveBeenCalledWith('Silva');
   });
 });

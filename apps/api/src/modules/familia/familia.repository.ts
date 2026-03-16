@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, ilike, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { convites, familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
@@ -300,6 +300,14 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       .returning({ id: familias.id });
     return result.length > 0;
   }
+
+  async buscarPorNome(nome: string): Promise<Array<{ id: string; nome: string }>> {
+    return db
+      .select({ id: familias.id, nome: familias.nome })
+      .from(familias)
+      .where(and(ilike(familias.nome, `%${nome}%`), isNull(familias.deletedAt)))
+      .limit(20);
+  }
 }
 
 export class InMemoryFamiliaRepository implements FamiliaRepository {
@@ -490,5 +498,13 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     }
 
     return existed;
+  }
+
+  async buscarPorNome(nome: string): Promise<Array<{ id: string; nome: string }>> {
+    const lower = nome.toLowerCase();
+    return Array.from(this.familiasById.values())
+      .filter((f) => f.nome.toLowerCase().includes(lower))
+      .map((f) => ({ id: f.id, nome: f.nome }))
+      .slice(0, 20);
   }
 }

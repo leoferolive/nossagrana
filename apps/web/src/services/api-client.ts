@@ -23,7 +23,7 @@ export class ApiClient {
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl;
-    this.fetchFn = options.fetchFn ?? fetch;
+    this.fetchFn = options.fetchFn ?? fetch.bind(globalThis);
     this.getAccessToken = options.getAccessToken;
     this.getRefreshToken = options.getRefreshToken;
     this.setAccessToken = options.setAccessToken;

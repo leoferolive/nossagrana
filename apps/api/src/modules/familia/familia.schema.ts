@@ -1,7 +1,6 @@
 import {
   familiaBuscarQuerySchema,
   familiaBuscarResponseSchema,
-  familiaListMineResponseSchema,
   familiaCreateInviteRequestSchema,
   familiaCreateInviteResponseSchema,
   familiaDeleteParamsSchema,
@@ -164,13 +163,6 @@ export const familiaSwitchActiveSchema = {
     403: z.object({
       message: z.literal('Usuario sem acesso a familia informada'),
     }),
-  },
-};
-
-export const familiaListMineSchema = {
-  response: {
-    200: familiaListMineResponseSchema,
-    401: z.object({ message: z.literal('Nao autenticado') }),
   },
 };
 

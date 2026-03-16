@@ -31,7 +31,6 @@ const buildRepository = (overrides?: Partial<FamiliaRepository>): FamiliaReposit
   removeMember: vi.fn().mockResolvedValue(true),
   deleteFamily: vi.fn().mockResolvedValue(true),
   buscarPorNome: vi.fn().mockResolvedValue([]),
-  listarDoUsuario: vi.fn().mockResolvedValue([]),
   ...overrides,
 });
 

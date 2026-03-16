@@ -732,16 +732,3 @@ export const familiaBuscarResponseSchema = z.object({
   ),
 });
 export type FamiliaBuscarResponse = z.infer<typeof familiaBuscarResponseSchema>;
-
-// ─── Familia List Mine ────────────────────────────────────────────────────────
-
-export const familiaListMineResponseSchema = z.object({
-  familias: z.array(
-    z.object({
-      id: z.string().uuid(),
-      nome: z.string(),
-      role: z.enum(['admin', 'membro']),
-    }),
-  ),
-});
-export type FamiliaListMineResponse = z.infer<typeof familiaListMineResponseSchema>;

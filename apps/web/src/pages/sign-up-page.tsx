@@ -3,7 +3,6 @@ import { type FormEvent, useState } from 'react';
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
 import { useAuth } from '@/contexts/use-auth';
-import { ApiError } from '@/services/api-client';
 import { authService } from '@/services/auth.service';
 
 interface SignUpPageProps {
@@ -46,7 +45,8 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
       });
       onCompleteSignUp();
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 409) {
+      const errorWithStatus = err as { status?: number };
+      if (errorWithStatus.status === 409) {
         setErro('Este e-mail já está cadastrado');
       } else {
         setErro('Ocorreu um erro. Tente novamente.');

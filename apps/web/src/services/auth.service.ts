@@ -10,7 +10,6 @@ import type {
   FamiliaJoinByInviteResponse,
   FamiliaListJoinRequestsResponse,
   FamiliaListMembersResponse,
-  FamiliaListMineResponse,
   FamiliaRequestJoinResponse,
   FamiliaReviewJoinRequestResponse,
   FamiliaSwitchActiveResponse,
@@ -133,10 +132,6 @@ export class FamiliaService {
     return this.api.request<FamiliaBuscarResponse>(
       `/api/familias/buscar?nome=${encodeURIComponent(nome)}`,
     );
-  }
-
-  async listarMinhas(): Promise<FamiliaListMineResponse> {
-    return this.api.request<FamiliaListMineResponse>('/api/familias/minhas');
   }
 }
 

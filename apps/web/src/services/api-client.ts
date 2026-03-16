@@ -1,15 +1,5 @@
 import type { AuthRefreshRequest, AuthRefreshResponse } from '@nossagrana/types';
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
 interface ApiClientOptions {
   baseUrl: string;
   fetchFn?: typeof fetch;
@@ -49,7 +39,7 @@ export class ApiClient {
       headers: this.withAuthHeader(headers, accessToken),
     });
 
-    if (response.status === 401 && !skipAuthRetry && path !== '/auth/refresh') {
+    if (response.status === 401 && !skipAuthRetry && path !== '/api/auth/refresh') {
       const refreshed = await this.refreshAccessToken();
       if (refreshed) {
         return this.request<T>(path, { ...options, skipAuthRetry: true });
@@ -57,10 +47,7 @@ export class ApiClient {
     }
 
     if (!response.ok) {
-      throw new ApiError(
-        response.status === 401 ? 'Nao autorizado' : 'Erro ao processar requisicao',
-        response.status,
-      );
+      throw new Error(response.status === 401 ? 'Nao autorizado' : 'Erro ao processar requisicao');
     }
 
     if (response.status === 204) {
@@ -78,7 +65,7 @@ export class ApiClient {
     }
 
     const payload: AuthRefreshRequest = { refreshToken };
-    const response = await this.fetchFn(`${this.baseUrl}/auth/refresh`, {
+    const response = await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

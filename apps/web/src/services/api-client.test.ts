@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiClient, ApiError } from './api-client';
+import { ApiClient } from './api-client';
 
 interface TokenState {
   accessToken: string | null;
@@ -57,7 +57,7 @@ describe('ApiClient', () => {
     expect(result).toEqual({ ok: true });
     expect(tokenState.accessToken).toBe('access-token-new');
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:3000/auth/refresh');
+    expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:3000/api/auth/refresh');
     const requestHeaders = new Headers(fetchMock.mock.calls[2][1]?.headers);
     expect(requestHeaders.get('Authorization')).toBe('Bearer access-token-new');
   });
@@ -91,11 +91,9 @@ describe('ApiClient', () => {
       },
     });
 
-    const err = await apiClient.request('/dashboard').catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(ApiError);
-    expect((err as ApiError).message).toBe('Nao autorizado');
-    expect((err as ApiError).status).toBe(401);
+    await expect(apiClient.request('/dashboard')).rejects.toThrow('Nao autorizado');
     expect(tokenState.accessToken).toBeNull();
     expect(tokenState.refreshToken).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

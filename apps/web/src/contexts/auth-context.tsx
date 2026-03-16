@@ -47,10 +47,12 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
   const login = useCallback((nextSession: AuthSession) => {
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(nextSession));
     setSession(nextSession);
   }, []);
 
   const logout = useCallback(() => {
+    localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
     setSession(null);
   }, []);
 
@@ -68,6 +70,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const updateFamiliaIdAtiva = useCallback((familiaIdAtiva: string) => {
+    const currentRaw = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+    if (currentRaw) {
+      const current = JSON.parse(currentRaw) as Partial<AuthSession>;
+      localStorage.setItem(
+        AUTH_SESSION_STORAGE_KEY,
+        JSON.stringify({ ...current, familiaIdAtiva }),
+      );
+    }
     setSession((s) => (s ? { ...s, familiaIdAtiva } : null));
   }, []);
 

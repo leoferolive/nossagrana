@@ -155,13 +155,12 @@ jobs:
 
       - name: Install semgrep
         run: |
-          curl -sS https://bootstrap.pypa.io/get-pip.py | python3 - --user --quiet
-          python3 -m pip install semgrep --user --quiet
+          python3 -m venv /tmp/semgrep-venv
+          /tmp/semgrep-venv/bin/pip install semgrep --quiet
 
       - name: Semgrep scan
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          semgrep scan \
+          /tmp/semgrep-venv/bin/semgrep scan \
             --config p/owasp-top-ten \
             --config p/javascript \
             --config p/typescript \

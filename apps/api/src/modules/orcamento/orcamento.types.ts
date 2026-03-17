@@ -25,6 +25,7 @@ export interface OrcamentoHistoricoRow {
 export interface OrcamentoSetInput {
   familiaId: string;
   categoriaId: string;
+  categoriaNome?: string;
   usuarioId: string;
   valorLimite: string;
   vigenciaInicio: string;

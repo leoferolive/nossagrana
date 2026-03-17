@@ -56,6 +56,7 @@ export const App = () => {
     return 'login';
   });
   const [novaTransacaoOpen, setNovaTransacaoOpen] = useState(false);
+  const [ajudaSource, setAjudaSource] = useState<Screen>('configuracoes');
   const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
@@ -108,7 +109,10 @@ export const App = () => {
           onGoToOrcamento={() => setScreen('orcamento')}
           onGoToRelatorios={() => setScreen('relatorios')}
           onGoToHistorico={() => setScreen('historico')}
-          onGoToAjuda={() => setScreen('ajuda')}
+          onGoToAjuda={() => {
+            setAjudaSource('dashboard');
+            setScreen('ajuda');
+          }}
           onGoToConfiguracoes={() => setScreen('configuracoes')}
         />
         <TransacaoModal
@@ -184,7 +188,7 @@ export const App = () => {
   }
 
   if (screen === 'ajuda') {
-    return <AjudaPage onBack={() => setScreen('configuracoes')} />;
+    return <AjudaPage onBack={() => setScreen(ajudaSource)} />;
   }
 
   if (screen === 'configuracoes') {
@@ -196,7 +200,10 @@ export const App = () => {
         onGoToOrcamento={() => setScreen('orcamento')}
         onGoToFamilia={() => setScreen('family-settings')}
         onGoToHistorico={() => setScreen('historico')}
-        onGoToAjuda={() => setScreen('ajuda')}
+        onGoToAjuda={() => {
+          setAjudaSource('configuracoes');
+          setScreen('ajuda');
+        }}
         onGoToPerfil={() => setScreen('perfil')}
       />
     );
@@ -206,7 +213,21 @@ export const App = () => {
     return <PerfilPage onBack={() => setScreen('configuracoes')} />;
   }
 
-  if (screen === 'fatura' && faturaMetodoId) {
+  if (screen === 'fatura') {
+    if (!faturaMetodoId) {
+      return (
+        <MetodosPagamentoPage
+          familiaId={familiaId}
+          onBack={() => setScreen('dashboard')}
+          onVerFatura={(id, nome, mes) => {
+            setFaturaMetodoId(id);
+            setFaturaMetodoNome(nome);
+            setFaturaMes(mes);
+            setScreen('fatura');
+          }}
+        />
+      );
+    }
     return (
       <FaturaPage
         familiaId={familiaId}

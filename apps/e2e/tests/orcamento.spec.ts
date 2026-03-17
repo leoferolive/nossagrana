@@ -17,10 +17,6 @@
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Minimal shape of the authContext fixture used in navigation helpers. */
@@ -82,7 +78,6 @@ async function gotoOrcamento(page: import('@playwright/test').Page) {
  * Sets a budget limit for a given category via the API.
  */
 async function setOrcamentoViaApi(
-  page: import('@playwright/test').Page,
   token: string,
   familiaId: string,
   categoriaId: string,
@@ -90,17 +85,9 @@ async function setOrcamentoViaApi(
 ) {
   const now = new Date();
   const mesReferencia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-  await page.request.post(`${BASE_URL}/api/orcamento/${categoriaId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'x-familia-id': familiaId,
-      'Content-Type': 'application/json',
-    },
-    data: {
-      valorLimite,
-      vigenciaInicio: mesReferencia,
-    },
+  await api.setOrcamento(token, familiaId, categoriaId, {
+    valorLimite,
+    vigenciaInicio: mesReferencia,
   });
 }
 
@@ -121,7 +108,7 @@ test.describe('Orçamento', () => {
     });
 
     // Set an initial budget limit via the API so the item appears in the list.
-    await setOrcamentoViaApi(page, authContext.accessToken, familiaId, categoria.id, '500.00');
+    await setOrcamentoViaApi(authContext.accessToken, familiaId, categoria.id, '500.00');
 
     await gotoDashboard(page, authContext, familiaId);
     await gotoOrcamento(page);
@@ -164,7 +151,7 @@ test.describe('Orçamento', () => {
       tipo: 'despesa',
     });
 
-    await setOrcamentoViaApi(page, authContext.accessToken, familiaId, categoria.id, '10.00');
+    await setOrcamentoViaApi(authContext.accessToken, familiaId, categoria.id, '10.00');
 
     // Create a transaction that exceeds the limit (R$ 150 > R$ 10).
     await api.criarTransacao(authContext.accessToken, familiaId, {
@@ -208,7 +195,7 @@ test.describe('Orçamento', () => {
       tipo: 'despesa',
     });
 
-    await setOrcamentoViaApi(page, authContext.accessToken, familiaId, categoria.id, '300.00');
+    await setOrcamentoViaApi(authContext.accessToken, familiaId, categoria.id, '300.00');
 
     // Create a transaction so there's spending progress to show.
     await api.criarTransacao(authContext.accessToken, familiaId, {

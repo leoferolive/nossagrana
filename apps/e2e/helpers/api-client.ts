@@ -274,6 +274,24 @@ export async function criarMetodoPagamento(
 }
 
 /**
+ * POST /orcamento/:categoriaId
+ * Sets or updates a budget limit for the given category.
+ * Requires a valid access token and an active familia context (x-familia-id header).
+ */
+export async function setOrcamento(
+  token: string,
+  familiaId: string,
+  categoriaId: string,
+  data: { valorLimite: string; vigenciaInicio: string },
+): Promise<void> {
+  await request<Record<string, unknown>>('POST', `/api/orcamento/${categoriaId}`, {
+    token,
+    familiaId,
+    body: data,
+  });
+}
+
+/**
  * DELETE /auth/account
  * Deletes the authenticated user's account. Used for cleanup after tests.
  * Returns void (204 No Content).

@@ -108,7 +108,7 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
       id: crypto.randomUUID(),
       familiaId: input.familiaId,
       categoriaId: input.categoriaId,
-      categoriaNome: input.categoriaId,
+      categoriaNome: input.categoriaNome ?? input.categoriaId,
       valorLimite: input.valorLimite,
       vigenciaInicio: input.vigenciaInicio,
       vigenciaFim: null,

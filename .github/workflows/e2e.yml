@@ -1,0 +1,92 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nossagrana_e2e
+          POSTGRES_PASSWORD: nossagrana_e2e
+          POSTGRES_DB: nossagrana_e2e
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run API migrations
+        run: pnpm --filter api db:migrate
+        env:
+          DATABASE_URL: postgresql://nossagrana_e2e:nossagrana_e2e@localhost:5433/nossagrana_e2e
+
+      - name: Build API
+        run: pnpm --filter api build
+
+      - name: Build Web
+        run: pnpm --filter web build
+        env:
+          VITE_API_URL: http://localhost:3000
+          VITE_WS_URL: ws://localhost:3000
+
+      - name: Install Playwright browsers
+        run: pnpm --filter e2e exec playwright install chromium --with-deps
+
+      - name: Start API server
+        run: node apps/api/dist/server.js &
+        env:
+          NODE_ENV: production
+          PORT: 3000
+          DATABASE_URL: postgresql://nossagrana_e2e:nossagrana_e2e@localhost:5433/nossagrana_e2e
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: 15m
+          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
+          REFRESH_TOKEN_EXPIRES_IN: 7d
+          CORS_ORIGIN: http://localhost:5173
+
+      - name: Start Web preview server
+        run: pnpm --filter web preview --port 5173 &
+
+      - name: Wait for servers to be ready
+        run: pnpm --filter e2e exec wait-on http://localhost:3000/api/health http://localhost:5173 --timeout 60000
+
+      - name: Run E2E tests
+        run: pnpm --filter e2e test
+        env:
+          API_URL: http://localhost:3000
+          BASE_URL: http://localhost:5173
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 30

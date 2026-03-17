@@ -24,6 +24,10 @@
     },
     "test:coverage": {
       "dependsOn": ["^build"]
+    },
+    "e2e": {
+      "dependsOn": ["api#build", "web#build"],
+      "cache": false
     }
   }
 }

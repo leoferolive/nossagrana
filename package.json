@@ -10,6 +10,7 @@
     "type-check": "turbo run type-check",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
+    "e2e": "turbo run e2e",
     "format:check:changed": "node ./scripts/check-prettier-changed.mjs",
     "coverage:changed-check": "node ./scripts/check-changed-coverage.mjs",
     "security:audit": "pnpm audit --audit-level=high --prod",

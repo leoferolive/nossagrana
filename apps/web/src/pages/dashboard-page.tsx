@@ -12,6 +12,7 @@ import {
 import { useEffect } from 'react';
 import { Doughnut, Line } from 'react-chartjs-2';
 
+import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { useDashboardStore } from '../stores/dashboard.store';
 
@@ -60,7 +61,7 @@ export const DashboardPage = ({
   onGoToAjuda,
   onGoToConfiguracoes,
 }: DashboardPageProps) => {
-  const { resumo, graficos, orcamento, loading, fetchAll } = useDashboardStore();
+  const { resumo, graficos, orcamento, loading, error, fetchAll } = useDashboardStore();
 
   useEffect(() => {
     fetchAll(familiaId);
@@ -140,6 +141,7 @@ export const DashboardPage = ({
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <FirstTimeTour tourKey="dashboard" steps={dashboardTourSteps} />
+      <ErrorBanner error={error} />
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <div>
           <h1 className="text-xl font-bold text-text">NossaGrana</h1>

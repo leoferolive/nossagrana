@@ -93,3 +93,9 @@ export const authUpdateSenhaSchema = {
     401: z.object({ message: z.string() }),
   },
 };
+
+export const authDeleteAccountSchema = {
+  response: {
+    204: z.null(),
+  },
+};

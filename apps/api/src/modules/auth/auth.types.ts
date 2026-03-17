@@ -34,6 +34,11 @@ export interface AuthRepository {
   }): Promise<AuthRepositoryUser>;
   updateNome(id: string, nome: string): Promise<AuthRepositoryUser>;
   updateSenhaHash(id: string, senhaHash: string): Promise<void>;
+  findFamiliasByUserId(userId: string): Promise<Array<{ familiaId: string }>>;
+  countFamiliaMembers(familiaId: string): Promise<number>;
+  deleteFamiliaAndAllData(familiaId: string): Promise<void>;
+  removeUserFromFamilia(userId: string, familiaId: string): Promise<void>;
+  deleteUser(userId: string): Promise<void>;
 }
 
 export const authTypesRuntimeMarker = true;

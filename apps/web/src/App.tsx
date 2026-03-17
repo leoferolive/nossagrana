@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { TransacaoModal } from '@/components/transacao-modal';
 import { useAuth } from '@/contexts/use-auth';
+import { useTransacaoStore } from '@/stores/transacao.store';
 import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
 import { ConfiguracoesPage } from '@/pages/configuracoes-page';
@@ -40,8 +41,22 @@ export const App = () => {
   const { familiaIdAtiva, isAuthenticated } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
 
-  const [screen, setScreen] = useState<Screen>('login');
+  const [screen, setScreen] = useState<Screen>(() => {
+    const sessionRaw = localStorage.getItem('nossagrana.auth.session');
+    if (sessionRaw) {
+      try {
+        const session = JSON.parse(sessionRaw) as { accessToken?: string; familiaIdAtiva?: string };
+        if (session.accessToken) {
+          return session.familiaIdAtiva ? 'dashboard' : 'onboarding';
+        }
+      } catch {
+        // sessão inválida no localStorage — começar no login
+      }
+    }
+    return 'login';
+  });
   const [novaTransacaoOpen, setNovaTransacaoOpen] = useState(false);
+  const [ajudaSource, setAjudaSource] = useState<Screen>('configuracoes');
   const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
@@ -94,10 +109,14 @@ export const App = () => {
           onGoToOrcamento={() => setScreen('orcamento')}
           onGoToRelatorios={() => setScreen('relatorios')}
           onGoToHistorico={() => setScreen('historico')}
-          onGoToAjuda={() => setScreen('ajuda')}
+          onGoToAjuda={() => {
+            setAjudaSource('dashboard');
+            setScreen('ajuda');
+          }}
           onGoToConfiguracoes={() => setScreen('configuracoes')}
         />
         <TransacaoModal
+          familiaId={familiaId}
           open={novaTransacaoOpen}
           onClose={() => setNovaTransacaoOpen(false)}
           onSubmit={async (payload) => {
@@ -119,12 +138,18 @@ export const App = () => {
           onNovaTransacao={() => setNovaTransacaoOpen(true)}
         />
         <TransacaoModal
+          familiaId={familiaId}
           open={novaTransacaoOpen}
           onClose={() => setNovaTransacaoOpen(false)}
           onSubmit={async (payload) => {
             if (!familiaId) return;
             await transacaoService.registrar(payload, familiaId);
             setNovaTransacaoOpen(false);
+            // Re-fetch so ExtratoPage reflects the new transaction immediately.
+            transacaoService
+              .listar({}, familiaId)
+              .then((res) => useTransacaoStore.getState().setTransacoes(res.transacoes))
+              .catch(() => {});
           }}
         />
       </>
@@ -163,7 +188,7 @@ export const App = () => {
   }
 
   if (screen === 'ajuda') {
-    return <AjudaPage onBack={() => setScreen('configuracoes')} />;
+    return <AjudaPage onBack={() => setScreen(ajudaSource)} />;
   }
 
   if (screen === 'configuracoes') {
@@ -175,7 +200,10 @@ export const App = () => {
         onGoToOrcamento={() => setScreen('orcamento')}
         onGoToFamilia={() => setScreen('family-settings')}
         onGoToHistorico={() => setScreen('historico')}
-        onGoToAjuda={() => setScreen('ajuda')}
+        onGoToAjuda={() => {
+          setAjudaSource('configuracoes');
+          setScreen('ajuda');
+        }}
         onGoToPerfil={() => setScreen('perfil')}
       />
     );
@@ -185,7 +213,21 @@ export const App = () => {
     return <PerfilPage onBack={() => setScreen('configuracoes')} />;
   }
 
-  if (screen === 'fatura' && faturaMetodoId) {
+  if (screen === 'fatura') {
+    if (!faturaMetodoId) {
+      return (
+        <MetodosPagamentoPage
+          familiaId={familiaId}
+          onBack={() => setScreen('dashboard')}
+          onVerFatura={(id, nome, mes) => {
+            setFaturaMetodoId(id);
+            setFaturaMetodoNome(nome);
+            setFaturaMes(mes);
+            setScreen('fatura');
+          }}
+        />
+      );
+    }
     return (
       <FaturaPage
         familiaId={familiaId}

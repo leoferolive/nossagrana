@@ -41,15 +41,13 @@ export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
 
   return (
     <AuthShell
-      title="Entrar no NossaGrana"
-      subtitle="Acesse sua conta para continuar."
       footer={
         <>
           Não tem conta?{' '}
           <button
             type="button"
             onClick={onOpenSignUp}
-            className="font-semibold text-info transition hover:underline"
+            className="font-semibold text-success transition hover:underline"
           >
             Cadastre-se
           </button>

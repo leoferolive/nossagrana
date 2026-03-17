@@ -27,6 +27,20 @@ const TIPO_COLOR: Record<TipoMetodo, string> = {
   dinheiro: 'bg-text-dim/10 text-text-muted',
 };
 
+const TIPO_ICON: Record<TipoMetodo, string> = {
+  credito: '\uD83D\uDCB3',
+  debito: '\uD83D\uDCB3',
+  pix: '\u26A1',
+  dinheiro: '\uD83D\uDCB5',
+};
+
+const TIPO_ICON_BG: Record<TipoMetodo, string> = {
+  credito: 'bg-[#8B5CF620]',
+  debito: 'bg-warning/10',
+  pix: 'bg-[#06B6D420]',
+  dinheiro: 'bg-success/10',
+};
+
 export const MetodosPagamentoPage = ({
   familiaId,
   onBack,
@@ -102,7 +116,7 @@ export const MetodosPagamentoPage = ({
         >
           ←
         </button>
-        <h1 className="text-lg font-bold text-text">Cartões e Métodos</h1>
+        <h1 className="text-lg font-bold text-text">Cartões e Pagamentos</h1>
         <div className="flex-1" />
         <button
           type="button"
@@ -202,29 +216,33 @@ export const MetodosPagamentoPage = ({
           </p>
         )}
 
-        <ul className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {metodos.map((m) => (
-            <li
-              key={m.id}
-              className="flex items-center justify-between rounded-xl border border-border bg-panel px-4 py-3"
-            >
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-text">{m.nome}</span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${TIPO_COLOR[m.tipo]}`}
-                  >
-                    {TIPO_LABEL[m.tipo]}
-                  </span>
+            <div key={m.id} className="cursor-pointer rounded-xl border border-border bg-panel p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-text">{m.nome}</div>
+                  <div className="mt-1 text-xs text-text-muted">
+                    {m.tipo === 'credito' && m.dataFechamento != null
+                      ? `Fecha dia ${m.dataFechamento}${m.dataVencimento != null ? ` · Vence dia ${m.dataVencimento}` : ''}`
+                      : TIPO_LABEL[m.tipo].toUpperCase()}
+                  </div>
+                  {m.tipo !== 'credito' && (
+                    <span
+                      className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TIPO_COLOR[m.tipo]}`}
+                    >
+                      {TIPO_LABEL[m.tipo]}
+                    </span>
+                  )}
                 </div>
-                {m.tipo === 'credito' && m.dataFechamento != null && (
-                  <span className="text-xs text-text-muted">
-                    Fecha dia {m.dataFechamento}
-                    {m.dataVencimento != null && ` · Vence dia ${m.dataVencimento}`}
-                  </span>
-                )}
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl ${TIPO_ICON_BG[m.tipo]}`}
+                  aria-hidden="true"
+                >
+                  {TIPO_ICON[m.tipo]}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="mt-3 flex items-center gap-2">
                 {m.tipo === 'credito' && onVerFatura && (
                   <button
                     type="button"
@@ -255,9 +273,18 @@ export const MetodosPagamentoPage = ({
                   Desativar
                 </button>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
+
+        {/* Botão mobile "+ Novo Método" */}
+        <button
+          type="button"
+          onClick={() => setFormOpen(true)}
+          className="mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong md:hidden"
+        >
+          + Novo Método
+        </button>
       </div>
     </div>
   );

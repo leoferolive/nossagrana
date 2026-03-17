@@ -164,45 +164,92 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
           </p>
         )}
 
-        <ul className="flex flex-col gap-2">
-          {categorias.map((cat) => (
-            <li
-              key={cat.id}
-              className="flex items-center justify-between rounded-xl border border-border bg-panel px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-text">{cat.nome}</span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    cat.tipo === 'receita'
-                      ? 'bg-success/10 text-success'
-                      : 'bg-danger/10 text-danger'
-                  }`}
-                >
-                  {cat.tipo}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenEdit(cat.id)}
-                  aria-label={`Editar ${cat.nome}`}
-                  className="rounded-lg px-3 py-1 text-xs text-info transition hover:bg-info/10"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleDesativar(cat.id)}
-                  aria-label="Desativar"
-                  className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
-                >
-                  Desativar
-                </button>
-              </div>
-            </li>
+        {/* Desktop: grid 2 colunas */}
+        <div className="hidden md:grid md:grid-cols-2 md:gap-4">
+          {(['despesa', 'receita'] as const).map((tipoSecao) => (
+            <div key={tipoSecao} className="rounded-xl border border-border bg-panel p-4">
+              <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-text-muted">
+                {tipoSecao === 'despesa' ? 'Despesas' : 'Receitas'}
+              </h2>
+              {categorias
+                .filter((c) => c.tipo === tipoSecao)
+                .map((cat, i, arr) => (
+                  <div
+                    key={cat.id}
+                    className={`flex items-center justify-between py-3 ${i < arr.length - 1 ? 'border-b border-border' : ''}`}
+                  >
+                    <span className="text-sm text-text">{cat.nome}</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(cat.id)}
+                        aria-label={`Editar ${cat.nome}`}
+                        className="cursor-pointer text-xs text-text-muted transition hover:text-text"
+                      >
+                        editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDesativar(cat.id)}
+                        aria-label="Desativar"
+                        className="text-xs text-danger transition hover:text-danger/80"
+                      >
+                        desativar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
           ))}
-        </ul>
+        </div>
+
+        {/* Mobile: lista com seções */}
+        <div className="md:hidden">
+          {(['despesa', 'receita'] as const).map((tipoSecao) => {
+            const items = categorias.filter((c) => c.tipo === tipoSecao);
+            if (items.length === 0) return null;
+            return (
+              <div key={tipoSecao}>
+                <h2 className="pb-2 pt-3 text-xs font-bold uppercase tracking-wider text-text-muted">
+                  {tipoSecao === 'despesa' ? 'Despesas' : 'Receitas'}
+                </h2>
+                {items.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between border-b border-border py-3"
+                  >
+                    <span className="text-sm text-text">{cat.nome}</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(cat.id)}
+                        aria-label={`Editar ${cat.nome}`}
+                        className="cursor-pointer text-xs text-text-muted transition hover:text-text"
+                      >
+                        editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDesativar(cat.id)}
+                        aria-label="Desativar"
+                        className="text-xs text-danger transition hover:text-danger/80"
+                      >
+                        desativar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong"
+          >
+            + Nova Categoria
+          </button>
+        </div>
       </div>
     </div>
   );

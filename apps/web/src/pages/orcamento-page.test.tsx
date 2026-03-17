@@ -31,7 +31,7 @@ describe('OrcamentoPage', () => {
   it('renders heading', async () => {
     render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /orçamento/i })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: /orçamento mensal/i })).toBeInTheDocument(),
     );
   });
 
@@ -58,9 +58,9 @@ describe('OrcamentoPage', () => {
       ],
     });
     render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Alimentação')).toBeInTheDocument());
-    expect(screen.getByText(/500/)).toBeInTheDocument();
-    expect(screen.getByText(/50%/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/500/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/50%/).length).toBeGreaterThan(0);
   });
 
   it('calls onBack when back button clicked', async () => {
@@ -92,12 +92,14 @@ describe('OrcamentoPage', () => {
     mockService.setOrcamento.mockResolvedValue({ orcamento: {} });
 
     render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => screen.getByText('Alimentação'));
-    fireEvent.click(screen.getByRole('button', { name: /editar limite/i }));
+    await waitFor(() => expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0));
+    const editButtons = screen.getAllByRole('button', { name: /editar limite/i });
+    fireEvent.click(editButtons[0]);
 
-    const input = screen.getByLabelText(/novo limite/i);
+    const input = screen.getAllByLabelText(/novo limite/i)[0];
     fireEvent.change(input, { target: { value: '800' } });
-    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+    const saveButtons = screen.getAllByRole('button', { name: /salvar/i });
+    fireEvent.click(saveButtons[0]);
 
     await waitFor(() =>
       expect(mockService.setOrcamento).toHaveBeenCalledWith(

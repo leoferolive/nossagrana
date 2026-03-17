@@ -171,6 +171,7 @@ export const App = () => {
         <FamilySettingsPage
           onBackToOnboarding={() => setScreen('configuracoes')}
           onGoToDashboard={() => setScreen('dashboard')}
+          onBack={() => setScreen('configuracoes')}
           familiaId={familiaId}
         />
       );

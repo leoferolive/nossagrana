@@ -47,51 +47,32 @@ const renderPage = (props: { onOpenLogin?: () => void; onCompleteSignUp?: () => 
 };
 
 describe('SignUpPage', () => {
-  it('renderiza campos nome, email, senha e confirmSenha', () => {
+  it('renderiza campos nome, email e senha', () => {
     renderPage();
-    expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/nome/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^e-mail/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirmar senha/i)).toBeInTheDocument();
   });
 
-  it('exibe erro quando senhas não coincidem', async () => {
-    renderPage();
-
-    fireEvent.change(screen.getByLabelText(/nome completo/i), {
-      target: { value: 'João Silva' },
-    });
-    fireEvent.change(screen.getByLabelText(/^e-mail/i), {
-      target: { value: 'joao@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/^senha$/i), {
-      target: { value: 'senha12345' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
-      target: { value: 'senha99999' },
-    });
-
-    fireEvent.submit(screen.getByRole('form', { name: /cadastro/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/as senhas não coincidem/i);
-    });
-    expect(authService.register).not.toHaveBeenCalled();
+  it('renderiza botão "← Voltar" que chama onOpenLogin', () => {
+    const onOpenLogin = vi.fn();
+    renderPage({ onOpenLogin });
+    const voltarBtn = screen.getByRole('button', { name: /voltar/i });
+    expect(voltarBtn).toBeInTheDocument();
+    fireEvent.click(voltarBtn);
+    expect(onOpenLogin).toHaveBeenCalled();
   });
 
   it('exibe erro quando senha tem menos de 8 caracteres', async () => {
     renderPage();
 
-    fireEvent.change(screen.getByLabelText(/nome completo/i), {
+    fireEvent.change(screen.getByLabelText(/nome/i), {
       target: { value: 'João Silva' },
     });
     fireEvent.change(screen.getByLabelText(/^e-mail/i), {
       target: { value: 'joao@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/^senha$/i), {
-      target: { value: 'abc' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
       target: { value: 'abc' },
     });
 
@@ -123,16 +104,13 @@ describe('SignUpPage', () => {
 
     renderPage({ onCompleteSignUp });
 
-    fireEvent.change(screen.getByLabelText(/nome completo/i), {
+    fireEvent.change(screen.getByLabelText(/nome/i), {
       target: { value: 'João Silva' },
     });
     fireEvent.change(screen.getByLabelText(/^e-mail/i), {
       target: { value: 'joao@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/^senha$/i), {
-      target: { value: 'senha12345' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
       target: { value: 'senha12345' },
     });
 
@@ -172,16 +150,13 @@ describe('SignUpPage', () => {
 
     renderPage();
 
-    fireEvent.change(screen.getByLabelText(/nome completo/i), {
+    fireEvent.change(screen.getByLabelText(/nome/i), {
       target: { value: 'João Silva' },
     });
     fireEvent.change(screen.getByLabelText(/^e-mail/i), {
       target: { value: 'joao@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/^senha$/i), {
-      target: { value: 'senha12345' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
       target: { value: 'senha12345' },
     });
 
@@ -208,16 +183,13 @@ describe('SignUpPage', () => {
 
     renderPage();
 
-    fireEvent.change(screen.getByLabelText(/nome completo/i), {
+    fireEvent.change(screen.getByLabelText(/nome/i), {
       target: { value: 'João Silva' },
     });
     fireEvent.change(screen.getByLabelText(/^e-mail/i), {
       target: { value: 'joao@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/^senha$/i), {
-      target: { value: 'senha12345' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
       target: { value: 'senha12345' },
     });
 
@@ -232,7 +204,7 @@ describe('SignUpPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /criar conta/i })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: /continuar/i })).not.toBeDisabled();
     });
   });
 });

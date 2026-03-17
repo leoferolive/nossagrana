@@ -129,16 +129,13 @@ afterEach(() => {
 });
 
 const fillSignUpForm = () => {
-  fireEvent.change(screen.getByLabelText(/nome completo/i), {
+  fireEvent.change(screen.getByLabelText(/nome/i), {
     target: { value: 'João Silva' },
   });
   fireEvent.change(screen.getByLabelText(/^e-mail$/i), {
     target: { value: 'joao@example.com' },
   });
   fireEvent.change(screen.getByLabelText(/^senha$/i), {
-    target: { value: 'senha12345' },
-  });
-  fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
     target: { value: 'senha12345' },
   });
 };
@@ -164,7 +161,8 @@ describe('App', () => {
     it('renders login screen', () => {
       render(<App />);
 
-      expect(screen.getByRole('heading', { name: /entrar no nossagrana/i })).toBeInTheDocument();
+      expect(screen.getByText('NossaGrana')).toBeInTheDocument();
+      expect(screen.getByText(/finanças da família/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
@@ -177,15 +175,12 @@ describe('App', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
 
-      expect(
-        screen.getByRole('heading', { name: /criar conta no nossagrana/i }),
-      ).toBeInTheDocument();
-      expect(screen.getByText(/junte sua fam/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /criar conta/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/nome/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^e-mail$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/confirmar senha/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /criar conta/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /continuar/i })).toBeInTheDocument();
     });
 
     it('opens onboarding flow after sign up submit', async () => {
@@ -193,14 +188,16 @@ describe('App', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
       fillSignUpForm();
-      fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
 
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /como deseja entrar/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
       );
-      expect(screen.getAllByRole('button', { name: /criar fam/i }).length).toBeGreaterThan(0);
-      expect(screen.getByRole('button', { name: /entrar com convite/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /buscar e solicitar/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /criar família/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /tenho um código de convite/i }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /buscar família/i })).toBeInTheDocument();
     });
 
     it('opens family settings screen from onboarding via criar familia', async () => {
@@ -208,20 +205,20 @@ describe('App', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
       fillSignUpForm();
-      fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /como deseja entrar/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
       );
 
+      fireEvent.click(screen.getByRole('button', { name: /criar família/i }));
       fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Familia Test' },
       });
       fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
 
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /configura.+da fam/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
-      expect(screen.getByText(/gest.+de membros/i)).toBeInTheDocument();
     });
 
     it('lists members and allows removing a member in family settings', async () => {
@@ -229,18 +226,19 @@ describe('App', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
       fillSignUpForm();
-      fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /como deseja entrar/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
       );
 
+      fireEvent.click(screen.getByRole('button', { name: /criar família/i }));
       fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Familia Test' },
       });
       fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
 
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /configura.+da fam/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
 
       await waitFor(() => {
@@ -260,18 +258,19 @@ describe('App', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
       fillSignUpForm();
-      fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /como deseja entrar/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
       );
 
+      fireEvent.click(screen.getByRole('button', { name: /criar família/i }));
       fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Familia Test' },
       });
       fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
 
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /configura.+da fam/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
 
       await waitFor(() => {
@@ -298,28 +297,29 @@ describe('App', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
       fillSignUpForm();
-      fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /como deseja entrar/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
       );
 
+      fireEvent.click(screen.getByRole('button', { name: /criar família/i }));
       fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Familia Test' },
       });
       fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
 
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /configura.+da fam/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
 
       fireEvent.click(screen.getByRole('button', { name: /gerar c.digo de convite/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/c.digo: FAM-LEO-2026/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /copiar c.digo/i })).toBeInTheDocument();
+        expect(screen.getByText(/FAM-LEO-2026/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /copiar/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: /copiar c.digo/i }));
+      fireEvent.click(screen.getByRole('button', { name: /copiar/i }));
 
       expect(writeText).toHaveBeenCalledWith('FAM-LEO-2026');
       expect(await screen.findByText(/c.digo copiado/i)).toBeInTheDocument();
@@ -333,7 +333,7 @@ describe('App', () => {
 
       // Deve ir para onboarding quando não há familiaId
       await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /como deseja entrar/i })).toBeInTheDocument(),
+        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
       );
     });
   });
@@ -369,11 +369,11 @@ describe('App', () => {
       await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
       fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
       const main = screen.getByRole('main');
-      await waitFor(() => within(main).getByRole('button', { name: /cart.es e pagamentos/i }));
-      fireEvent.click(within(main).getByRole('button', { name: /cart.es e pagamentos/i }));
-      expect(screen.getAllByRole('heading', { name: /cart.es e m.todos/i }).length).toBeGreaterThan(
-        0,
-      );
+      await waitFor(() => within(main).getByRole('button', { name: /cart.es \/ pagamentos/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /cart.es \/ pagamentos/i }));
+      expect(
+        screen.getAllByRole('heading', { name: /cart.es e pagamentos/i }).length,
+      ).toBeGreaterThan(0);
     });
 
     it('navega para OrcamentoPage ao clicar em Orçamento', async () => {
@@ -381,8 +381,8 @@ describe('App', () => {
       await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
       fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
       const main = screen.getByRole('main');
-      await waitFor(() => within(main).getByRole('button', { name: /^orçamento$/i }));
-      fireEvent.click(within(main).getByRole('button', { name: /^orçamento$/i }));
+      await waitFor(() => within(main).getByRole('button', { name: /orçamento mensal/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /orçamento mensal/i }));
       await waitFor(() =>
         expect(screen.getAllByRole('heading', { name: /orçamento/i }).length).toBeGreaterThan(0),
       );
@@ -402,8 +402,8 @@ describe('App', () => {
       await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
       fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
       const main = screen.getByRole('main');
-      await waitFor(() => within(main).getByRole('button', { name: /^histórico$/i }));
-      fireEvent.click(within(main).getByRole('button', { name: /^histórico$/i }));
+      await waitFor(() => within(main).getByRole('button', { name: /histórico de meses/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /histórico de meses/i }));
       expect(screen.getAllByRole('heading', { name: /histórico/i }).length).toBeGreaterThan(0);
     });
 
@@ -418,7 +418,7 @@ describe('App', () => {
       render(<App />);
       await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
       fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
-      fireEvent.click(screen.getByRole('button', { name: /perfil e conta/i }));
+      fireEvent.click(screen.getByRole('button', { name: /perfil \/ conta/i }));
       await waitFor(() =>
         expect(screen.getAllByRole('heading', { name: /perfil/i }).length).toBeGreaterThan(0),
       );

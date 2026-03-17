@@ -44,7 +44,7 @@ export const ConfiguracoesPage = ({
     ...(onGoToPerfil
       ? [
           {
-            label: 'Perfil e Conta',
+            label: 'Perfil / Conta',
             description: 'Edite seu nome e senha',
             icon: IconPerfil,
             onClick: onGoToPerfil,
@@ -58,13 +58,13 @@ export const ConfiguracoesPage = ({
       onClick: onGoToCategorias,
     },
     {
-      label: 'Cartões e Pagamentos',
+      label: 'Cartões / Pagamentos',
       description: 'Métodos de pagamento cadastrados',
       icon: IconCartao,
       onClick: onGoToMetodosPagamento,
     },
     {
-      label: 'Orçamento',
+      label: 'Orçamento Mensal',
       description: 'Limites de gasto por categoria',
       icon: IconOrcamento,
       onClick: onGoToOrcamento,
@@ -76,7 +76,7 @@ export const ConfiguracoesPage = ({
       onClick: onGoToFamilia,
     },
     {
-      label: 'Histórico',
+      label: 'Histórico de Meses',
       description: 'Meses fechados e snapshots',
       icon: IconHistorico,
       onClick: onGoToHistorico,

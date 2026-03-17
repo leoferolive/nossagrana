@@ -153,11 +153,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install semgrep
+        run: pip3 install semgrep --break-system-packages
+
       - name: Semgrep scan
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/owasp-top-ten
-            p/javascript
-            p/typescript
-            p/secrets
+        run: |
+          semgrep scan \
+            --config p/owasp-top-ten \
+            --config p/javascript \
+            --config p/typescript \
+            --config p/secrets \
+            --error

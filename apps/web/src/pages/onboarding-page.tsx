@@ -5,7 +5,7 @@ import { familiaService } from '@/services/auth.service';
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
 
-type OnboardingMode = 'create' | 'invite' | 'request';
+type OnboardingMode = 'create' | 'invite' | 'request' | null;
 
 interface FamiliaOption {
   id: string;
@@ -22,7 +22,7 @@ const submitButtonClass =
 
 export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: OnboardingPageProps) => {
   const { updateFamiliaIdAtiva } = useAuth();
-  const [mode, setMode] = useState<OnboardingMode>('create');
+  const [mode, setMode] = useState<OnboardingMode>(null);
 
   const [nome, setNome] = useState('');
   const [codigoConvite, setCodigoConvite] = useState('');
@@ -92,7 +92,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
     }
   };
 
-  const handleModeChange = (newMode: OnboardingMode) => {
+  const handleModeChange = (newMode: OnboardingMode | null) => {
     setMode(newMode);
     setErro(null);
     setSolicitacaoEnviada(false);
@@ -101,45 +101,22 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
 
   return (
     <AuthShell
-      title="Como deseja entrar na sua família?"
-      subtitle="Escolha uma opção para concluir seu onboarding."
+      title="Entrar numa Família"
+      subtitle="Crie uma nova família ou entre com um código de convite."
+      showBrand={false}
       footer={
         <>
           Já tem família ativa?{' '}
           <button
             type="button"
             onClick={onOpenLogin}
-            className="font-semibold text-info transition hover:underline"
+            className="font-semibold text-success transition hover:underline"
           >
             Ir para login
           </button>
         </>
       }
     >
-      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <button
-          type="button"
-          onClick={() => handleModeChange('create')}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-info hover:text-info"
-        >
-          Criar família
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange('invite')}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-info hover:text-info"
-        >
-          Entrar com convite
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange('request')}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-info hover:text-info"
-        >
-          Buscar e solicitar
-        </button>
-      </div>
-
       {erro && (
         <div role="alert" className="mb-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
           {erro}
@@ -150,6 +127,49 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
         <div role="alert" className="mb-4 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
           Solicitação enviada com sucesso! Aguarde aprovação do administrador.
         </div>
+      )}
+
+      {mode === null && (
+        <div className="flex flex-col gap-3" role="group" aria-label="Opções de família">
+          <button
+            type="button"
+            onClick={() => handleModeChange('create')}
+            className="cursor-pointer rounded-xl border border-border bg-panel p-4 text-left transition hover:border-success/50"
+          >
+            <div className="text-sm font-bold text-text">Criar Família</div>
+            <div className="mt-1 text-xs text-text-muted">
+              Comece uma nova família e convide membros
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange('invite')}
+            className="cursor-pointer rounded-xl border border-border bg-panel p-4 text-left transition hover:border-success/50"
+          >
+            <div className="text-sm font-bold text-text">Tenho um código de convite</div>
+            <div className="mt-1 text-xs text-text-muted">Cole o código ou link que recebeu</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange('request')}
+            className="cursor-pointer rounded-xl border border-border bg-panel p-4 text-left transition hover:border-success/50"
+          >
+            <div className="text-sm font-bold text-text">Buscar Família</div>
+            <div className="mt-1 text-xs text-text-muted">
+              Encontre e solicite entrada numa família
+            </div>
+          </button>
+        </div>
+      )}
+
+      {mode !== null && (
+        <button
+          type="button"
+          onClick={() => handleModeChange(null)}
+          className="mb-4 text-sm font-medium text-success transition hover:underline"
+        >
+          ← Voltar
+        </button>
       )}
 
       {mode === 'create' && (
@@ -232,7 +252,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
                       void handleSolicitarEntrada(familia.id);
                     }}
                     disabled={carregando}
-                    className="rounded-lg border border-border bg-panel px-3 py-1 text-xs font-semibold text-info transition hover:border-info disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-lg border border-border bg-panel px-3 py-1 text-xs font-semibold text-success transition hover:border-success disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Solicitar entrada
                   </button>

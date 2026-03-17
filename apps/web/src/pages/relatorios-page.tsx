@@ -1,18 +1,8 @@
-import {
-  ArcElement,
-  CategoryScale,
-  Chart as ChartJS,
-  Filler,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Tooltip,
-} from 'chart.js';
 import { useEffect, useState } from 'react';
-import { Doughnut, Line } from 'react-chartjs-2';
 
 import { ErrorBanner } from '../components/error-banner';
+import { MiniChart } from '../components/charts/mini-chart';
+import { PieChart } from '../components/charts/pie-chart';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 
 import type {
@@ -21,17 +11,6 @@ import type {
   RelatorioPorUsuarioItem,
 } from '@nossagrana/types';
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-);
-
 type Tab = 'distribuicao' | 'por-membro' | 'tendencias';
 
 interface RelatoriosPageProps {
@@ -39,12 +18,10 @@ interface RelatoriosPageProps {
   onBack: () => void;
 }
 
-const CHART_COLORS = ['#4ade80', '#60a5fa', '#f87171', '#facc15', '#a78bfa', '#fb923c'];
-
 const formatBRL = (valor: string) =>
   parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
+export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPageProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('distribuicao');
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -77,46 +54,15 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
     );
   }
 
-  const donutData = {
-    labels: distribuicao.map((d) => d.categoriaNome),
-    datasets: [
-      {
-        data: distribuicao.map((d) => parseFloat(d.total)),
-        backgroundColor: CHART_COLORS,
-        borderWidth: 0,
-      },
-    ],
-  };
+  const pieData = distribuicao.map((d) => ({
+    label: d.categoriaNome,
+    value: parseFloat(d.total),
+  }));
 
-  const lineData = {
-    labels: tendencias.map((m) => m.mesReferencia),
-    datasets: [
-      {
-        label: 'Receitas',
-        data: tendencias.map((m) => parseFloat(m.totalReceitas)),
-        borderColor: '#4ade80',
-        backgroundColor: 'rgba(74, 222, 128, 0.1)',
-        fill: true,
-        tension: 0.3,
-      },
-      {
-        label: 'Despesas',
-        data: tendencias.map((m) => parseFloat(m.totalDespesas)),
-        borderColor: '#f87171',
-        backgroundColor: 'rgba(248, 113, 113, 0.1)',
-        fill: true,
-        tension: 0.3,
-      },
-      {
-        label: 'Saldo',
-        data: tendencias.map((m) => parseFloat(m.saldo)),
-        borderColor: '#60a5fa',
-        backgroundColor: 'rgba(96, 165, 250, 0.1)',
-        fill: true,
-        tension: 0.3,
-      },
-    ],
-  };
+  const receitas = tendencias.map((m) => parseFloat(m.totalReceitas));
+  const despesas = tendencias.map((m) => parseFloat(m.totalDespesas));
+  const saldos = tendencias.map((m) => parseFloat(m.saldo));
+  const tendLabels = tendencias.map((m) => m.mesReferencia.slice(5));
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'distribuicao', label: 'Distribuição' },
@@ -127,16 +73,9 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
   return (
     <div className="min-h-screen bg-bg p-4">
       <ErrorBanner error={erro} />
+
       <div className="mb-6 flex items-center gap-4">
-        <button
-          type="button"
-          aria-label="Voltar"
-          onClick={onBack}
-          className="rounded-lg bg-surface px-3 py-2 text-sm text-text-muted hover:bg-surface-hover"
-        >
-          ← Voltar
-        </button>
-        <h1 className="text-2xl font-bold text-text">Relatórios</h1>
+        <h1 className="text-2xl font-bold text-text md:hidden">Relatórios</h1>
       </div>
 
       {/* Tabs */}
@@ -150,7 +89,7 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'border-b-2 border-primary text-primary'
+                ? 'border-b-2 border-success text-success'
                 : 'text-text-muted hover:text-text'
             }`}
           >
@@ -159,13 +98,13 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
         ))}
       </div>
 
-      {/* Distribuição Tab */}
+      {/* Distribuição */}
       {activeTab === 'distribuicao' && (
-        <div>
-          {distribuicao.length > 0 ? (
+        <div className="space-y-4">
+          {pieData.length > 0 ? (
             <>
-              <div className="mx-auto mb-6 max-w-xs">
-                <Doughnut data={donutData} />
+              <div className="rounded-xl border border-border bg-panel p-4">
+                <PieChart data={pieData} size={120} />
               </div>
               <ul className="space-y-2">
                 {distribuicao.map((item) => (
@@ -188,34 +127,57 @@ export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
         </div>
       )}
 
-      {/* Por Membro Tab */}
+      {/* Por Membro */}
       {activeTab === 'por-membro' && (
         <div>
           {porUsuario.length > 0 ? (
-            <ul className="space-y-2">
+            <div className="grid gap-3 md:grid-cols-2">
               {porUsuario.map((item) => (
-                <li
-                  key={item.usuarioId}
-                  className="flex items-center justify-between rounded-lg bg-surface p-3"
-                >
-                  <span className="text-text">{item.usuarioNome}</span>
-                  <div className="flex gap-4 text-sm">
-                    <span className="text-text-muted">{item.percentual}%</span>
-                    <span className="font-medium text-text">{formatBRL(item.total)}</span>
+                <div key={item.usuarioId} className="rounded-xl border border-border bg-panel p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-success/20 text-sm font-bold text-success">
+                      {item.usuarioNome.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-text">{item.usuarioNome}</p>
+                      <p className="text-xs text-text-muted">{item.percentual}% do total</p>
+                    </div>
+                    <p className="ml-auto font-bold text-danger tabular-nums">
+                      {formatBRL(item.total)}
+                    </p>
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="text-center text-text-muted">Nenhum dado por membro disponível.</p>
           )}
         </div>
       )}
 
-      {/* Tendências Tab */}
+      {/* Tendências */}
       {activeTab === 'tendencias' && (
-        <div>
-          <Line data={lineData} />
+        <div className="space-y-4">
+          {tendencias.length >= 2 ? (
+            <>
+              <div className="rounded-xl border border-border bg-panel p-4">
+                <p className="mb-2 text-xs font-semibold text-success">Receitas</p>
+                <MiniChart data={receitas} height={56} color="#22C55E" labels={tendLabels} />
+              </div>
+              <div className="rounded-xl border border-border bg-panel p-4">
+                <p className="mb-2 text-xs font-semibold text-danger">Despesas</p>
+                <MiniChart data={despesas} height={56} color="#EF4444" labels={tendLabels} />
+              </div>
+              <div className="rounded-xl border border-border bg-panel p-4">
+                <p className="mb-2 text-xs font-semibold text-primary">Saldo</p>
+                <MiniChart data={saldos} height={56} color="#3B82F6" labels={tendLabels} />
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-text-muted">
+              Registre transações em pelo menos 2 meses para ver tendências.
+            </p>
+          )}
         </div>
       )}
     </div>

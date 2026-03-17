@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { AppShell } from '@/components/app-shell';
 import { TransacaoModal } from '@/components/transacao-modal';
 import { useAuth } from '@/contexts/use-auth';
 import { AjudaPage } from '@/pages/ajuda-page';
@@ -50,12 +51,13 @@ export const App = () => {
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
 
+  // Telas fora do AppShell (autenticação e onboarding)
   if (
-    !isAuthenticated &&
-    screen !== 'login' &&
-    screen !== 'sign-up' &&
-    screen !== 'onboarding' &&
-    screen !== 'family-settings'
+    screen === 'login' ||
+    (!isAuthenticated &&
+      screen !== 'sign-up' &&
+      screen !== 'onboarding' &&
+      screen !== 'family-settings')
   ) {
     return (
       <LoginPage
@@ -83,7 +85,7 @@ export const App = () => {
     );
   }
 
-  if (screen === 'family-settings') {
+  if (screen === 'family-settings' && !familiaId) {
     return (
       <FamilySettingsPage
         onBackToOnboarding={() => setScreen('onboarding')}
@@ -93,127 +95,122 @@ export const App = () => {
     );
   }
 
-  if (screen === 'dashboard') {
-    return (
-      <>
-        <DashboardPage
-          familiaId={familiaId}
-          onNovaTransacao={() => setNovaTransacaoOpen(true)}
-          onGoToExtrato={() => setScreen('extrato')}
-          onGoToCategorias={() => setScreen('categorias')}
-          onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
-          onGoToOrcamento={() => setScreen('orcamento')}
-          onGoToRelatorios={() => setScreen('relatorios')}
-          onGoToHistorico={() => setScreen('historico')}
-          onGoToAjuda={() => setScreen('ajuda')}
-          onGoToConfiguracoes={() => setScreen('configuracoes')}
-        />
-        <TransacaoModal
-          open={novaTransacaoOpen}
-          familiaId={familiaId}
-          onClose={() => setNovaTransacaoOpen(false)}
-          onSubmit={async (payload) => {
-            if (!familiaId) return;
-            await transacaoService.registrar(payload, familiaId);
-            setNovaTransacaoOpen(false);
-          }}
-        />
-      </>
-    );
-  }
+  const handleNovaTransacao = () => setNovaTransacaoOpen(true);
 
-  if (screen === 'extrato') {
-    return (
-      <>
+  const renderContent = () => {
+    if (screen === 'dashboard') {
+      return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} />;
+    }
+
+    if (screen === 'extrato') {
+      return (
         <ExtratoPage
           familiaId={familiaId}
           onBack={() => setScreen('dashboard')}
-          onNovaTransacao={() => setNovaTransacaoOpen(true)}
+          onNovaTransacao={handleNovaTransacao}
         />
-        <TransacaoModal
-          open={novaTransacaoOpen}
+      );
+    }
+
+    if (screen === 'categorias') {
+      return <CategoriasPage familiaId={familiaId} onBack={() => setScreen('configuracoes')} />;
+    }
+
+    if (screen === 'metodos-pagamento') {
+      return (
+        <MetodosPagamentoPage
           familiaId={familiaId}
-          onClose={() => setNovaTransacaoOpen(false)}
-          onSubmit={async (payload) => {
-            if (!familiaId) return;
-            await transacaoService.registrar(payload, familiaId);
-            setNovaTransacaoOpen(false);
+          onBack={() => setScreen('configuracoes')}
+          onVerFatura={(id, nome, mes) => {
+            setFaturaMetodoId(id);
+            setFaturaMetodoNome(nome);
+            setFaturaMes(mes);
+            setScreen('fatura');
           }}
         />
-      </>
-    );
-  }
+      );
+    }
 
-  if (screen === 'categorias') {
-    return <CategoriasPage familiaId={familiaId} onBack={() => setScreen('dashboard')} />;
-  }
+    if (screen === 'orcamento') {
+      return <OrcamentoPage familiaId={familiaId} onBack={() => setScreen('configuracoes')} />;
+    }
 
-  if (screen === 'metodos-pagamento') {
-    return (
-      <MetodosPagamentoPage
-        familiaId={familiaId}
-        onBack={() => setScreen('dashboard')}
-        onVerFatura={(id, nome, mes) => {
-          setFaturaMetodoId(id);
-          setFaturaMetodoNome(nome);
-          setFaturaMes(mes);
-          setScreen('fatura');
-        }}
-      />
-    );
-  }
+    if (screen === 'relatorios') {
+      return <RelatoriosPage familiaId={familiaId} onBack={() => setScreen('dashboard')} />;
+    }
 
-  if (screen === 'orcamento') {
-    return <OrcamentoPage familiaId={familiaId} onBack={() => setScreen('dashboard')} />;
-  }
+    if (screen === 'historico') {
+      return <HistoricoPage familiaId={familiaId} onBack={() => setScreen('configuracoes')} />;
+    }
 
-  if (screen === 'relatorios') {
-    return <RelatoriosPage familiaId={familiaId} onBack={() => setScreen('dashboard')} />;
-  }
+    if (screen === 'ajuda') {
+      return <AjudaPage onBack={() => setScreen('configuracoes')} />;
+    }
 
-  if (screen === 'historico') {
-    return <HistoricoPage familiaId={familiaId} onBack={() => setScreen('dashboard')} />;
-  }
+    if (screen === 'configuracoes') {
+      return (
+        <ConfiguracoesPage
+          onBack={() => setScreen('dashboard')}
+          onGoToCategorias={() => setScreen('categorias')}
+          onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
+          onGoToOrcamento={() => setScreen('orcamento')}
+          onGoToFamilia={() => setScreen('family-settings')}
+          onGoToHistorico={() => setScreen('historico')}
+          onGoToAjuda={() => setScreen('ajuda')}
+          onGoToPerfil={() => setScreen('perfil')}
+        />
+      );
+    }
 
-  if (screen === 'ajuda') {
-    return <AjudaPage onBack={() => setScreen('configuracoes')} />;
-  }
+    if (screen === 'perfil') {
+      return <PerfilPage onBack={() => setScreen('configuracoes')} />;
+    }
 
-  if (screen === 'configuracoes') {
-    return (
-      <ConfiguracoesPage
-        onBack={() => setScreen('dashboard')}
-        onGoToCategorias={() => setScreen('categorias')}
-        onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
-        onGoToOrcamento={() => setScreen('orcamento')}
-        onGoToFamilia={() => setScreen('family-settings')}
-        onGoToHistorico={() => setScreen('historico')}
-        onGoToAjuda={() => setScreen('ajuda')}
-        onGoToPerfil={() => setScreen('perfil')}
-      />
-    );
-  }
+    if (screen === 'family-settings') {
+      return (
+        <FamilySettingsPage
+          onBackToOnboarding={() => setScreen('configuracoes')}
+          onGoToDashboard={() => setScreen('dashboard')}
+          onBack={() => setScreen('configuracoes')}
+          familiaId={familiaId}
+        />
+      );
+    }
 
-  if (screen === 'perfil') {
-    return <PerfilPage onBack={() => setScreen('configuracoes')} />;
-  }
+    if (screen === 'fatura' && faturaMetodoId) {
+      return (
+        <FaturaPage
+          familiaId={familiaId}
+          metodoPagamentoId={faturaMetodoId}
+          metodoPagamentoNome={faturaMetodoNome}
+          mesReferencia={faturaMes}
+          onBack={() => setScreen('metodos-pagamento')}
+        />
+      );
+    }
 
-  if (screen === 'fatura' && faturaMetodoId) {
-    return (
-      <FaturaPage
-        familiaId={familiaId}
-        metodoPagamentoId={faturaMetodoId}
-        metodoPagamentoNome={faturaMetodoNome}
-        mesReferencia={faturaMes}
-        onBack={() => setScreen('dashboard')}
-      />
-    );
-  }
+    return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} />;
+  };
 
   return (
-    <LoginPage
-      onOpenSignUp={() => setScreen('sign-up')}
-      onLoginSuccess={(hasFamilia) => setScreen(hasFamilia ? 'dashboard' : 'onboarding')}
-    />
+    <>
+      <AppShell
+        currentScreen={screen}
+        onNavigate={(s) => setScreen(s as Screen)}
+        onNovaTransacao={handleNovaTransacao}
+      >
+        {renderContent()}
+      </AppShell>
+      <TransacaoModal
+        open={novaTransacaoOpen}
+        familiaId={familiaId}
+        onClose={() => setNovaTransacaoOpen(false)}
+        onSubmit={async (payload) => {
+          if (!familiaId) return;
+          await transacaoService.registrar(payload, familiaId);
+          setNovaTransacaoOpen(false);
+        }}
+      />
+    </>
   );
 };

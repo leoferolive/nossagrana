@@ -1,11 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('react-chartjs-2', () => ({
-  Doughnut: () => <canvas data-testid="doughnut" />,
-  Line: () => <canvas data-testid="line" />,
-}));
-
 const mockService = vi.hoisted(() => ({
   getRelatorioDistribuicao: vi.fn(),
   getRelatorioPorUsuario: vi.fn(),
@@ -45,15 +40,7 @@ describe('RelatoriosPage', () => {
     );
   });
 
-  it('calls onBack when back button clicked', async () => {
-    const onBack = vi.fn();
-    render(<RelatoriosPage familiaId={familiaId} onBack={onBack} />);
-    await waitFor(() => screen.getByRole('button', { name: /voltar/i }));
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
-  });
-
-  it('shows distribuicao tab by default with donut chart when there is data', async () => {
+  it('shows distribuicao tab by default with category data', async () => {
     mockService.getRelatorioDistribuicao.mockResolvedValue({
       mesReferencia: '2026-03',
       distribuicao: [
@@ -62,8 +49,8 @@ describe('RelatoriosPage', () => {
       ],
     });
     render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => screen.getByText('Alimentação'));
-    expect(screen.getByTestId('doughnut')).toBeInTheDocument();
+    await waitFor(() => screen.getAllByText('Alimentação'));
+    expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0);
   });
 
   it('switches to por-membro tab', async () => {
@@ -84,7 +71,7 @@ describe('RelatoriosPage', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
   });
 
-  it('switches to tendencias tab and shows line chart', async () => {
+  it('switches to tendencias tab and shows charts', async () => {
     mockService.getRelatorioTendencias.mockResolvedValue({
       meses: [
         {
@@ -110,6 +97,7 @@ describe('RelatoriosPage', () => {
     render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
     await waitFor(() => screen.getByRole('tab', { name: /tendências/i }));
     fireEvent.click(screen.getByRole('tab', { name: /tendências/i }));
-    await waitFor(() => screen.getByTestId('line'));
+    await waitFor(() => screen.getByText(/receitas/i));
+    expect(screen.getByText(/receitas/i)).toBeInTheDocument();
   });
 });

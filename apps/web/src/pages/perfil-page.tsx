@@ -79,7 +79,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
         <h1 className="text-lg font-bold text-text">Perfil</h1>
       </header>
 
-      <main className="flex-1 space-y-6 p-4">
+      <div className="flex-1 space-y-6 p-4">
         {/* Dados pessoais */}
         <section className="rounded-xl border border-border bg-panel p-4">
           <h2 className="mb-4 text-sm font-semibold uppercase text-text-muted">Dados pessoais</h2>
@@ -169,7 +169,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
             <p className="mt-2 text-center text-xs text-success">Senha alterada com sucesso!</p>
           )}
         </section>
-      </main>
+      </div>
     </div>
   );
 };

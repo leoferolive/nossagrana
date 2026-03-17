@@ -70,10 +70,12 @@ describe('MetodosPagamentoPage', () => {
     expect(screen.getByText('Pix pessoal')).toBeInTheDocument();
   });
 
-  it('exibe badge do tipo', () => {
+  it('exibe tipo do método', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
     render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
-    expect(screen.getByText('credito')).toBeInTheDocument();
+    // Crédito mostra info de fechamento/vencimento
+    expect(screen.getByText(/fecha dia 15/i)).toBeInTheDocument();
+    // Pix mostra badge de tipo
     expect(screen.getByText('pix')).toBeInTheDocument();
   });
 
@@ -86,7 +88,8 @@ describe('MetodosPagamentoPage', () => {
   it('abre formulário ao clicar em novo método', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
     render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /novo método/i }));
+    const addButtons = screen.getAllByRole('button', { name: /novo método/i });
+    fireEvent.click(addButtons[0]);
     expect(screen.getByLabelText(/nome/i)).toBeInTheDocument();
   });
 
@@ -135,7 +138,8 @@ describe('MetodosPagamentoPage', () => {
 
     render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /novo método/i }));
+    const addButtons = screen.getAllByRole('button', { name: /novo método/i });
+    fireEvent.click(addButtons[0]);
 
     const inputNome = screen.getByLabelText(/nome/i);
     fireEvent.change(inputNome, { target: { value: 'Cartão Inter' } });

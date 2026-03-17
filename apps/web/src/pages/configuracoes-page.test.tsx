@@ -33,14 +33,14 @@ describe('ConfiguracoesPage', () => {
     expect(screen.getByRole('button', { name: /categorias/i })).toBeInTheDocument();
   });
 
-  it('exibe atalho para Cartões e Pagamentos', () => {
+  it('exibe atalho para Cartões / Pagamentos', () => {
     render(<ConfiguracoesPage {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /cartões/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cartões \/ pagamentos/i })).toBeInTheDocument();
   });
 
-  it('exibe atalho para Orçamento', () => {
+  it('exibe atalho para Orçamento Mensal', () => {
     render(<ConfiguracoesPage {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /orçamento/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /orçamento mensal/i })).toBeInTheDocument();
   });
 
   it('exibe atalho para Família', () => {
@@ -48,21 +48,14 @@ describe('ConfiguracoesPage', () => {
     expect(screen.getByRole('button', { name: /família/i })).toBeInTheDocument();
   });
 
-  it('exibe atalho para Histórico', () => {
+  it('exibe atalho para Histórico de Meses', () => {
     render(<ConfiguracoesPage {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /histórico/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /histórico de meses/i })).toBeInTheDocument();
   });
 
   it('exibe atalho para Ajuda', () => {
     render(<ConfiguracoesPage {...defaultProps} />);
     expect(screen.getByRole('button', { name: /ajuda/i })).toBeInTheDocument();
-  });
-
-  it('chama onBack ao clicar em Voltar', () => {
-    const onBack = vi.fn();
-    render(<ConfiguracoesPage {...defaultProps} onBack={onBack} />);
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
   });
 
   it('chama onGoToCategorias ao clicar em Categorias', () => {
@@ -72,17 +65,17 @@ describe('ConfiguracoesPage', () => {
     expect(onGoToCategorias).toHaveBeenCalled();
   });
 
-  it('chama onGoToMetodosPagamento ao clicar em Cartões', () => {
+  it('chama onGoToMetodosPagamento ao clicar em Cartões / Pagamentos', () => {
     const onGoToMetodosPagamento = vi.fn();
     render(<ConfiguracoesPage {...defaultProps} onGoToMetodosPagamento={onGoToMetodosPagamento} />);
-    fireEvent.click(screen.getByRole('button', { name: /cartões/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cartões \/ pagamentos/i }));
     expect(onGoToMetodosPagamento).toHaveBeenCalled();
   });
 
-  it('chama onGoToOrcamento ao clicar em Orçamento', () => {
+  it('chama onGoToOrcamento ao clicar em Orçamento Mensal', () => {
     const onGoToOrcamento = vi.fn();
     render(<ConfiguracoesPage {...defaultProps} onGoToOrcamento={onGoToOrcamento} />);
-    fireEvent.click(screen.getByRole('button', { name: /orçamento/i }));
+    fireEvent.click(screen.getByRole('button', { name: /orçamento mensal/i }));
     expect(onGoToOrcamento).toHaveBeenCalled();
   });
 
@@ -93,10 +86,10 @@ describe('ConfiguracoesPage', () => {
     expect(onGoToFamilia).toHaveBeenCalled();
   });
 
-  it('chama onGoToHistorico ao clicar em Histórico', () => {
+  it('chama onGoToHistorico ao clicar em Histórico de Meses', () => {
     const onGoToHistorico = vi.fn();
     render(<ConfiguracoesPage {...defaultProps} onGoToHistorico={onGoToHistorico} />);
-    fireEvent.click(screen.getByRole('button', { name: /histórico/i }));
+    fireEvent.click(screen.getByRole('button', { name: /histórico de meses/i }));
     expect(onGoToHistorico).toHaveBeenCalled();
   });
 

@@ -10,7 +10,6 @@ import {
   IconHistorico,
   IconOrcamento,
   IconPerfil,
-  IconVoltar,
 } from '../components/icons';
 
 interface ConfiguracoesPageProps {
@@ -32,7 +31,7 @@ interface MenuItem {
 }
 
 export const ConfiguracoesPage = ({
-  onBack,
+  onBack: _onBack,
   onGoToCategorias,
   onGoToMetodosPagamento,
   onGoToOrcamento,
@@ -45,7 +44,7 @@ export const ConfiguracoesPage = ({
     ...(onGoToPerfil
       ? [
           {
-            label: 'Perfil e Conta',
+            label: 'Perfil / Conta',
             description: 'Edite seu nome e senha',
             icon: IconPerfil,
             onClick: onGoToPerfil,
@@ -59,13 +58,13 @@ export const ConfiguracoesPage = ({
       onClick: onGoToCategorias,
     },
     {
-      label: 'Cartões e Pagamentos',
+      label: 'Cartões / Pagamentos',
       description: 'Métodos de pagamento cadastrados',
       icon: IconCartao,
       onClick: onGoToMetodosPagamento,
     },
     {
-      label: 'Orçamento',
+      label: 'Orçamento Mensal',
       description: 'Limites de gasto por categoria',
       icon: IconOrcamento,
       onClick: onGoToOrcamento,
@@ -77,7 +76,7 @@ export const ConfiguracoesPage = ({
       onClick: onGoToFamilia,
     },
     {
-      label: 'Histórico',
+      label: 'Histórico de Meses',
       description: 'Meses fechados e snapshots',
       icon: IconHistorico,
       onClick: onGoToHistorico,
@@ -98,18 +97,10 @@ export const ConfiguracoesPage = ({
       />
 
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <button
-          type="button"
-          aria-label="Voltar"
-          onClick={onBack}
-          className="text-text-muted transition hover:text-text"
-        >
-          <IconVoltar size={20} />
-        </button>
         <h1 className="text-lg font-bold text-text">Configurações</h1>
       </header>
 
-      <main className="flex-1 p-4">
+      <div className="flex-1 p-4">
         <ul className="flex flex-col gap-2">
           {items.map((item) => {
             const Icon = item.icon;
@@ -132,7 +123,7 @@ export const ConfiguracoesPage = ({
             );
           })}
         </ul>
-      </main>
+      </div>
     </div>
   );
 };

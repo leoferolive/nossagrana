@@ -16,7 +16,6 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [confirmSenha, setConfirmSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
@@ -26,11 +25,6 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
 
     if (senha.length < 8) {
       setErro('A senha deve ter no mínimo 8 caracteres');
-      return;
-    }
-
-    if (senha !== confirmSenha) {
-      setErro('As senhas não coincidem');
       return;
     }
 
@@ -58,21 +52,28 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
 
   return (
     <AuthShell
-      title="Criar conta no NossaGrana"
-      subtitle="Junte sua família e organize tudo em um lugar."
+      title="Criar Conta"
+      showBrand={false}
       footer={
         <>
           Já tem conta?{' '}
           <button
             type="button"
             onClick={onOpenLogin}
-            className="font-semibold text-info transition hover:underline"
+            className="font-semibold text-success transition hover:underline"
           >
             Entrar
           </button>
         </>
       }
     >
+      <button
+        type="button"
+        onClick={onOpenLogin}
+        className="mb-4 text-sm font-medium text-success transition hover:underline"
+      >
+        ← Voltar
+      </button>
       <form
         aria-label="cadastro"
         className="space-y-4"
@@ -83,7 +84,7 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
       >
         <FormField
           id="fullName"
-          label="Nome completo"
+          label="Nome"
           type="text"
           autoComplete="name"
           value={nome}
@@ -105,14 +106,6 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
         />
-        <FormField
-          id="confirmPassword"
-          label="Confirmar senha"
-          type="password"
-          autoComplete="new-password"
-          value={confirmSenha}
-          onChange={(e) => setConfirmSenha(e.target.value)}
-        />
         {erro !== null && (
           <p role="alert" className="text-sm text-error">
             {erro}
@@ -123,7 +116,7 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
           disabled={carregando}
           className="w-full rounded-lg bg-success px-4 py-2.5 font-semibold text-white transition hover:bg-success-strong focus:outline-none focus:ring-2 focus:ring-success/40 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {carregando ? 'Criando conta...' : 'Criar conta'}
+          {carregando ? 'Criando conta...' : 'Continuar'}
         </button>
       </form>
     </AuthShell>

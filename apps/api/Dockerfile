@@ -26,5 +26,8 @@ COPY --from=builder /app/packages/types/package.json ./packages/types/package.js
 COPY --from=builder /app/packages/types/node_modules ./packages/types/node_modules
 COPY --from=builder /app/node_modules ./node_modules
 
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
 EXPOSE 3000
 CMD ["node", "apps/api/dist/server.js"]

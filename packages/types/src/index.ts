@@ -201,6 +201,7 @@ export const familiaListMembersResponseSchema = z.object({
     z.object({
       usuarioId: z.string().uuid(),
       familiaId: z.string().uuid(),
+      nome: z.string(),
       role: z.enum(['admin', 'membro']),
       dataEntrada: z.string(),
     }),

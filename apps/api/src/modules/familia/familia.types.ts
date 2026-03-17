@@ -56,6 +56,7 @@ export interface ReviewedFamiliaJoinRequest {
 export interface FamiliaMember {
   usuarioId: string;
   familiaId: string;
+  nome: string;
   role: 'admin' | 'membro';
   dataEntrada: Date;
 }

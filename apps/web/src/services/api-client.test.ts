@@ -91,7 +91,7 @@ describe('ApiClient', () => {
       },
     });
 
-    await expect(apiClient.request('/dashboard')).rejects.toThrow('Nao autorizado');
+    await expect(apiClient.request('/dashboard')).rejects.toThrow('Não autorizado');
     expect(tokenState.accessToken).toBeNull();
     expect(tokenState.refreshToken).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);

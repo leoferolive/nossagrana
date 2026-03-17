@@ -7,11 +7,11 @@ import { authService } from '@/services/auth.service';
 
 interface LoginPageProps {
   onOpenSignUp: () => void;
-  onLoginSuccess?: () => void;
+  onLoginSuccess?: (hasFamilia: boolean) => void;
 }
 
 export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
-  const { login } = useAuth();
+  const { login, familiaIdAtiva } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -24,12 +24,14 @@ export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
 
     try {
       const response = await authService.login({ email, senha });
+      // Preserve existing familiaIdAtiva from previous session
+      const familiaIdPreservada = familiaIdAtiva ?? '';
       login({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
-        familiaIdAtiva: '',
+        familiaIdAtiva: familiaIdPreservada,
       });
-      onLoginSuccess?.();
+      onLoginSuccess?.(!!familiaIdPreservada);
     } catch {
       setErro('E-mail ou senha incorretos. Tente novamente.');
     } finally {

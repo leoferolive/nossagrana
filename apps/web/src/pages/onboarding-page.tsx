@@ -101,11 +101,11 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
 
   return (
     <AuthShell
-      title="Como deseja entrar na sua familia?"
-      subtitle="Escolha uma opcao para concluir seu onboarding."
+      title="Como deseja entrar na sua família?"
+      subtitle="Escolha uma opção para concluir seu onboarding."
       footer={
         <>
-          Ja tem familia ativa?{' '}
+          Já tem família ativa?{' '}
           <button
             type="button"
             onClick={onOpenLogin}
@@ -122,7 +122,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
           onClick={() => handleModeChange('create')}
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-info hover:text-info"
         >
-          Criar familia
+          Criar família
         </button>
         <button
           type="button"
@@ -162,14 +162,14 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
         >
           <FormField
             id="familyName"
-            label="Nome da familia"
+            label="Nome da família"
             type="text"
             autoComplete="off"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
           />
           <button type="submit" disabled={carregando} className={submitButtonClass}>
-            {carregando ? 'Criando...' : 'Criar familia'}
+            {carregando ? 'Criando...' : 'Criar família'}
           </button>
         </form>
       )}
@@ -184,7 +184,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
         >
           <FormField
             id="inviteCode"
-            label="Codigo de convite"
+            label="Código de convite"
             type="text"
             autoComplete="off"
             value={codigoConvite}
@@ -207,7 +207,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
           >
             <FormField
               id="searchFamily"
-              label="Nome da familia"
+              label="Nome da família"
               type="text"
               autoComplete="off"
               value={nomeBusca}

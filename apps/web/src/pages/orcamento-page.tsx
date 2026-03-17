@@ -68,13 +68,17 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
   };
 
   const handleSalvar = async (categoriaId: string) => {
-    await coreFinanceiroService.setOrcamento(familiaId, categoriaId, {
-      valorLimite: novoLimite,
-      vigenciaInicio: getCurrentMes(),
-    });
-    setEditingId(null);
-    setNovoLimite('');
-    await loadOrcamentos();
+    try {
+      await coreFinanceiroService.setOrcamento(familiaId, categoriaId, {
+        valorLimite: novoLimite,
+        vigenciaInicio: getCurrentMes(),
+      });
+      setEditingId(null);
+      setNovoLimite('');
+      await loadOrcamentos();
+    } catch {
+      setErro('Erro ao salvar orçamento. Tente novamente.');
+    }
   };
 
   if (loading) {
@@ -147,7 +151,9 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                     <input
                       id={`limite-${item.categoriaId}`}
                       aria-label="Novo limite"
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
+                      pattern="^\d+(\.\d{1,2})?$"
                       value={novoLimite}
                       onChange={(e) => setNovoLimite(e.target.value)}
                       className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"

@@ -34,12 +34,14 @@ const MEMBROS = [
   {
     usuarioId: 'u1',
     familiaId: 'f1',
+    nome: 'u1',
     role: 'admin' as const,
     dataEntrada: '2026-01-01',
   },
   {
     usuarioId: 'u2',
     familiaId: 'f1',
+    nome: 'u2',
     role: 'membro' as const,
     dataEntrada: '2026-01-02',
   },
@@ -101,7 +103,7 @@ describe('FamilySettingsPage', () => {
 
     render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
 
-    fireEvent.click(screen.getByRole('button', { name: /gerar codigo de convite/i }));
+    fireEvent.click(screen.getByRole('button', { name: /gerar c.digo de convite/i }));
 
     await waitFor(() => {
       expect(mockGerarConvite).toHaveBeenCalledWith('f1');

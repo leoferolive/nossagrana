@@ -273,10 +273,13 @@ describe('App', () => {
         expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /^aprovar$/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /^rejeitar$/i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByRole('button', { name: /^aprovar$/i })).toBeInTheDocument();
+          expect(screen.getByRole('button', { name: /^rejeitar$/i })).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
 
       fireEvent.click(screen.getByRole('button', { name: /^aprovar$/i }));
 

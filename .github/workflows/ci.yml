@@ -154,7 +154,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install semgrep
-        run: pip3 install semgrep --break-system-packages
+        run: python3 -m pip install semgrep --break-system-packages
 
       - name: Semgrep scan
         run: |

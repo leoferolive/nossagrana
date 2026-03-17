@@ -112,17 +112,6 @@ vi.mock('./stores/websocket.store', () => ({
 import { useAuth } from './contexts/use-auth';
 import { App } from './App';
 
-const unauthenticatedAuth = {
-  isAuthenticated: false as const,
-  accessToken: null,
-  refreshToken: null,
-  familiaIdAtiva: null,
-  login: vi.fn(),
-  logout: vi.fn(),
-  setAccessToken: vi.fn(),
-  updateFamiliaIdAtiva: vi.fn(),
-};
-
 afterEach(() => {
   cleanup();
   vi.mocked(useAuth).mockImplementation(() => ({

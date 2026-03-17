@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
         run: pnpm build
 
   tests-and-coverage:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     needs: quality
     steps:
       - name: Checkout
@@ -111,7 +111,7 @@ jobs:
         run: pnpm coverage:changed-check
 
   audit:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     needs: quality
     steps:
       - name: Checkout
@@ -133,7 +133,7 @@ jobs:
         run: pnpm security:audit
 
   gitleaks:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     needs: quality
     steps:
       - name: Checkout
@@ -147,7 +147,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   semgrep:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     needs: quality
     steps:
       - name: Checkout

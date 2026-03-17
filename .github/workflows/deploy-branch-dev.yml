@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   create-rc:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     permissions:
       contents: write
     outputs:
@@ -97,7 +97,7 @@ jobs:
 
   cleanup-images:
     needs: deploy
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     permissions:
       packages: write
     steps:
@@ -124,7 +124,7 @@ jobs:
   summary:
     needs: [create-rc, deploy, cleanup-images]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Resumo do workflow
         run: |

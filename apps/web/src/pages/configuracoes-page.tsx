@@ -10,7 +10,6 @@ import {
   IconHistorico,
   IconOrcamento,
   IconPerfil,
-  IconVoltar,
 } from '../components/icons';
 
 interface ConfiguracoesPageProps {
@@ -98,18 +97,10 @@ export const ConfiguracoesPage = ({
       />
 
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <button
-          type="button"
-          aria-label="Voltar"
-          onClick={onBack}
-          className="text-text-muted transition hover:text-text"
-        >
-          <IconVoltar size={20} />
-        </button>
         <h1 className="text-lg font-bold text-text">Configurações</h1>
       </header>
 
-      <main className="flex-1 p-4">
+      <div className="flex-1 p-4">
         <ul className="flex flex-col gap-2">
           {items.map((item) => {
             const Icon = item.icon;
@@ -132,7 +123,7 @@ export const ConfiguracoesPage = ({
             );
           })}
         </ul>
-      </main>
+      </div>
     </div>
   );
 };

@@ -155,7 +155,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
       )}
 
       {/* Lista */}
-      <main className="flex-1 p-4">
+      <div className="flex-1 p-4">
         {carregando && <p className="text-center text-sm text-text-muted">Carregando...</p>}
 
         {!carregando && categorias.length === 0 && (
@@ -203,7 +203,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
             </li>
           ))}
         </ul>
-      </main>
+      </div>
     </div>
   );
 };

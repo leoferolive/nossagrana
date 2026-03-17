@@ -121,7 +121,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
       </header>
 
       <ErrorBanner error={erro} />
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <div className="flex flex-1 flex-col gap-4 p-4">
         {orcamentos.length === 0 ? (
           <p className="text-sm text-text-muted">Nenhum orçamento configurado.</p>
         ) : (
@@ -187,7 +187,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };

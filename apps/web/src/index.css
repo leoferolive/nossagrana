@@ -6,7 +6,10 @@
   font-family: 'Manrope', 'Segoe UI', sans-serif;
   --color-bg: 11 13 17;
   --color-panel: 22 24 31;
+  --color-sidebar: 17 19 24;
   --color-surface: 28 31 40;
+  --color-surface-hover: 34 37 48;
+  --color-card-alt: 28 31 40;
   --color-border: 39 42 53;
   --color-text: 228 228 234;
   --color-text-muted: 139 141 154;
@@ -16,6 +19,7 @@
   --color-danger: 239 68 68;
   --color-warning: 245 158 11;
   --color-info: 59 130 246;
+  --color-primary: 59 130 246;
 }
 
 body {

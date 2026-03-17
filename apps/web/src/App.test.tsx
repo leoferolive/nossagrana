@@ -109,6 +109,8 @@ vi.mock('./stores/websocket.store', () => ({
   })),
 }));
 
+import { within } from '@testing-library/react';
+
 import { useAuth } from './contexts/use-auth';
 import { App } from './App';
 
@@ -354,22 +356,33 @@ describe('App', () => {
 
     it('navega para CategoriasPage ao clicar em Categorias', async () => {
       render(<App />);
-      await waitFor(() => screen.getByRole('button', { name: /ver categorias/i }));
-      fireEvent.click(screen.getByRole('button', { name: /ver categorias/i }));
-      expect(screen.getByRole('heading', { name: /categorias/i })).toBeInTheDocument();
+      await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /categorias/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /categorias/i }));
+      expect(screen.getAllByRole('heading', { name: /categorias/i }).length).toBeGreaterThan(0);
     });
 
     it('navega para MetodosPagamentoPage ao clicar em Cartões', async () => {
       render(<App />);
-      await waitFor(() => screen.getByRole('button', { name: /ver métodos de pagamento/i }));
-      fireEvent.click(screen.getByRole('button', { name: /ver métodos de pagamento/i }));
-      expect(screen.getByRole('heading', { name: /cart.es e m.todos/i })).toBeInTheDocument();
+      await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /cart.es e pagamentos/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /cart.es e pagamentos/i }));
+      expect(screen.getAllByRole('heading', { name: /cart.es e m.todos/i }).length).toBeGreaterThan(
+        0,
+      );
     });
 
     it('navega para OrcamentoPage ao clicar em Orçamento', async () => {
       render(<App />);
-      await waitFor(() => screen.getByRole('button', { name: /ver orçamentos/i }));
-      fireEvent.click(screen.getByRole('button', { name: /ver orçamentos/i }));
+      await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /^orçamento$/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /^orçamento$/i }));
       await waitFor(() =>
         expect(screen.getAllByRole('heading', { name: /orçamento/i }).length).toBeGreaterThan(0),
       );
@@ -386,8 +399,11 @@ describe('App', () => {
 
     it('navega para HistoricoPage ao clicar em Ver histórico', async () => {
       render(<App />);
-      await waitFor(() => screen.getByRole('button', { name: /ver histórico/i }));
-      fireEvent.click(screen.getByRole('button', { name: /ver histórico/i }));
+      await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /^histórico$/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /^histórico$/i }));
       expect(screen.getAllByRole('heading', { name: /histórico/i }).length).toBeGreaterThan(0);
     });
 
@@ -412,7 +428,9 @@ describe('App', () => {
       render(<App />);
       await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
       fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
-      fireEvent.click(screen.getByRole('button', { name: /ajuda/i }));
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /^ajuda$/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /^ajuda$/i }));
       expect(screen.getAllByRole('heading', { name: /ajuda/i }).length).toBeGreaterThan(0);
     });
 
@@ -435,7 +453,7 @@ describe('App', () => {
         expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
       );
 
-      // Navigate to extrato to verify familiaId propagation (extrato uses familiaId too)
+      // Navigate via BottomNav to extrato to verify familiaId propagation
       fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
       expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
     });

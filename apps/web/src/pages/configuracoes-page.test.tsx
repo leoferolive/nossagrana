@@ -58,13 +58,6 @@ describe('ConfiguracoesPage', () => {
     expect(screen.getByRole('button', { name: /ajuda/i })).toBeInTheDocument();
   });
 
-  it('chama onBack ao clicar em Voltar', () => {
-    const onBack = vi.fn();
-    render(<ConfiguracoesPage {...defaultProps} onBack={onBack} />);
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
-  });
-
   it('chama onGoToCategorias ao clicar em Categorias', () => {
     const onGoToCategorias = vi.fn();
     render(<ConfiguracoesPage {...defaultProps} onGoToCategorias={onGoToCategorias} />);

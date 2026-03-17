@@ -87,40 +87,61 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
 
   if (!open) return null;
 
+  const accentColor = tipo === 'receita' ? 'bg-success' : 'bg-danger';
+
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="w-full max-w-lg rounded-t-2xl bg-panel p-5 shadow-soft sm:rounded-2xl">
-        <h2 className="mb-4 text-base font-bold text-text">Nova transação</h2>
+      {/* Bottom-sheet mobile / modal centrado desktop */}
+      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 shadow-soft md:rounded-2xl md:border md:border-border">
+        {/* Handle bar mobile */}
+        <div className="mb-4 flex justify-center md:hidden">
+          <div className="h-1 w-10 rounded-full bg-border" />
+        </div>
 
-        {/* Tipo: receita / despesa */}
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-text">Nova Transação</h2>
+          <button
+            type="button"
+            aria-label="Fechar modal"
+            onClick={onClose}
+            className="text-text-muted hover:text-text"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Toggle Receita / Despesa */}
+        <div className="mb-5 flex gap-2">
           <button
             type="button"
             aria-label="Receita"
             onClick={() => setTipo('receita')}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
               tipo === 'receita'
                 ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
             }`}
           >
-            Receita
+            ↑ Receita
           </button>
           <button
             type="button"
             aria-label="Despesa"
             onClick={() => setTipo('despesa')}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
               tipo === 'despesa'
                 ? 'bg-danger text-white'
                 : 'border border-border text-text-muted hover:text-text'
             }`}
           >
-            Despesa
+            ↓ Despesa
           </button>
         </div>
 
@@ -136,7 +157,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-info/40"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
             />
           </label>
 
@@ -147,42 +168,12 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
               aria-label="Categoria"
               value={categoriaId}
               onChange={(e) => setCategoriaId(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
             >
               <option value="">Selecione...</option>
               {categorias.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {/* Data */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Data</span>
-            <input
-              aria-label="Data"
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
-            />
-          </label>
-
-          {/* Método de pagamento */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Método de pagamento</span>
-            <select
-              aria-label="Método de pagamento"
-              value={metodoPagamentoId}
-              onChange={(e) => setMetodoPagamentoId(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
-            >
-              <option value="">Sem método</option>
-              {metodos.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nome}
                 </option>
               ))}
             </select>
@@ -196,12 +187,42 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Mercado do mês"
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
             />
           </label>
 
+          {/* Data */}
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-text-muted">Data</span>
+            <input
+              aria-label="Data"
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+            />
+          </label>
+
+          {/* Método de pagamento */}
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-text-muted">Método de pagamento</span>
+            <select
+              aria-label="Método de pagamento"
+              value={metodoPagamentoId}
+              onChange={(e) => setMetodoPagamentoId(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+            >
+              <option value="">Sem método</option>
+              {metodos.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+
           {/* Toggles: parcelado / recorrente */}
-          <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
             <TooltipHelp text="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão." />
             <TooltipHelp text="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente." />
             <button
@@ -236,7 +257,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
             </button>
           </div>
 
-          {/* Campos de parcelamento */}
+          {/* Campos condicionais: parcelamento */}
           {parcelado && (
             <label className="flex flex-col gap-1">
               <span className="text-xs text-text-muted">Número de parcelas</span>
@@ -247,7 +268,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
                 max={72}
                 value={numeroParcelas}
                 onChange={(e) => setNumeroParcelas(Number(e.target.value))}
-                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
+                className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
               />
               {valor && numeroParcelas > 1 && (
                 <span className="text-xs text-text-muted">
@@ -257,7 +278,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
             </label>
           )}
 
-          {/* Campos de recorrência */}
+          {/* Campos condicionais: recorrência */}
           {recorrente && (
             <>
               <label className="flex flex-col gap-1">
@@ -266,7 +287,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
                   aria-label="Frequência"
                   value={frequencia}
                   onChange={(e) => setFrequencia(e.target.value as typeof frequencia)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
+                  className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
                 >
                   <option value="mensal">Mensal</option>
                   <option value="semanal">Semanal</option>
@@ -280,7 +301,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
                   type="date"
                   value={dataFimRecorrencia}
                   onChange={(e) => setDataFimRecorrencia(e.target.value)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none"
+                  className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
                 />
               </label>
             </>
@@ -300,9 +321,9 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong"
+            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 ${accentColor}`}
           >
-            Salvar
+            Salvar Transação
           </button>
         </div>
       </div>

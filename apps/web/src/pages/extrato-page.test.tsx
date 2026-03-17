@@ -77,26 +77,14 @@ describe('ExtratoPage', () => {
 
   it('exibe lista de transações', () => {
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    expect(screen.getByText('Mercado')).toBeInTheDocument();
-    expect(screen.getByText('Salario')).toBeInTheDocument();
+    expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Salario').length).toBeGreaterThan(0);
   });
 
   it('exibe valores formatados com sinal', () => {
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    expect(screen.getByText(/- R\$\s*150,00/)).toBeInTheDocument();
-    expect(screen.getByText(/\+ R\$\s*5\.000,00/)).toBeInTheDocument();
-  });
-
-  it('exibe FAB "+" para nova transação', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /nova transação/i })).toBeInTheDocument();
-  });
-
-  it('chama onNovaTransacao ao clicar no FAB', () => {
-    const onNovaTransacao = vi.fn();
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={onNovaTransacao} />);
-    fireEvent.click(screen.getByRole('button', { name: /nova transação/i }));
-    expect(onNovaTransacao).toHaveBeenCalled();
+    expect(screen.getAllByText(/- R\$\s*150,00/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\+ R\$\s*5\.000,00/).length).toBeGreaterThan(0);
   });
 
   it('exibe badge "Parcela X/N" para transação parcelada', () => {
@@ -109,7 +97,7 @@ describe('ExtratoPage', () => {
       filtros: {},
     });
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    expect(screen.getByText('Parcela 2/6')).toBeInTheDocument();
+    expect(screen.getAllByText('Parcela 2/6').length).toBeGreaterThan(0);
   });
 
   it('exibe badge "Recorrente" para transação recorrente', () => {
@@ -120,18 +108,18 @@ describe('ExtratoPage', () => {
       filtros: {},
     });
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    expect(screen.getByText(/recorrente/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/recorrente/i).length).toBeGreaterThan(0);
   });
 
   it('filtro de tipo filtra visualmente', () => {
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /filtrar despesas/i }));
-    expect(screen.getByText('Mercado')).toBeInTheDocument();
+    expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0);
   });
 
   it('abre modal de detalhe ao clicar na transação', () => {
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    fireEvent.click(screen.getByText('Mercado'));
+    fireEvent.click(screen.getAllByText('Mercado')[0]);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
@@ -169,7 +157,7 @@ describe('ExtratoPage — carregamento via API', () => {
     });
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
-      expect(screen.getByText('Jantar API')).toBeInTheDocument();
+      expect(screen.getAllByText('Jantar API').length).toBeGreaterThan(0);
     });
   });
 

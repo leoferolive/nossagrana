@@ -154,10 +154,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install semgrep
-        run: python3 -m pip install semgrep --break-system-packages
+        run: |
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3 - --user --quiet
+          python3 -m pip install semgrep --user --quiet
 
       - name: Semgrep scan
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           semgrep scan \
             --config p/owasp-top-ten \
             --config p/javascript \

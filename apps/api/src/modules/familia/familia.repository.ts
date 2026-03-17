@@ -3,7 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, gt, ilike, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import { convites, familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
+import { convites, familias, solicitacoesEntrada, usuarioFamilia, users } from '../../db/schema.js';
 import type {
   CreatedFamilia,
   CreatedFamiliaInvite,
@@ -271,10 +271,12 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
       .select({
         usuarioId: usuarioFamilia.usuarioId,
         familiaId: usuarioFamilia.familiaId,
+        nome: users.nome,
         role: usuarioFamilia.role,
         dataEntrada: usuarioFamilia.dataEntrada,
       })
       .from(usuarioFamilia)
+      .innerJoin(users, eq(usuarioFamilia.usuarioId, users.id))
       .where(eq(usuarioFamilia.familiaId, input.familiaId));
   }
 
@@ -318,6 +320,11 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
   >();
   private invitesById = new Map<string, CreatedFamiliaInvite>();
   private joinRequestsById = new Map<string, CreatedFamiliaJoinRequest>();
+  private userNamesById = new Map<string, string>();
+
+  setUserName(usuarioId: string, nome: string): void {
+    this.userNamesById.set(usuarioId, nome);
+  }
 
   async createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia> {
     const id = randomUUID();
@@ -467,6 +474,7 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     return Array.from(memberships.entries()).map(([usuarioId, membership]) => ({
       usuarioId,
       familiaId: input.familiaId,
+      nome: this.userNamesById.get(usuarioId) ?? '',
       role: membership.role,
       dataEntrada: membership.dataEntrada,
     }));

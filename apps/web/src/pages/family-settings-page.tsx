@@ -9,10 +9,15 @@ import type {
 
 interface FamilySettingsPageProps {
   onBackToOnboarding: () => void;
+  onGoToDashboard?: () => void;
   familiaId: string;
 }
 
-export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySettingsPageProps) => {
+export const FamilySettingsPage = ({
+  onBackToOnboarding,
+  onGoToDashboard,
+  familiaId,
+}: FamilySettingsPageProps) => {
   const [membros, setMembros] = useState<FamiliaListMembersResponse['membros']>([]);
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<
     FamiliaListJoinRequestsResponse['solicitacoes']
@@ -74,16 +79,27 @@ export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySett
 
   return (
     <AuthShell
-      title="Configuracoes da familia"
-      subtitle="Gestao de membros, convites e solicitacoes."
+      title="Configurações da família"
+      subtitle="Gestão de membros, convites e solicitações."
       footer={
-        <button
-          type="button"
-          onClick={onBackToOnboarding}
-          className="font-semibold text-info transition hover:underline"
-        >
-          Voltar ao onboarding
-        </button>
+        <div className="flex flex-col items-center gap-2">
+          {onGoToDashboard && (
+            <button
+              type="button"
+              onClick={onGoToDashboard}
+              className="font-semibold text-success transition hover:underline"
+            >
+              Ir para o Dashboard
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onBackToOnboarding}
+            className="font-semibold text-info transition hover:underline"
+          >
+            Voltar ao onboarding
+          </button>
+        </div>
       }
     >
       <div className="space-y-4 rounded-lg border border-border bg-surface p-4 text-sm text-text-muted">
@@ -95,19 +111,20 @@ export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySett
               className="flex items-center justify-between rounded-md border border-border px-3 py-2"
             >
               <span>
-                {membro.usuarioId}{' '}
+                {membro.nome || membro.usuarioId.slice(-8)}{' '}
                 <span className="text-xs uppercase text-text-dim">({membro.role})</span>
               </span>
 
               {membro.role !== 'admin' && (
                 <button
                   type="button"
+                  aria-label={`Remover ${membro.nome || membro.usuarioId}`}
                   onClick={() => {
                     void removeMember(membro.usuarioId);
                   }}
                   className="text-xs font-semibold text-danger transition hover:underline"
                 >
-                  Remover {membro.usuarioId}
+                  Remover
                 </button>
               )}
             </li>
@@ -115,7 +132,7 @@ export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySett
         </ul>
 
         <div className="space-y-2">
-          <p className="font-semibold text-text">Solicitacoes pendentes</p>
+          <p className="font-semibold text-text">Solicitações pendentes</p>
           <ul className="space-y-2">
             {solicitacoesPendentes.map((solicitacao) => (
               <li
@@ -152,12 +169,12 @@ export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySett
             }}
             className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-info transition hover:border-info"
           >
-            Gerar codigo de convite
+            Gerar código de convite
           </button>
 
           {inviteCode && (
             <div className="space-y-2 rounded-md border border-border px-3 py-2">
-              <p>Codigo: {inviteCode}</p>
+              <p>Código: {inviteCode}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -165,9 +182,9 @@ export const FamilySettingsPage = ({ onBackToOnboarding, familiaId }: FamilySett
                 }}
                 className="text-xs font-semibold text-info transition hover:underline"
               >
-                Copiar codigo
+                Copiar código
               </button>
-              {isInviteCopied && <p className="text-xs text-success">Codigo copiado</p>}
+              {isInviteCopied && <p className="text-xs text-success">Código copiado</p>}
             </div>
           )}
         </div>

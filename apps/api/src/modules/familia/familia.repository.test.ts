@@ -205,7 +205,9 @@ describe('DrizzleFamiliaRepository', () => {
     });
     mockDb.select.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: listWhereMock,
+        innerJoin: vi.fn().mockReturnValue({
+          where: listWhereMock,
+        }),
       }),
     });
 

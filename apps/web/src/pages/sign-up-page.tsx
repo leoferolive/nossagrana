@@ -4,6 +4,7 @@ import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
 import { useAuth } from '@/contexts/use-auth';
 import { authService } from '@/services/auth.service';
+import { ApiError } from '@/services/api-client';
 
 interface SignUpPageProps {
   onOpenLogin: () => void;
@@ -45,8 +46,7 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
       });
       onCompleteSignUp();
     } catch (err: unknown) {
-      const errorWithStatus = err as { status?: number };
-      if (errorWithStatus.status === 409) {
+      if (err instanceof ApiError && err.status === 409) {
         setErro('Este e-mail já está cadastrado');
       } else {
         setErro('Ocorreu um erro. Tente novamente.');
@@ -59,10 +59,10 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
   return (
     <AuthShell
       title="Criar conta no NossaGrana"
-      subtitle="Junte sua familia e organize tudo em um lugar."
+      subtitle="Junte sua família e organize tudo em um lugar."
       footer={
         <>
-          Ja tem conta?{' '}
+          Já tem conta?{' '}
           <button
             type="button"
             onClick={onOpenLogin}

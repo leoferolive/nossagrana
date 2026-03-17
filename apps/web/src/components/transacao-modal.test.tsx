@@ -48,13 +48,13 @@ const METODOS = [
 
 describe('TransacaoModal', () => {
   it('não renderiza quando fechado', () => {
-    render(<TransacaoModal open={false} onClose={vi.fn()} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={false} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('renderiza campos quando aberto', () => {
     useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
-    render(<TransacaoModal open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByLabelText(/valor/i)).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('TransacaoModal', () => {
   });
 
   it('toggle entre receita e despesa', () => {
-    render(<TransacaoModal open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
     const receitaBtn = screen.getByRole('button', { name: /receita/i });
 
     fireEvent.click(receitaBtn);
@@ -71,27 +71,27 @@ describe('TransacaoModal', () => {
   });
 
   it('exibe campos de parcelamento ao ativar toggle', () => {
-    render(<TransacaoModal open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /parcelado/i }));
     expect(screen.getByLabelText(/parcelas/i)).toBeInTheDocument();
   });
 
   it('exibe campos de recorrência ao ativar toggle', () => {
-    render(<TransacaoModal open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /recorrente/i }));
     expect(screen.getByLabelText(/frequência/i)).toBeInTheDocument();
   });
 
   it('chama onClose ao clicar em cancelar', () => {
     const onClose = vi.fn();
-    render(<TransacaoModal open={true} onClose={onClose} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={true} familiaId="f1" onClose={onClose} onSubmit={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
     expect(onClose).toHaveBeenCalled();
   });
 
   it('exibe lista de métodos de pagamento no select', () => {
     useMetodoPagamentoStore.setState({ metodos: METODOS, carregando: false, erro: null });
-    render(<TransacaoModal open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
     expect(screen.getByText('Nubank')).toBeInTheDocument();
   });
 });

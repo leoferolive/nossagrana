@@ -40,17 +40,27 @@ export const App = () => {
   const { familiaIdAtiva, isAuthenticated } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
 
-  const [screen, setScreen] = useState<Screen>('login');
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (isAuthenticated && familiaIdAtiva) return 'dashboard';
+    if (isAuthenticated) return 'onboarding';
+    return 'login';
+  });
   const [novaTransacaoOpen, setNovaTransacaoOpen] = useState(false);
   const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
 
-  if (!isAuthenticated && screen !== 'login' && screen !== 'sign-up' && screen !== 'onboarding') {
+  if (
+    !isAuthenticated &&
+    screen !== 'login' &&
+    screen !== 'sign-up' &&
+    screen !== 'onboarding' &&
+    screen !== 'family-settings'
+  ) {
     return (
       <LoginPage
         onOpenSignUp={() => setScreen('sign-up')}
-        onLoginSuccess={() => setScreen('dashboard')}
+        onLoginSuccess={(hasFamilia) => setScreen(hasFamilia ? 'dashboard' : 'onboarding')}
       />
     );
   }
@@ -77,6 +87,7 @@ export const App = () => {
     return (
       <FamilySettingsPage
         onBackToOnboarding={() => setScreen('onboarding')}
+        onGoToDashboard={() => setScreen('dashboard')}
         familiaId={familiaId}
       />
     );
@@ -99,6 +110,7 @@ export const App = () => {
         />
         <TransacaoModal
           open={novaTransacaoOpen}
+          familiaId={familiaId}
           onClose={() => setNovaTransacaoOpen(false)}
           onSubmit={async (payload) => {
             if (!familiaId) return;
@@ -120,6 +132,7 @@ export const App = () => {
         />
         <TransacaoModal
           open={novaTransacaoOpen}
+          familiaId={familiaId}
           onClose={() => setNovaTransacaoOpen(false)}
           onSubmit={async (payload) => {
             if (!familiaId) return;
@@ -200,7 +213,7 @@ export const App = () => {
   return (
     <LoginPage
       onOpenSignUp={() => setScreen('sign-up')}
-      onLoginSuccess={() => setScreen('dashboard')}
+      onLoginSuccess={(hasFamilia) => setScreen(hasFamilia ? 'dashboard' : 'onboarding')}
     />
   );
 };

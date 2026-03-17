@@ -53,9 +53,7 @@ const renderPage = (
 describe('OnboardingPage', () => {
   it('renderiza os 3 botões de modo (create/invite/request)', () => {
     renderPage();
-    expect(screen.getAllByRole('button', { name: /criar familia/i }).length).toBeGreaterThanOrEqual(
-      1,
-    );
+    expect(screen.getAllByRole('button', { name: /criar fam/i }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole('button', { name: /entrar com convite/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /buscar e solicitar/i })).toBeInTheDocument();
   });
@@ -72,11 +70,11 @@ describe('OnboardingPage', () => {
 
       renderPage({ onOpenFamilySettings });
 
-      fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Oliveira' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /criar familia/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /criar famil/i }));
 
       await waitFor(() => {
         expect(familiaService.criar).toHaveBeenCalledWith({ nome: 'Oliveira' });
@@ -100,11 +98,11 @@ describe('OnboardingPage', () => {
 
       renderPage();
 
-      fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Oliveira' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /criar familia/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /criar famil/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toHaveTextContent(/erro ao criar família/i);
@@ -126,7 +124,7 @@ describe('OnboardingPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /entrar com convite/i }));
 
-      fireEvent.change(screen.getByLabelText(/codigo de convite/i), {
+      fireEvent.change(screen.getByLabelText(/c.digo de convite/i), {
         target: { value: 'CODIGO123' },
       });
 
@@ -158,7 +156,7 @@ describe('OnboardingPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /entrar com convite/i }));
 
-      fireEvent.change(screen.getByLabelText(/codigo de convite/i), {
+      fireEvent.change(screen.getByLabelText(/c.digo de convite/i), {
         target: { value: 'INVALIDO' },
       });
 
@@ -183,7 +181,7 @@ describe('OnboardingPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /buscar e solicitar/i }));
 
-      fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Silv' },
       });
 
@@ -217,7 +215,7 @@ describe('OnboardingPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /buscar e solicitar/i }));
 
-      fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Silva' },
       });
 
@@ -245,7 +243,7 @@ describe('OnboardingPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /buscar e solicitar/i }));
 
-      fireEvent.change(screen.getByLabelText(/nome da familia/i), {
+      fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Test' },
       });
 

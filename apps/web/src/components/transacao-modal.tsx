@@ -1,21 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { TransacaoCreateRequest } from '@nossagrana/types';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
+import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { TooltipHelp } from './tooltip-help';
 
 interface TransacaoModalProps {
   open: boolean;
+  familiaId: string;
   onClose: () => void;
   onSubmit: (payload: TransacaoCreateRequest) => void;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps) => {
+export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: TransacaoModalProps) => {
   const categorias = useCategoriaStore((s) => s.categorias);
+  const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const metodos = useMetodoPagamentoStore((s) => s.metodos);
+  const setMetodos = useMetodoPagamentoStore((s) => s.setMetodos);
 
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
   const [valor, setValor] = useState('');
@@ -30,6 +34,38 @@ export const TransacaoModal = ({ open, onClose, onSubmit }: TransacaoModalProps)
   const [recorrente, setRecorrente] = useState(false);
   const [frequencia, setFrequencia] = useState<'mensal' | 'semanal' | 'quinzenal'>('mensal');
   const [dataFimRecorrencia, setDataFimRecorrencia] = useState('');
+
+  useEffect(() => {
+    if (!open || !familiaId) return;
+    if (categorias.length === 0) {
+      categoriaService
+        .listar(familiaId)
+        .then((res) => setCategorias(res.categorias))
+        .catch(() => {});
+    }
+    if (metodos.length === 0) {
+      metodoPagamentoService
+        .listar(familiaId)
+        .then((res) => setMetodos(res.metodosPagamento))
+        .catch(() => {});
+    }
+  }, [open, familiaId, categorias.length, metodos.length, setCategorias, setMetodos]);
+
+  useEffect(() => {
+    if (!open) {
+      setTipo('despesa');
+      setValor('');
+      setCategoriaId('');
+      setDescricao('');
+      setData(today);
+      setMetodoPagamentoId('');
+      setParcelado(false);
+      setNumeroParcelas(2);
+      setRecorrente(false);
+      setFrequencia('mensal');
+      setDataFimRecorrencia('');
+    }
+  }, [open]);
 
   const handleSubmit = () => {
     const payload: TransacaoCreateRequest = {

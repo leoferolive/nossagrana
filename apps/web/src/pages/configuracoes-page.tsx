@@ -31,7 +31,7 @@ interface MenuItem {
 }
 
 export const ConfiguracoesPage = ({
-  onBack,
+  onBack: _onBack,
   onGoToCategorias,
   onGoToMetodosPagamento,
   onGoToOrcamento,

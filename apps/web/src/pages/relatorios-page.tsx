@@ -21,7 +21,7 @@ interface RelatoriosPageProps {
 const formatBRL = (valor: string) =>
   parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-export const RelatoriosPage = ({ familiaId, onBack }: RelatoriosPageProps) => {
+export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPageProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('distribuicao');
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);

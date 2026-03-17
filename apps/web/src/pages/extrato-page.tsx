@@ -67,7 +67,11 @@ const TransacaoBadges = ({ t }: { t: Transacao }) => (
   </div>
 );
 
-export const ExtratoPage = ({ familiaId, onBack, onNovaTransacao }: ExtratoPageProps) => {
+export const ExtratoPage = ({
+  familiaId,
+  onBack: _onBack,
+  onNovaTransacao: _onNovaTransacao,
+}: ExtratoPageProps) => {
   const { transacoes, carregando } = useTransacaoStore();
   const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
   const setCarregando = useTransacaoStore((s) => s.setCarregando);

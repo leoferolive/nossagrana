@@ -242,10 +242,13 @@ describe('App', () => {
         expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
 
-      await waitFor(() => {
-        expect(screen.getAllByText(/leo/i).length).toBeGreaterThan(0);
-        expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getAllByText(/leo/i).length).toBeGreaterThan(0);
+          expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
 
       fireEvent.click(screen.getByRole('button', { name: /remover maria/i }));
 

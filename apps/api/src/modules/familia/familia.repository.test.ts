@@ -98,6 +98,27 @@ describe('InMemoryFamiliaRepository', () => {
     expect(await repository.deleteFamily({ familiaId: 'missing' })).toBe(false);
   });
 
+  it('listFamiliasByUsuarioId returns families for user', async () => {
+    const repo = new InMemoryFamiliaRepository();
+    const userId = 'u1';
+
+    const familia1 = await repo.createWithAdminMembership({ nome: 'Familia A', usuarioId: userId });
+    const familia2 = await repo.createWithAdminMembership({ nome: 'Familia B', usuarioId: userId });
+    await repo.createWithAdminMembership({ nome: 'Familia C', usuarioId: 'u2' });
+
+    const result = await repo.listFamiliasByUsuarioId({ usuarioId: userId });
+    expect(result).toHaveLength(2);
+    expect(result.map((f) => f.id)).toContain(familia1.id);
+    expect(result.map((f) => f.id)).toContain(familia2.id);
+    expect(result[0].role).toBe('admin');
+  });
+
+  it('listFamiliasByUsuarioId returns empty for user with no families', async () => {
+    const repo = new InMemoryFamiliaRepository();
+    const result = await repo.listFamiliasByUsuarioId({ usuarioId: 'u-nenhum' });
+    expect(result).toHaveLength(0);
+  });
+
   it('buscarPorNome returns matching families case-insensitively', async () => {
     const repo = new InMemoryFamiliaRepository();
     await repo.createWithAdminMembership({ nome: 'Familia Silva', usuarioId: 'u1' });

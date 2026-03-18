@@ -717,6 +717,21 @@ export const historicoDetalheResponseSchema = z.object({
 });
 export type HistoricoDetalheResponse = z.infer<typeof historicoDetalheResponseSchema>;
 
+// ─── Familia Minhas ──────────────────────────────────────────────────────────
+
+export const familiaMinhasItemSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string(),
+  role: z.enum(['admin', 'membro']),
+  dataEntrada: z.string(),
+});
+export type FamiliaMinhasItem = z.infer<typeof familiaMinhasItemSchema>;
+
+export const familiaMinhasResponseSchema = z.object({
+  familias: z.array(familiaMinhasItemSchema),
+});
+export type FamiliaMinhasResponse = z.infer<typeof familiaMinhasResponseSchema>;
+
 // ─── Familia Buscar ───────────────────────────────────────────────────────────
 
 export const familiaBuscarQuerySchema = z.object({

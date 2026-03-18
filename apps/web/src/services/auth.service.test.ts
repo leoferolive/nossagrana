@@ -83,6 +83,18 @@ describe('FamiliaService', () => {
     service = new FamiliaService(apiClient);
   });
 
+  it('listarMinhas faz GET /api/familias/minhas', async () => {
+    const mockResponse = {
+      familias: [{ id: 'f1', nome: 'Familia Silva', role: 'admin', dataEntrada: '2026-01-01' }],
+    };
+    vi.mocked(apiClient.request).mockResolvedValueOnce(mockResponse);
+
+    const result = await service.listarMinhas();
+
+    expect(apiClient.request).toHaveBeenCalledWith('/api/familias/minhas');
+    expect(result).toEqual(mockResponse);
+  });
+
   it('criar faz POST /api/familias com payload', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({
       familia: { id: 'f1', nome: 'Família Silva', dataCriacao: '2026-01-01' },

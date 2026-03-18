@@ -19,6 +19,7 @@ import {
 import type { FamiliaRepository } from './familia.types.js';
 
 const buildRepository = (overrides?: Partial<FamiliaRepository>): FamiliaRepository => ({
+  listFamiliasByUsuarioId: vi.fn().mockResolvedValue([]),
   createWithAdminMembership: vi.fn().mockResolvedValue({ id: 'f1', nome: 'Familia Teste' }),
   isUserAdmin: vi.fn().mockResolvedValue(true),
   hasMembership: vi.fn().mockResolvedValue(true),
@@ -164,6 +165,20 @@ describe('FamiliaService', () => {
         usuarioId: 'u1',
       }),
     ).rejects.toBeInstanceOf(FamiliaNotFoundError);
+  });
+
+  it('listMinhas delegates to repository', async () => {
+    const mockResult = [
+      { id: 'f1', nome: 'Familia Silva', role: 'admin' as const, dataEntrada: new Date() },
+    ];
+    const repository = buildRepository({
+      listFamiliasByUsuarioId: vi.fn().mockResolvedValue(mockResult),
+    });
+    const service = new FamiliaService(repository);
+
+    const result = await service.listMinhas({ usuarioId: 'u1' });
+    expect(result).toEqual(mockResult);
+    expect(repository.listFamiliasByUsuarioId).toHaveBeenCalledWith({ usuarioId: 'u1' });
   });
 
   it('buscarPorNome delegates to repository', async () => {

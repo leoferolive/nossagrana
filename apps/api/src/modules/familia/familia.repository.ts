@@ -10,6 +10,7 @@ import type {
   CreatedFamiliaJoinRequest,
   CreateFamiliaInput,
   CreateFamiliaInviteInput,
+  FamiliaMinhasItem,
   FamiliaRepository,
   JoinFamiliaByInviteInput,
   RequestFamiliaJoinInput,
@@ -17,6 +18,19 @@ import type {
 } from './familia.types.js';
 
 export class DrizzleFamiliaRepository implements FamiliaRepository {
+  async listFamiliasByUsuarioId(input: { usuarioId: string }): Promise<FamiliaMinhasItem[]> {
+    return db
+      .select({
+        id: familias.id,
+        nome: familias.nome,
+        role: usuarioFamilia.role,
+        dataEntrada: usuarioFamilia.dataEntrada,
+      })
+      .from(usuarioFamilia)
+      .innerJoin(familias, eq(usuarioFamilia.familiaId, familias.id))
+      .where(and(eq(usuarioFamilia.usuarioId, input.usuarioId), isNull(familias.deletedAt)));
+  }
+
   async createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia> {
     return db.transaction(async (tx) => {
       const [createdFamilia] = await tx
@@ -324,6 +338,25 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
 
   setUserName(usuarioId: string, nome: string): void {
     this.userNamesById.set(usuarioId, nome);
+  }
+
+  async listFamiliasByUsuarioId(input: { usuarioId: string }): Promise<FamiliaMinhasItem[]> {
+    const result: FamiliaMinhasItem[] = [];
+    for (const [familiaId, memberships] of this.membershipsByFamiliaId.entries()) {
+      const membership = memberships.get(input.usuarioId);
+      if (membership) {
+        const familia = this.familiasById.get(familiaId);
+        if (familia) {
+          result.push({
+            id: familia.id,
+            nome: familia.nome,
+            role: membership.role,
+            dataEntrada: membership.dataEntrada,
+          });
+        }
+      }
+    }
+    return result;
   }
 
   async createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia> {

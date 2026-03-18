@@ -265,6 +265,12 @@ export class FamiliaService {
     }
   }
 
+  async listMinhas(input: { usuarioId: string }) {
+    return this.familiaRepository.listFamiliasByUsuarioId({
+      usuarioId: input.usuarioId,
+    });
+  }
+
   async buscarPorNome(input: { nome: string }) {
     return this.familiaRepository.buscarPorNome(input.nome);
   }

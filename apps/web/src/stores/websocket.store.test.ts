@@ -8,7 +8,10 @@ const mockWs = {
   onmessage: null as ((event: MessageEvent) => void) | null,
   readyState: 1,
 };
-vi.stubGlobal('WebSocket', vi.fn(() => mockWs));
+vi.stubGlobal(
+  'WebSocket',
+  vi.fn(() => mockWs),
+);
 
 const mockFetchAll = vi.fn();
 vi.mock('./dashboard.store', () => ({
@@ -26,6 +29,10 @@ describe('useWebSocketStore', () => {
   });
 
   afterEach(() => {
+    // Limpar store e timers pendentes antes de voltar a real timers
+    const { disconnect } = useWebSocketStore.getState();
+    disconnect();
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -60,7 +67,11 @@ describe('useWebSocketStore', () => {
       // Simula onopen
       mockWs.onopen?.(new Event('open'));
       // Simula mensagem
-      mockWs.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ tipo: 'transacao:alterada', familiaId: 'f1' }) }));
+      mockWs.onmessage?.(
+        new MessageEvent('message', {
+          data: JSON.stringify({ tipo: 'transacao:alterada', familiaId: 'f1' }),
+        }),
+      );
     });
     expect(mockFetchAll).toHaveBeenCalledWith('f1');
   });
@@ -68,7 +79,11 @@ describe('useWebSocketStore', () => {
   it('disconnect fecha socket e limpa estado', () => {
     const { result } = renderHook(() => useWebSocketStore());
     act(() => {
-      result.current.connect({ getAccessToken: () => 'tok', familiaId: 'f1', clearSession: vi.fn() });
+      result.current.connect({
+        getAccessToken: () => 'tok',
+        familiaId: 'f1',
+        clearSession: vi.fn(),
+      });
       result.current.disconnect();
     });
     expect(mockWs.close).toHaveBeenCalled();

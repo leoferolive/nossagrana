@@ -2,7 +2,10 @@ import { create } from 'zustand';
 
 import { useDashboardStore } from './dashboard.store';
 
-const WS_URL = typeof import.meta !== 'undefined' ? (import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000') : 'ws://localhost:3000';
+const WS_URL =
+  typeof import.meta !== 'undefined'
+    ? (import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000')
+    : 'ws://localhost:3000';
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 100;
 
@@ -33,6 +36,11 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
   const doConnect = (opts: ConnectOpts) => {
     const token = opts.getAccessToken();
     if (!token) {
+      set({ status: 'error' });
+      return;
+    }
+
+    if (typeof WebSocket === 'undefined') {
       set({ status: 'error' });
       return;
     }

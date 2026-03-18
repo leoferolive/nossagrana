@@ -35,6 +35,7 @@ vi.mock('./services/auth.service', () => ({
     logout: vi.fn().mockResolvedValue(undefined),
   },
   familiaService: {
+    listarMinhas: vi.fn().mockResolvedValue({ familias: [] }),
     criar: vi
       .fn()
       .mockResolvedValue({ familia: { id: 'fam-1', nome: 'Test', dataCriacao: '2026-01-01' } }),

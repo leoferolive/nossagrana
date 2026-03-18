@@ -15,6 +15,7 @@
     "security:audit": "pnpm audit --audit-level=high --prod",
     "deps:check": "pnpm outdated -r",
     "deps:update": "pnpm update -r",
+    "knip": "knip",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
@@ -28,6 +29,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
+    "knip": "^5.87.0",
     "lint-staged": "^16.4.0",
     "oxlint": "^1.4.0",
     "prettier": "^3.5.3",

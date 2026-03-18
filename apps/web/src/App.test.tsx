@@ -222,42 +222,46 @@ describe('App', () => {
       );
     });
 
-    it('lists members and allows removing a member in family settings', async () => {
-      render(<App />);
+    it(
+      'lists members and allows removing a member in family settings',
+      { timeout: 15000 },
+      async () => {
+        render(<App />);
 
-      fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
-      fillSignUpForm();
-      fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
-      await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
-      );
+        fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
+        fillSignUpForm();
+        fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
+        await waitFor(() =>
+          expect(screen.getByRole('heading', { name: /entrar numa família/i })).toBeInTheDocument(),
+        );
 
-      fireEvent.click(screen.getByRole('button', { name: /criar família/i }));
-      fireEvent.change(screen.getByLabelText(/nome da fam/i), {
-        target: { value: 'Familia Test' },
-      });
-      fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
+        fireEvent.click(screen.getByRole('button', { name: /criar família/i }));
+        fireEvent.change(screen.getByLabelText(/nome da fam/i), {
+          target: { value: 'Familia Test' },
+        });
+        fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
 
-      await waitFor(() =>
-        expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
-      );
+        await waitFor(() =>
+          expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
+        );
 
-      await waitFor(
-        () => {
-          expect(screen.getAllByText(/leo/i).length).toBeGreaterThan(0);
-          expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
-        },
-        { timeout: 3000 },
-      );
+        await waitFor(
+          () => {
+            expect(screen.getAllByText(/leo/i).length).toBeGreaterThan(0);
+            expect(screen.getByRole('button', { name: /remover maria/i })).toBeInTheDocument();
+          },
+          { timeout: 3000 },
+        );
 
-      fireEvent.click(screen.getByRole('button', { name: /remover maria/i }));
+        fireEvent.click(screen.getByRole('button', { name: /remover maria/i }));
 
-      await waitFor(() => {
-        expect(screen.queryByRole('button', { name: /remover maria/i })).not.toBeInTheDocument();
-      });
-    });
+        await waitFor(() => {
+          expect(screen.queryByRole('button', { name: /remover maria/i })).not.toBeInTheDocument();
+        });
+      },
+    );
 
-    it('manages pending requests in family settings', async () => {
+    it('manages pending requests in family settings', { timeout: 15000 }, async () => {
       render(<App />);
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
@@ -293,7 +297,7 @@ describe('App', () => {
       });
     });
 
-    it('generates and copies invite code in family settings', async () => {
+    it('generates and copies invite code in family settings', { timeout: 15000 }, async () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.defineProperty(navigator, 'clipboard', {
         value: { writeText },

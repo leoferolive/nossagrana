@@ -8,4 +8,4 @@ data:
   PORT: '3000'
   JWT_EXPIRES_IN: 15m
   REFRESH_TOKEN_EXPIRES_IN: 7d
-  CORS_ORIGIN: https://dev-app.nossagrana.home
+  CORS_ORIGIN: http://dev-app.nossagrana.home

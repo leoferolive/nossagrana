@@ -11,6 +11,13 @@ spec:
     - host: dev-app.nossagrana.home
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: nossagrana-dev-api
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:

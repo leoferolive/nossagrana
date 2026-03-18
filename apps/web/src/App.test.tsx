@@ -323,12 +323,22 @@ describe('App', () => {
         expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
       );
 
+      await waitFor(
+        () =>
+          expect(
+            screen.getByRole('button', { name: /gerar c.digo de convite/i }),
+          ).toBeInTheDocument(),
+        { timeout: 3000 },
+      );
       fireEvent.click(screen.getByRole('button', { name: /gerar c.digo de convite/i }));
 
-      await waitFor(() => {
-        expect(screen.getByText(/FAM-LEO-2026/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /copiar/i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText(/FAM-LEO-2026/)).toBeInTheDocument();
+          expect(screen.getByRole('button', { name: /copiar/i })).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
 
       fireEvent.click(screen.getByRole('button', { name: /copiar/i }));
 

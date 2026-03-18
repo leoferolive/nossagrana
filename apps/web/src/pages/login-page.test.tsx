@@ -5,13 +5,16 @@ vi.mock('@/services/auth.service', () => ({
   authService: {
     login: vi.fn(),
   },
+  familiaService: {
+    listarMinhas: vi.fn().mockResolvedValue({ familias: [] }),
+  },
 }));
 
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: vi.fn(),
 }));
 
-import { authService } from '@/services/auth.service';
+import { authService, familiaService } from '@/services/auth.service';
 import { useAuth } from '@/contexts/use-auth';
 import { LoginPage } from './login-page';
 
@@ -64,12 +67,16 @@ describe('LoginPage', () => {
     });
   });
 
-  it('com dados válidos chama authService.login e depois onLoginSuccess', async () => {
+  it('com dados válidos chama authService.login, busca famílias e chama onLoginSuccess', async () => {
     const onLoginSuccess = vi.fn();
+    const mockFamilias = [
+      { id: 'f1', nome: 'Familia Teste', role: 'admin' as const, dataEntrada: '2026-01-01' },
+    ];
     vi.mocked(authService.login).mockResolvedValueOnce({
       accessToken: 'access-token-123',
       refreshToken: 'refresh-token-456',
     });
+    vi.mocked(familiaService.listarMinhas).mockResolvedValueOnce({ familias: mockFamilias });
 
     renderPage({ onLoginSuccess });
 
@@ -98,7 +105,11 @@ describe('LoginPage', () => {
     });
 
     await waitFor(() => {
-      expect(onLoginSuccess).toHaveBeenCalled();
+      expect(familiaService.listarMinhas).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(onLoginSuccess).toHaveBeenCalledWith(mockFamilias);
     });
   });
 
@@ -128,6 +139,7 @@ describe('LoginPage', () => {
         resolveLogin = resolve;
       }),
     );
+    vi.mocked(familiaService.listarMinhas).mockResolvedValueOnce({ familias: [] });
 
     renderPage();
 

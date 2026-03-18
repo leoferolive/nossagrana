@@ -1,17 +1,18 @@
+import type { FamiliaMinhasItem } from '@nossagrana/types';
 import { type FormEvent, useState } from 'react';
 
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
 import { useAuth } from '@/contexts/use-auth';
-import { authService } from '@/services/auth.service';
+import { authService, familiaService } from '@/services/auth.service';
 
 interface LoginPageProps {
   onOpenSignUp: () => void;
-  onLoginSuccess?: (hasFamilia: boolean) => void;
+  onLoginSuccess?: (familias: FamiliaMinhasItem[]) => void;
 }
 
 export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
-  const { login, familiaIdAtiva } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -24,14 +25,13 @@ export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
 
     try {
       const response = await authService.login({ email, senha });
-      // Preserve existing familiaIdAtiva from previous session
-      const familiaIdPreservada = familiaIdAtiva ?? '';
       login({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
-        familiaIdAtiva: familiaIdPreservada,
+        familiaIdAtiva: '',
       });
-      onLoginSuccess?.(!!familiaIdPreservada);
+      const minhasRes = await familiaService.listarMinhas();
+      onLoginSuccess?.(minhasRes.familias);
     } catch {
       setErro('E-mail ou senha incorretos. Tente novamente.');
     } finally {

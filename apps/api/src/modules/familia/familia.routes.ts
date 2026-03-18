@@ -28,6 +28,7 @@ import {
   familiaJoinByInviteSchema,
   familiaListJoinRequestsSchema,
   familiaListMembersSchema,
+  familiaMinhasSchema,
   familiaRemoveMemberSchema,
   familiaSwitchActiveSchema,
   familiaReviewJoinRequestSchema,
@@ -57,6 +58,26 @@ const defaultFamiliaService = (): FamiliaService => {
 
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
   const familiaService = defaultFamiliaService();
+
+  fastify.get(
+    '/familias/minhas',
+    {
+      preHandler: [fastify.authenticate],
+      schema: familiaMinhasSchema,
+    },
+    async (request, reply) => {
+      const familias = await familiaService.listMinhas({
+        usuarioId: request.user.sub,
+      });
+
+      return reply.code(200).send({
+        familias: familias.map((f) => ({
+          ...f,
+          dataEntrada: f.dataEntrada.toISOString(),
+        })),
+      });
+    },
+  );
 
   fastify.get(
     '/familias/buscar',

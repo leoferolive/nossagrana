@@ -61,7 +61,15 @@ export interface FamiliaMember {
   dataEntrada: Date;
 }
 
+export interface FamiliaMinhasItem {
+  id: string;
+  nome: string;
+  role: 'admin' | 'membro';
+  dataEntrada: Date;
+}
+
 export interface FamiliaRepository {
+  listFamiliasByUsuarioId(input: { usuarioId: string }): Promise<FamiliaMinhasItem[]>;
   createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia>;
   isUserAdmin(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   hasMembership(input: { familiaId: string; usuarioId: string }): Promise<boolean>;

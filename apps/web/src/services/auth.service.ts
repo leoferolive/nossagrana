@@ -10,6 +10,7 @@ import type {
   FamiliaJoinByInviteResponse,
   FamiliaListJoinRequestsResponse,
   FamiliaListMembersResponse,
+  FamiliaMinhasResponse,
   FamiliaRequestJoinResponse,
   FamiliaReviewJoinRequestResponse,
   FamiliaSwitchActiveResponse,
@@ -56,6 +57,10 @@ export class AuthService {
 
 export class FamiliaService {
   constructor(private readonly api: ApiClient) {}
+
+  async listarMinhas(): Promise<FamiliaMinhasResponse> {
+    return this.api.request<FamiliaMinhasResponse>('/api/familias/minhas');
+  }
 
   async criar(payload: FamiliaCreateRequest): Promise<FamiliaCreateResponse> {
     return this.api.request<FamiliaCreateResponse>('/api/familias', {

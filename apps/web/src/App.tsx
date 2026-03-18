@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import type { FamiliaMinhasItem } from '@nossagrana/types';
+import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
 import { TransacaoModal } from '@/components/transacao-modal';
@@ -8,6 +9,7 @@ import { CategoriasPage } from '@/pages/categorias-page';
 import { ConfiguracoesPage } from '@/pages/configuracoes-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
+import { FamiliaSelectorPage } from '@/pages/familia-selector-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
 import { FaturaPage } from '@/pages/fatura-page';
 import { HistoricoPage } from '@/pages/historico-page';
@@ -18,12 +20,14 @@ import { OrcamentoPage } from '@/pages/orcamento-page';
 import { PerfilPage } from '@/pages/perfil-page';
 import { RelatoriosPage } from '@/pages/relatorios-page';
 import { SignUpPage } from '@/pages/sign-up-page';
+import { familiaService } from '@/services/auth.service';
 import { transacaoService } from '@/services/core-financeiro.service';
 
 type Screen =
   | 'login'
   | 'sign-up'
   | 'onboarding'
+  | 'familia-selector'
   | 'family-settings'
   | 'dashboard'
   | 'extrato'
@@ -38,7 +42,7 @@ type Screen =
   | 'perfil';
 
 export const App = () => {
-  const { familiaIdAtiva, isAuthenticated } = useAuth();
+  const { familiaIdAtiva, isAuthenticated, updateFamiliaIdAtiva } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
 
   const [screen, setScreen] = useState<Screen>(() => {
@@ -50,6 +54,39 @@ export const App = () => {
   const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
+  const [familiasDoUsuario, setFamiliasDoUsuario] = useState<FamiliaMinhasItem[]>([]);
+
+  const handleLoginSuccess = useCallback(
+    (familias: FamiliaMinhasItem[]) => {
+      if (familias.length === 0) {
+        setScreen('onboarding');
+      } else if (familias.length === 1) {
+        updateFamiliaIdAtiva(familias[0].id);
+        setScreen('dashboard');
+      } else {
+        setFamiliasDoUsuario(familias);
+        setScreen('familia-selector');
+      }
+    },
+    [updateFamiliaIdAtiva],
+  );
+
+  const handleFamiliaSelect = useCallback(
+    (selectedFamiliaId: string) => {
+      updateFamiliaIdAtiva(selectedFamiliaId);
+      setScreen('dashboard');
+    },
+    [updateFamiliaIdAtiva],
+  );
+
+  useEffect(() => {
+    if (screen === 'familia-selector' && isAuthenticated && familiasDoUsuario.length === 0) {
+      familiaService
+        .listarMinhas()
+        .then((res) => setFamiliasDoUsuario(res.familias))
+        .catch(() => setScreen('onboarding'));
+    }
+  }, [screen, isAuthenticated, familiasDoUsuario.length]);
 
   // Telas fora do AppShell (autenticação e onboarding)
   if (
@@ -60,10 +97,7 @@ export const App = () => {
       screen !== 'family-settings')
   ) {
     return (
-      <LoginPage
-        onOpenSignUp={() => setScreen('sign-up')}
-        onLoginSuccess={(hasFamilia) => setScreen(hasFamilia ? 'dashboard' : 'onboarding')}
-      />
+      <LoginPage onOpenSignUp={() => setScreen('sign-up')} onLoginSuccess={handleLoginSuccess} />
     );
   }
 
@@ -81,6 +115,16 @@ export const App = () => {
       <OnboardingPage
         onOpenLogin={() => setScreen('login')}
         onOpenFamilySettings={() => setScreen('family-settings')}
+      />
+    );
+  }
+
+  if (screen === 'familia-selector') {
+    return (
+      <FamiliaSelectorPage
+        familias={familiasDoUsuario}
+        onSelect={handleFamiliaSelect}
+        onGoToOnboarding={() => setScreen('onboarding')}
       />
     );
   }

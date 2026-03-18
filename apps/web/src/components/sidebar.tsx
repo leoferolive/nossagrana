@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   BarChart2,
   CalendarDays,
   CreditCard,
@@ -37,6 +38,7 @@ const navGroups = [
   {
     items: [
       { id: 'family-settings', icon: Users, label: 'Família' },
+      { id: 'familia-selector', icon: ArrowLeftRight, label: 'Alternar Família' },
       { id: 'ajuda', icon: HelpCircle, label: 'Ajuda' },
     ],
   },

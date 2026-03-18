@@ -7,10 +7,9 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
-    "setup:db": "docker-compose -f docker-compose.e2e.yml up -d"
+    "setup:db": "docker compose -f docker-compose.e2e.yml up -d"
   },
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
-    "wait-on": "^8.0.3"
+    "@playwright/test": "^1.52.0"
   }
 }

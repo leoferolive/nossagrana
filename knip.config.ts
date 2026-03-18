@@ -15,6 +15,9 @@ const config: KnipConfig = {
     'apps/api': {},
     'apps/web': {},
     'packages/types': {},
+    'apps/e2e': {
+      entry: ['tests/**/*.spec.ts', 'fixtures/**/*.ts', 'helpers/**/*.ts'],
+    },
   },
 };
 

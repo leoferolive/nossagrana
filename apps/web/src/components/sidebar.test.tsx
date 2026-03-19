@@ -11,7 +11,6 @@ afterEach(() => {
 const defaultProps = {
   currentScreen: 'dashboard',
   onNavigate: vi.fn(),
-  onNovaTransacao: vi.fn(),
   onLogout: vi.fn(),
 };
 

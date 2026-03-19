@@ -31,12 +31,7 @@ export const AppShell = ({
     <div className="flex min-h-screen md:h-screen">
       {/* Sidebar: visível apenas no desktop */}
       <div className="hidden md:flex">
-        <Sidebar
-          currentScreen={currentScreen}
-          onNavigate={onNavigate}
-          onNovaTransacao={onNovaTransacao}
-          onLogout={onLogout}
-        />
+        <Sidebar currentScreen={currentScreen} onNavigate={onNavigate} onLogout={onLogout} />
       </div>
 
       {/* Área principal */}

@@ -2,31 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
+import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { BudgetBar } from '../components/charts/budget-bar';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { useDashboardStore } from '../stores/dashboard.store';
-
-function getCurrentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonth(mesReferencia: string, delta: number): string {
-  const [year, month] = mesReferencia.split('-').map(Number);
-  const date = new Date(year, month - 1 + delta, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
 
 const formatBRL = (valor: string) =>
   parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 interface DashboardPageProps {
   familiaId: string;
-  onNovaTransacao?: () => void;
 }
 
-export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps) => {
+export const DashboardPage = ({ familiaId }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, error, fetchAll } = useDashboardStore();
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
 
@@ -48,37 +37,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
   const temTransacoes =
     resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
 
-  const mesLabel = new Date(`${mesReferencia}-01`).toLocaleString('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  });
-
   const isCurrentMonth = mesReferencia === getCurrentMonth();
-
-  const MonthNav = () => (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        onClick={handleMesAnterior}
-        className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text"
-        aria-label="Mês anterior"
-      >
-        ◀
-      </button>
-      <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
-        {mesLabel}
-      </span>
-      <button
-        type="button"
-        onClick={handleMesProximo}
-        disabled={isCurrentMonth}
-        className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
-        aria-label="Próximo mês"
-      >
-        ▶
-      </button>
-    </div>
-  );
 
   const pieData = (graficos?.distribuicaoCategorias ?? []).map((c) => ({
     label: c.categoriaNome,
@@ -116,22 +75,23 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
       <header className="flex items-center justify-between border-b border-border px-4 py-4 md:hidden">
         <div>
           <h1 className="text-xl font-bold text-text">NossaGrana</h1>
-          <MonthNav />
+          <MonthNav
+            mesReferencia={mesReferencia}
+            onMesAnterior={handleMesAnterior}
+            onMesProximo={handleMesProximo}
+            isCurrentMonth={isCurrentMonth}
+          />
         </div>
-        {onNovaTransacao && (
-          <button
-            type="button"
-            onClick={onNovaTransacao}
-            className="flex h-10 items-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white shadow hover:bg-success-strong"
-          >
-            + Nova
-          </button>
-        )}
       </header>
 
       {/* Mês de referência no desktop */}
       <div className="hidden px-6 pt-4 md:block">
-        <MonthNav />
+        <MonthNav
+          mesReferencia={mesReferencia}
+          onMesAnterior={handleMesAnterior}
+          onMesProximo={handleMesProximo}
+          isCurrentMonth={isCurrentMonth}
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-4">

@@ -17,7 +17,6 @@ type Screen = string;
 interface SidebarProps {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
-  onNovaTransacao: () => void;
   onLogout: () => void;
 }
 
@@ -46,21 +45,11 @@ const navGroups = [
   },
 ];
 
-export const Sidebar = ({ currentScreen, onNavigate, onNovaTransacao, onLogout }: SidebarProps) => (
+export const Sidebar = ({ currentScreen, onNavigate, onLogout }: SidebarProps) => (
   <aside className="flex h-screen w-[220px] shrink-0 flex-col border-r border-border bg-sidebar">
     <div className="border-b border-border px-5 py-4">
       <h1 className="text-lg font-extrabold tracking-tight text-success">NossaGrana</h1>
       <p className="mt-0.5 text-xs text-text-muted">Finanças da família</p>
-    </div>
-
-    <div className="border-b border-border px-4 py-3">
-      <button
-        type="button"
-        onClick={onNovaTransacao}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-success py-2 text-sm font-semibold text-white hover:bg-success-strong"
-      >
-        + Nova Transação
-      </button>
     </div>
 
     <nav className="flex-1 overflow-y-auto py-2">

@@ -150,7 +150,7 @@ export const App = () => {
 
   const renderContent = () => {
     if (screen === 'dashboard') {
-      return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} />;
+      return <DashboardPage familiaId={familiaId} />;
     }
 
     if (screen === 'extrato') {
@@ -241,7 +241,7 @@ export const App = () => {
       );
     }
 
-    return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} />;
+    return <DashboardPage familiaId={familiaId} />;
   };
 
   return (

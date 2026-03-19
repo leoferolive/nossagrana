@@ -5,6 +5,7 @@ import {
   CreditCard,
   HelpCircle,
   House,
+  LogOut,
   Receipt,
   Tag,
   Target,
@@ -17,6 +18,7 @@ interface SidebarProps {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
   onNovaTransacao: () => void;
+  onLogout: () => void;
 }
 
 const navGroups = [
@@ -44,7 +46,7 @@ const navGroups = [
   },
 ];
 
-export const Sidebar = ({ currentScreen, onNavigate, onNovaTransacao }: SidebarProps) => (
+export const Sidebar = ({ currentScreen, onNavigate, onNovaTransacao, onLogout }: SidebarProps) => (
   <aside className="flex h-screen w-[220px] shrink-0 flex-col border-r border-border bg-sidebar">
     <div className="border-b border-border px-5 py-4">
       <h1 className="text-lg font-extrabold tracking-tight text-success">NossaGrana</h1>
@@ -83,5 +85,17 @@ export const Sidebar = ({ currentScreen, onNavigate, onNovaTransacao }: SidebarP
         </div>
       ))}
     </nav>
+
+    <div className="border-t border-border px-4 py-3">
+      <button
+        type="button"
+        aria-label="Sair"
+        onClick={onLogout}
+        className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger/10"
+      >
+        <LogOut size={16} />
+        <span>Sair</span>
+      </button>
+    </div>
   </aside>
 );

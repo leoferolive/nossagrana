@@ -99,4 +99,16 @@ describe('ConfiguracoesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /ajuda/i }));
     expect(onGoToAjuda).toHaveBeenCalled();
   });
+
+  it('renderiza botão "Sair da conta"', () => {
+    render(<ConfiguracoesPage {...defaultProps} onLogout={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /sair da conta/i })).toBeInTheDocument();
+  });
+
+  it('chama onLogout ao clicar em "Sair da conta"', () => {
+    const onLogout = vi.fn();
+    render(<ConfiguracoesPage {...defaultProps} onLogout={onLogout} />);
+    fireEvent.click(screen.getByRole('button', { name: /sair da conta/i }));
+    expect(onLogout).toHaveBeenCalled();
+  });
 });

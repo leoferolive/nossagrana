@@ -20,7 +20,7 @@ import { OrcamentoPage } from '@/pages/orcamento-page';
 import { PerfilPage } from '@/pages/perfil-page';
 import { RelatoriosPage } from '@/pages/relatorios-page';
 import { SignUpPage } from '@/pages/sign-up-page';
-import { familiaService } from '@/services/auth.service';
+import { authService, familiaService } from '@/services/auth.service';
 import { transacaoService } from '@/services/core-financeiro.service';
 
 type Screen =
@@ -42,7 +42,7 @@ type Screen =
   | 'perfil';
 
 export const App = () => {
-  const { familiaIdAtiva, isAuthenticated, updateFamiliaIdAtiva } = useAuth();
+  const { familiaIdAtiva, isAuthenticated, refreshToken, logout, updateFamiliaIdAtiva } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
 
   const [screen, setScreen] = useState<Screen>(() => {
@@ -78,6 +78,13 @@ export const App = () => {
     },
     [updateFamiliaIdAtiva],
   );
+
+  const handleLogout = useCallback(() => {
+    if (refreshToken) {
+      authService.logout(refreshToken).catch(() => {});
+    }
+    logout();
+  }, [refreshToken, logout]);
 
   useEffect(() => {
     if (screen === 'familia-selector' && isAuthenticated && familiasDoUsuario.length === 0) {
@@ -202,6 +209,7 @@ export const App = () => {
           onGoToHistorico={() => setScreen('historico')}
           onGoToAjuda={() => setScreen('ajuda')}
           onGoToPerfil={() => setScreen('perfil')}
+          onLogout={handleLogout}
         />
       );
     }
@@ -242,6 +250,7 @@ export const App = () => {
         currentScreen={screen}
         onNavigate={(s) => setScreen(s as Screen)}
         onNovaTransacao={handleNovaTransacao}
+        onLogout={handleLogout}
       >
         {renderContent()}
       </AppShell>

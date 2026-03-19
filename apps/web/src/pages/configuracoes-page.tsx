@@ -10,6 +10,7 @@ import {
   IconHistorico,
   IconOrcamento,
   IconPerfil,
+  IconSair,
 } from '../components/icons';
 
 interface ConfiguracoesPageProps {
@@ -21,6 +22,7 @@ interface ConfiguracoesPageProps {
   onGoToHistorico: () => void;
   onGoToAjuda: () => void;
   onGoToPerfil?: () => void;
+  onLogout?: () => void;
 }
 
 interface MenuItem {
@@ -39,6 +41,7 @@ export const ConfiguracoesPage = ({
   onGoToHistorico,
   onGoToAjuda,
   onGoToPerfil,
+  onLogout,
 }: ConfiguracoesPageProps) => {
   const items: MenuItem[] = [
     ...(onGoToPerfil
@@ -123,6 +126,23 @@ export const ConfiguracoesPage = ({
             );
           })}
         </ul>
+
+        {onLogout && (
+          <div className="mt-6">
+            <button
+              type="button"
+              aria-label="Sair da conta"
+              onClick={onLogout}
+              className="flex w-full items-center gap-4 rounded-xl border border-danger/30 bg-panel px-4 py-4 text-left transition hover:bg-danger/10"
+            >
+              <IconSair size={20} className="shrink-0 text-danger" />
+              <div className="flex-1">
+                <p className="font-semibold text-danger">Sair da conta</p>
+                <p className="text-xs text-text-muted">Encerrar sessão atual</p>
+              </div>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

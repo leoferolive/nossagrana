@@ -346,6 +346,37 @@ describe('App', () => {
       expect(await screen.findByText(/c.digo copiado/i)).toBeInTheDocument();
     });
 
+    it('exibe seletor de família quando login retorna múltiplas famílias', async () => {
+      const { familiaService } = await import('./services/auth.service');
+      vi.mocked(familiaService.listarMinhas).mockResolvedValueOnce({
+        familias: [
+          { id: 'fam-1', nome: 'Família 1', dataEntrada: '2026-01-01', role: 'admin' },
+          { id: 'fam-2', nome: 'Família 2', dataEntrada: '2026-01-02', role: 'membro' },
+        ],
+      });
+
+      let authenticated = false;
+      vi.mocked(useAuth).mockImplementation(() => ({
+        isAuthenticated: authenticated,
+        accessToken: authenticated ? 'token' : null,
+        refreshToken: null,
+        familiaIdAtiva: null,
+        login: vi.fn(() => {
+          authenticated = true;
+        }),
+        logout: vi.fn(),
+        setAccessToken: vi.fn(),
+        updateFamiliaIdAtiva: vi.fn(),
+      }));
+
+      render(<App />);
+      fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { name: /escolha uma família/i })).toBeInTheDocument(),
+      );
+    });
+
     it('navega para onboarding quando familiaId não existe após login', async () => {
       render(<App />);
 
@@ -453,6 +484,45 @@ describe('App', () => {
       await waitFor(() => within(main).getByRole('button', { name: /^ajuda$/i }));
       fireEvent.click(within(main).getByRole('button', { name: /^ajuda$/i }));
       expect(screen.getAllByRole('heading', { name: /ajuda/i }).length).toBeGreaterThan(0);
+    });
+
+    it('chama authService.logout e useAuth().logout ao clicar "Sair da conta" nas configurações', async () => {
+      const logoutMock = vi.fn();
+      vi.mocked(useAuth).mockReturnValue({
+        isAuthenticated: true,
+        accessToken: 'token',
+        refreshToken: 'rt',
+        familiaIdAtiva: 'fam-test',
+        login: vi.fn(),
+        logout: logoutMock,
+        setAccessToken: vi.fn(),
+        updateFamiliaIdAtiva: vi.fn(),
+      });
+
+      const { authService } = await import('./services/auth.service');
+
+      render(<App />);
+      await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /sair da conta/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /sair da conta/i }));
+
+      expect(authService.logout).toHaveBeenCalledWith('rt');
+      expect(logoutMock).toHaveBeenCalled();
+    });
+
+    it('navega para FamilySettingsPage a partir das configurações', async () => {
+      render(<App />);
+      await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+      const main = screen.getByRole('main');
+      await waitFor(() => within(main).getByRole('button', { name: /família/i }));
+      fireEvent.click(within(main).getByRole('button', { name: /família/i }));
+      await waitFor(() =>
+        expect(screen.getAllByRole('heading', { name: /família/i }).length).toBeGreaterThan(0),
+      );
     });
 
     it('DashboardPage recebe familiaIdAtiva do AuthContext em vez de DEMO_FAMILIA_ID', async () => {

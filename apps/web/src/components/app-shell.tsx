@@ -10,6 +10,7 @@ interface AppShellProps {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
   onNovaTransacao: () => void;
+  onLogout: () => void;
   children: ReactNode;
 }
 
@@ -19,6 +20,7 @@ export const AppShell = ({
   currentScreen,
   onNavigate,
   onNovaTransacao,
+  onLogout,
   children,
 }: AppShellProps) => {
   const activeTab = (
@@ -33,6 +35,7 @@ export const AppShell = ({
           currentScreen={currentScreen}
           onNavigate={onNavigate}
           onNovaTransacao={onNovaTransacao}
+          onLogout={onLogout}
         />
       </div>
 

@@ -350,8 +350,8 @@ describe('App', () => {
       const { familiaService } = await import('./services/auth.service');
       vi.mocked(familiaService.listarMinhas).mockResolvedValueOnce({
         familias: [
-          { id: 'fam-1', nome: 'Família 1', dataCriacao: '2026-01-01', role: 'admin' },
-          { id: 'fam-2', nome: 'Família 2', dataCriacao: '2026-01-02', role: 'membro' },
+          { id: 'fam-1', nome: 'Família 1', dataEntrada: '2026-01-01', role: 'admin' },
+          { id: 'fam-2', nome: 'Família 2', dataEntrada: '2026-01-02', role: 'membro' },
         ],
       });
 

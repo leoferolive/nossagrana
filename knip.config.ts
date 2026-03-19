@@ -1,7 +1,7 @@
 import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
-  ignore: ['docs/wireframes/**'],
+  ignore: ['docs/wireframes/**', 'audit-screenshots/**'],
   ignoreDependencies: ['lint-staged'],
   rules: {
     duplicates: 'off',

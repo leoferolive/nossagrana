@@ -26,6 +26,9 @@ vi.mock('@/services/core-financeiro.service', () => ({
   transacaoService: {
     listar: vi.fn(),
   },
+  metodoPagamentoService: {
+    listar: vi.fn().mockResolvedValue({ metodosPagamento: [] }),
+  },
 }));
 
 afterEach(() => {
@@ -139,7 +142,10 @@ describe('ExtratoPage — carregamento via API', () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
-      expect(transacaoService.listar).toHaveBeenCalledWith({}, 'f1');
+      expect(transacaoService.listar).toHaveBeenCalledWith(
+        expect.objectContaining({ mesReferencia: expect.any(String) }),
+        'f1',
+      );
     });
   });
 

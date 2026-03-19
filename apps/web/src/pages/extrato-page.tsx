@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FirstTimeTour } from '../components/first-time-tour';
-import { transacaoService } from '@/services/core-financeiro.service';
+import { transacaoService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
 interface ExtratoPageProps {
@@ -13,6 +13,17 @@ interface ExtratoPageProps {
 type FiltroTipo = 'todos' | 'receita' | 'despesa';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
+
+function getCurrentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function shiftMonth(mesReferencia: string, delta: number): string {
+  const [year, month] = mesReferencia.split('-').map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
 
 const formatValor = (valor: string, tipo: 'receita' | 'despesa') => {
   const num = parseFloat(valor);
@@ -34,8 +45,12 @@ const TransacaoDetalheModal = ({
     role="dialog"
     aria-modal="true"
     className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center"
+    onClick={onClose}
   >
-    <div className="w-full max-w-lg rounded-t-2xl bg-panel p-5 shadow-soft sm:rounded-2xl">
+    <div
+      className="w-full max-w-lg rounded-t-2xl bg-panel p-5 shadow-soft sm:rounded-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
       <h2 className="mb-4 text-base font-bold text-text">{transacao.descricao ?? 'Transação'}</h2>
       <p className="text-sm text-text-muted">{formatValor(transacao.valor, transacao.tipo)}</p>
       <p className="mt-1 text-xs text-text-muted">{transacao.data}</p>
@@ -76,23 +91,61 @@ export const ExtratoPage = ({
   const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
   const setCarregando = useTransacaoStore((s) => s.setCarregando);
 
+  const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
+  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
+  const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);
+  const [metodosMap, setMetodosMap] = useState<Map<string, string>>(new Map());
+
+  // Load payment methods
+  useEffect(() => {
+    if (!familiaId) return;
+    metodoPagamentoService
+      .listar(familiaId)
+      .then((res) => {
+        const map = new Map<string, string>();
+        for (const m of res.metodosPagamento) {
+          map.set(m.id, m.nome);
+        }
+        setMetodosMap(map);
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, [familiaId]);
+
+  // Load transactions for selected month
   useEffect(() => {
     if (!familiaId) return;
     setCarregando(true);
     transacaoService
-      .listar({}, familiaId)
+      .listar({ mesReferencia }, familiaId)
       .then((res) => setTransacoes(res.transacoes))
       .catch(() => setTransacoes([]))
       .finally(() => setCarregando(false));
-  }, [familiaId, setCarregando, setTransacoes]);
+  }, [familiaId, mesReferencia, setCarregando, setTransacoes]);
 
-  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
-  const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);
+  const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
+  const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
-  const transacoesFiltradas = transacoes.filter((t) => {
-    if (filtroTipo === 'todos') return true;
-    return t.tipo === filtroTipo;
+  const mesLabel = new Date(`${mesReferencia}-01`).toLocaleString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
   });
+  const isCurrentMonth = mesReferencia === getCurrentMonth();
+
+  const transacoesFiltradas = useMemo(
+    () =>
+      transacoes.filter((t) => {
+        if (filtroTipo === 'todos') return true;
+        return t.tipo === filtroTipo;
+      }),
+    [transacoes, filtroTipo],
+  );
+
+  const getMetodoNome = (id: string | null) => {
+    if (!id) return '—';
+    return metodosMap.get(id) ?? '—';
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -109,9 +162,33 @@ export const ExtratoPage = ({
         ]}
       />
 
-      {/* Header — título + filtros */}
+      {/* Header — título + mês + filtros */}
       <header className="border-b border-border px-4 py-4 md:px-6">
-        <h1 className="mb-3 text-lg font-bold text-text md:hidden">Extrato</h1>
+        <div className="mb-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-text md:hidden">Extrato</h1>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleMesAnterior}
+              className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text"
+              aria-label="Mês anterior"
+            >
+              ◀
+            </button>
+            <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
+              {mesLabel}
+            </span>
+            <button
+              type="button"
+              onClick={handleMesProximo}
+              disabled={isCurrentMonth}
+              className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Próximo mês"
+            >
+              ▶
+            </button>
+          </div>
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -211,7 +288,9 @@ export const ExtratoPage = ({
                         <TransacaoBadges t={t} />
                       </div>
                     </td>
-                    <td className="py-3 pr-4 text-text-muted">{t.metodoPagamentoId ?? '—'}</td>
+                    <td className="py-3 pr-4 text-text-muted">
+                      {getMetodoNome(t.metodoPagamentoId)}
+                    </td>
                     <td
                       className={`py-3 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
                     >

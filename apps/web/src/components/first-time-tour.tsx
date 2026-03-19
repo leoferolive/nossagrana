@@ -47,8 +47,12 @@ export const FirstTimeTour = ({ tourKey, steps }: FirstTimeTourProps) => {
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={close}
     >
-      <div className="w-full max-w-sm rounded-2xl bg-panel border border-border p-6 shadow-soft">
+      <div
+        className="w-full max-w-sm rounded-2xl bg-panel border border-border p-6 shadow-soft"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <span className="text-xs text-text-muted">
             {step + 1} de {steps.length}

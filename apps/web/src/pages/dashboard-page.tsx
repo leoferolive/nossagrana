@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
@@ -6,6 +6,17 @@ import { BudgetBar } from '../components/charts/budget-bar';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { useDashboardStore } from '../stores/dashboard.store';
+
+function getCurrentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function shiftMonth(mesReferencia: string, delta: number): string {
+  const [year, month] = mesReferencia.split('-').map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
 
 const formatBRL = (valor: string) =>
   parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -17,10 +28,14 @@ interface DashboardPageProps {
 
 export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, error, fetchAll } = useDashboardStore();
+  const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
 
   useEffect(() => {
-    fetchAll(familiaId);
-  }, [familiaId, fetchAll]);
+    fetchAll(familiaId, mesReferencia);
+  }, [familiaId, mesReferencia, fetchAll]);
+
+  const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
+  const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
   if (loading) {
     return (
@@ -33,12 +48,37 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
   const temTransacoes =
     resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
 
-  const mesLabel = resumo?.mesReferencia
-    ? new Date(`${resumo.mesReferencia}-01`).toLocaleString('pt-BR', {
-        month: 'long',
-        year: 'numeric',
-      })
-    : '';
+  const mesLabel = new Date(`${mesReferencia}-01`).toLocaleString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const isCurrentMonth = mesReferencia === getCurrentMonth();
+
+  const MonthNav = () => (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={handleMesAnterior}
+        className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text"
+        aria-label="Mês anterior"
+      >
+        ◀
+      </button>
+      <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
+        {mesLabel}
+      </span>
+      <button
+        type="button"
+        onClick={handleMesProximo}
+        disabled={isCurrentMonth}
+        className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+        aria-label="Próximo mês"
+      >
+        ▶
+      </button>
+    </div>
+  );
 
   const pieData = (graficos?.distribuicaoCategorias ?? []).map((c) => ({
     label: c.categoriaNome,
@@ -76,7 +116,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
       <header className="flex items-center justify-between border-b border-border px-4 py-4 md:hidden">
         <div>
           <h1 className="text-xl font-bold text-text">NossaGrana</h1>
-          <p className="text-sm capitalize text-text-muted">{mesLabel}</p>
+          <MonthNav />
         </div>
         {onNovaTransacao && (
           <button
@@ -90,11 +130,9 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
       </header>
 
       {/* Mês de referência no desktop */}
-      {mesLabel && (
-        <div className="hidden px-6 pt-4 md:block">
-          <p className="text-sm capitalize text-text-muted">{mesLabel}</p>
-        </div>
-      )}
+      <div className="hidden px-6 pt-4 md:block">
+        <MonthNav />
+      </div>
 
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* 3 cards de resumo */}

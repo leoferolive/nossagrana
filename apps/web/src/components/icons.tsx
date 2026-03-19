@@ -31,6 +31,9 @@ export {
   UserCircle as IconPerfil,
   Settings as IconConfiguracoes,
 
+  // Sessão
+  LogOut as IconSair,
+
   // Informação
   HelpCircle as IconAjuda,
   Info as IconInfo,

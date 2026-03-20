@@ -76,7 +76,7 @@ describe('DashboardPage', () => {
       fetchAll: vi.fn(),
     });
     render(<DashboardPage familiaId="f1" />);
-    expect(screen.getByText(/nenhuma transação registrada/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhuma despesa registrada neste mês/i)).toBeInTheDocument();
   });
 
   it('exibe mensagem quando sem orçamentos', () => {

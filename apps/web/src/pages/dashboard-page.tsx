@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
+import { IconOrcamento, IconRelatorio } from '../components/icons';
 import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { BudgetBar } from '../components/charts/budget-bar';
 import { MiniChart } from '../components/charts/mini-chart';
@@ -11,11 +12,38 @@ import { useDashboardStore } from '../stores/dashboard.store';
 const formatBRL = (valor: string) =>
   parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-interface DashboardPageProps {
-  familiaId: string;
+function calcVariacao(atual: string, anterior: string): number | null {
+  const ant = parseFloat(anterior);
+  if (ant === 0) return null;
+  return ((parseFloat(atual) - ant) / Math.abs(ant)) * 100;
 }
 
-export const DashboardPage = ({ familiaId }: DashboardPageProps) => {
+function TrendBadge({ variacao, invertColor }: { variacao: number | null; invertColor?: boolean }) {
+  if (variacao === null) return null;
+  const isUp = variacao >= 0;
+  const arrow = isUp ? '\u2191' : '\u2193';
+  // invertColor: for expenses, going up is bad (red) and going down is good (green)
+  const colorClass = invertColor
+    ? isUp
+      ? 'text-danger'
+      : 'text-success'
+    : isUp
+      ? 'text-success'
+      : 'text-danger';
+  return (
+    <span className={`ml-1 text-[10px] font-semibold ${colorClass}`}>
+      {arrow} {Math.abs(variacao).toFixed(0)}%
+    </span>
+  );
+}
+
+interface DashboardPageProps {
+  familiaId: string;
+  onNovaTransacao?: () => void;
+  onNavigate?: (screen: string) => void;
+}
+
+export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, error, fetchAll } = useDashboardStore();
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
 
@@ -46,6 +74,16 @@ export const DashboardPage = ({ familiaId }: DashboardPageProps) => {
 
   const miniChartData = (graficos?.evolucaoDiaria ?? []).map((d) => parseFloat(d.totalDespesas));
   const miniChartLabels = (graficos?.evolucaoDiaria ?? []).map((d) => d.dia.slice(8));
+
+  // Tendência mês anterior
+  const mesAnterior = resumo?.mesAnterior ?? null;
+  const varReceitas = mesAnterior
+    ? calcVariacao(resumo?.totalReceitas ?? '0', mesAnterior.totalReceitas)
+    : null;
+  const varDespesas = mesAnterior
+    ? calcVariacao(resumo?.totalDespesas ?? '0', mesAnterior.totalDespesas)
+    : null;
+  const varSaldo = mesAnterior ? calcVariacao(resumo?.saldo ?? '0', mesAnterior.saldo) : null;
 
   const dashboardTourSteps = [
     {
@@ -97,38 +135,59 @@ export const DashboardPage = ({ familiaId }: DashboardPageProps) => {
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* 3 cards de resumo */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border bg-panel p-3">
-            <p className="text-xs font-semibold text-success">RECEITAS</p>
+          <div className="rounded-xl border-l-2 border-success bg-panel p-3 shadow-sm shadow-black/20">
+            <p className="text-xs font-semibold text-success">
+              Receitas
+              <TrendBadge variacao={varReceitas} />
+            </p>
             <p className="mt-1 text-lg font-bold text-text">
               {formatBRL(resumo?.totalReceitas ?? '0')}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-panel p-3">
-            <p className="text-xs font-semibold text-danger">DESPESAS</p>
+          <div className="rounded-xl border-l-2 border-danger bg-panel p-3 shadow-sm shadow-black/20">
+            <p className="text-xs font-semibold text-danger">
+              Despesas
+              <TrendBadge variacao={varDespesas} invertColor />
+            </p>
             <p className="mt-1 text-lg font-bold text-text">
               {formatBRL(resumo?.totalDespesas ?? '0')}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-panel p-3">
-            <p className="text-xs font-semibold text-primary">SALDO</p>
+          <div className="rounded-xl border-l-2 border-primary bg-panel p-3 shadow-sm shadow-black/20">
+            <p className="text-xs font-semibold text-primary">
+              Saldo
+              <TrendBadge variacao={varSaldo} />
+            </p>
             <p className="mt-1 text-lg font-bold text-text">{formatBRL(resumo?.saldo ?? '0')}</p>
           </div>
         </div>
 
         {/* Distribuição por categoria — PieChart SVG */}
-        <div className="rounded-xl border border-border bg-panel p-4">
-          <p className="mb-3 text-xs font-semibold text-text-muted">DESPESAS POR CATEGORIA</p>
+        <div className="rounded-xl bg-panel p-4 shadow-sm shadow-black/20">
+          <p className="mb-3 text-xs font-semibold text-text-muted">Despesas por categoria</p>
           {pieData.length > 0 ? (
             <PieChart data={pieData} size={110} />
           ) : (
-            <p className="text-center text-xs text-text-muted">Nenhuma transação registrada</p>
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <IconRelatorio className="text-text-dim" size={32} />
+              <p className="text-sm text-text-muted">Nenhuma despesa registrada neste mês</p>
+              {onNovaTransacao && (
+                <button
+                  type="button"
+                  onClick={onNovaTransacao}
+                  className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white hover:bg-success-strong"
+                >
+                  Adicionar transação
+                </button>
+              )}
+            </div>
           )}
         </div>
 
         {/* Evolução do mês — MiniChart SVG */}
         {temTransacoes && miniChartData.length >= 2 && (
-          <div className="rounded-xl border border-border bg-panel p-4">
-            <p className="mb-2 text-xs font-semibold text-text-muted">EVOLUÇÃO DO MÊS</p>
+          <div className="rounded-xl bg-panel p-4 shadow-sm shadow-black/20">
+            <p className="mb-2 text-xs font-semibold text-text-muted">Evolução do mês</p>
             <MiniChart
               data={miniChartData}
               height={64}
@@ -140,12 +199,22 @@ export const DashboardPage = ({ familiaId }: DashboardPageProps) => {
         )}
 
         {/* Orçamento — BudgetBar */}
-        <div className="rounded-xl border border-border bg-panel p-4">
-          <p className="mb-3 text-xs font-semibold text-text-muted">ORÇAMENTO</p>
+        <div className="rounded-xl bg-panel p-4 shadow-sm shadow-black/20">
+          <p className="mb-3 text-xs font-semibold text-text-muted">Orçamento</p>
           {orcamento.length === 0 ? (
-            <p className="text-sm text-text-muted">
-              Nenhum orçamento configurado. Configure na tela de Orçamento.
-            </p>
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <IconOrcamento className="text-text-dim" size={32} />
+              <p className="text-sm text-text-muted">Nenhum orçamento configurado</p>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('orcamento')}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                >
+                  Configurar orçamento
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               {orcamento.map((item) => (

@@ -145,16 +145,22 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
         tourKey="orcamento"
         steps={[
           {
-            title: 'Orçamento',
-            description: 'Defina limites de gasto por categoria para controlar suas finanças.',
+            icon: '🎯',
+            title: 'Orçamento mensal',
+            description:
+              'Defina quanto deseja gastar no máximo por categoria. O controle ajuda a evitar surpresas no fim do mês.',
           },
           {
-            title: 'Progresso',
-            description: 'A barra mostra quanto do limite já foi utilizado no mês.',
+            icon: '📊',
+            title: 'Barra de progresso',
+            description:
+              'A barra muda de cor: verde = dentro do limite, amarelo = 80% usado, vermelho = estourou.',
           },
           {
-            title: 'Editar limite',
-            description: 'Toque em "Editar limite" para ajustar o valor máximo de cada categoria.',
+            icon: '✏️',
+            title: 'Ajustar limites',
+            description:
+              'Toque em "Editar limite" para alterar o valor. A mudança vale a partir de agora e o histórico anterior é preservado.',
           },
         ]}
       />

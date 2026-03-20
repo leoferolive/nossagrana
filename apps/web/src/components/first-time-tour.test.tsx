@@ -22,8 +22,9 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 import { FirstTimeTour } from './first-time-tour';
 
 const steps = [
-  { title: 'Bem-vindo!', description: 'Esta é a tela principal.' },
-  { title: 'Transações', description: 'Clique em + para adicionar uma transação.' },
+  { icon: '👋', title: 'Bem-vindo!', description: 'Esta é a tela principal.' },
+  { icon: '💰', title: 'Transações', description: 'Clique em + para adicionar uma transação.' },
+  { title: 'Fim', description: 'Pronto para usar!' },
 ];
 
 afterEach(() => {
@@ -46,6 +47,12 @@ describe('FirstTimeTour', () => {
     expect(screen.queryByText('Bem-vindo!')).not.toBeInTheDocument();
   });
 
+  it('exibe ícone do step quando fornecido', () => {
+    localStorageMock.getItem.mockReturnValue(null as unknown as string);
+    render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
+    expect(screen.getByText('👋')).toBeInTheDocument();
+  });
+
   it('avança para o próximo passo', () => {
     localStorageMock.getItem.mockReturnValue(null as unknown as string);
     render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
@@ -53,12 +60,28 @@ describe('FirstTimeTour', () => {
     expect(screen.getByText('Transações')).toBeInTheDocument();
   });
 
+  it('volta para o passo anterior', () => {
+    localStorageMock.getItem.mockReturnValue(null as unknown as string);
+    render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
+    fireEvent.click(screen.getByRole('button', { name: /próximo/i }));
+    expect(screen.getByText('Transações')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
+    expect(screen.getByText('Bem-vindo!')).toBeInTheDocument();
+  });
+
+  it('não exibe botão voltar no primeiro passo', () => {
+    localStorageMock.getItem.mockReturnValue(null as unknown as string);
+    render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
+    expect(screen.queryByRole('button', { name: /voltar/i })).not.toBeInTheDocument();
+  });
+
   it('fecha o tour no último passo e salva no localStorage', () => {
     localStorageMock.getItem.mockReturnValue(null as unknown as string);
     render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
     fireEvent.click(screen.getByRole('button', { name: /próximo/i }));
+    fireEvent.click(screen.getByRole('button', { name: /próximo/i }));
     fireEvent.click(screen.getByRole('button', { name: /concluir/i }));
-    expect(screen.queryByText('Transações')).not.toBeInTheDocument();
+    expect(screen.queryByText('Fim')).not.toBeInTheDocument();
     expect(localStorageMock.setItem).toHaveBeenCalledWith('tour-dashboard', 'true');
   });
 
@@ -70,9 +93,10 @@ describe('FirstTimeTour', () => {
     expect(localStorageMock.setItem).toHaveBeenCalledWith('tour-dashboard', 'true');
   });
 
-  it('mostra indicador de progresso (passo N de M)', () => {
+  it('exibe progress dots', () => {
     localStorageMock.getItem.mockReturnValue(null as unknown as string);
-    render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
-    expect(screen.getByText(/1.*2/)).toBeInTheDocument();
+    const { container } = render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
+    const dots = container.querySelectorAll('.rounded-full');
+    expect(dots.length).toBe(steps.length);
   });
 });

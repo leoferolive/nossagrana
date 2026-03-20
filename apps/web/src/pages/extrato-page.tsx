@@ -206,12 +206,27 @@ export const ExtratoPage = ({
       <FirstTimeTour
         tourKey="extrato"
         steps={[
-          { title: 'Extrato', description: 'Aqui você vê todas as suas transações registradas.' },
-          { title: 'Filtros', description: 'Use os filtros para ver só receitas ou só despesas.' },
-          { title: 'Detalhe', description: 'Toque em uma transação para ver os detalhes.' },
           {
-            title: 'Nova transação',
-            description: 'Use o botão "+" para registrar uma nova transação.',
+            icon: '📋',
+            title: 'Seu extrato',
+            description:
+              'Veja todas as transações do mês. Use as setas ◀ ▶ para navegar entre meses.',
+          },
+          {
+            icon: '🔍',
+            title: 'Filtros e busca',
+            description:
+              'Filtre por receitas ou despesas com os chips. Use a barra de busca para encontrar uma transação específica.',
+          },
+          {
+            icon: '✏️',
+            title: 'Editar transação',
+            description: 'Toque em qualquer transação para editá-la ou excluí-la.',
+          },
+          {
+            icon: '📥',
+            title: 'Exportar CSV',
+            description: 'Use o botão "Exportar CSV" para baixar suas transações em planilha.',
           },
         ]}
       />

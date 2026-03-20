@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
+import { FirstTimeTour } from '../components/first-time-tour';
 import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
@@ -88,6 +89,23 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
 
   return (
     <div className="min-h-screen bg-bg p-4">
+      <FirstTimeTour
+        tourKey="relatorios"
+        steps={[
+          {
+            icon: '📊',
+            title: 'Relatórios',
+            description:
+              'Analise seus gastos de diferentes ângulos: distribuição por categoria, comparação entre membros e tendências ao longo dos meses.',
+          },
+          {
+            icon: '🔄',
+            title: 'Abas de visualização',
+            description:
+              'Alterne entre Distribuição, Por Membro e Tendências usando as abas no topo.',
+          },
+        ]}
+      />
       <ErrorBanner error={erro} />
 
       <div className="mb-4 flex items-center justify-between gap-4">

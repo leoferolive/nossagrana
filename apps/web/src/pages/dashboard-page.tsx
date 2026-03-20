@@ -87,20 +87,28 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
 
   const dashboardTourSteps = [
     {
+      icon: '👋',
       title: 'Bem-vindo ao NossaGrana!',
-      description: 'Esta é a tela principal. Aqui você vê o resumo financeiro do mês.',
+      description:
+        'Aqui é o seu painel financeiro. Você vê receitas, despesas e saldo do mês de forma rápida.',
     },
     {
-      title: 'Receitas e Despesas',
-      description: 'Os cards mostram o total de receitas, despesas e saldo do mês atual.',
+      icon: '💰',
+      title: 'Cards de resumo',
+      description:
+        'Os três cards no topo mostram o total de receitas, despesas e o saldo. As setas indicam se subiu ou caiu em relação ao mês anterior.',
     },
     {
-      title: 'Nova Transação',
-      description: 'Toque no botão "+" para registrar uma nova receita ou despesa.',
+      icon: '➕',
+      title: 'Registrar transação',
+      description:
+        'Toque no botão "+" (mobile) ou "Nova Transação" (desktop) para registrar uma receita ou despesa.',
     },
     {
-      title: 'Navegar',
-      description: 'Use o menu inferior para acessar Extrato, Relatórios e Configurações.',
+      icon: '📊',
+      title: 'Gráficos e orçamento',
+      description:
+        'Acompanhe despesas por categoria, evolução diária e limites de orçamento — tudo nesta mesma tela.',
     },
   ];
 

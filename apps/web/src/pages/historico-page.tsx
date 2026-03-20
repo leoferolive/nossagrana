@@ -96,19 +96,28 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
       <FirstTimeTour
         tourKey="historico"
         steps={[
-          { title: 'Histórico', description: 'Veja um resumo financeiro de cada mês passado.' },
           {
-            title: 'Snapshot',
-            description: 'Meses fechados têm um snapshot que preserva os dados do período.',
-          },
-          {
-            title: 'Divergente',
+            icon: '📅',
+            title: 'Histórico mensal',
             description:
-              'Se uma transação for editada após o fechamento, o mês fica marcado como divergente.',
+              'Reveja o resumo financeiro de cada mês. Toque em um mês para ver o detalhamento.',
           },
           {
-            title: 'Tendência',
-            description: 'O gráfico de tendência mostra a evolução ao longo do tempo.',
+            icon: '📸',
+            title: 'Snapshot',
+            description:
+              'No fim de cada mês, uma "foto" dos totais é salva. Assim o relatório original fica preservado mesmo que algo mude depois.',
+          },
+          {
+            icon: '⚠️',
+            title: 'Mês divergente',
+            description:
+              'Se você editar uma transação de um mês já fechado, ele fica marcado como divergente. O snapshot original continua disponível.',
+          },
+          {
+            icon: '📈',
+            title: 'Gráfico de tendência',
+            description: 'Acompanhe a evolução de receitas, despesas e saldo ao longo dos meses.',
           },
         ]}
       />

@@ -11,6 +11,10 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
+vi.mock('../components/first-time-tour', () => ({
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
+}));
+
 import { RelatoriosPage } from './relatorios-page';
 
 const familiaId = 'fam-1';

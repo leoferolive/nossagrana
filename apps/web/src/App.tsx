@@ -246,7 +246,12 @@ export const App = () => {
     }
 
     if (screen === 'ajuda') {
-      return <AjudaPage onBack={() => setScreen('configuracoes')} />;
+      return (
+        <AjudaPage
+          onBack={() => setScreen('configuracoes')}
+          onNavigate={(s) => setScreen(s as Screen)}
+        />
+      );
     }
 
     if (screen === 'configuracoes') {

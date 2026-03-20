@@ -29,6 +29,9 @@ vi.mock('@/services/core-financeiro.service', () => ({
   metodoPagamentoService: {
     listar: vi.fn().mockResolvedValue({ metodosPagamento: [] }),
   },
+  categoriaService: {
+    listar: vi.fn().mockResolvedValue({ categorias: [] }),
+  },
 }));
 
 afterEach(() => {

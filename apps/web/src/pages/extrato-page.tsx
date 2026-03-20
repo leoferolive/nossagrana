@@ -169,12 +169,15 @@ export const ExtratoPage = ({
     [transacoes, filtroTipo, busca],
   );
 
-  const getMetodoNome = (id: string | null) => {
-    if (!id) return '—';
-    return metodosMap.get(id) ?? '—';
-  };
+  const getMetodoNome = useCallback(
+    (id: string | null) => (!id ? '—' : (metodosMap.get(id) ?? '—')),
+    [metodosMap],
+  );
 
-  const getCategoriaNome = (id: string | null) => (!id ? '—' : (categoriasMap.get(id) ?? '—'));
+  const getCategoriaNome = useCallback(
+    (id: string | null) => (!id ? '—' : (categoriasMap.get(id) ?? '—')),
+    [categoriasMap],
+  );
 
   const exportarCSV = useCallback(() => {
     const headers = ['Data', 'Descrição', 'Categoria', 'Pagamento', 'Tipo', 'Valor'];
@@ -196,7 +199,7 @@ export const ExtratoPage = ({
     a.download = `extrato-${mesReferencia}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [transacoesFiltradas, mesReferencia]);
+  }, [transacoesFiltradas, mesReferencia, getCategoriaNome, getMetodoNome]);
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">

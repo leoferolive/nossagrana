@@ -92,6 +92,8 @@ describe('TransacaoModal', () => {
   it('exibe lista de métodos de pagamento no select', () => {
     useMetodoPagamentoStore.setState({ metodos: METODOS, carregando: false, erro: null });
     render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+    // Open the custom select dropdown
+    fireEvent.click(screen.getByRole('combobox', { name: /método de pagamento/i }));
     expect(screen.getByText('Nubank')).toBeInTheDocument();
   });
 });

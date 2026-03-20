@@ -76,7 +76,7 @@ export const CustomSelect = ({
     if (!isOpen || highlightedIndex < 0 || !listboxRef.current) return;
     const items = listboxRef.current.children;
     if (items[highlightedIndex]) {
-      (items[highlightedIndex] as HTMLElement).scrollIntoView({ block: 'nearest' });
+      (items[highlightedIndex] as HTMLElement).scrollIntoView?.({ block: 'nearest' });
     }
   }, [highlightedIndex, isOpen]);
 

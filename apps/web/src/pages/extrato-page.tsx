@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 
 import { FirstTimeTour } from '../components/first-time-tour';
-import { transacaoService, metodoPagamentoService } from '@/services/core-financeiro.service';
+import {
+  transacaoService,
+  metodoPagamentoService,
+  categoriaService,
+} from '@/services/core-financeiro.service';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
 interface ExtratoPageProps {
@@ -93,8 +98,10 @@ export const ExtratoPage = ({
 
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
+  const [busca, setBusca] = useState('');
   const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);
   const [metodosMap, setMetodosMap] = useState<Map<string, string>>(new Map());
+  const [categoriasMap, setCategoriasMap] = useState<Map<string, string>>(new Map());
 
   // Load payment methods
   useEffect(() => {
@@ -107,6 +114,23 @@ export const ExtratoPage = ({
           map.set(m.id, m.nome);
         }
         setMetodosMap(map);
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, [familiaId]);
+
+  // Load categories
+  useEffect(() => {
+    if (!familiaId) return;
+    categoriaService
+      .listar(familiaId)
+      .then((res) => {
+        const map = new Map<string, string>();
+        for (const c of res.categorias) {
+          map.set(c.id, c.nome);
+        }
+        setCategoriasMap(map);
       })
       .catch(() => {
         /* ignore */
@@ -136,16 +160,41 @@ export const ExtratoPage = ({
   const transacoesFiltradas = useMemo(
     () =>
       transacoes.filter((t) => {
-        if (filtroTipo === 'todos') return true;
-        return t.tipo === filtroTipo;
+        if (filtroTipo !== 'todos' && t.tipo !== filtroTipo) return false;
+        if (busca && !(t.descricao ?? '').toLowerCase().includes(busca.toLowerCase())) return false;
+        return true;
       }),
-    [transacoes, filtroTipo],
+    [transacoes, filtroTipo, busca],
   );
 
   const getMetodoNome = (id: string | null) => {
     if (!id) return '—';
     return metodosMap.get(id) ?? '—';
   };
+
+  const getCategoriaNome = (id: string | null) => (!id ? '—' : (categoriasMap.get(id) ?? '—'));
+
+  const exportarCSV = useCallback(() => {
+    const headers = ['Data', 'Descrição', 'Categoria', 'Pagamento', 'Tipo', 'Valor'];
+    const rows = transacoesFiltradas.map((t) => [
+      t.data,
+      t.descricao ?? '',
+      getCategoriaNome(t.categoriaId),
+      getMetodoNome(t.metodoPagamentoId),
+      t.tipo,
+      t.valor,
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `extrato-${mesReferencia}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [transacoesFiltradas, mesReferencia]);
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -188,6 +237,14 @@ export const ExtratoPage = ({
               ▶
             </button>
           </div>
+          <button
+            type="button"
+            onClick={exportarCSV}
+            className="rounded-lg border border-border px-3 py-1 text-xs text-text-muted transition hover:bg-surface hover:text-text"
+            aria-label="Exportar CSV"
+          >
+            Exportar CSV
+          </button>
         </div>
         <div className="flex gap-2">
           <button
@@ -226,6 +283,18 @@ export const ExtratoPage = ({
             Receitas
           </button>
         </div>
+        <div className="mt-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" size={16} />
+            <input
+              type="text"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por descrição..."
+              className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+        </div>
       </header>
 
       {/* Conteúdo */}
@@ -246,18 +315,26 @@ export const ExtratoPage = ({
             >
               <div className="flex flex-col gap-1">
                 <span className="font-medium text-text">{t.descricao}</span>
+                <span className="text-xs text-text-dim">{getCategoriaNome(t.categoriaId)}</span>
                 <div className="flex flex-wrap items-center gap-1">
                   <TransacaoBadges t={t} />
                   <span className="text-xs text-text-muted">{t.data}</span>
                 </div>
               </div>
-              <span
-                className={`text-sm font-semibold tabular-nums ${
-                  t.tipo === 'receita' ? 'text-success' : 'text-danger'
-                }`}
-              >
-                {formatValor(t.valor, t.tipo)}
-              </span>
+              <div className="flex items-center gap-1">
+                <span
+                  className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
+                >
+                  {t.tipo === 'receita' ? '\u2191' : '\u2193'}
+                </span>
+                <span
+                  className={`text-sm font-semibold tabular-nums ${
+                    t.tipo === 'receita' ? 'text-success' : 'text-danger'
+                  }`}
+                >
+                  {formatValor(t.valor, t.tipo)}
+                </span>
+              </div>
             </li>
           ))}
         </ul>
@@ -270,29 +347,33 @@ export const ExtratoPage = ({
                 <tr className="border-b border-border text-left text-xs text-text-muted">
                   <th className="pb-2 pr-4 font-semibold">Data</th>
                   <th className="pb-2 pr-4 font-semibold">Descrição</th>
+                  <th className="pb-2 pr-4 font-semibold">Categoria</th>
                   <th className="pb-2 pr-4 font-semibold">Pagamento</th>
                   <th className="pb-2 text-right font-semibold">Valor</th>
                 </tr>
               </thead>
               <tbody>
-                {transacoesFiltradas.map((t) => (
+                {transacoesFiltradas.map((t, idx) => (
                   <tr
                     key={t.id}
-                    className="cursor-pointer border-b border-border/50 hover:bg-card-alt"
+                    className={`cursor-pointer border-b border-border/50 hover:bg-card-alt ${idx % 2 === 1 ? 'bg-surface/30' : ''}`}
                     onClick={() => setTransacaoSelecionada(t)}
                   >
-                    <td className="py-3 pr-4 text-text-muted">{t.data}</td>
-                    <td className="py-3 pr-4">
+                    <td className="py-3.5 pr-4 text-text-muted">{t.data}</td>
+                    <td className="py-3.5 pr-4">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-text">{t.descricao}</span>
                         <TransacaoBadges t={t} />
                       </div>
                     </td>
-                    <td className="py-3 pr-4 text-text-muted">
+                    <td className="py-3.5 pr-4 text-text-muted">
+                      {getCategoriaNome(t.categoriaId)}
+                    </td>
+                    <td className="py-3.5 pr-4 text-text-muted">
                       {getMetodoNome(t.metodoPagamentoId)}
                     </td>
                     <td
-                      className={`py-3 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
+                      className={`py-3.5 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
                     >
                       {formatValor(t.valor, t.tipo)}
                     </td>

@@ -4,7 +4,8 @@ import type { TransacaoCreateRequest } from '@nossagrana/types';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
-import { TooltipHelp } from './tooltip-help';
+import { IconParcelas, IconRecorrente } from './icons';
+import { CustomSelect } from './ui/custom-select';
 
 interface TransacaoModalProps {
   open: boolean;
@@ -87,8 +88,6 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
 
   if (!open) return null;
 
-  const accentColor = tipo === 'receita' ? 'bg-success' : 'bg-danger';
-
   return (
     <div
       role="dialog"
@@ -162,22 +161,14 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
           </label>
 
           {/* Categoria */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Categoria</span>
-            <select
-              aria-label="Categoria"
-              value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
-            >
-              <option value="">Selecione...</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </label>
+          <CustomSelect
+            label="Categoria"
+            aria-label="Categoria"
+            placeholder="Selecione..."
+            options={categorias.map((c) => ({ value: c.id, label: c.nome }))}
+            value={categoriaId}
+            onChange={setCategoriaId}
+          />
 
           {/* Descrição */}
           <label className="flex flex-col gap-1">
@@ -204,55 +195,52 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
           </label>
 
           {/* Método de pagamento */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Método de pagamento</span>
-            <select
-              aria-label="Método de pagamento"
-              value={metodoPagamentoId}
-              onChange={(e) => setMetodoPagamentoId(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
-            >
-              <option value="">Sem método</option>
-              {metodos.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nome}
-                </option>
-              ))}
-            </select>
-          </label>
+          <CustomSelect
+            label="Método de pagamento"
+            aria-label="Método de pagamento"
+            placeholder="Sem método"
+            options={[
+              { value: '', label: 'Sem método' },
+              ...metodos.map((m) => ({ value: m.id, label: m.nome })),
+            ]}
+            value={metodoPagamentoId}
+            onChange={setMetodoPagamentoId}
+          />
 
           {/* Toggles: parcelado / recorrente */}
           <div className="flex items-center gap-2">
-            <TooltipHelp text="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão." />
-            <TooltipHelp text="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente." />
             <button
               type="button"
               aria-label="Parcelado"
+              title="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão."
               onClick={() => {
                 setParcelado(!parcelado);
                 setRecorrente(false);
               }}
-              className={`flex-1 rounded-lg border py-2 text-xs font-semibold transition ${
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
                 parcelado
                   ? 'border-info bg-info/10 text-info'
                   : 'border-border text-text-muted hover:text-text'
               }`}
             >
+              <IconParcelas size={14} />
               Parcelado
             </button>
             <button
               type="button"
               aria-label="Recorrente"
+              title="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente."
               onClick={() => {
                 setRecorrente(!recorrente);
                 setParcelado(false);
               }}
-              className={`flex-1 rounded-lg border py-2 text-xs font-semibold transition ${
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
                 recorrente
                   ? 'border-warning bg-warning/10 text-warning'
                   : 'border-border text-text-muted hover:text-text'
               }`}
             >
+              <IconRecorrente size={14} />
               Recorrente
             </button>
           </div>
@@ -281,19 +269,17 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
           {/* Campos condicionais: recorrência */}
           {recorrente && (
             <>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-text-muted">Frequência</span>
-                <select
-                  aria-label="Frequência"
-                  value={frequencia}
-                  onChange={(e) => setFrequencia(e.target.value as typeof frequencia)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
-                >
-                  <option value="mensal">Mensal</option>
-                  <option value="semanal">Semanal</option>
-                  <option value="quinzenal">Quinzenal</option>
-                </select>
-              </label>
+              <CustomSelect
+                label="Frequência"
+                aria-label="Frequência"
+                options={[
+                  { value: 'mensal', label: 'Mensal' },
+                  { value: 'semanal', label: 'Semanal' },
+                  { value: 'quinzenal', label: 'Quinzenal' },
+                ]}
+                value={frequencia}
+                onChange={(v) => setFrequencia(v as typeof frequencia)}
+              />
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-text-muted">Data fim (opcional)</span>
                 <input
@@ -321,7 +307,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
           <button
             type="button"
             onClick={handleSubmit}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 ${accentColor}`}
+            className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong"
           >
             Salvar Transação
           </button>

@@ -9,15 +9,16 @@ import {
 } from '@/services/core-financeiro.service';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
+type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
+
 interface ExtratoPageProps {
   familiaId: string;
   onBack: () => void;
   onNovaTransacao: () => void;
+  onEditarTransacao?: (transacao: Transacao) => void;
 }
 
 type FiltroTipo = 'todos' | 'receita' | 'despesa';
-
-type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -91,6 +92,7 @@ export const ExtratoPage = ({
   familiaId,
   onBack: _onBack,
   onNovaTransacao: _onNovaTransacao,
+  onEditarTransacao,
 }: ExtratoPageProps) => {
   const { transacoes, carregando } = useTransacaoStore();
   const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
@@ -311,7 +313,9 @@ export const ExtratoPage = ({
             <li
               key={t.id}
               className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-panel px-4 py-3 transition hover:bg-surface"
-              onClick={() => setTransacaoSelecionada(t)}
+              onClick={() =>
+                onEditarTransacao ? onEditarTransacao(t) : setTransacaoSelecionada(t)
+              }
             >
               <div className="flex flex-col gap-1">
                 <span className="font-medium text-text">{t.descricao}</span>
@@ -357,7 +361,9 @@ export const ExtratoPage = ({
                   <tr
                     key={t.id}
                     className={`cursor-pointer border-b border-border/50 hover:bg-card-alt ${idx % 2 === 1 ? 'bg-surface/30' : ''}`}
-                    onClick={() => setTransacaoSelecionada(t)}
+                    onClick={() =>
+                      onEditarTransacao ? onEditarTransacao(t) : setTransacaoSelecionada(t)
+                    }
                   >
                     <td className="py-3.5 pr-4 text-text-muted">{t.data}</td>
                     <td className="py-3.5 pr-4">

@@ -11,6 +11,7 @@ interface AppShellProps {
   onNavigate: (screen: Screen) => void;
   onNovaTransacao: () => void;
   onLogout: () => void;
+  familiaNome?: string;
   children: ReactNode;
 }
 
@@ -21,6 +22,7 @@ export const AppShell = ({
   onNavigate,
   onNovaTransacao,
   onLogout,
+  familiaNome,
   children,
 }: AppShellProps) => {
   const activeTab = (
@@ -31,7 +33,12 @@ export const AppShell = ({
     <div className="flex min-h-screen md:h-screen">
       {/* Sidebar: visível apenas no desktop */}
       <div className="hidden md:flex">
-        <Sidebar currentScreen={currentScreen} onNavigate={onNavigate} onLogout={onLogout} />
+        <Sidebar
+          currentScreen={currentScreen}
+          onNavigate={onNavigate}
+          onLogout={onLogout}
+          familiaNome={familiaNome}
+        />
       </div>
 
       {/* Área principal */}

@@ -1,22 +1,43 @@
 import { useEffect, useState } from 'react';
 
-import type { TransacaoCreateRequest } from '@nossagrana/types';
+import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { IconParcelas, IconRecorrente } from './icons';
 import { CustomSelect } from './ui/custom-select';
 
+interface TransacaoParaEditar {
+  id: string;
+  tipo: 'receita' | 'despesa';
+  valor: string;
+  categoriaId: string;
+  descricao: string | null;
+  data: string;
+  metodoPagamentoId: string | null;
+}
+
 interface TransacaoModalProps {
   open: boolean;
   familiaId: string;
   onClose: () => void;
   onSubmit: (payload: TransacaoCreateRequest) => void;
+  transacaoParaEditar?: TransacaoParaEditar | null;
+  onUpdate?: (id: string, payload: TransacaoUpdateRequest) => void;
+  onDelete?: (id: string) => void;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: TransacaoModalProps) => {
+export const TransacaoModal = ({
+  open,
+  familiaId,
+  onClose,
+  onSubmit,
+  transacaoParaEditar,
+  onUpdate,
+  onDelete,
+}: TransacaoModalProps) => {
   const categorias = useCategoriaStore((s) => s.categorias);
   const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const metodos = useMetodoPagamentoStore((s) => s.metodos);
@@ -65,24 +86,49 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
       setRecorrente(false);
       setFrequencia('mensal');
       setDataFimRecorrencia('');
+      return;
     }
-  }, [open]);
+    if (transacaoParaEditar) {
+      setTipo(transacaoParaEditar.tipo);
+      setValor(transacaoParaEditar.valor);
+      setCategoriaId(transacaoParaEditar.categoriaId);
+      setDescricao(transacaoParaEditar.descricao ?? '');
+      setData(transacaoParaEditar.data);
+      setMetodoPagamentoId(transacaoParaEditar.metodoPagamentoId ?? '');
+      setParcelado(false);
+      setRecorrente(false);
+    }
+  }, [open, transacaoParaEditar]);
+
+  const isEditing = !!transacaoParaEditar;
 
   const handleSubmit = () => {
-    const payload: TransacaoCreateRequest = {
-      tipo,
-      valor,
-      categoriaId,
-      descricao: descricao || null,
-      data,
-      metodoPagamentoId: metodoPagamentoId || null,
-      parcelado,
-      numeroParcelas: parcelado ? numeroParcelas : null,
-      recorrente,
-      frequencia: recorrente ? frequencia : null,
-      dataFimRecorrencia: recorrente && dataFimRecorrencia ? dataFimRecorrencia : null,
-    };
-    onSubmit(payload);
+    if (isEditing && onUpdate) {
+      const payload: TransacaoUpdateRequest = {
+        tipo,
+        valor,
+        categoriaId,
+        descricao: descricao || null,
+        data,
+        metodoPagamentoId: metodoPagamentoId || null,
+      };
+      onUpdate(transacaoParaEditar.id, payload);
+    } else {
+      const payload: TransacaoCreateRequest = {
+        tipo,
+        valor,
+        categoriaId,
+        descricao: descricao || null,
+        data,
+        metodoPagamentoId: metodoPagamentoId || null,
+        parcelado,
+        numeroParcelas: parcelado ? numeroParcelas : null,
+        recorrente,
+        frequencia: recorrente ? frequencia : null,
+        dataFimRecorrencia: recorrente && dataFimRecorrencia ? dataFimRecorrencia : null,
+      };
+      onSubmit(payload);
+    }
     onClose();
   };
 
@@ -105,7 +151,9 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
         </div>
 
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-text">Nova Transação</h2>
+          <h2 className="text-base font-bold text-text">
+            {isEditing ? 'Editar Transação' : 'Nova Transação'}
+          </h2>
           <button
             type="button"
             aria-label="Fechar modal"
@@ -207,46 +255,48 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
             onChange={setMetodoPagamentoId}
           />
 
-          {/* Toggles: parcelado / recorrente */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Parcelado"
-              title="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão."
-              onClick={() => {
-                setParcelado(!parcelado);
-                setRecorrente(false);
-              }}
-              className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
-                parcelado
-                  ? 'border-info bg-info/10 text-info'
-                  : 'border-border text-text-muted hover:text-text'
-              }`}
-            >
-              <IconParcelas size={14} />
-              Parcelado
-            </button>
-            <button
-              type="button"
-              aria-label="Recorrente"
-              title="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente."
-              onClick={() => {
-                setRecorrente(!recorrente);
-                setParcelado(false);
-              }}
-              className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
-                recorrente
-                  ? 'border-warning bg-warning/10 text-warning'
-                  : 'border-border text-text-muted hover:text-text'
-              }`}
-            >
-              <IconRecorrente size={14} />
-              Recorrente
-            </button>
-          </div>
+          {/* Toggles: parcelado / recorrente (hidden when editing) */}
+          {!isEditing && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Parcelado"
+                title="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão."
+                onClick={() => {
+                  setParcelado(!parcelado);
+                  setRecorrente(false);
+                }}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
+                  parcelado
+                    ? 'border-info bg-info/10 text-info'
+                    : 'border-border text-text-muted hover:text-text'
+                }`}
+              >
+                <IconParcelas size={14} />
+                Parcelado
+              </button>
+              <button
+                type="button"
+                aria-label="Recorrente"
+                title="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente."
+                onClick={() => {
+                  setRecorrente(!recorrente);
+                  setParcelado(false);
+                }}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
+                  recorrente
+                    ? 'border-warning bg-warning/10 text-warning'
+                    : 'border-border text-text-muted hover:text-text'
+                }`}
+              >
+                <IconRecorrente size={14} />
+                Recorrente
+              </button>
+            </div>
+          )}
 
           {/* Campos condicionais: parcelamento */}
-          {parcelado && (
+          {!isEditing && parcelado && (
             <label className="flex flex-col gap-1">
               <span className="text-xs text-text-muted">Número de parcelas</span>
               <input
@@ -267,7 +317,7 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
           )}
 
           {/* Campos condicionais: recorrência */}
-          {recorrente && (
+          {!isEditing && recorrente && (
             <>
               <CustomSelect
                 label="Frequência"
@@ -295,22 +345,38 @@ export const TransacaoModal = ({ open, familiaId, onClose, onSubmit }: Transacao
         </div>
 
         {/* Ações */}
-        <div className="mt-5 flex gap-2">
-          <button
-            type="button"
-            aria-label="Cancelar"
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-border py-2.5 text-sm text-text-muted transition hover:text-text"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong"
-          >
-            Salvar Transação
-          </button>
+        <div className="mt-5">
+          {isEditing && onDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+                  onDelete(transacaoParaEditar.id);
+                  onClose();
+                }
+              }}
+              className="mb-2 w-full rounded-lg border border-danger/30 py-2.5 text-sm text-danger transition hover:bg-danger/10"
+            >
+              Excluir transação
+            </button>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              aria-label="Cancelar"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-border py-2.5 text-sm text-text-muted transition hover:text-text"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong"
+            >
+              {isEditing ? 'Salvar Alterações' : 'Salvar Transação'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

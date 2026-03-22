@@ -101,6 +101,7 @@ export const categorias = pgTable('categorias', {
   nome: text('nome').notNull(),
   tipo: categoriaTipo('tipo').notNull(),
   ativo: boolean('ativo').notNull().default(true),
+  sistema: boolean('sistema').notNull().default(false),
   criadoPor: uuid('criado_por')
     .notNull()
     .references(() => users.id),
@@ -165,6 +166,7 @@ export const transacoes = pgTable(
     valorTotal: numeric('valor_total', { precision: 14, scale: 2 }),
     valorParcela: numeric('valor_parcela', { precision: 14, scale: 2 }),
     transacaoPaiId: uuid('transacao_pai_id'),
+    cofrinhoId: uuid('cofrinho_id'),
     criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
     atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -211,5 +213,58 @@ export const snapshotsMensais = pgTable(
   (table) => [
     index('snapshots_mensais_familia_id_idx').on(table.familiaId),
     index('snapshots_mensais_mes_referencia_idx').on(table.mesReferencia),
+  ],
+);
+
+export const cofrinhoStatus = pgEnum('cofrinho_status', ['ativo', 'encerrado']);
+export const movimentacaoCofrinhoTipo = pgEnum('movimentacao_cofrinho_tipo', ['aporte', 'retirada']);
+
+export const cofrinhos = pgTable(
+  'cofrinhos',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    nome: text('nome').notNull(),
+    emoji: text('emoji'),
+    descricao: text('descricao'),
+    metaValor: numeric('meta_valor', { precision: 12, scale: 2 }),
+    saldoAtual: numeric('saldo_atual', { precision: 12, scale: 2 }).notNull().default('0'),
+    status: cofrinhoStatus('status').notNull().default('ativo'),
+    criadoPor: uuid('criado_por')
+      .notNull()
+      .references(() => users.id),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+    encerradoEm: timestamp('encerrado_em', { withTimezone: true }),
+  },
+  (table) => [
+    index('cofrinhos_familia_id_idx').on(table.familiaId),
+  ],
+);
+
+export const movimentacoesCofrinhos = pgTable(
+  'movimentacoes_cofrinho',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    cofrinhoId: uuid('cofrinho_id')
+      .notNull()
+      .references(() => cofrinhos.id),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    tipo: movimentacaoCofrinhoTipo('tipo').notNull(),
+    valor: numeric('valor', { precision: 12, scale: 2 }).notNull(),
+    descricao: text('descricao'),
+    transacaoId: uuid('transacao_id').references(() => transacoes.id),
+    registradoPor: uuid('registrado_por')
+      .notNull()
+      .references(() => users.id),
+    registradoEm: timestamp('registrado_em', { withTimezone: true }).defaultNow().notNull(),
+    mesReferencia: text('mes_referencia').notNull(),
+  },
+  (table) => [
+    index('movimentacoes_cofrinho_cofrinho_id_idx').on(table.cofrinhoId),
+    index('movimentacoes_cofrinho_familia_id_idx').on(table.familiaId),
   ],
 );

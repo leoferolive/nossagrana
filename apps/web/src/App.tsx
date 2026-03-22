@@ -6,6 +6,8 @@ import { TransacaoModal } from '@/components/transacao-modal';
 import { useAuth } from '@/contexts/use-auth';
 import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
+import { CofrinhoDetalhePage } from '@/pages/cofrinho-detalhe-page';
+import { CofrinhosPage } from '@/pages/cofrinhos-page';
 import { ConfiguracoesPage } from '@/pages/configuracoes-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
@@ -39,7 +41,9 @@ type Screen =
   | 'historico'
   | 'ajuda'
   | 'configuracoes'
-  | 'perfil';
+  | 'perfil'
+  | 'cofrinhos'
+  | 'cofrinho-detalhe';
 
 export const App = () => {
   const { familiaIdAtiva, isAuthenticated, refreshToken, logout, updateFamiliaIdAtiva } = useAuth();
@@ -51,6 +55,7 @@ export const App = () => {
     return 'login';
   });
   const [novaTransacaoOpen, setNovaTransacaoOpen] = useState(false);
+  const [cofrinhoIdSelecionado, setCofrinhoIdSelecionado] = useState<string>('');
   const [faturaMetodoId, setFaturaMetodoId] = useState<string | null>(null);
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
@@ -186,6 +191,30 @@ export const App = () => {
       return <OrcamentoPage familiaId={familiaId} onBack={() => setScreen('configuracoes')} />;
     }
 
+    if (screen === 'cofrinhos') {
+      return (
+        <CofrinhosPage
+          familiaId={familiaId}
+          onNavigate={(s) => setScreen(s as Screen)}
+          onVerDetalhe={(id: string) => {
+            setCofrinhoIdSelecionado(id);
+            setScreen('cofrinho-detalhe');
+          }}
+        />
+      );
+    }
+
+    if (screen === 'cofrinho-detalhe') {
+      return (
+        <CofrinhoDetalhePage
+          familiaId={familiaId}
+          cofrinhoId={cofrinhoIdSelecionado}
+          onBack={() => setScreen('cofrinhos')}
+          onNavigate={(s) => setScreen(s as Screen)}
+        />
+      );
+    }
+
     if (screen === 'relatorios') {
       return <RelatoriosPage familiaId={familiaId} onBack={() => setScreen('dashboard')} />;
     }
@@ -205,6 +234,7 @@ export const App = () => {
           onGoToCategorias={() => setScreen('categorias')}
           onGoToMetodosPagamento={() => setScreen('metodos-pagamento')}
           onGoToOrcamento={() => setScreen('orcamento')}
+          onGoToCofrinhos={() => setScreen('cofrinhos')}
           onGoToFamilia={() => setScreen('family-settings')}
           onGoToHistorico={() => setScreen('historico')}
           onGoToAjuda={() => setScreen('ajuda')}

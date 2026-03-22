@@ -6,6 +6,7 @@ import {
   HelpCircle,
   House,
   LogOut,
+  PiggyBank,
   Receipt,
   Tag,
   Target,
@@ -35,6 +36,7 @@ const navGroups = [
       { id: 'categorias', icon: Tag, label: 'Categorias' },
       { id: 'metodos-pagamento', icon: CreditCard, label: 'Cartões' },
       { id: 'orcamento', icon: Target, label: 'Orçamento' },
+      { id: 'cofrinhos', icon: PiggyBank, label: 'Cofrinhos' },
     ],
   },
   {

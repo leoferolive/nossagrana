@@ -17,7 +17,7 @@ controle cartões de crédito e visualize relatórios e insights financeiros.
 - `FLOWS.md` — 7 fluxos da aplicação em Mermaid
 - `USE_CASES.md` — 32 casos de uso detalhados
 - `DECISIONS.md` — decisões técnicas com justificativas
-- `TASKS.md` (raiz) — backlog completo por fase
+- `TASKS.md` — backlog completo por fase
 
 ---
 
@@ -225,4 +225,4 @@ Ao fazer push na branch `main`, o workflow:
 - Fluxos: `docs/FLOWS.md`
 - Casos de uso: `docs/USE_CASES.md`
 - Decisões técnicas: `docs/DECISIONS.md`
-- Backlog de tasks: `TASKS.md`
+- Backlog de tasks: `docs/TASKS.md`

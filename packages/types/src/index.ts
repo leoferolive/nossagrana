@@ -748,3 +748,143 @@ export const familiaBuscarResponseSchema = z.object({
   ),
 });
 export type FamiliaBuscarResponse = z.infer<typeof familiaBuscarResponseSchema>;
+
+// ─── Cofrinhos ───────────────────────────────────────────────────────────────
+
+export const cofrinhoStatusSchema = z.enum(['ativo', 'encerrado']);
+export type CofrinhoStatus = z.infer<typeof cofrinhoStatusSchema>;
+
+export const movimentacaoCofrinhoTipoSchema = z.enum(['aporte', 'retirada']);
+export type MovimentacaoCofrinhoTipo = z.infer<typeof movimentacaoCofrinhoTipoSchema>;
+
+const cofrinhoSchema = z.object({
+  id: z.string().uuid(),
+  familiaId: z.string().uuid(),
+  nome: z.string().min(1),
+  emoji: z.string().nullable(),
+  descricao: z.string().nullable(),
+  metaValor: z.string().nullable(),
+  saldoAtual: z.string(),
+  status: cofrinhoStatusSchema,
+  criadoPor: z.string().uuid(),
+  criadoEm: z.string(),
+  encerradoEm: z.string().nullable(),
+});
+
+export const cofrinhoCreateRequestSchema = z.object({
+  nome: z.string().trim().min(1).max(100),
+  emoji: z.string().max(10).optional().nullable(),
+  descricao: z.string().trim().optional().nullable(),
+  metaValor: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido')
+    .optional()
+    .nullable(),
+});
+export type CofrinhoCreateRequest = z.infer<typeof cofrinhoCreateRequestSchema>;
+
+export const cofrinhoCreateResponseSchema = z.object({ cofrinho: cofrinhoSchema });
+export type CofrinhoCreateResponse = z.infer<typeof cofrinhoCreateResponseSchema>;
+
+export const cofrinhoUpdateRequestSchema = z.object({
+  nome: z.string().trim().min(1).max(100).optional(),
+  emoji: z.string().max(10).optional().nullable(),
+  descricao: z.string().trim().optional().nullable(),
+  metaValor: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido')
+    .optional()
+    .nullable(),
+});
+export type CofrinhoUpdateRequest = z.infer<typeof cofrinhoUpdateRequestSchema>;
+
+export const cofrinhoParamsSchema = z.object({ id: z.string().uuid() });
+export type CofrinhoParams = z.infer<typeof cofrinhoParamsSchema>;
+
+export const cofrinhoListQuerySchema = z.object({
+  status: cofrinhoStatusSchema.optional().default('ativo'),
+});
+export type CofrinhoListQuery = z.infer<typeof cofrinhoListQuerySchema>;
+
+export const cofrinhoListResponseSchema = z.object({
+  cofrinhos: z.array(cofrinhoSchema),
+});
+export type CofrinhoListResponse = z.infer<typeof cofrinhoListResponseSchema>;
+
+const movimentacaoCofrinhoSchema = z.object({
+  id: z.string().uuid(),
+  cofrinhoId: z.string().uuid(),
+  tipo: movimentacaoCofrinhoTipoSchema,
+  valor: z.string(),
+  descricao: z.string().nullable(),
+  transacaoId: z.string().uuid().nullable(),
+  registradoPor: z.string().uuid(),
+  registradoEm: z.string(),
+  mesReferencia: z.string(),
+});
+
+export const cofrinhoDetalheResponseSchema = z.object({
+  cofrinho: cofrinhoSchema,
+  movimentacoes: z.array(movimentacaoCofrinhoSchema),
+  aporteRecorrenteAtivo: z
+    .object({
+      transacaoPaiId: z.string().uuid(),
+      valor: z.string(),
+      frequencia: transacaoFrequenciaSchema,
+      dataFimRecorrencia: z.string().nullable(),
+    })
+    .nullable(),
+});
+export type CofrinhoDetalheResponse = z.infer<typeof cofrinhoDetalheResponseSchema>;
+
+export const cofrinhoAporteRequestSchema = z.object({
+  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  descricao: z.string().trim().optional().nullable(),
+  recorrente: z.boolean().optional().default(false),
+  frequencia: transacaoFrequenciaSchema.optional().nullable(),
+  dataFimRecorrencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
+});
+export type CofrinhoAporteRequest = z.infer<typeof cofrinhoAporteRequestSchema>;
+
+export const cofrinhoAporteResponseSchema = z.object({
+  movimentacao: movimentacaoCofrinhoSchema,
+  cofrinho: cofrinhoSchema,
+});
+export type CofrinhoAporteResponse = z.infer<typeof cofrinhoAporteResponseSchema>;
+
+export const cofrinhoRetiradaRequestSchema = z.object({
+  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  descricao: z.string().trim().optional().nullable(),
+  voltarAoSaldo: z.boolean(),
+});
+export type CofrinhoRetiradaRequest = z.infer<typeof cofrinhoRetiradaRequestSchema>;
+
+export const cofrinhoRetiradaResponseSchema = cofrinhoAporteResponseSchema;
+export type CofrinhoRetiradaResponse = z.infer<typeof cofrinhoRetiradaResponseSchema>;
+
+export const cofrinhoEncerrarRequestSchema = z.object({
+  voltarAoSaldo: z.boolean().optional().default(false),
+});
+export type CofrinhoEncerrarRequest = z.infer<typeof cofrinhoEncerrarRequestSchema>;
+
+export const cofrinhoEncerrarResponseSchema = z.object({ cofrinho: cofrinhoSchema });
+export type CofrinhoEncerrarResponse = z.infer<typeof cofrinhoEncerrarResponseSchema>;
+
+export const cofrinhoResumoSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string(),
+  emoji: z.string().nullable(),
+  saldoAtual: z.string(),
+  metaValor: z.string().nullable(),
+  percentualMeta: z.number().nullable(),
+});
+export type CofrinhoResumo = z.infer<typeof cofrinhoResumoSchema>;
+
+export const dashboardCofrinhoResponseSchema = z.object({
+  cofrinhos: z.array(cofrinhoResumoSchema),
+});
+export type DashboardCofrinhoResponse = z.infer<typeof dashboardCofrinhoResponseSchema>;

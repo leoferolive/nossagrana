@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./services/core-financeiro.service', () => ({
@@ -116,7 +116,6 @@ import { within } from '@testing-library/react';
 
 import { useAuth } from './contexts/use-auth';
 import { App } from './App';
-import { useTransacaoStore } from './stores/transacao.store';
 
 afterEach(() => {
   cleanup();

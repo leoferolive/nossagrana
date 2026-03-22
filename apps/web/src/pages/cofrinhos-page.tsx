@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { BudgetBar } from '../components/charts/budget-bar';
 import { CofrinhoModal } from '../components/cofrinho-modal';
 import { ErrorBanner } from '../components/error-banner';
+import { FirstTimeTour } from '../components/first-time-tour';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 
@@ -45,8 +46,29 @@ export function CofrinhosPage({ familiaId, onNavigate: _onNavigate, onVerDetalhe
     );
   }
 
+  const cofrinhosTourSteps = [
+    {
+      title: 'Bem-vindo aos Cofrinhos!',
+      description: 'Aqui você cria reservas para guardar dinheiro da família.',
+    },
+    {
+      title: 'Metas',
+      description: 'Defina uma meta opcional para acompanhar o progresso de cada cofrinho.',
+    },
+    {
+      title: 'Aportes',
+      description: 'Faça aportes manuais ou configure aportes automáticos mensais.',
+    },
+    {
+      title: 'Retiradas',
+      description: 'Retire quando precisar — você escolhe se o valor volta ao saldo ou não.',
+    },
+  ];
+
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      <FirstTimeTour tourKey="cofrinhos" steps={cofrinhosTourSteps} />
+
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <h1 className="text-xl font-bold text-text">Cofrinhos</h1>

@@ -69,6 +69,31 @@ const FAQ = [
       },
     ],
   },
+  {
+    categoria: 'Cofrinhos',
+    itens: [
+      {
+        pergunta: 'O que são Cofrinhos?',
+        resposta:
+          'Cofrinhos são reservas financeiras da família. Você pode guardar dinheiro para objetivos específicos, como viagens, emergências ou compras grandes.',
+      },
+      {
+        pergunta: 'Como funciona um aporte?',
+        resposta:
+          'Um aporte transfere dinheiro para o cofrinho e é registrado como uma despesa no seu extrato mensal.',
+      },
+      {
+        pergunta: "O que significa 'voltar ao saldo'?",
+        resposta:
+          'Ao retirar dinheiro de um cofrinho, você pode escolher se o valor volta como receita no extrato ou se foi usado fora do sistema.',
+      },
+      {
+        pergunta: 'Posso configurar aportes automáticos?',
+        resposta:
+          "Sim! Ao fazer um aporte, marque a opção 'Recorrente' e escolha a frequência (mensal, quinzenal ou semanal).",
+      },
+    ],
+  },
 ];
 
 export const AjudaPage = ({ onBack }: AjudaPageProps) => {

@@ -43,21 +43,36 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
   const [detalhe, setDetalhe] = useState<HistoricoDetalheResponse | null>(null);
   const [detalheLoading, setDetalheLoading] = useState(false);
   const [mesSelecionado, setMesSelecionado] = useState<string | null>(null);
+  const [snapshotLoading, setSnapshotLoading] = useState<string | null>(null);
+
+  const loadMeses = async () => {
+    setLoading(true);
+    try {
+      const result = await coreFinanceiroService.getHistorico(familiaId);
+      setMeses(result.meses);
+    } catch {
+      setErro('Erro ao carregar histórico. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const result = await coreFinanceiroService.getHistorico(familiaId);
-        setMeses(result.meses);
-      } catch {
-        setErro('Erro ao carregar histórico. Tente novamente.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
+    void loadMeses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familiaId]);
+
+  const handleGerarSnapshot = async (mesReferencia: string) => {
+    setSnapshotLoading(mesReferencia);
+    try {
+      await coreFinanceiroService.gerarSnapshot(familiaId, mesReferencia);
+      await loadMeses();
+    } catch {
+      setErro('Erro ao gerar snapshot. Tente novamente.');
+    } finally {
+      setSnapshotLoading(null);
+    }
+  };
 
   const handleSelectMes = async (mes: string) => {
     setMesSelecionado(mes);
@@ -81,19 +96,28 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
       <FirstTimeTour
         tourKey="historico"
         steps={[
-          { title: 'Histórico', description: 'Veja um resumo financeiro de cada mês passado.' },
           {
-            title: 'Snapshot',
-            description: 'Meses fechados têm um snapshot que preserva os dados do período.',
-          },
-          {
-            title: 'Divergente',
+            icon: '📅',
+            title: 'Histórico mensal',
             description:
-              'Se uma transação for editada após o fechamento, o mês fica marcado como divergente.',
+              'Reveja o resumo financeiro de cada mês. Toque em um mês para ver o detalhamento.',
           },
           {
-            title: 'Tendência',
-            description: 'O gráfico de tendência mostra a evolução ao longo do tempo.',
+            icon: '📸',
+            title: 'Snapshot',
+            description:
+              'No fim de cada mês, uma "foto" dos totais é salva. Assim o relatório original fica preservado mesmo que algo mude depois.',
+          },
+          {
+            icon: '⚠️',
+            title: 'Mês divergente',
+            description:
+              'Se você editar uma transação de um mês já fechado, ele fica marcado como divergente. O snapshot original continua disponível.',
+          },
+          {
+            icon: '📈',
+            title: 'Gráfico de tendência',
+            description: 'Acompanhe a evolução de receitas, despesas e saldo ao longo dos meses.',
           },
         ]}
       />
@@ -147,43 +171,60 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
             {/* Mobile: cards */}
             <div className="space-y-2 md:hidden">
               {meses.map((mes) => (
-                <button
+                <div
                   key={mes.mesReferencia}
-                  type="button"
-                  onClick={() => handleSelectMes(mes.mesReferencia)}
-                  className="w-full rounded-xl border border-border bg-panel p-4 text-left transition-colors hover:bg-surface/50"
+                  className="rounded-xl border border-border bg-panel p-4 transition-colors hover:bg-surface/50"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold capitalize">
-                        {formatMes(mes.mesReferencia)}
-                      </span>
-                      {mes.divergente && (
-                        <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
-                          ⚠ divergente
+                  <button
+                    type="button"
+                    onClick={() => handleSelectMes(mes.mesReferencia)}
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold capitalize">
+                          {formatMes(mes.mesReferencia)}
                         </span>
-                      )}
-                      {mes.temSnapshot && !mes.divergente && (
-                        <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
-                          fechado
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-right text-sm">
-                      <div className="text-success">+{formatBRL(mes.totalReceitas)}</div>
-                      <div className="text-danger">-{formatBRL(mes.totalDespesas)}</div>
-                      <div
-                        className={
-                          parseFloat(mes.saldo) >= 0
-                            ? 'font-semibold text-success'
-                            : 'font-semibold text-danger'
-                        }
-                      >
-                        {formatBRL(mes.saldo)}
+                        {mes.divergente && (
+                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+                            ⚠ divergente
+                          </span>
+                        )}
+                        {mes.temSnapshot && !mes.divergente && (
+                          <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
+                            fechado
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="text-success">+{formatBRL(mes.totalReceitas)}</div>
+                        <div className="text-danger">-{formatBRL(mes.totalDespesas)}</div>
+                        <div
+                          className={
+                            parseFloat(mes.saldo) >= 0
+                              ? 'font-semibold text-success'
+                              : 'font-semibold text-danger'
+                          }
+                        >
+                          {formatBRL(mes.saldo)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                  {!mes.temSnapshot && (
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        type="button"
+                        aria-label="Gerar Snapshot"
+                        onClick={() => void handleGerarSnapshot(mes.mesReferencia)}
+                        disabled={snapshotLoading === mes.mesReferencia}
+                        className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary/80 disabled:opacity-50"
+                      >
+                        {snapshotLoading === mes.mesReferencia ? 'Gerando...' : 'Gerar Snapshot'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -197,6 +238,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                     <th className="pb-2 pr-4 text-right font-semibold">Despesas</th>
                     <th className="pb-2 pr-4 text-right font-semibold">Saldo</th>
                     <th className="pb-2 font-semibold">Status</th>
+                    <th className="pb-2 font-semibold">Ação</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -233,6 +275,24 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                           <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-text-muted">
                             aberto
                           </span>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        {!mes.temSnapshot && (
+                          <button
+                            type="button"
+                            aria-label="Gerar Snapshot"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleGerarSnapshot(mes.mesReferencia);
+                            }}
+                            disabled={snapshotLoading === mes.mesReferencia}
+                            className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary/80 disabled:opacity-50"
+                          >
+                            {snapshotLoading === mes.mesReferencia
+                              ? 'Gerando...'
+                              : 'Gerar Snapshot'}
+                          </button>
                         )}
                       </td>
                     </tr>

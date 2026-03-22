@@ -2110,4 +2110,44 @@ describe('Historico routes', () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  it('POST /api/historico/:mesReferencia/snapshot gera snapshot manualmente', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/historico/2026-03/snapshot',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toMatchObject({
+      mesReferencia: '2026-03',
+      totalReceitas: expect.any(String),
+      totalDespesas: expect.any(String),
+      saldo: expect.any(String),
+      geradoEm: expect.any(String),
+    });
+  });
+
+  it('POST /api/historico/:mesReferencia/snapshot retorna snapshot existente se já existe', async () => {
+    // The first call above created the snapshot. Calling again should return the same one.
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/historico/2026-03/snapshot',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().mesReferencia).toBe('2026-03');
+  });
+
+  it('GET /api/historico/:mesReferencia retorna detalhe quando snapshot existe', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/historico/2026-03',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.mesReferencia).toBe('2026-03');
+    expect(body.snapshot).not.toBeNull();
+  });
 });

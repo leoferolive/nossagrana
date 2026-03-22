@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
+import { FirstTimeTour } from '../components/first-time-tour';
+import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
@@ -25,25 +27,40 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
   const [activeTab, setActiveTab] = useState<Tab>('distribuicao');
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
 
   const [distribuicao, setDistribuicao] = useState<RelatorioDistribuicaoItem[]>([]);
   const [porUsuario, setPorUsuario] = useState<RelatorioPorUsuarioItem[]>([]);
   const [tendencias, setTendencias] = useState<RelatorioTendenciaMes[]>([]);
 
+  const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
+  const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
+  const isCurrentMonth = mesReferencia === getCurrentMonth();
+
+  // Fetch distribuição e porUsuario quando mês ou familiaId mudam
   useEffect(() => {
     setLoading(true);
+    setErro(null);
     Promise.all([
-      coreFinanceiroService.getRelatorioDistribuicao(familiaId),
-      coreFinanceiroService.getRelatorioPorUsuario(familiaId),
-      coreFinanceiroService.getRelatorioTendencias(familiaId),
+      coreFinanceiroService.getRelatorioDistribuicao(familiaId, mesReferencia),
+      coreFinanceiroService.getRelatorioPorUsuario(familiaId, mesReferencia),
     ])
-      .then(([dist, porUser, tend]) => {
+      .then(([dist, porUser]) => {
         setDistribuicao(dist.distribuicao);
         setPorUsuario(porUser.porUsuario);
-        setTendencias(tend.meses);
       })
       .catch(() => setErro('Erro ao carregar relatórios. Tente novamente.'))
       .finally(() => setLoading(false));
+  }, [familiaId, mesReferencia]);
+
+  // Tendências sempre carregam uma vez (últimos 6 meses, sem filtro de mês)
+  useEffect(() => {
+    coreFinanceiroService
+      .getRelatorioTendencias(familiaId)
+      .then((tend) => setTendencias(tend.meses))
+      .catch(() => {
+        /* tendências não críticas */
+      });
   }, [familiaId]);
 
   if (loading) {
@@ -72,10 +89,33 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
 
   return (
     <div className="min-h-screen bg-bg p-4">
+      <FirstTimeTour
+        tourKey="relatorios"
+        steps={[
+          {
+            icon: '📊',
+            title: 'Relatórios',
+            description:
+              'Analise seus gastos de diferentes ângulos: distribuição por categoria, comparação entre membros e tendências ao longo dos meses.',
+          },
+          {
+            icon: '🔄',
+            title: 'Abas de visualização',
+            description:
+              'Alterne entre Distribuição, Por Membro e Tendências usando as abas no topo.',
+          },
+        ]}
+      />
       <ErrorBanner error={erro} />
 
-      <div className="mb-6 flex items-center gap-4">
+      <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-text md:hidden">Relatórios</h1>
+        <MonthNav
+          mesReferencia={mesReferencia}
+          onMesAnterior={handleMesAnterior}
+          onMesProximo={handleMesProximo}
+          isCurrentMonth={isCurrentMonth}
+        />
       </div>
 
       {/* Tabs */}

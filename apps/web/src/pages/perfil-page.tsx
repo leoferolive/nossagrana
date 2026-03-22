@@ -64,7 +64,14 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
     <div className="flex min-h-screen flex-col bg-bg">
       <FirstTimeTour
         tourKey="perfil"
-        steps={[{ title: 'Perfil', description: 'Atualize seu nome e gerencie sua senha aqui.' }]}
+        steps={[
+          {
+            icon: '👤',
+            title: 'Seu perfil',
+            description:
+              'Atualize seu nome de exibição e altere sua senha. Seu e-mail é usado para login e não pode ser alterado.',
+          },
+        ]}
       />
 
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">

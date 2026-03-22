@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 interface AjudaPageProps {
   onBack?: () => void;
+  onNavigate?: (screen: string) => void;
 }
 
 const FAQ = [
@@ -71,10 +72,31 @@ const FAQ = [
   },
 ];
 
-export const AjudaPage = ({ onBack }: AjudaPageProps) => {
+const TOUR_KEYS = [
+  'dashboard',
+  'extrato',
+  'relatorios',
+  'orcamento',
+  'historico',
+  'configuracoes',
+  'perfil',
+];
+
+export const AjudaPage = ({ onBack, onNavigate }: AjudaPageProps) => {
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [tourReset, setTourReset] = useState(false);
 
   const toggle = (key: string) => setOpenKey(openKey === key ? null : key);
+
+  const resetTours = () => {
+    for (const key of TOUR_KEYS) {
+      localStorage.removeItem(`tour-${key}`);
+    }
+    setTourReset(true);
+    if (onNavigate) {
+      onNavigate('dashboard');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg text-text p-4">
@@ -91,6 +113,22 @@ export const AjudaPage = ({ onBack }: AjudaPageProps) => {
           )}
           <h1 className="text-2xl font-bold">Ajuda</h1>
           <p className="text-sm text-text-muted mt-1">Perguntas frequentes sobre o NossaGrana</p>
+        </div>
+
+        {/* Card de tutorial */}
+        <div className="mb-4 rounded-xl border border-border bg-panel p-4">
+          <h2 className="text-sm font-semibold text-text">Tutorial interativo</h2>
+          <p className="mt-1 text-xs text-text-muted">
+            Reveja o passo a passo de como usar o NossaGrana.
+          </p>
+          <button
+            type="button"
+            onClick={resetTours}
+            disabled={tourReset}
+            className="mt-3 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success-strong disabled:opacity-50"
+          >
+            {tourReset ? 'Tutorial reiniciado!' : 'Rever tutorial'}
+          </button>
         </div>
 
         <div className="flex flex-col gap-4">

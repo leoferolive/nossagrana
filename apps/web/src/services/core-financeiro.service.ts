@@ -24,6 +24,7 @@ import type {
   RelatorioDistribuicaoResponse,
   RelatorioPorUsuarioResponse,
   RelatorioTendenciasResponse,
+  SnapshotManualResponse,
   TransacaoCreateRequest,
   TransacaoCreateResponse,
   TransacaoListQuery,
@@ -291,6 +292,13 @@ export class DashboardService {
     mesReferencia: string,
   ): Promise<HistoricoDetalheResponse> {
     return this.api.request<HistoricoDetalheResponse>(`/api/historico/${mesReferencia}`, {
+      headers: familiaHeader(familiaId),
+    });
+  }
+
+  async gerarSnapshot(familiaId: string, mesReferencia: string): Promise<SnapshotManualResponse> {
+    return this.api.request<SnapshotManualResponse>(`/api/historico/${mesReferencia}/snapshot`, {
+      method: 'POST',
       headers: familiaHeader(familiaId),
     });
   }

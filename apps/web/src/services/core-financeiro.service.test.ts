@@ -315,6 +315,21 @@ describe('DashboardService', () => {
     expect(apiClient.request).toHaveBeenCalledWith('/api/historico/2026-03', expect.anything());
   });
 
+  it('gerarSnapshot envia POST para /api/historico/:mesReferencia/snapshot', async () => {
+    vi.mocked(apiClient.request).mockResolvedValueOnce({
+      mesReferencia: '2026-02',
+      totalReceitas: '2000.00',
+      totalDespesas: '1200.00',
+      saldo: '800.00',
+      geradoEm: '2026-03-19T00:00:00.000Z',
+    });
+    await service.gerarSnapshot('fid', '2026-02');
+    expect(apiClient.request).toHaveBeenCalledWith(
+      '/api/historico/2026-02/snapshot',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
   it('getPerfil chama /api/auth/perfil', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({ nome: 'Leo', email: 'leo@example.com' });
     await service.getPerfil();

@@ -717,6 +717,15 @@ export const historicoDetalheResponseSchema = z.object({
 });
 export type HistoricoDetalheResponse = z.infer<typeof historicoDetalheResponseSchema>;
 
+export const snapshotManualResponseSchema = z.object({
+  mesReferencia: z.string(),
+  totalReceitas: z.string(),
+  totalDespesas: z.string(),
+  saldo: z.string(),
+  geradoEm: z.string(),
+});
+export type SnapshotManualResponse = z.infer<typeof snapshotManualResponseSchema>;
+
 // ─── Familia Minhas ──────────────────────────────────────────────────────────
 
 export const familiaMinhasItemSchema = z.object({

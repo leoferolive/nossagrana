@@ -39,8 +39,15 @@ describe('DashboardPage', () => {
   });
 
   it('exibe loading state', () => {
-    mockUseDashboard.mockReturnValue({ loading: true, resumo: null, graficos: null, orcamento: [], error: null, fetchAll: vi.fn() });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    mockUseDashboard.mockReturnValue({
+      loading: true,
+      resumo: null,
+      graficos: null,
+      orcamento: [],
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    render(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
@@ -53,7 +60,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    render(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/5\.200,00/)).toBeInTheDocument();
     expect(screen.getByText(/3\.800,00/)).toBeInTheDocument();
     expect(screen.getByText(/1\.400,00/)).toBeInTheDocument();
@@ -68,20 +75,25 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
-    expect(screen.getByText(/nenhuma transação registrada/i)).toBeInTheDocument();
+    render(<DashboardPage familiaId="f1" />);
+    expect(screen.getByText(/nenhuma despesa registrada neste mês/i)).toBeInTheDocument();
   });
 
   it('exibe mensagem quando sem orçamentos', () => {
     mockUseDashboard.mockReturnValue({
       resumo: resumoBase,
-      graficos: { distribuicaoCategorias: [{ categoriaId: 'c1', categoriaNome: 'Alim', total: '100.00', percentual: 100 }], evolucaoDiaria: [] },
+      graficos: {
+        distribuicaoCategorias: [
+          { categoriaId: 'c1', categoriaNome: 'Alim', total: '100.00', percentual: 100 },
+        ],
+        evolucaoDiaria: [],
+      },
       orcamento: [],
       loading: false,
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    render(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/nenhum orçamento configurado/i)).toBeInTheDocument();
   });
 
@@ -90,15 +102,36 @@ describe('DashboardPage', () => {
       resumo: resumoBase,
       graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
       orcamento: [
-        { categoriaId: 'c1', categoriaNome: 'Alimentação', valorLimite: '1000.00', totalGasto: '600.00', percentual: 60, status: 'ok' },
-        { categoriaId: 'c2', categoriaNome: 'Lazer', valorLimite: '500.00', totalGasto: '430.00', percentual: 86, status: 'warning' },
-        { categoriaId: 'c3', categoriaNome: 'Transporte', valorLimite: '300.00', totalGasto: '315.00', percentual: 105, status: 'exceeded' },
+        {
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+          valorLimite: '1000.00',
+          totalGasto: '600.00',
+          percentual: 60,
+          status: 'ok',
+        },
+        {
+          categoriaId: 'c2',
+          categoriaNome: 'Lazer',
+          valorLimite: '500.00',
+          totalGasto: '430.00',
+          percentual: 86,
+          status: 'warning',
+        },
+        {
+          categoriaId: 'c3',
+          categoriaNome: 'Transporte',
+          valorLimite: '300.00',
+          totalGasto: '315.00',
+          percentual: 105,
+          status: 'exceeded',
+        },
       ],
       loading: false,
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    render(<DashboardPage familiaId="f1" />);
     expect(screen.getByText('Alimentação')).toBeInTheDocument();
     expect(screen.getByText('60%')).toBeInTheDocument();
     expect(screen.getByText('Lazer')).toBeInTheDocument();

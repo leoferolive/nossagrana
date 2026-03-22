@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 
+import { Target } from 'lucide-react';
+
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
-import { coreFinanceiroService } from '../services/core-financeiro.service';
+import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
 
 interface OrcamentoItem {
   id: string;
@@ -49,13 +51,21 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
   const [erro, setErro] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [novoLimite, setNovoLimite] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [categoriasDisponiveis, setCategoriasDisponiveis] = useState<
+    { id: string; nome: string }[]
+  >([]);
+  const [addCategoriaId, setAddCategoriaId] = useState('');
+  const [addValorLimite, setAddValorLimite] = useState('');
 
   const loadOrcamentos = async () => {
     setLoading(true);
     setErro(null);
     try {
       const result = await coreFinanceiroService.getOrcamentos(familiaId);
-      setOrcamentos(result.orcamentos as OrcamentoItem[]);
+      const items = result.orcamentos as OrcamentoItem[];
+      setOrcamentos(items);
+      await loadCategoriasDisponiveis(items.map((o) => o.categoriaId));
     } catch {
       setErro('Erro ao carregar orçamentos. Tente novamente.');
     } finally {
@@ -63,10 +73,44 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
     }
   };
 
+  const loadCategoriasDisponiveis = async (orcamentosCategoriaIds: string[]) => {
+    try {
+      const result = await categoriaService.listar(familiaId);
+      const despesas = result.categorias.filter(
+        (c) => c.tipo === 'despesa' && c.ativo && !orcamentosCategoriaIds.includes(c.id),
+      );
+      setCategoriasDisponiveis(despesas.map((c) => ({ id: c.id, nome: c.nome })));
+    } catch {
+      // silently fail — categorias are non-critical here
+    }
+  };
+
   useEffect(() => {
     void loadOrcamentos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familiaId]);
+
+  const handleOpenAddForm = () => {
+    setShowAddForm(true);
+    setAddCategoriaId('');
+    setAddValorLimite('');
+  };
+
+  const handleAddSalvar = async () => {
+    if (!addCategoriaId || !addValorLimite) return;
+    try {
+      await coreFinanceiroService.setOrcamento(familiaId, addCategoriaId, {
+        valorLimite: addValorLimite,
+        vigenciaInicio: getCurrentMes(),
+      });
+      setShowAddForm(false);
+      setAddCategoriaId('');
+      setAddValorLimite('');
+      await loadOrcamentos();
+    } catch {
+      setErro('Erro ao salvar orçamento. Tente novamente.');
+    }
+  };
 
   const handleEditar = (item: OrcamentoItem) => {
     setEditingId(item.categoriaId);
@@ -101,16 +145,22 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
         tourKey="orcamento"
         steps={[
           {
-            title: 'Orçamento',
-            description: 'Defina limites de gasto por categoria para controlar suas finanças.',
+            icon: '🎯',
+            title: 'Orçamento mensal',
+            description:
+              'Defina quanto deseja gastar no máximo por categoria. O controle ajuda a evitar surpresas no fim do mês.',
           },
           {
-            title: 'Progresso',
-            description: 'A barra mostra quanto do limite já foi utilizado no mês.',
+            icon: '📊',
+            title: 'Barra de progresso',
+            description:
+              'A barra muda de cor: verde = dentro do limite, amarelo = 80% usado, vermelho = estourou.',
           },
           {
-            title: 'Editar limite',
-            description: 'Toque em "Editar limite" para ajustar o valor máximo de cada categoria.',
+            icon: '✏️',
+            title: 'Ajustar limites',
+            description:
+              'Toque em "Editar limite" para alterar o valor. A mudança vale a partir de agora e o histórico anterior é preservado.',
           },
         ]}
       />
@@ -139,10 +189,96 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
 
       <ErrorBanner error={erro} />
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {orcamentos.length === 0 ? (
-          <p className="text-sm text-text-muted">Nenhum orçamento configurado.</p>
-        ) : (
+        {/* Formulário de adicionar categoria */}
+        {showAddForm && (
+          <div className="rounded-xl border border-border bg-panel p-4">
+            <p className="mb-3 text-sm font-semibold text-text">Adicionar categoria ao orçamento</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label htmlFor="add-categoria" className="mb-1 block text-xs text-text-muted">
+                  Categoria
+                </label>
+                <select
+                  id="add-categoria"
+                  aria-label="Categoria"
+                  value={addCategoriaId}
+                  onChange={(e) => setAddCategoriaId(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Selecione...</option>
+                  {categoriasDisponiveis.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label htmlFor="add-valor-limite" className="mb-1 block text-xs text-text-muted">
+                  Valor limite
+                </label>
+                <input
+                  id="add-valor-limite"
+                  aria-label="Valor limite"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ex: 500.00"
+                  value={addValorLimite}
+                  onChange={(e) => setAddValorLimite(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleAddSalvar()}
+                  className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white hover:bg-success-strong"
+                >
+                  Salvar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="rounded-lg border border-border px-3 py-2 text-sm text-text-muted hover:bg-surface"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {orcamentos.length === 0 && !showAddForm ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface">
+              <Target size={32} className="text-text-muted" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-text">Nenhum orçamento configurado</h2>
+              <p className="mt-1 max-w-sm text-sm text-text-muted">
+                Defina limites mensais de gasto por categoria para acompanhar se suas despesas estão
+                dentro do planejado.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenAddForm}
+              className="rounded-lg bg-success px-6 py-2.5 text-sm font-semibold text-white hover:bg-success-strong"
+            >
+              Configurar Orçamento
+            </button>
+          </div>
+        ) : orcamentos.length === 0 ? null : (
           <>
+            {!showAddForm && (
+              <button
+                type="button"
+                onClick={handleOpenAddForm}
+                className="self-start rounded-lg border border-dashed border-border px-4 py-2 text-sm text-text-muted transition hover:border-success hover:text-success"
+              >
+                + Adicionar Categoria
+              </button>
+            )}
             {/* Mobile: cards com BudgetBar */}
             <div className="flex flex-col gap-3 md:hidden">
               {orcamentos.map((item) => (

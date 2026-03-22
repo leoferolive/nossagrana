@@ -155,7 +155,7 @@ export const App = () => {
 
   const renderContent = () => {
     if (screen === 'dashboard') {
-      return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} />;
+      return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} onNavigate={(s) => setScreen(s as Screen)} />;
     }
 
     if (screen === 'extrato') {

@@ -4,6 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../stores/dashboard.store', () => ({
   useDashboardStore: vi.fn(),
 }));
+vi.mock('../stores/cofrinho.store', () => ({
+  useCofrinhoStore: vi.fn(),
+}));
 vi.mock('react-chartjs-2', () => ({
   Doughnut: () => <div data-testid="chart-doughnut" />,
   Line: () => <div data-testid="chart-line" />,
@@ -11,8 +14,10 @@ vi.mock('react-chartjs-2', () => ({
 
 import { DashboardPage } from './dashboard-page';
 import { useDashboardStore } from '../stores/dashboard.store';
+import { useCofrinhoStore } from '../stores/cofrinho.store';
 
 const mockUseDashboard = useDashboardStore as unknown as ReturnType<typeof vi.fn>;
+const mockUseCofrinhoStore = useCofrinhoStore as unknown as ReturnType<typeof vi.fn>;
 
 const resumoBase = {
   mesReferencia: '2026-03',
@@ -30,6 +35,10 @@ describe('DashboardPage', () => {
       orcamento: [],
       loading: false,
       error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({
+      cofrinhos: [],
       fetchAll: vi.fn(),
     });
   });
@@ -103,5 +112,49 @@ describe('DashboardPage', () => {
     expect(screen.getByText('60%')).toBeInTheDocument();
     expect(screen.getByText('Lazer')).toBeInTheDocument();
     expect(screen.getByText('Transporte')).toBeInTheDocument();
+  });
+
+  it('exibe card de cofrinhos com dados', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({
+      cofrinhos: [
+        { id: 'cof1', nome: 'Viagem', emoji: '✈️', saldoAtual: '1500.00', status: 'ativo' },
+        { id: 'cof2', nome: 'Reserva', emoji: null, saldoAtual: '300.00', status: 'ativo' },
+      ],
+      fetchAll: vi.fn(),
+    });
+    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
+    expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
+    expect(screen.getByText('Viagem')).toBeInTheDocument();
+    expect(screen.getByText('✈️')).toBeInTheDocument();
+    expect(screen.getByText('Reserva')).toBeInTheDocument();
+    expect(screen.getByText('🐷')).toBeInTheDocument();
+    expect(screen.getByText('Ver todos →')).toBeInTheDocument();
+  });
+
+  it('exibe estado vazio quando sem cofrinhos', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({
+      cofrinhos: [],
+      fetchAll: vi.fn(),
+    });
+    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
+    expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
+    expect(screen.getByText('Sua família ainda não tem cofrinhos.')).toBeInTheDocument();
+    expect(screen.queryByText('Ver todos →')).not.toBeInTheDocument();
   });
 });

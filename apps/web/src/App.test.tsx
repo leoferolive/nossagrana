@@ -117,6 +117,31 @@ import { within } from '@testing-library/react';
 import { useAuth } from './contexts/use-auth';
 import { App } from './App';
 
+const makeTransacao = (overrides: Record<string, unknown> = {}) => ({
+  id: 'tx-1',
+  tipo: 'despesa' as const,
+  valor: '50.00',
+  categoriaId: 'cat-1',
+  descricao: 'Transação',
+  data: '2026-03-10',
+  mesReferencia: '2026-03',
+  metodoPagamentoId: null,
+  familiaId: 'fam-test',
+  usuarioRegistrouId: 'u1',
+  recorrente: false,
+  frequencia: null,
+  dataFimRecorrencia: null,
+  parcelado: false,
+  numeroParcelas: null,
+  parcelaAtual: null,
+  valorTotal: null,
+  valorParcela: null,
+  transacaoPaiId: null,
+  criadoEm: '2026-03-10T00:00:00Z',
+  atualizadoEm: '2026-03-10T00:00:00Z',
+  ...overrides,
+});
+
 afterEach(() => {
   cleanup();
   vi.mocked(useAuth).mockImplementation(() => ({
@@ -582,22 +607,7 @@ describe('App', () => {
     it('abre modal de edição ao clicar em transação no extrato', async () => {
       const { transacaoService } = await import('./services/core-financeiro.service');
       vi.mocked(transacaoService.listar).mockResolvedValue({
-        transacoes: [
-          {
-            id: 'tx-edit-1',
-            tipo: 'despesa',
-            valor: '50.00',
-            categoriaId: 'cat-1',
-            descricao: 'Mercado',
-            data: '2026-03-10',
-            mesReferencia: '2026-03',
-            metodoPagamentoId: null,
-            familiaId: 'fam-test',
-            usuarioRegistrouId: 'u1',
-            criadoEm: '2026-03-10T00:00:00Z',
-            atualizadoEm: '2026-03-10T00:00:00Z',
-          },
-        ],
+        transacoes: [makeTransacao({ id: 'tx-edit-1', descricao: 'Mercado' })],
       });
 
       render(<App />);
@@ -614,20 +624,12 @@ describe('App', () => {
       const { transacaoService } = await import('./services/core-financeiro.service');
       vi.mocked(transacaoService.listar).mockResolvedValue({
         transacoes: [
-          {
+          makeTransacao({
             id: 'tx-upd-1',
-            tipo: 'despesa',
             valor: '75.00',
-            categoriaId: 'cat-1',
             descricao: 'Farmácia',
             data: '2026-03-15',
-            mesReferencia: '2026-03',
-            metodoPagamentoId: null,
-            familiaId: 'fam-test',
-            usuarioRegistrouId: 'u1',
-            criadoEm: '2026-03-15T00:00:00Z',
-            atualizadoEm: '2026-03-15T00:00:00Z',
-          },
+          }),
         ],
       });
 
@@ -653,20 +655,13 @@ describe('App', () => {
       const { transacaoService } = await import('./services/core-financeiro.service');
       vi.mocked(transacaoService.listar).mockResolvedValue({
         transacoes: [
-          {
+          makeTransacao({
             id: 'tx-del-1',
             tipo: 'receita',
             valor: '200.00',
-            categoriaId: 'cat-1',
             descricao: 'Salário',
             data: '2026-03-01',
-            mesReferencia: '2026-03',
-            metodoPagamentoId: null,
-            familiaId: 'fam-test',
-            usuarioRegistrouId: 'u1',
-            criadoEm: '2026-03-01T00:00:00Z',
-            atualizadoEm: '2026-03-01T00:00:00Z',
-          },
+          }),
         ],
       });
 
@@ -691,20 +686,12 @@ describe('App', () => {
       const { transacaoService } = await import('./services/core-financeiro.service');
       vi.mocked(transacaoService.listar).mockResolvedValue({
         transacoes: [
-          {
+          makeTransacao({
             id: 'tx-close-1',
-            tipo: 'despesa',
             valor: '30.00',
-            categoriaId: 'cat-1',
             descricao: 'Café',
             data: '2026-03-20',
-            mesReferencia: '2026-03',
-            metodoPagamentoId: null,
-            familiaId: 'fam-test',
-            usuarioRegistrouId: 'u1',
-            criadoEm: '2026-03-20T00:00:00Z',
-            atualizadoEm: '2026-03-20T00:00:00Z',
-          },
+          }),
         ],
       });
 

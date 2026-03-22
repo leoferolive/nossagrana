@@ -6,8 +6,10 @@ import {
   CofrinhoNotFoundError,
   CofrinhoEncerradoError,
   SaldoInsuficienteError,
+  AporteRecorrenteJaAtivoError,
+  AporteRecorrenteNotFoundError,
 } from './cofrinho.service.js';
-import type { TransacaoCreator } from './cofrinho.types.js';
+import type { TransacaoCreator, TransacaoRecorrenteCreator } from './cofrinho.types.js';
 
 function makeMockTransacaoCreator(): TransacaoCreator & {
   criar: ReturnType<typeof vi.fn>;
@@ -23,18 +25,39 @@ const mockGetCategoriaCofrinho = async (_familiaId: string) => ({
   id: 'cat-cofrinho-id',
 });
 
+function makeMockTransacaoRecorrenteCreator(): TransacaoRecorrenteCreator & {
+  criarRecorrente: ReturnType<typeof vi.fn>;
+  cancelarRecorrencia: ReturnType<typeof vi.fn>;
+} {
+  return {
+    criarRecorrente: vi.fn().mockImplementation(async () => ({
+      id: 'tx-recorrente-' + Math.random().toString(36).slice(2),
+    })),
+    cancelarRecorrencia: vi.fn().mockImplementation(async () => {}),
+  };
+}
+
 describe('CofrinhoService', () => {
   let service: CofrinhoService;
+  let serviceComRecorrente: CofrinhoService;
   let repo: InMemoryCofrinhoRepository;
   let mockTransacaoCreator: ReturnType<typeof makeMockTransacaoCreator>;
+  let mockTransacaoRecorrenteCreator: ReturnType<typeof makeMockTransacaoRecorrenteCreator>;
 
   beforeEach(() => {
     repo = new InMemoryCofrinhoRepository();
     mockTransacaoCreator = makeMockTransacaoCreator();
+    mockTransacaoRecorrenteCreator = makeMockTransacaoRecorrenteCreator();
     service = new CofrinhoService(
       repo,
       mockTransacaoCreator,
       mockGetCategoriaCofrinho,
+    );
+    serviceComRecorrente = new CofrinhoService(
+      repo,
+      mockTransacaoCreator,
+      mockGetCategoriaCofrinho,
+      mockTransacaoRecorrenteCreator,
     );
   });
 
@@ -554,6 +577,154 @@ describe('CofrinhoService', () => {
     it('deve rejeitar se não encontrado', async () => {
       await expect(
         service.detalhe({ id: 'inexistente', familiaId: 'f1' }),
+      ).rejects.toThrow(CofrinhoNotFoundError);
+    });
+  });
+
+  describe('aportar recorrente', () => {
+    it('deve criar transação-pai recorrente + primeira movimentação', async () => {
+      const cofrinho = await serviceComRecorrente.criar({
+        familiaId: 'f1',
+        nome: 'Viagem',
+        emoji: '✈️',
+        metaValor: '5000.00',
+        criadoPor: 'u1',
+      });
+
+      const result = await serviceComRecorrente.aportar({
+        cofrinhoId: cofrinho.id,
+        familiaId: 'f1',
+        valor: '200.00',
+        descricao: 'Aporte mensal',
+        registradoPor: 'u1',
+        recorrente: true,
+        frequencia: 'mensal',
+      });
+
+      // Verify transacaoRecorrenteCreator.criarRecorrente was called
+      expect(mockTransacaoRecorrenteCreator.criarRecorrente).toHaveBeenCalledOnce();
+      const criarCall = mockTransacaoRecorrenteCreator.criarRecorrente.mock.calls[0][0];
+      expect(criarCall.tipo).toBe('despesa');
+      expect(criarCall.valor).toBe('200.00');
+      expect(criarCall.categoriaId).toBe('cat-cofrinho-id');
+      expect(criarCall.familiaId).toBe('f1');
+      expect(criarCall.cofrinhoId).toBe(cofrinho.id);
+      expect(criarCall.frequencia).toBe('mensal');
+
+      // Verify transacaoCreator.criar was NOT called (recorrente uses its own creator)
+      expect(mockTransacaoCreator.criar).not.toHaveBeenCalled();
+
+      // Verify movimentacao was created
+      expect(result.movimentacao.tipo).toBe('aporte');
+      expect(result.movimentacao.valor).toBe('200.00');
+      expect(result.movimentacao.descricao).toBe('Aporte mensal');
+      expect(result.movimentacao.transacaoId).toBeDefined();
+
+      // Verify saldo was updated
+      expect(result.cofrinho.saldoAtual).toBe('200.00');
+    });
+
+    it('deve passar dataFimRecorrencia quando informada', async () => {
+      const cofrinho = await serviceComRecorrente.criar({
+        familiaId: 'f1',
+        nome: 'Viagem',
+        criadoPor: 'u1',
+      });
+
+      await serviceComRecorrente.aportar({
+        cofrinhoId: cofrinho.id,
+        familiaId: 'f1',
+        valor: '100.00',
+        registradoPor: 'u1',
+        recorrente: true,
+        frequencia: 'mensal',
+        dataFimRecorrencia: '2027-12-31',
+      });
+
+      const criarCall = mockTransacaoRecorrenteCreator.criarRecorrente.mock.calls[0][0];
+      expect(criarCall.dataFimRecorrencia).toBe('2027-12-31');
+    });
+
+    it('deve rejeitar se já existe aporte recorrente ativo', async () => {
+      const cofrinho = await serviceComRecorrente.criar({
+        familiaId: 'f1',
+        nome: 'Viagem',
+        criadoPor: 'u1',
+      });
+
+      // Mock repo.findAporteRecorrenteAtivo to return non-null
+      vi.spyOn(repo, 'findAporteRecorrenteAtivo').mockResolvedValueOnce({
+        transacaoPaiId: 'tx-existing',
+        valor: '100.00',
+        frequencia: 'mensal',
+        dataFimRecorrencia: null,
+      });
+
+      await expect(
+        serviceComRecorrente.aportar({
+          cofrinhoId: cofrinho.id,
+          familiaId: 'f1',
+          valor: '200.00',
+          registradoPor: 'u1',
+          recorrente: true,
+          frequencia: 'mensal',
+        }),
+      ).rejects.toThrow(AporteRecorrenteJaAtivoError);
+    });
+  });
+
+  describe('cancelarAporteRecorrente', () => {
+    it('deve cancelar aporte recorrente ativo', async () => {
+      const cofrinho = await serviceComRecorrente.criar({
+        familiaId: 'f1',
+        nome: 'Viagem',
+        criadoPor: 'u1',
+      });
+
+      // Mock repo.findAporteRecorrenteAtivo to return aporte data
+      vi.spyOn(repo, 'findAporteRecorrenteAtivo').mockResolvedValueOnce({
+        transacaoPaiId: 'tx-recorrente-123',
+        valor: '200.00',
+        frequencia: 'mensal',
+        dataFimRecorrencia: null,
+      });
+
+      await serviceComRecorrente.cancelarAporteRecorrente({
+        cofrinhoId: cofrinho.id,
+        familiaId: 'f1',
+      });
+
+      // Verify transacaoRecorrenteCreator.cancelarRecorrencia was called
+      expect(mockTransacaoRecorrenteCreator.cancelarRecorrencia).toHaveBeenCalledOnce();
+      expect(mockTransacaoRecorrenteCreator.cancelarRecorrencia).toHaveBeenCalledWith({
+        transacaoPaiId: 'tx-recorrente-123',
+        familiaId: 'f1',
+      });
+    });
+
+    it('deve rejeitar se não há aporte recorrente ativo', async () => {
+      const cofrinho = await serviceComRecorrente.criar({
+        familiaId: 'f1',
+        nome: 'Viagem',
+        criadoPor: 'u1',
+      });
+
+      // repo.findAporteRecorrenteAtivo returns null by default
+
+      await expect(
+        serviceComRecorrente.cancelarAporteRecorrente({
+          cofrinhoId: cofrinho.id,
+          familiaId: 'f1',
+        }),
+      ).rejects.toThrow(AporteRecorrenteNotFoundError);
+    });
+
+    it('deve rejeitar se cofrinho não encontrado', async () => {
+      await expect(
+        serviceComRecorrente.cancelarAporteRecorrente({
+          cofrinhoId: 'inexistente',
+          familiaId: 'f1',
+        }),
       ).rejects.toThrow(CofrinhoNotFoundError);
     });
   });

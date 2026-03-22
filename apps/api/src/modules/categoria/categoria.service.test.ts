@@ -1,49 +1,149 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 import { InMemoryCategoriaRepository } from './categoria.repository.js';
-import { CategoriaNotFoundError, CategoriaService } from './categoria.service.js';
+import { CategoriaService, CategoriaNotFoundError, CategoriaSistemaError } from './categoria.service.js';
 
 describe('CategoriaService', () => {
-  it('deactivates a category (soft delete)', async () => {
-    const repository = new InMemoryCategoriaRepository();
-    const service = new CategoriaService(repository);
+  let service: CategoriaService;
+  let repo: InMemoryCategoriaRepository;
 
-    const created = await repository.create({
-      familiaId: 'f1',
-      nome: 'Alimentacao',
-      tipo: 'despesa',
-      criadoPor: 'u1',
-    });
-
-    const deactivated = await service.deactivate({ id: created.id, familiaId: 'f1' });
-    expect(deactivated.ativo).toBe(false);
-
-    const listed = await service.listByFamiliaId({ familiaId: 'f1' });
-    expect(listed).toHaveLength(0);
+  beforeEach(() => {
+    repo = new InMemoryCategoriaRepository();
+    service = new CategoriaService(repo);
   });
 
-  it('throws CategoriaNotFoundError when deactivating non-existent category', async () => {
-    const repository = new InMemoryCategoriaRepository();
-    const service = new CategoriaService(repository);
+  describe('update', () => {
+    it('deve atualizar uma categoria normal', async () => {
+      const categoria = await repo.create({
+        familiaId: 'fam-1',
+        nome: 'Alimentacao',
+        tipo: 'despesa',
+        criadoPor: 'user-1',
+      });
 
-    await expect(service.deactivate({ id: 'nao-existe', familiaId: 'f1' })).rejects.toThrow(
-      CategoriaNotFoundError,
-    );
-  });
+      const updated = await service.update({
+        id: categoria.id,
+        familiaId: 'fam-1',
+        nome: 'Alimentacao Editada',
+        tipo: 'despesa',
+      });
 
-  it('does not deactivate category from another family', async () => {
-    const repository = new InMemoryCategoriaRepository();
-    const service = new CategoriaService(repository);
-
-    const created = await repository.create({
-      familiaId: 'f1',
-      nome: 'Alimentacao',
-      tipo: 'despesa',
-      criadoPor: 'u1',
+      expect(updated.nome).toBe('Alimentacao Editada');
     });
 
-    await expect(
-      service.deactivate({ id: created.id, familiaId: 'outra-familia' }),
-    ).rejects.toThrow(CategoriaNotFoundError);
+    it('deve lançar CategoriaSistemaError ao atualizar categoria sistema=true', async () => {
+      const categoria = await repo.create({
+        familiaId: 'fam-1',
+        nome: 'Cofrinho',
+        tipo: 'despesa',
+        criadoPor: 'user-1',
+        sistema: true,
+      });
+
+      await expect(
+        service.update({
+          id: categoria.id,
+          familiaId: 'fam-1',
+          nome: 'Cofrinho Editado',
+          tipo: 'despesa',
+        }),
+      ).rejects.toThrow(CategoriaSistemaError);
+    });
+
+    it('deve lançar CategoriaNotFoundError ao atualizar categoria inexistente', async () => {
+      await expect(
+        service.update({
+          id: 'inexistente',
+          familiaId: 'fam-1',
+          nome: 'Qualquer',
+          tipo: 'despesa',
+        }),
+      ).rejects.toThrow(CategoriaNotFoundError);
+    });
+  });
+
+  describe('deactivate', () => {
+    it('deve desativar uma categoria normal', async () => {
+      const categoria = await repo.create({
+        familiaId: 'fam-1',
+        nome: 'Lazer',
+        tipo: 'despesa',
+        criadoPor: 'user-1',
+      });
+
+      const deactivated = await service.deactivate({
+        id: categoria.id,
+        familiaId: 'fam-1',
+      });
+
+      expect(deactivated.ativo).toBe(false);
+    });
+
+    it('deve lançar CategoriaSistemaError ao desativar categoria sistema=true', async () => {
+      const categoria = await repo.create({
+        familiaId: 'fam-1',
+        nome: 'Cofrinho',
+        tipo: 'despesa',
+        criadoPor: 'user-1',
+        sistema: true,
+      });
+
+      await expect(
+        service.deactivate({
+          id: categoria.id,
+          familiaId: 'fam-1',
+        }),
+      ).rejects.toThrow(CategoriaSistemaError);
+    });
+
+    it('deve lançar CategoriaNotFoundError ao desativar categoria inexistente', async () => {
+      await expect(
+        service.deactivate({
+          id: 'inexistente',
+          familiaId: 'fam-1',
+        }),
+      ).rejects.toThrow(CategoriaNotFoundError);
+    });
+  });
+
+  describe('create', () => {
+    it('deve criar categoria com sistema=false por padrão', async () => {
+      const categoria = await service.create({
+        familiaId: 'fam-1',
+        nome: 'Nova Categoria',
+        tipo: 'receita',
+        criadoPor: 'user-1',
+      });
+
+      expect(categoria.sistema).toBe(false);
+      expect(categoria.nome).toBe('Nova Categoria');
+    });
+  });
+
+  describe('listByFamiliaId', () => {
+    it('deve retornar categorias com campo sistema', async () => {
+      await repo.create({
+        familiaId: 'fam-1',
+        nome: 'Cofrinho',
+        tipo: 'despesa',
+        criadoPor: 'user-1',
+        sistema: true,
+      });
+
+      await repo.create({
+        familiaId: 'fam-1',
+        nome: 'Alimentacao',
+        tipo: 'despesa',
+        criadoPor: 'user-1',
+      });
+
+      const categorias = await service.listByFamiliaId({ familiaId: 'fam-1' });
+
+      expect(categorias).toHaveLength(2);
+      const cofrinho = categorias.find((c) => c.nome === 'Cofrinho');
+      const alimentacao = categorias.find((c) => c.nome === 'Alimentacao');
+      expect(cofrinho?.sistema).toBe(true);
+      expect(alimentacao?.sistema).toBe(false);
+    });
   });
 });

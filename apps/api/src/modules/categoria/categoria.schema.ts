@@ -46,6 +46,9 @@ export const categoriaUpdateSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
+    403: z.object({
+      message: z.string(),
+    }),
     404: z.object({
       message: z.literal('Categoria nao encontrada'),
     }),
@@ -61,6 +64,9 @@ export const categoriaDeleteSchema = {
     }),
     401: z.object({
       message: z.literal('Nao autenticado'),
+    }),
+    403: z.object({
+      message: z.string(),
     }),
     404: z.object({
       message: z.literal('Categoria nao encontrada'),

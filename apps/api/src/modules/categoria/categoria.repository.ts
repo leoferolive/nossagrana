@@ -15,6 +15,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         nome: categorias.nome,
         tipo: categorias.tipo,
         ativo: categorias.ativo,
+        sistema: categorias.sistema,
         criadoPor: categorias.criadoPor,
         criadoEm: categorias.criadoEm,
       })
@@ -24,9 +25,37 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     return found.map((categoria) => ({
       ...categoria,
       tipo: categoria.tipo as 'receita' | 'despesa',
-      ativo: categoria.ativo,
-      criadoEm: categoria.criadoEm,
     }));
+  }
+
+  async findById(input: { id: string; familiaId: string }): Promise<Categoria | null> {
+    const [found] = await db
+      .select({
+        id: categorias.id,
+        familiaId: categorias.familiaId,
+        nome: categorias.nome,
+        tipo: categorias.tipo,
+        ativo: categorias.ativo,
+        sistema: categorias.sistema,
+        criadoPor: categorias.criadoPor,
+        criadoEm: categorias.criadoEm,
+      })
+      .from(categorias)
+      .where(
+        and(
+          eq(categorias.id, input.id),
+          eq(categorias.familiaId, input.familiaId),
+        ),
+      );
+
+    if (!found) {
+      return null;
+    }
+
+    return {
+      ...found,
+      tipo: found.tipo as 'receita' | 'despesa',
+    };
   }
 
   async create(input: {
@@ -34,6 +63,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     nome: string;
     tipo: 'receita' | 'despesa';
     criadoPor: string;
+    sistema?: boolean;
   }): Promise<Categoria> {
     const [created] = await db
       .insert(categorias)
@@ -42,6 +72,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         nome: input.nome,
         tipo: input.tipo,
         ativo: true,
+        sistema: input.sistema ?? false,
         criadoPor: input.criadoPor,
       })
       .returning({
@@ -50,6 +81,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         nome: categorias.nome,
         tipo: categorias.tipo,
         ativo: categorias.ativo,
+        sistema: categorias.sistema,
         criadoPor: categorias.criadoPor,
         criadoEm: categorias.criadoEm,
       });
@@ -57,8 +89,6 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     return {
       ...created,
       tipo: created.tipo as 'receita' | 'despesa',
-      ativo: created.ativo,
-      criadoEm: created.criadoEm,
     };
   }
 
@@ -87,6 +117,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         nome: categorias.nome,
         tipo: categorias.tipo,
         ativo: categorias.ativo,
+        sistema: categorias.sistema,
         criadoPor: categorias.criadoPor,
         criadoEm: categorias.criadoEm,
       });
@@ -98,8 +129,6 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     return {
       ...updated,
       tipo: updated.tipo as 'receita' | 'despesa',
-      ativo: updated.ativo,
-      criadoEm: updated.criadoEm,
     };
   }
 
@@ -120,6 +149,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         nome: categorias.nome,
         tipo: categorias.tipo,
         ativo: categorias.ativo,
+        sistema: categorias.sistema,
         criadoPor: categorias.criadoPor,
         criadoEm: categorias.criadoEm,
       });
@@ -131,8 +161,6 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     return {
       ...updated,
       tipo: updated.tipo as 'receita' | 'despesa',
-      ativo: updated.ativo,
-      criadoEm: updated.criadoEm,
     };
   }
 }
@@ -146,11 +174,20 @@ export class InMemoryCategoriaRepository implements CategoriaRepository {
     );
   }
 
+  async findById(input: { id: string; familiaId: string }): Promise<Categoria | null> {
+    return (
+      this.categorias.find(
+        (categoria) => categoria.id === input.id && categoria.familiaId === input.familiaId,
+      ) ?? null
+    );
+  }
+
   async create(input: {
     familiaId: string;
     nome: string;
     tipo: 'receita' | 'despesa';
     criadoPor: string;
+    sistema?: boolean;
   }): Promise<Categoria> {
     const created: Categoria = {
       id: randomUUID(),
@@ -158,6 +195,7 @@ export class InMemoryCategoriaRepository implements CategoriaRepository {
       nome: input.nome,
       tipo: input.tipo,
       ativo: true,
+      sistema: input.sistema ?? false,
       criadoPor: input.criadoPor,
       criadoEm: new Date(),
     };

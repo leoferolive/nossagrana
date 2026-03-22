@@ -1,4 +1,5 @@
 import {
+  CATEGORIA_SISTEMA_COFRINHO,
   CATEGORIAS_PADRAO_DESPESA,
   CATEGORIAS_PADRAO_RECEITA,
 } from '../../db/seeds/categorias-padrao.js';
@@ -116,6 +117,14 @@ export class FamiliaService {
           }),
         ),
       ]);
+
+      await this.categoriaRepository.create({
+        familiaId: familia.id,
+        nome: CATEGORIA_SISTEMA_COFRINHO,
+        tipo: 'despesa',
+        criadoPor: input.usuarioId,
+        sistema: true,
+      });
     }
 
     return familia;

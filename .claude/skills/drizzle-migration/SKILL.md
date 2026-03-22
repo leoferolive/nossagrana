@@ -22,7 +22,9 @@ Editar `apps/api/src/db/schema.ts`:
 // Exemplo: nova tabela
 export const tags = pgTable('tags', {
   id: uuid('id').defaultRandom().primaryKey(),
-  familiaId: uuid('familia_id').notNull().references(() => familias.id),
+  familiaId: uuid('familia_id')
+    .notNull()
+    .references(() => familias.id),
   nome: varchar('nome', { length: 100 }).notNull(),
   cor: varchar('cor', { length: 7 }).notNull(), // hex color
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -31,6 +33,7 @@ export const tags = pgTable('tags', {
 ```
 
 **Regras do schema:**
+
 - `snake_case` para tabelas e colunas
 - UUID como PK com `defaultRandom()`
 - `familia_id` em toda tabela de dados financeiros
@@ -69,6 +72,7 @@ export const tagsIdx = {
 ```
 
 Priorizar:
+
 - `(familia_id)` — toda tabela multi-tenant
 - `(familia_id, campo_filtrado)` — para queries com WHERE adicional
 - Índices parciais quando filtro é comum

@@ -5,11 +5,13 @@ Padrão de filtro: "$ARGUMENTS"
 ## Execução
 
 Se um padrão foi fornecido, rode apenas os testes que matcham:
+
 ```bash
 pnpm test -- $ARGUMENTS
 ```
 
 Se nenhum padrão foi fornecido, rode todos os testes:
+
 ```bash
 pnpm test
 ```

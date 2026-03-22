@@ -36,7 +36,11 @@ export interface ModuleNameRepository {
   criar(input: CreateModuleNameInput): Promise<ModuleName>;
   listarPorFamilia(familiaId: string): Promise<ModuleName[]>;
   buscarPorId(id: string, familiaId: string): Promise<ModuleName | null>;
-  atualizar(id: string, familiaId: string, input: Partial<CreateModuleNameInput>): Promise<ModuleName>;
+  atualizar(
+    id: string,
+    familiaId: string,
+    input: Partial<CreateModuleNameInput>,
+  ): Promise<ModuleName>;
   remover(id: string, familiaId: string): Promise<void>;
 }
 ```
@@ -82,7 +86,9 @@ Criar schemas de validação:
 ```typescript
 import { z } from 'zod';
 
-export const createModuleNameSchema = z.object({ /* campos */ });
+export const createModuleNameSchema = z.object({
+  /* campos */
+});
 export const updateModuleNameSchema = createModuleNameSchema.partial();
 export const moduleNameParamsSchema = z.object({ id: z.string().uuid() });
 ```
@@ -95,8 +101,28 @@ Implementar rotas Fastify:
 import type { FastifyInstance } from 'fastify';
 
 export async function moduleNameRoutes(app: FastifyInstance) {
-  app.get('/', { schema: { /* ... */ } }, async (request, reply) => { /* ... */ });
-  app.post('/', { schema: { /* ... */ } }, async (request, reply) => { /* ... */ });
+  app.get(
+    '/',
+    {
+      schema: {
+        /* ... */
+      },
+    },
+    async (request, reply) => {
+      /* ... */
+    },
+  );
+  app.post(
+    '/',
+    {
+      schema: {
+        /* ... */
+      },
+    },
+    async (request, reply) => {
+      /* ... */
+    },
+  );
   // PUT, DELETE...
 }
 ```

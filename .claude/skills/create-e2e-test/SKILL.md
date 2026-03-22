@@ -16,10 +16,10 @@ Cria um teste end-to-end com Playwright para o NossaGrana.
 
 O projeto fornece fixtures em `apps/e2e/fixtures/base.ts`:
 
-| Fixture | Descrição |
-|---------|-----------|
-| `authContext` | Usuário registrado e autenticado com tokens |
-| `familiaId` | Família criada para o usuário autenticado |
+| Fixture             | Descrição                                         |
+| ------------------- | ------------------------------------------------- |
+| `authContext`       | Usuário registrado e autenticado com tokens       |
+| `familiaId`         | Família criada para o usuário autenticado         |
 | `authenticatedPage` | Página Playwright com auth tokens no localStorage |
 
 ### Import

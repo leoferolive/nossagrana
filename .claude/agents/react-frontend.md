@@ -47,14 +47,14 @@ apps/web/src/
 
 Usar APENAS estes tokens do Tailwind config:
 
-| Uso | Token correto | ❌ Nunca usar |
-|-----|--------------|---------------|
-| Background principal | `bg-bg` | `bg-background` |
-| Painel/card | `bg-panel` | `bg-card` |
-| Superfície | `bg-surface` | `bg-muted` |
-| Texto principal | `text-text` | `text-foreground` |
-| Texto secundário | `text-text-muted` | `text-muted-foreground` |
-| Bordas | `border-border` | — |
+| Uso                  | Token correto     | ❌ Nunca usar           |
+| -------------------- | ----------------- | ----------------------- |
+| Background principal | `bg-bg`           | `bg-background`         |
+| Painel/card          | `bg-panel`        | `bg-card`               |
+| Superfície           | `bg-surface`      | `bg-muted`              |
+| Texto principal      | `text-text`       | `text-foreground`       |
+| Texto secundário     | `text-text-muted` | `text-muted-foreground` |
+| Bordas               | `border-border`   | —                       |
 
 ## Regras
 

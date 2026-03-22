@@ -31,7 +31,7 @@ it('deve criar transação para a família do usuário', async () => {
   const result = await service.criar({
     familiaId: 'familia-1',
     descricao: 'Mercado',
-    valor: 150.00,
+    valor: 150.0,
     tipo: 'despesa',
   });
   expect(result.familiaId).toBe('familia-1');
@@ -70,6 +70,7 @@ it('não deve retornar dados de outra família', async () => {
 ## Checklist por Tipo
 
 ### Backend Service
+
 - [ ] Caso de sucesso (happy path)
 - [ ] Validação de input inválido
 - [ ] Isolamento multi-tenant
@@ -77,6 +78,7 @@ it('não deve retornar dados de outra família', async () => {
 - [ ] Caso de duplicidade (quando aplicável)
 
 ### Frontend Page/Component
+
 - [ ] Renderização inicial (loading)
 - [ ] Estado de sucesso com dados
 - [ ] Estado vazio (sem dados)
@@ -84,6 +86,7 @@ it('não deve retornar dados de outra família', async () => {
 - [ ] Interação do usuário (clicks, forms)
 
 ### E2E
+
 - [ ] Fluxo completo do happy path
 - [ ] Validação visual de elementos críticos
 

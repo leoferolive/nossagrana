@@ -39,6 +39,7 @@ pnpm --filter web test -- [arquivo.test.tsx]
 3. Rodar todos os testes do módulo — confirmar que nada quebrou
 
 **Resistir à tentação de**:
+
 - Adicionar features extras
 - Otimizar performance
 - Refatorar durante esta fase
@@ -57,6 +58,7 @@ Voltar para RED com o próximo comportamento.
 ## Checklist por Feature
 
 ### Backend (Módulo)
+
 - [ ] RED: teste de criação
 - [ ] GREEN: implementar criação
 - [ ] RED: teste de listagem com filtro familia_id
@@ -70,6 +72,7 @@ Voltar para RED com o próximo comportamento.
 - [ ] REFACTOR: revisar código completo
 
 ### Frontend (Página/Componente)
+
 - [ ] RED: teste de renderização
 - [ ] GREEN: implementar estrutura
 - [ ] RED: teste de loading

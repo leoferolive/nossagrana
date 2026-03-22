@@ -52,6 +52,7 @@ export function PageNamePage() {
 ```
 
 **Tokens obrigatórios:**
+
 - `bg-bg` para fundo principal
 - `bg-panel` para cards/painéis
 - `bg-surface` para superfícies elevadas

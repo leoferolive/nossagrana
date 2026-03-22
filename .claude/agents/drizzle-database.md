@@ -34,10 +34,7 @@ Priorizar índices que evitam full table scans:
 
 ```typescript
 // Índice composto para queries multi-tenant
-index('idx_transacoes_familia_mes').on(
-  transacoes.familiaId,
-  transacoes.mesReferencia
-)
+index('idx_transacoes_familia_mes').on(transacoes.familiaId, transacoes.mesReferencia);
 ```
 
 - Índices compostos `(familia_id, campo_mais_filtrado)`

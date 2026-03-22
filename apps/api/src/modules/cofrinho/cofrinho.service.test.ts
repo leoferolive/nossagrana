@@ -572,6 +572,7 @@ describe('CofrinhoService', () => {
       expect(result.cofrinho.nome).toBe('Viagem');
       expect(result.cofrinho.saldoAtual).toBe('300.00');
       expect(result.movimentacoes).toHaveLength(2);
+      expect(result.aporteRecorrenteAtivo).toBeNull();
     });
 
     it('deve rejeitar se não encontrado', async () => {

@@ -345,7 +345,16 @@ export class CofrinhoService {
   async detalhe(input: {
     id: string;
     familiaId: string;
-  }): Promise<{ cofrinho: Cofrinho; movimentacoes: MovimentacaoCofrinho[] }> {
+  }): Promise<{
+    cofrinho: Cofrinho;
+    movimentacoes: MovimentacaoCofrinho[];
+    aporteRecorrenteAtivo: {
+      transacaoPaiId: string;
+      valor: string;
+      frequencia: 'mensal' | 'semanal' | 'quinzenal';
+      dataFimRecorrencia: string | null;
+    } | null;
+  }> {
     const cofrinho = await this.repository.findById(input);
 
     if (!cofrinho) {
@@ -357,7 +366,12 @@ export class CofrinhoService {
       familiaId: input.familiaId,
     });
 
-    return { cofrinho, movimentacoes };
+    const aporteRecorrenteAtivo = await this.repository.findAporteRecorrenteAtivo({
+      cofrinhoId: input.id,
+      familiaId: input.familiaId,
+    });
+
+    return { cofrinho, movimentacoes, aporteRecorrenteAtivo };
   }
 
   async cancelarAporteRecorrente(input: {

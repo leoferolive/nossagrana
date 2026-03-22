@@ -9,9 +9,12 @@ import {
   cofrinhoRetiradaRequestSchema,
   cofrinhoUpdateRequestSchema,
 } from '@nossagrana/types';
+import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
+import { db } from '../../db/client.js';
+import { categorias, transacoes } from '../../db/schema.js';
 import { DrizzleCofrinhoRepository, InMemoryCofrinhoRepository } from './cofrinho.repository.js';
 import {
   cofrinhoAporteRecorrenteDeleteSchema,
@@ -50,6 +53,41 @@ const testTransacaoCreator: TransacaoCreator = {
 
 const testGetCategoriaCofrinho = async () => ({ id: randomUUID() });
 
+const realTransacaoCreator: TransacaoCreator = {
+  criar: async (input) => {
+    const [row] = await db
+      .insert(transacoes)
+      .values({
+        familiaId: input.familiaId,
+        tipo: input.tipo,
+        valor: input.valor,
+        categoriaId: input.categoriaId,
+        descricao: input.descricao,
+        data: input.data,
+        mesReferencia: input.mesReferencia,
+        usuarioRegistrouId: input.usuarioRegistrouId,
+        cofrinhoId: input.cofrinhoId,
+      })
+      .returning({ id: transacoes.id });
+    return { id: row.id };
+  },
+};
+
+const realGetCategoriaCofrinho = async (familiaId: string) => {
+  const [cat] = await db
+    .select({ id: categorias.id })
+    .from(categorias)
+    .where(
+      and(
+        eq(categorias.familiaId, familiaId),
+        eq(categorias.nome, 'Cofrinho'),
+        eq(categorias.sistema, true),
+      ),
+    );
+  if (!cat) throw new Error('Categoria Cofrinho não encontrada');
+  return cat;
+};
+
 const defaultCofrinhoService = (): CofrinhoService => {
   if (env.NODE_ENV === 'test') {
     return new CofrinhoService(
@@ -61,8 +99,8 @@ const defaultCofrinhoService = (): CofrinhoService => {
 
   return new CofrinhoService(
     new DrizzleCofrinhoRepository(),
-    testTransacaoCreator,
-    testGetCategoriaCofrinho,
+    realTransacaoCreator,
+    realGetCategoriaCofrinho,
   );
 };
 
@@ -145,12 +183,10 @@ export const cofrinhoRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       try {
         const params = cofrinhoParamsSchema.parse(request.params);
-        const { cofrinho, movimentacoes } = await cofrinhoService.detalhe({
+        const { cofrinho, movimentacoes, aporteRecorrenteAtivo } = await cofrinhoService.detalhe({
           id: params.id,
           familiaId: request.familiaIdAtiva as string,
         });
-
-        const aporteRecorrenteAtivo = null;
 
         return reply.code(200).send({
           cofrinho: serializeCofrinho(cofrinho),

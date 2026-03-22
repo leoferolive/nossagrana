@@ -63,7 +63,7 @@ export class CofrinhoService {
     id: string,
     payload: CofrinhoAporteRequest,
   ): Promise<CofrinhoAporteResponse> {
-    return this.api.request<CofrinhoAporteResponse>(`/api/cofrinhos/${id}/aportar`, {
+    return this.api.request<CofrinhoAporteResponse>(`/api/cofrinhos/${id}/aportes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
       body: JSON.stringify(payload),
@@ -75,7 +75,7 @@ export class CofrinhoService {
     id: string,
     payload: CofrinhoRetiradaRequest,
   ): Promise<CofrinhoRetiradaResponse> {
-    return this.api.request<CofrinhoRetiradaResponse>(`/api/cofrinhos/${id}/retirar`, {
+    return this.api.request<CofrinhoRetiradaResponse>(`/api/cofrinhos/${id}/retiradas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
       body: JSON.stringify(payload),

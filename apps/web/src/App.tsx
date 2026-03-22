@@ -1,4 +1,8 @@
-import type { FamiliaMinhasItem } from '@nossagrana/types';
+import type {
+  FamiliaMinhasItem,
+  TransacaoListResponse,
+  TransacaoUpdateRequest,
+} from '@nossagrana/types';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
@@ -45,6 +49,8 @@ type Screen =
   | 'cofrinhos'
   | 'cofrinho-detalhe';
 
+type Transacao = TransacaoListResponse['transacoes'][number];
+
 export const App = () => {
   const { familiaIdAtiva, isAuthenticated, refreshToken, logout, updateFamiliaIdAtiva } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
@@ -60,16 +66,25 @@ export const App = () => {
   const [faturaMetodoNome, setFaturaMetodoNome] = useState<string>('');
   const [faturaMes, setFaturaMes] = useState<string>('');
   const [familiasDoUsuario, setFamiliasDoUsuario] = useState<FamiliaMinhasItem[]>([]);
+  const [transacaoParaEditar, setTransacaoParaEditar] = useState<{
+    id: string;
+    tipo: 'receita' | 'despesa';
+    valor: string;
+    categoriaId: string;
+    descricao: string | null;
+    data: string;
+    metodoPagamentoId: string | null;
+  } | null>(null);
 
   const handleLoginSuccess = useCallback(
     (familias: FamiliaMinhasItem[]) => {
+      setFamiliasDoUsuario(familias);
       if (familias.length === 0) {
         setScreen('onboarding');
       } else if (familias.length === 1) {
         updateFamiliaIdAtiva(familias[0].id);
         setScreen('dashboard');
       } else {
-        setFamiliasDoUsuario(familias);
         setScreen('familia-selector');
       }
     },
@@ -153,9 +168,44 @@ export const App = () => {
 
   const handleNovaTransacao = () => setNovaTransacaoOpen(true);
 
+  const handleEditarTransacao = (t: Transacao) => {
+    setTransacaoParaEditar({
+      id: t.id,
+      tipo: t.tipo,
+      valor: t.valor,
+      categoriaId: t.categoriaId,
+      descricao: t.descricao,
+      data: t.data,
+      metodoPagamentoId: t.metodoPagamentoId,
+    });
+    setNovaTransacaoOpen(true);
+  };
+
+  const handleUpdateTransacao = async (id: string, payload: TransacaoUpdateRequest) => {
+    if (!familiaId) return;
+    await transacaoService.editar(id, payload, familiaId);
+    setNovaTransacaoOpen(false);
+    setTransacaoParaEditar(null);
+  };
+
+  const handleDeleteTransacao = async (id: string) => {
+    if (!familiaId) return;
+    await transacaoService.excluir(id, familiaId);
+    setNovaTransacaoOpen(false);
+    setTransacaoParaEditar(null);
+  };
+
+  const familiaNomeAtiva = familiasDoUsuario.find((f) => f.id === familiaId)?.nome;
+
   const renderContent = () => {
     if (screen === 'dashboard') {
-      return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} onNavigate={(s) => setScreen(s as Screen)} />;
+      return (
+        <DashboardPage
+          familiaId={familiaId}
+          onNovaTransacao={handleNovaTransacao}
+          onNavigate={(s) => setScreen(s as Screen)}
+        />
+      );
     }
 
     if (screen === 'extrato') {
@@ -164,6 +214,7 @@ export const App = () => {
           familiaId={familiaId}
           onBack={() => setScreen('dashboard')}
           onNovaTransacao={handleNovaTransacao}
+          onEditarTransacao={handleEditarTransacao}
         />
       );
     }
@@ -224,7 +275,12 @@ export const App = () => {
     }
 
     if (screen === 'ajuda') {
-      return <AjudaPage onBack={() => setScreen('configuracoes')} />;
+      return (
+        <AjudaPage
+          onBack={() => setScreen('configuracoes')}
+          onNavigate={(s) => setScreen(s as Screen)}
+        />
+      );
     }
 
     if (screen === 'configuracoes') {
@@ -271,7 +327,13 @@ export const App = () => {
       );
     }
 
-    return <DashboardPage familiaId={familiaId} onNovaTransacao={handleNovaTransacao} />;
+    return (
+      <DashboardPage
+        familiaId={familiaId}
+        onNovaTransacao={handleNovaTransacao}
+        onNavigate={(s) => setScreen(s as Screen)}
+      />
+    );
   };
 
   return (
@@ -281,18 +343,25 @@ export const App = () => {
         onNavigate={(s) => setScreen(s as Screen)}
         onNovaTransacao={handleNovaTransacao}
         onLogout={handleLogout}
+        familiaNome={familiaNomeAtiva}
       >
         {renderContent()}
       </AppShell>
       <TransacaoModal
         open={novaTransacaoOpen}
         familiaId={familiaId}
-        onClose={() => setNovaTransacaoOpen(false)}
+        onClose={() => {
+          setNovaTransacaoOpen(false);
+          setTransacaoParaEditar(null);
+        }}
         onSubmit={async (payload) => {
           if (!familiaId) return;
           await transacaoService.registrar(payload, familiaId);
           setNovaTransacaoOpen(false);
         }}
+        transacaoParaEditar={transacaoParaEditar}
+        onUpdate={handleUpdateTransacao}
+        onDelete={handleDeleteTransacao}
       />
     </>
   );

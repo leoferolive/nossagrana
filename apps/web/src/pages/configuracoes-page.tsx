@@ -102,8 +102,10 @@ export const ConfiguracoesPage = ({
         tourKey="configuracoes"
         steps={[
           {
+            icon: '⚙️',
             title: 'Configurações',
-            description: 'Acesse rapidamente todas as seções do app por aqui.',
+            description:
+              'Aqui você acessa categorias, cartões, orçamento, família e perfil. No desktop, tudo aparece na barra lateral.',
           },
         ]}
       />

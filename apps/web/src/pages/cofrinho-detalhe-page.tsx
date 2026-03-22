@@ -50,7 +50,7 @@ export function CofrinhoDetalhePage({
   const isEncerrado = cofrinho.status === 'encerrado';
 
   const handleAporte = async (payload: { valor: string; descricao?: string | null }) => {
-    await cofrinhoService.aportar(familiaId, cofrinhoId, payload);
+    await cofrinhoService.aportar(familiaId, cofrinhoId, { ...payload, recorrente: false });
     void fetchDetalhe(familiaId, cofrinhoId);
   };
 

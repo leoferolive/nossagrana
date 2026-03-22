@@ -6,6 +6,8 @@ vi.mock('./services/core-financeiro.service', () => ({
   transacaoService: {
     listar: vi.fn().mockResolvedValue({ transacoes: [] }),
     registrar: vi.fn().mockResolvedValue({ transacao: { id: 'tx-1' } }),
+    editar: vi.fn().mockResolvedValue({ transacao: { id: 'tx-1' } }),
+    excluir: vi.fn().mockResolvedValue(undefined),
   },
   categoriaService: {
     listar: vi.fn().mockResolvedValue({ categorias: [] }),
@@ -114,6 +116,31 @@ import { within } from '@testing-library/react';
 
 import { useAuth } from './contexts/use-auth';
 import { App } from './App';
+
+const makeTransacao = (overrides: Record<string, unknown> = {}) => ({
+  id: 'tx-1',
+  tipo: 'despesa' as const,
+  valor: '50.00',
+  categoriaId: 'cat-1',
+  descricao: 'Transação',
+  data: '2026-03-10',
+  mesReferencia: '2026-03',
+  metodoPagamentoId: null,
+  familiaId: 'fam-test',
+  usuarioRegistrouId: 'u1',
+  recorrente: false,
+  frequencia: null,
+  dataFimRecorrencia: null,
+  parcelado: false,
+  numeroParcelas: null,
+  parcelaAtual: null,
+  valorTotal: null,
+  valorParcela: null,
+  transacaoPaiId: null,
+  criadoEm: '2026-03-10T00:00:00Z',
+  atualizadoEm: '2026-03-10T00:00:00Z',
+  ...overrides,
+});
 
 afterEach(() => {
   cleanup();
@@ -377,6 +404,34 @@ describe('App', () => {
       );
     });
 
+    it('login com uma única família chama updateFamiliaIdAtiva e navega para dashboard', async () => {
+      const updateFamilia = vi.fn();
+      vi.mocked(useAuth).mockImplementation(() => ({
+        isAuthenticated: false,
+        accessToken: null,
+        refreshToken: null,
+        familiaIdAtiva: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        setAccessToken: vi.fn(),
+        updateFamiliaIdAtiva: updateFamilia,
+      }));
+
+      const { familiaService } = await import('./services/auth.service');
+      vi.mocked(familiaService.listarMinhas).mockResolvedValueOnce({
+        familias: [
+          { id: 'fam-only', nome: 'Unica Familia', dataEntrada: '2026-01-01', role: 'admin' },
+        ],
+      });
+
+      render(<App />);
+      fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+
+      await waitFor(() => {
+        expect(updateFamilia).toHaveBeenCalledWith('fam-only');
+      });
+    });
+
     it('navega para onboarding quando familiaId não existe após login', async () => {
       render(<App />);
 
@@ -547,6 +602,133 @@ describe('App', () => {
       // Navigate via BottomNav to extrato to verify familiaId propagation
       fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
       expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
+    });
+
+    it('abre modal de edição ao clicar em transação no extrato', async () => {
+      const { transacaoService } = await import('./services/core-financeiro.service');
+      vi.mocked(transacaoService.listar).mockResolvedValue({
+        transacoes: [makeTransacao({ id: 'tx-edit-1', descricao: 'Mercado' })],
+      });
+
+      render(<App />);
+      await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+
+      await waitFor(() => expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0));
+      fireEvent.click(screen.getAllByText('Mercado')[0]);
+
+      await waitFor(() => expect(screen.getByText('Editar Transação')).toBeInTheDocument());
+    });
+
+    it('chama transacaoService.editar ao atualizar transação via modal', async () => {
+      const { transacaoService } = await import('./services/core-financeiro.service');
+      vi.mocked(transacaoService.listar).mockResolvedValue({
+        transacoes: [
+          makeTransacao({
+            id: 'tx-upd-1',
+            valor: '75.00',
+            descricao: 'Farmácia',
+            data: '2026-03-15',
+          }),
+        ],
+      });
+
+      render(<App />);
+      await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+
+      await waitFor(() => expect(screen.getAllByText('Farmácia').length).toBeGreaterThan(0));
+      fireEvent.click(screen.getAllByText('Farmácia')[0]);
+      await waitFor(() => expect(screen.getByText('Editar Transação')).toBeInTheDocument());
+
+      // Change valor and submit
+      const valorInput = screen.getByLabelText(/valor/i);
+      fireEvent.change(valorInput, { target: { value: '80.00' } });
+      fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+      await waitFor(() => {
+        expect(transacaoService.editar).toHaveBeenCalled();
+      });
+    });
+
+    it('chama transacaoService.excluir ao excluir transação via modal', async () => {
+      const { transacaoService } = await import('./services/core-financeiro.service');
+      vi.mocked(transacaoService.listar).mockResolvedValue({
+        transacoes: [
+          makeTransacao({
+            id: 'tx-del-1',
+            tipo: 'receita',
+            valor: '200.00',
+            descricao: 'Salário',
+            data: '2026-03-01',
+          }),
+        ],
+      });
+
+      render(<App />);
+      await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+
+      await waitFor(() => expect(screen.getAllByText('Salário').length).toBeGreaterThan(0));
+      fireEvent.click(screen.getAllByText('Salário')[0]);
+      await waitFor(() => expect(screen.getByText('Editar Transação')).toBeInTheDocument());
+
+      // Mock window.confirm
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+
+      await waitFor(() => {
+        expect(transacaoService.excluir).toHaveBeenCalledWith('tx-del-1', 'fam-test');
+      });
+    });
+
+    it('fecha modal e limpa transacaoParaEditar ao clicar onClose', async () => {
+      const { transacaoService } = await import('./services/core-financeiro.service');
+      vi.mocked(transacaoService.listar).mockResolvedValue({
+        transacoes: [
+          makeTransacao({
+            id: 'tx-close-1',
+            valor: '30.00',
+            descricao: 'Café',
+            data: '2026-03-20',
+          }),
+        ],
+      });
+
+      render(<App />);
+      await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
+      fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+
+      await waitFor(() => expect(screen.getAllByText('Café').length).toBeGreaterThan(0));
+      fireEvent.click(screen.getAllByText('Café')[0]);
+      await waitFor(() => expect(screen.getByText('Editar Transação')).toBeInTheDocument());
+
+      // Close using X button
+      fireEvent.click(screen.getByRole('button', { name: /fechar modal/i }));
+      await waitFor(() => expect(screen.queryByText('Editar Transação')).not.toBeInTheDocument());
+    });
+
+    it('abre e submete nova transação via modal do FAB', async () => {
+      const { transacaoService } = await import('./services/core-financeiro.service');
+
+      render(<App />);
+      await waitFor(() =>
+        expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+      );
+
+      // Click "Nova Transação" button (top bar or FAB)
+      const novaButtons = screen.getAllByRole('button', { name: /nova/i });
+      fireEvent.click(novaButtons[0]);
+      await waitFor(() => expect(screen.getByText('Nova Transação')).toBeInTheDocument());
+
+      // Fill required fields and submit
+      const valorInput = screen.getByLabelText(/valor/i);
+      fireEvent.change(valorInput, { target: { value: '100.00' } });
+      fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+      await waitFor(() => {
+        expect(transacaoService.registrar).toHaveBeenCalled();
+      });
     });
   });
 });

@@ -1,4 +1,8 @@
-import { historicoDetalheResponseSchema, historicoListResponseSchema } from '@nossagrana/types';
+import {
+  historicoDetalheResponseSchema,
+  historicoListResponseSchema,
+  snapshotManualResponseSchema,
+} from '@nossagrana/types';
 import { z } from 'zod';
 
 const errorSchemas = {
@@ -21,5 +25,13 @@ export const historicoDetalheSchema = {
     400: errorSchemas[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
+  },
+};
+
+export const snapshotManualSchema = {
+  params: z.object({ mesReferencia: z.string().regex(/^\d{4}-\d{2}$/) }),
+  response: {
+    200: snapshotManualResponseSchema,
+    401: errorSchemas[401],
   },
 };

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mockService = vi.hoisted(() => ({
   getHistorico: vi.fn(),
   getHistoricoDetalhe: vi.fn(),
+  gerarSnapshot: vi.fn(),
 }));
 
 vi.mock('../services/core-financeiro.service', () => ({
@@ -145,6 +146,91 @@ describe('HistoricoPage', () => {
   it('exibe o tour de histórico', async () => {
     render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId('tour-historico')).toBeInTheDocument());
+  });
+
+  it('exibe botão "Gerar Snapshot" para meses abertos (sem snapshot)', async () => {
+    mockService.getHistorico.mockResolvedValue({
+      meses: [
+        {
+          mesReferencia: '2026-01',
+          totalReceitas: '1800.00',
+          totalDespesas: '900.00',
+          saldo: '900.00',
+          temSnapshot: false,
+          divergente: false,
+          geradoEm: null,
+        },
+      ],
+    });
+    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /gerar snapshot/i }).length).toBeGreaterThan(0),
+    );
+  });
+
+  it('não exibe botão "Gerar Snapshot" para meses já fechados', async () => {
+    mockService.getHistorico.mockResolvedValue({
+      meses: [
+        {
+          mesReferencia: '2026-02',
+          totalReceitas: '2000.00',
+          totalDespesas: '1200.00',
+          saldo: '800.00',
+          temSnapshot: true,
+          divergente: false,
+          geradoEm: '2026-02-28T23:55:00.000Z',
+        },
+      ],
+    });
+    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() => expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0));
+    expect(screen.queryByRole('button', { name: /gerar snapshot/i })).not.toBeInTheDocument();
+  });
+
+  it('chama gerarSnapshot e re-fetch ao clicar no botão', async () => {
+    mockService.getHistorico
+      .mockResolvedValueOnce({
+        meses: [
+          {
+            mesReferencia: '2026-01',
+            totalReceitas: '1800.00',
+            totalDespesas: '900.00',
+            saldo: '900.00',
+            temSnapshot: false,
+            divergente: false,
+            geradoEm: null,
+          },
+        ],
+      })
+      .mockResolvedValue({
+        meses: [
+          {
+            mesReferencia: '2026-01',
+            totalReceitas: '1800.00',
+            totalDespesas: '900.00',
+            saldo: '900.00',
+            temSnapshot: true,
+            divergente: false,
+            geradoEm: '2026-03-19T00:00:00.000Z',
+          },
+        ],
+      });
+    mockService.gerarSnapshot.mockResolvedValue({
+      mesReferencia: '2026-01',
+      totalReceitas: '1800.00',
+      totalDespesas: '900.00',
+      saldo: '900.00',
+      geradoEm: '2026-03-19T00:00:00.000Z',
+    });
+    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /gerar snapshot/i }).length).toBeGreaterThan(0),
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: /gerar snapshot/i })[0]);
+    await waitFor(() =>
+      expect(mockService.gerarSnapshot).toHaveBeenCalledWith(familiaId, '2026-01'),
+    );
+    await waitFor(() => expect(mockService.getHistorico).toHaveBeenCalledTimes(2));
   });
 
   describe('gráfico de tendência', () => {

@@ -3,17 +3,21 @@ import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { DrizzleHistoricoRepository, InMemoryHistoricoRepository } from './historico.repository.js';
-import { historicoDetalheSchema, historicoListSchema } from './historico.schema.js';
+import {
+  historicoDetalheSchema,
+  historicoListSchema,
+  snapshotManualSchema,
+} from './historico.schema.js';
 import { HistoricoService } from './historico.service.js';
+import { SnapshotService } from './snapshot.service.js';
 
-const defaultService = () => {
-  const repo =
-    env.NODE_ENV === 'test' ? new InMemoryHistoricoRepository() : new DrizzleHistoricoRepository();
-  return new HistoricoService(repo);
-};
+const defaultRepo = () =>
+  env.NODE_ENV === 'test' ? new InMemoryHistoricoRepository() : new DrizzleHistoricoRepository();
 
 export const historicoRoutes: FastifyPluginAsync = async (fastify) => {
-  const service = defaultService();
+  const repo = defaultRepo();
+  const service = new HistoricoService(repo);
+  const snapshotService = new SnapshotService(repo);
 
   fastify.get(
     '/historico',
@@ -43,6 +47,28 @@ export const historicoRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ message: 'Mês não encontrado' });
       }
       return result;
+    },
+  );
+
+  fastify.post(
+    '/historico/:mesReferencia/snapshot',
+    {
+      preHandler: [fastify.authenticate, fastify.requireFamiliaScope],
+      schema: snapshotManualSchema,
+    },
+    async (request) => {
+      const { mesReferencia } = historicoMesParamsSchema.parse(request.params);
+      const snap = await snapshotService.gerarSnapshot(
+        request.familiaIdAtiva as string,
+        mesReferencia,
+      );
+      return {
+        mesReferencia,
+        totalReceitas: snap.totalReceitas,
+        totalDespesas: snap.totalDespesas,
+        saldo: snap.saldo,
+        geradoEm: snap.geradoEm.toISOString(),
+      };
     },
   );
 };

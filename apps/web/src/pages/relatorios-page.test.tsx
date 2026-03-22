@@ -11,6 +11,10 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
+vi.mock('../components/first-time-tour', () => ({
+  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
+}));
+
 import { RelatoriosPage } from './relatorios-page';
 
 const familiaId = 'fam-1';
@@ -69,6 +73,34 @@ describe('RelatoriosPage', () => {
     mockService.getRelatorioDistribuicao.mockRejectedValue(new Error('network'));
     render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+  });
+
+  it('exibe seletor de mês e re-fetch ao mudar', async () => {
+    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() => screen.getByLabelText(/mês anterior/i));
+    expect(screen.getByLabelText(/mês anterior/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/próximo mês/i)).toBeInTheDocument();
+
+    // Mudar para mês anterior deve re-fetch distribuição e porUsuario
+    fireEvent.click(screen.getByLabelText(/mês anterior/i));
+    await waitFor(() => expect(mockService.getRelatorioDistribuicao).toHaveBeenCalledTimes(2));
+    expect(mockService.getRelatorioPorUsuario).toHaveBeenCalledTimes(2);
+    // Tendências não devem ser re-fetched
+    expect(mockService.getRelatorioTendencias).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes mesReferencia to distribuição and porUsuario APIs', async () => {
+    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() => expect(mockService.getRelatorioDistribuicao).toHaveBeenCalled());
+    // Chamada inicial usa mês atual
+    expect(mockService.getRelatorioDistribuicao).toHaveBeenCalledWith(
+      familiaId,
+      expect.stringMatching(/^\d{4}-\d{2}$/),
+    );
+    expect(mockService.getRelatorioPorUsuario).toHaveBeenCalledWith(
+      familiaId,
+      expect.stringMatching(/^\d{4}-\d{2}$/),
+    );
   });
 
   it('switches to tendencias tab and shows charts', async () => {

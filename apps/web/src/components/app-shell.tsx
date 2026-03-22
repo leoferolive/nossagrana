@@ -11,6 +11,7 @@ interface AppShellProps {
   onNavigate: (screen: Screen) => void;
   onNovaTransacao: () => void;
   onLogout: () => void;
+  familiaNome?: string;
   children: ReactNode;
 }
 
@@ -21,6 +22,7 @@ export const AppShell = ({
   onNavigate,
   onNovaTransacao,
   onLogout,
+  familiaNome,
   children,
 }: AppShellProps) => {
   const activeTab = (
@@ -34,8 +36,8 @@ export const AppShell = ({
         <Sidebar
           currentScreen={currentScreen}
           onNavigate={onNavigate}
-          onNovaTransacao={onNovaTransacao}
           onLogout={onLogout}
+          familiaNome={familiaNome}
         />
       </div>
 

@@ -150,4 +150,4 @@ Manifests em `k8s/`.
 - `docs/USE_CASES.md` — 32 casos de uso detalhados
 - `docs/DECISIONS.md` — decisões técnicas com justificativas
 - `docs/DEPENDENCY_POLICY.md` — política de dependências
-- `TASKS.md` — backlog completo por fase
+- `docs/TASKS.md` — backlog completo por fase

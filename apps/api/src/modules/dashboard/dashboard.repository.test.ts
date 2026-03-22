@@ -67,6 +67,18 @@ describe('InMemoryDashboardRepository', () => {
     expect(dist[1].total).toBe('100.00');
   });
 
+  it('getDistribuicaoCategorias exclui categorias com sistema=true', async () => {
+    repo.seed({
+      transacoes: [
+        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '100.00', data: '2026-03-01', categoriaId: 'c1', categoriaNome: 'Alimentação', categoriaSistema: false },
+        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '500.00', data: '2026-03-02', categoriaId: 'c-sys', categoriaNome: 'Cofrinho', categoriaSistema: true },
+      ],
+    });
+    const dist = await repo.getDistribuicaoCategorias('f1', '2026-03');
+    expect(dist).toHaveLength(1);
+    expect(dist[0].categoriaId).toBe('c1');
+  });
+
   it('getDistribuicaoCategorias retorna [] sem despesas', async () => {
     const dist = await repo.getDistribuicaoCategorias('f1', '2026-03');
     expect(dist).toEqual([]);

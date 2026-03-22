@@ -72,6 +72,21 @@ describe('DashboardService.getGraficos', () => {
     expect(alim?.percentual).toBe(30);
   });
 
+  it('distribuicaoCategorias exclui categorias com sistema=true', async () => {
+    const { repo, service } = buildService();
+    repo.seed({
+      transacoes: [
+        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '300.00', data: '2026-03-01', categoriaId: 'c1', categoriaNome: 'Alimentação', categoriaSistema: false },
+        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '500.00', data: '2026-03-02', categoriaId: 'c-sys', categoriaNome: 'Cofrinho', categoriaSistema: true },
+      ],
+    });
+    const g = await service.getGraficos('f1', '2026-03');
+    expect(g.distribuicaoCategorias).toHaveLength(1);
+    expect(g.distribuicaoCategorias[0].categoriaId).toBe('c1');
+    expect(g.distribuicaoCategorias[0].total).toBe('300.00');
+    expect(g.distribuicaoCategorias[0].percentual).toBe(100);
+  });
+
   it('evolucaoDiaria é array denso com zeros para dias sem transação', async () => {
     const { repo, service } = buildService();
     repo.seed({

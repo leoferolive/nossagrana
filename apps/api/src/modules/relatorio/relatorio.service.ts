@@ -21,7 +21,7 @@ export class RelatorioService {
     mesReferencia: string,
   ): Promise<RelatorioDistribuicaoResponse> {
     const transacoes = await this.repo.getTransacoes(familiaId, mesReferencia);
-    const despesas = transacoes.filter((t) => t.tipo === 'despesa');
+    const despesas = transacoes.filter((t) => t.tipo === 'despesa' && !t.categoriaSistema);
 
     const map = new Map<string, { nome: string; total: number }>();
     for (const t of despesas) {
@@ -46,7 +46,7 @@ export class RelatorioService {
 
   async porUsuario(familiaId: string, mesReferencia: string): Promise<RelatorioPorUsuarioResponse> {
     const transacoes = await this.repo.getTransacoes(familiaId, mesReferencia);
-    const despesas = transacoes.filter((t) => t.tipo === 'despesa');
+    const despesas = transacoes.filter((t) => t.tipo === 'despesa' && !t.categoriaSistema);
 
     const map = new Map<string, { nome: string; total: number }>();
     for (const t of despesas) {

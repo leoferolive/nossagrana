@@ -22,6 +22,7 @@ interface SeedTransacao {
   data: string;
   categoriaId: string;
   categoriaNome?: string;
+  categoriaSistema?: boolean;
 }
 
 interface SeedSnapshot {
@@ -88,7 +89,11 @@ export class InMemoryDashboardRepository implements DashboardRepository {
     mesReferencia: string,
   ): Promise<CategoriaGasto[]> {
     const despesas = this._transacoes.filter(
-      (t) => t.familiaId === familiaId && t.mesReferencia === mesReferencia && t.tipo === 'despesa',
+      (t) =>
+        t.familiaId === familiaId &&
+        t.mesReferencia === mesReferencia &&
+        t.tipo === 'despesa' &&
+        !t.categoriaSistema,
     );
     const map = new Map<string, { nome: string; total: number }>();
     for (const t of despesas) {
@@ -215,6 +220,7 @@ export class DrizzleDashboardRepository implements DashboardRepository {
           eq(transacoes.familiaId, familiaId),
           eq(transacoes.mesReferencia, mesReferencia),
           eq(transacoes.tipo, 'despesa'),
+          eq(categorias.sistema, false),
         ),
       )
       .groupBy(transacoes.categoriaId, categorias.nome)

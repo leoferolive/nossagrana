@@ -6,12 +6,21 @@ import type { RelatorioRepository, RelatorioTransacaoRow } from './relatorio.typ
 
 // ─── InMemory ─────────────────────────────────────────────────────────────────
 
+type SeedRelatorioTransacao = Omit<RelatorioTransacaoRow, 'categoriaSistema'> & {
+  categoriaSistema?: boolean;
+};
+
 export class InMemoryRelatorioRepository implements RelatorioRepository {
   private _transacoes: RelatorioTransacaoRow[] = [];
 
-  seed(data: { transacoes?: RelatorioTransacaoRow[] }): void {
+  seed(data: { transacoes?: SeedRelatorioTransacao[] }): void {
     if (data.transacoes) {
-      this._transacoes.push(...data.transacoes);
+      this._transacoes.push(
+        ...data.transacoes.map((t) => ({
+          ...t,
+          categoriaSistema: t.categoriaSistema ?? false,
+        })),
+      );
     }
   }
 
@@ -33,6 +42,7 @@ export class DrizzleRelatorioRepository implements RelatorioRepository {
         valor: transacoes.valor,
         categoriaId: transacoes.categoriaId,
         categoriaNome: categorias.nome,
+        categoriaSistema: categorias.sistema,
         mesReferencia: transacoes.mesReferencia,
         usuarioId: transacoes.usuarioRegistrouId,
         usuarioNome: users.nome,

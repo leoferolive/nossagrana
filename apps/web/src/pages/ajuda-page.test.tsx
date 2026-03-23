@@ -72,13 +72,13 @@ describe('AjudaPage', () => {
 
   it('não mostra botão voltar quando onBack não é fornecido', () => {
     render(<AjudaPage />);
-    expect(screen.queryByRole('button', { name: /voltar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^voltar$/i })).not.toBeInTheDocument();
   });
 
   it('mostra botão voltar e chama onBack quando fornecido', () => {
     const onBack = vi.fn();
     render(<AjudaPage onBack={onBack} />);
-    const backButton = screen.getByRole('button', { name: /voltar/i });
+    const backButton = screen.getByRole('button', { name: /^voltar$/i });
     expect(backButton).toBeInTheDocument();
     fireEvent.click(backButton);
     expect(onBack).toHaveBeenCalled();

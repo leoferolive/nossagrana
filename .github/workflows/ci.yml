@@ -98,13 +98,15 @@ jobs:
       - name: Build shared types
         run: pnpm --filter @nossagrana/types build
 
+      - name: Web tests
+        env:
+          CI: 'true'
+        run: pnpm --filter web test
+
       - name: API tests with coverage
         env:
           CI: 'true'
         run: pnpm --filter api test:coverage
-
-      - name: Web tests
-        run: pnpm --filter web test
 
       - name: Collect changed files
         if: github.event_name == 'pull_request'

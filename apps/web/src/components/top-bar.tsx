@@ -18,6 +18,8 @@ const screenTitles: Record<string, string> = {
   configuracoes: 'Configurações',
   perfil: 'Perfil',
   fatura: 'Fatura',
+  cofrinhos: 'Cofrinhos',
+  'cofrinho-detalhe': 'Detalhe do Cofrinho',
 };
 
 export const TopBar = ({ currentScreen, onNovaTransacao }: TopBarProps) => (

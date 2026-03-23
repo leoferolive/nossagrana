@@ -14,7 +14,11 @@ import {
   categoriaListSchema,
   categoriaUpdateSchema,
 } from './categoria.schema.js';
-import { CategoriaNotFoundError, CategoriaService } from './categoria.service.js';
+import {
+  CategoriaNotFoundError,
+  CategoriaSistemaError,
+  CategoriaService,
+} from './categoria.service.js';
 
 const defaultCategoriaService = (): CategoriaService => {
   if (env.NODE_ENV === 'test') {
@@ -75,6 +79,10 @@ export const categoriaRoutes: FastifyPluginAsync = async (fastify) => {
           },
         });
       } catch (error) {
+        if (error instanceof CategoriaSistemaError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
         if (error instanceof CategoriaNotFoundError) {
           return reply.code(404).send({ message: error.message });
         }
@@ -125,6 +133,10 @@ export const categoriaRoutes: FastifyPluginAsync = async (fastify) => {
           },
         });
       } catch (error) {
+        if (error instanceof CategoriaSistemaError) {
+          return reply.code(403).send({ message: error.message });
+        }
+
         if (error instanceof CategoriaNotFoundError) {
           return reply.code(404).send({ message: error.message });
         }

@@ -40,4 +40,7 @@ export {
   AlertTriangle as IconAlerta,
   RefreshCw as IconRecorrente,
   Layers as IconParcelas,
+
+  // Cofrinhos
+  PiggyBank as IconCofrinho,
 } from 'lucide-react';

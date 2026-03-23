@@ -18,6 +18,7 @@ export interface Transacao {
   valorTotal: string | null;
   valorParcela: string | null;
   transacaoPaiId: string | null;
+  cofrinhoId: string | null;
   criadoEm: Date;
   atualizadoEm: Date;
 }
@@ -41,6 +42,7 @@ export type CreateTransacaoInput = {
   valorTotal?: string | null;
   valorParcela?: string | null;
   transacaoPaiId?: string | null;
+  cofrinhoId?: string | null;
 };
 
 export type UpdateTransacaoInput = {
@@ -66,6 +68,18 @@ export interface TransacaoFiltros {
 
 export interface SnapshotNotifier {
   marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
+}
+
+export interface CofrinhoHandler {
+  processarTransacaoComCofrinho(transacao: {
+    id: string;
+    familiaId: string;
+    valor: string;
+    cofrinhoId: string;
+    usuarioRegistrouId: string;
+    mesReferencia: string;
+    descricao: string | null;
+  }): Promise<void>;
 }
 
 export interface TransacaoRepository {

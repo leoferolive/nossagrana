@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
-import { IconOrcamento, IconRelatorio } from '../components/icons';
-import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { BudgetBar } from '../components/charts/budget-bar';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
+import { ErrorBanner } from '../components/error-banner';
+import { FirstTimeTour } from '../components/first-time-tour';
+import { IconCofrinho, IconOrcamento, IconRelatorio } from '../components/icons';
+import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
+import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { useDashboardStore } from '../stores/dashboard.store';
 
 const formatBRL = (valor: string) =>
@@ -45,11 +46,13 @@ interface DashboardPageProps {
 
 export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: DashboardPageProps) => {
   const { resumo, graficos, orcamento, loading, error, fetchAll } = useDashboardStore();
+  const { cofrinhos, fetchAll: fetchCofrinhos } = useCofrinhoStore();
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
 
   useEffect(() => {
     fetchAll(familiaId, mesReferencia);
-  }, [familiaId, mesReferencia, fetchAll]);
+    fetchCofrinhos(familiaId);
+  }, [familiaId, mesReferencia, fetchAll, fetchCofrinhos]);
 
   const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
   const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
@@ -232,6 +235,43 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
                   spent={parseFloat(item.totalGasto)}
                   limit={parseFloat(item.valorLimite)}
                 />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Cofrinhos */}
+        <div className="rounded-xl border border-border bg-panel p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 font-semibold text-text">
+              <IconCofrinho className="h-4 w-4" /> Cofrinhos
+            </h3>
+            {cofrinhos.length > 0 && (
+              <button
+                onClick={() => onNavigate?.('cofrinhos')}
+                className="text-sm text-success hover:underline"
+              >
+                Ver todos →
+              </button>
+            )}
+          </div>
+          {cofrinhos.length === 0 ? (
+            <p className="text-sm text-text-muted">Sua família ainda não tem cofrinhos.</p>
+          ) : (
+            <div className="space-y-3">
+              {cofrinhos.map((c) => (
+                <div key={c.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{c.emoji || '🐷'}</span>
+                    <span className="text-sm font-medium text-text">{c.nome}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-primary">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(parseFloat(c.saldoAtual))}
+                  </span>
+                </div>
               ))}
             </div>
           )}

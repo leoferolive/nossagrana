@@ -95,6 +95,7 @@ describe('database schema', () => {
       'nome',
       'tipo',
       'ativo',
+      'sistema',
       'criadoPor',
       'criadoEm',
     ]);
@@ -103,6 +104,7 @@ describe('database schema', () => {
     expect(columns.nome.notNull).toBe(true);
     expect(columns.tipo.notNull).toBe(true);
     expect(columns.ativo.notNull).toBe(true);
+    expect(columns.sistema.notNull).toBe(true);
     expect(columns.criadoPor.notNull).toBe(true);
     expect(columns.criadoEm.notNull).toBe(true);
   });
@@ -168,6 +170,7 @@ describe('database schema', () => {
       'valorTotal',
       'valorParcela',
       'transacaoPaiId',
+      'cofrinhoId',
       'criadoEm',
       'atualizadoEm',
     ]);

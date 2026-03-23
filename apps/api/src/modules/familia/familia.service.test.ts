@@ -4,6 +4,7 @@ import { InMemoryCategoriaRepository } from '../categoria/categoria.repository.j
 import {
   CATEGORIAS_PADRAO_DESPESA,
   CATEGORIAS_PADRAO_RECEITA,
+  CATEGORIA_SISTEMA_COFRINHO,
 } from '../../db/seeds/categorias-padrao.js';
 import {
   FamiliaMemberNotFoundError,
@@ -44,12 +45,16 @@ describe('FamiliaService', () => {
     await service.create({ nome: 'Familia Teste', usuarioId: 'u1' });
 
     const categorias = await categoriaRepository.listByFamiliaId({ familiaId: 'f1' });
-    const expectedTotal = CATEGORIAS_PADRAO_RECEITA.length + CATEGORIAS_PADRAO_DESPESA.length;
+    const expectedTotal = CATEGORIAS_PADRAO_RECEITA.length + CATEGORIAS_PADRAO_DESPESA.length + 1;
     expect(categorias).toHaveLength(expectedTotal);
 
     const nomes = categorias.map((c) => c.nome);
     expect(nomes).toContain('Salario');
     expect(nomes).toContain('Moradia');
+    expect(nomes).toContain(CATEGORIA_SISTEMA_COFRINHO);
+
+    const cofrinho = categorias.find((c) => c.nome === CATEGORIA_SISTEMA_COFRINHO);
+    expect(cofrinho?.sistema).toBe(true);
   });
 
   it('blocks invite creation for non-admin user', async () => {

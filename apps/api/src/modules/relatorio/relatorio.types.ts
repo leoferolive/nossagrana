@@ -10,6 +10,7 @@ export interface RelatorioTransacaoRow {
   valor: string;
   categoriaId: string;
   categoriaNome: string;
+  categoriaSistema: boolean;
   mesReferencia: string;
   usuarioId: string;
   usuarioNome: string;

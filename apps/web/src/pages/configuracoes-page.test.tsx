@@ -17,6 +17,7 @@ const defaultProps = {
   onGoToCategorias: vi.fn(),
   onGoToMetodosPagamento: vi.fn(),
   onGoToOrcamento: vi.fn(),
+  onGoToCofrinhos: vi.fn(),
   onGoToFamilia: vi.fn(),
   onGoToHistorico: vi.fn(),
   onGoToAjuda: vi.fn(),
@@ -77,6 +78,18 @@ describe('ConfiguracoesPage', () => {
     render(<ConfiguracoesPage {...defaultProps} onGoToOrcamento={onGoToOrcamento} />);
     fireEvent.click(screen.getByRole('button', { name: /orçamento mensal/i }));
     expect(onGoToOrcamento).toHaveBeenCalled();
+  });
+
+  it('exibe atalho para Cofrinhos', () => {
+    render(<ConfiguracoesPage {...defaultProps} />);
+    expect(screen.getByRole('button', { name: /cofrinhos/i })).toBeInTheDocument();
+  });
+
+  it('chama onGoToCofrinhos ao clicar em Cofrinhos', () => {
+    const onGoToCofrinhos = vi.fn();
+    render(<ConfiguracoesPage {...defaultProps} onGoToCofrinhos={onGoToCofrinhos} />);
+    fireEvent.click(screen.getByRole('button', { name: /cofrinhos/i }));
+    expect(onGoToCofrinhos).toHaveBeenCalled();
   });
 
   it('chama onGoToFamilia ao clicar em Família', () => {

@@ -5,6 +5,7 @@ import {
   IconAjuda,
   IconCartao,
   IconChevron,
+  IconCofrinho,
   IconExtrato,
   IconFamilia,
   IconHistorico,
@@ -18,6 +19,7 @@ interface ConfiguracoesPageProps {
   onGoToCategorias: () => void;
   onGoToMetodosPagamento: () => void;
   onGoToOrcamento: () => void;
+  onGoToCofrinhos: () => void;
   onGoToFamilia: () => void;
   onGoToHistorico: () => void;
   onGoToAjuda: () => void;
@@ -37,6 +39,7 @@ export const ConfiguracoesPage = ({
   onGoToCategorias,
   onGoToMetodosPagamento,
   onGoToOrcamento,
+  onGoToCofrinhos,
   onGoToFamilia,
   onGoToHistorico,
   onGoToAjuda,
@@ -71,6 +74,12 @@ export const ConfiguracoesPage = ({
       description: 'Limites de gasto por categoria',
       icon: IconOrcamento,
       onClick: onGoToOrcamento,
+    },
+    {
+      label: 'Cofrinhos',
+      description: 'Gerencie suas reservas e metas',
+      icon: IconCofrinho,
+      onClick: onGoToCofrinhos,
     },
     {
       label: 'Família',

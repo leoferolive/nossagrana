@@ -6,6 +6,12 @@ export class CategoriaNotFoundError extends Error {
   }
 }
 
+export class CategoriaSistemaError extends Error {
+  constructor() {
+    super('Categorias de sistema não podem ser editadas ou removidas');
+  }
+}
+
 export class CategoriaService {
   constructor(private readonly categoriaRepository: CategoriaRepository) {}
 
@@ -35,6 +41,19 @@ export class CategoriaService {
     nome: string;
     tipo: 'receita' | 'despesa';
   }) {
+    const existing = await this.categoriaRepository.findById({
+      id: input.id,
+      familiaId: input.familiaId,
+    });
+
+    if (!existing) {
+      throw new CategoriaNotFoundError();
+    }
+
+    if (existing.sistema) {
+      throw new CategoriaSistemaError();
+    }
+
     const updated = await this.categoriaRepository.update({
       id: input.id,
       familiaId: input.familiaId,
@@ -50,6 +69,19 @@ export class CategoriaService {
   }
 
   async deactivate(input: { id: string; familiaId: string }) {
+    const existing = await this.categoriaRepository.findById({
+      id: input.id,
+      familiaId: input.familiaId,
+    });
+
+    if (!existing) {
+      throw new CategoriaNotFoundError();
+    }
+
+    if (existing.sistema) {
+      throw new CategoriaSistemaError();
+    }
+
     const deactivated = await this.categoriaRepository.deactivate({
       id: input.id,
       familiaId: input.familiaId,

@@ -82,6 +82,72 @@ describe('RelatorioService', () => {
     expect(leo.percentual).toBe(75);
   });
 
+  it('distribuicao exclui categorias com sistema=true', async () => {
+    repo.seed({
+      transacoes: [
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '200.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          categoriaSistema: false,
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '500.00',
+          categoriaId: 'cat-sys',
+          categoriaNome: 'Cofrinho',
+          categoriaSistema: true,
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+      ],
+    });
+    const result = await service.distribuicao(familiaId, '2026-03');
+    expect(result.distribuicao).toHaveLength(1);
+    expect(result.distribuicao[0].categoriaNome).toBe('Alimentação');
+    expect(result.distribuicao[0].total).toBe('200.00');
+    expect(result.distribuicao[0].percentual).toBe(100);
+  });
+
+  it('porUsuario exclui categorias com sistema=true', async () => {
+    repo.seed({
+      transacoes: [
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '300.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Alimentação',
+          categoriaSistema: false,
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '500.00',
+          categoriaId: 'cat-sys',
+          categoriaNome: 'Cofrinho',
+          categoriaSistema: true,
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+      ],
+    });
+    const result = await service.porUsuario(familiaId, '2026-03');
+    expect(result.porUsuario).toHaveLength(1);
+    expect(result.porUsuario[0].total).toBe('300.00');
+  });
+
   it('tendencias retorna N meses regressivos com totais', async () => {
     repo.seed({
       transacoes: [

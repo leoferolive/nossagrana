@@ -32,6 +32,7 @@ const mapRow = (row: {
   valorTotal: string | null;
   valorParcela: string | null;
   transacaoPaiId: string | null;
+  cofrinhoId: string | null;
   criadoEm: Date;
   atualizadoEm: Date;
 }): Transacao => ({
@@ -60,6 +61,7 @@ const RETURNING_FIELDS = {
   valorTotal: transacoes.valorTotal,
   valorParcela: transacoes.valorParcela,
   transacaoPaiId: transacoes.transacaoPaiId,
+  cofrinhoId: transacoes.cofrinhoId,
   criadoEm: transacoes.criadoEm,
   atualizadoEm: transacoes.atualizadoEm,
 };
@@ -87,6 +89,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
         valorTotal: input.valorTotal ?? null,
         valorParcela: input.valorParcela ?? null,
         transacaoPaiId: input.transacaoPaiId ?? null,
+        cofrinhoId: input.cofrinhoId ?? null,
       })
       .returning(RETURNING_FIELDS);
 
@@ -117,6 +120,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
           valorTotal: input.valorTotal ?? null,
           valorParcela: input.valorParcela ?? null,
           transacaoPaiId: input.transacaoPaiId ?? null,
+          cofrinhoId: input.cofrinhoId ?? null,
         })),
       )
       .returning(RETURNING_FIELDS);
@@ -273,6 +277,7 @@ export class InMemoryTransacaoRepository implements TransacaoRepository {
       valorTotal: input.valorTotal ?? null,
       valorParcela: input.valorParcela ?? null,
       transacaoPaiId: input.transacaoPaiId ?? null,
+      cofrinhoId: input.cofrinhoId ?? null,
       criadoEm: now,
       atualizadoEm: now,
     };

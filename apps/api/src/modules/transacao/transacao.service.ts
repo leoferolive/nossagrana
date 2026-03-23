@@ -1,5 +1,6 @@
 import { calcularMesReferencia } from './mes-referencia.service.js';
 import type {
+  CofrinhoHandler,
   CreateTransacaoInput,
   SnapshotNotifier,
   TransacaoFiltros,
@@ -28,6 +29,7 @@ interface RegistrarInput {
   recorrente?: boolean;
   frequencia?: 'mensal' | 'semanal' | 'quinzenal' | null;
   dataFimRecorrencia?: string | null;
+  cofrinhoId?: string | null;
 }
 
 interface EditarInput {
@@ -67,6 +69,7 @@ export class TransacaoService {
   constructor(
     private readonly repository: TransacaoRepository,
     private readonly snapshotNotifier?: SnapshotNotifier,
+    private readonly cofrinhoHandler?: CofrinhoHandler,
   ) {}
 
   async registrar(input: RegistrarInput) {
@@ -147,6 +150,7 @@ export class TransacaoService {
         recorrente: true,
         frequencia: input.frequencia,
         dataFimRecorrencia: input.dataFimRecorrencia ?? null,
+        cofrinhoId: input.cofrinhoId ?? null,
       });
 
       const recorrencias: CreateTransacaoInput[] = [];
@@ -188,13 +192,30 @@ export class TransacaoService {
           frequencia: input.frequencia,
           dataFimRecorrencia: input.dataFimRecorrencia ?? null,
           transacaoPaiId: pai.id,
+          cofrinhoId: input.cofrinhoId ?? null,
         });
 
         dataAtual = incrementar(dataAtual);
         count++;
       }
 
-      await this.repository.createMany(recorrencias);
+      const filhas = await this.repository.createMany(recorrencias);
+
+      // Processar movimentações de cofrinho para filhas recorrentes
+      if (input.cofrinhoId && this.cofrinhoHandler) {
+        for (const filha of filhas) {
+          await this.cofrinhoHandler.processarTransacaoComCofrinho({
+            id: filha.id,
+            familiaId: filha.familiaId,
+            valor: filha.valor,
+            cofrinhoId: input.cofrinhoId,
+            usuarioRegistrouId: filha.usuarioRegistrouId,
+            mesReferencia: filha.mesReferencia,
+            descricao: filha.descricao,
+          });
+        }
+      }
+
       return pai;
     }
 
@@ -209,6 +230,7 @@ export class TransacaoService {
       mesReferencia,
       metodoPagamentoId: input.metodoPagamentoId ?? null,
       usuarioRegistrouId: input.usuarioRegistrouId,
+      cofrinhoId: input.cofrinhoId ?? null,
     });
   }
 

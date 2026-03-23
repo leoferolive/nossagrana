@@ -103,8 +103,8 @@ jobs:
           CI: 'true'
         run: pnpm --filter api test:coverage
 
-      - name: Web tests with coverage
-        run: pnpm --filter web test:coverage
+      - name: Web tests
+        run: pnpm --filter web test
 
       - name: Collect changed files
         if: github.event_name == 'pull_request'

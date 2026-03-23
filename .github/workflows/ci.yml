@@ -104,17 +104,7 @@ jobs:
         run: pnpm --filter api test:coverage
 
       - name: Web tests with coverage
-        id: web-coverage
-        continue-on-error: true
-        env:
-          CI: 'true'
         run: pnpm --filter web test:coverage
-
-      - name: Web tests (fallback without coverage)
-        if: steps.web-coverage.outcome == 'failure'
-        env:
-          CI: 'true'
-        run: pnpm --filter web test
 
       - name: Collect changed files
         if: github.event_name == 'pull_request'

@@ -19,6 +19,7 @@ export default defineConfig({
         maxForks: process.env.CI ? 1 : undefined,
       },
     },
+    fileParallelism: !process.env.CI,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],

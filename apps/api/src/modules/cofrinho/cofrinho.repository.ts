@@ -4,17 +4,10 @@ import { and, desc, eq } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { cofrinhos, movimentacoesCofrinhos, transacoes } from '../../db/schema.js';
-import type {
-  Cofrinho,
-  CofrinhoRepository,
-  MovimentacaoCofrinho,
-} from './cofrinho.types.js';
+import type { Cofrinho, CofrinhoRepository, MovimentacaoCofrinho } from './cofrinho.types.js';
 
 export class DrizzleCofrinhoRepository implements CofrinhoRepository {
-  async list(input: {
-    familiaId: string;
-    status: 'ativo' | 'encerrado';
-  }): Promise<Cofrinho[]> {
+  async list(input: { familiaId: string; status: 'ativo' | 'encerrado' }): Promise<Cofrinho[]> {
     const found = await db
       .select({
         id: cofrinhos.id,
@@ -30,12 +23,7 @@ export class DrizzleCofrinhoRepository implements CofrinhoRepository {
         encerradoEm: cofrinhos.encerradoEm,
       })
       .from(cofrinhos)
-      .where(
-        and(
-          eq(cofrinhos.familiaId, input.familiaId),
-          eq(cofrinhos.status, input.status),
-        ),
-      );
+      .where(and(eq(cofrinhos.familiaId, input.familiaId), eq(cofrinhos.status, input.status)));
 
     return found.map((c) => ({
       ...c,
@@ -43,10 +31,7 @@ export class DrizzleCofrinhoRepository implements CofrinhoRepository {
     }));
   }
 
-  async findById(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<Cofrinho | null> {
+  async findById(input: { id: string; familiaId: string }): Promise<Cofrinho | null> {
     const [found] = await db
       .select({
         id: cofrinhos.id,
@@ -62,12 +47,7 @@ export class DrizzleCofrinhoRepository implements CofrinhoRepository {
         encerradoEm: cofrinhos.encerradoEm,
       })
       .from(cofrinhos)
-      .where(
-        and(
-          eq(cofrinhos.id, input.id),
-          eq(cofrinhos.familiaId, input.familiaId),
-        ),
-      );
+      .where(and(eq(cofrinhos.id, input.id), eq(cofrinhos.familiaId, input.familiaId)));
 
     if (!found) {
       return null;
@@ -204,10 +184,7 @@ export class DrizzleCofrinhoRepository implements CofrinhoRepository {
     };
   }
 
-  async encerrar(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<Cofrinho | null> {
+  async encerrar(input: { id: string; familiaId: string }): Promise<Cofrinho | null> {
     const [updated] = await db
       .update(cofrinhos)
       .set({ status: 'encerrado', encerradoEm: new Date() })
@@ -315,10 +292,7 @@ export class DrizzleCofrinhoRepository implements CofrinhoRepository {
     }));
   }
 
-  async findAporteRecorrenteAtivo(input: {
-    cofrinhoId: string;
-    familiaId: string;
-  }): Promise<{
+  async findAporteRecorrenteAtivo(input: { cofrinhoId: string; familiaId: string }): Promise<{
     transacaoPaiId: string;
     valor: string;
     frequencia: 'mensal' | 'semanal' | 'quinzenal';
@@ -357,24 +331,14 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
   private cofrinhos: Cofrinho[] = [];
   private movimentacoes: MovimentacaoCofrinho[] = [];
 
-  async list(input: {
-    familiaId: string;
-    status: 'ativo' | 'encerrado';
-  }): Promise<Cofrinho[]> {
+  async list(input: { familiaId: string; status: 'ativo' | 'encerrado' }): Promise<Cofrinho[]> {
     return this.cofrinhos.filter(
       (c) => c.familiaId === input.familiaId && c.status === input.status,
     );
   }
 
-  async findById(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<Cofrinho | null> {
-    return (
-      this.cofrinhos.find(
-        (c) => c.id === input.id && c.familiaId === input.familiaId,
-      ) ?? null
-    );
+  async findById(input: { id: string; familiaId: string }): Promise<Cofrinho | null> {
+    return this.cofrinhos.find((c) => c.id === input.id && c.familiaId === input.familiaId) ?? null;
   }
 
   async create(input: {
@@ -413,10 +377,7 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
     metaValor?: string | null;
   }): Promise<Cofrinho | null> {
     const index = this.cofrinhos.findIndex(
-      (c) =>
-        c.id === input.id &&
-        c.familiaId === input.familiaId &&
-        c.status === 'ativo',
+      (c) => c.id === input.id && c.familiaId === input.familiaId && c.status === 'ativo',
     );
 
     if (index === -1) {
@@ -445,10 +406,7 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
     novoSaldo: string;
   }): Promise<Cofrinho | null> {
     const index = this.cofrinhos.findIndex(
-      (c) =>
-        c.id === input.id &&
-        c.familiaId === input.familiaId &&
-        c.status === 'ativo',
+      (c) => c.id === input.id && c.familiaId === input.familiaId && c.status === 'ativo',
     );
 
     if (index === -1) {
@@ -464,15 +422,9 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
     return updated;
   }
 
-  async encerrar(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<Cofrinho | null> {
+  async encerrar(input: { id: string; familiaId: string }): Promise<Cofrinho | null> {
     const index = this.cofrinhos.findIndex(
-      (c) =>
-        c.id === input.id &&
-        c.familiaId === input.familiaId &&
-        c.status === 'ativo',
+      (c) => c.id === input.id && c.familiaId === input.familiaId && c.status === 'ativo',
     );
 
     if (index === -1) {
@@ -522,20 +474,11 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
     familiaId: string;
   }): Promise<MovimentacaoCofrinho[]> {
     return this.movimentacoes
-      .filter(
-        (m) =>
-          m.cofrinhoId === input.cofrinhoId &&
-          m.familiaId === input.familiaId,
-      )
-      .sort(
-        (a, b) => b.registradoEm.getTime() - a.registradoEm.getTime(),
-      );
+      .filter((m) => m.cofrinhoId === input.cofrinhoId && m.familiaId === input.familiaId)
+      .sort((a, b) => b.registradoEm.getTime() - a.registradoEm.getTime());
   }
 
-  async findAporteRecorrenteAtivo(_input: {
-    cofrinhoId: string;
-    familiaId: string;
-  }): Promise<{
+  async findAporteRecorrenteAtivo(_input: { cofrinhoId: string; familiaId: string }): Promise<{
     transacaoPaiId: string;
     valor: string;
     frequencia: 'mensal' | 'semanal' | 'quinzenal';

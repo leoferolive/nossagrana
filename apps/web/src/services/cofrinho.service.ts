@@ -35,10 +35,7 @@ export class CofrinhoService {
     });
   }
 
-  async criar(
-    familiaId: string,
-    payload: CofrinhoCreateRequest,
-  ): Promise<CofrinhoCreateResponse> {
+  async criar(familiaId: string, payload: CofrinhoCreateRequest): Promise<CofrinhoCreateResponse> {
     return this.api.request<CofrinhoCreateResponse>('/api/cofrinhos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },

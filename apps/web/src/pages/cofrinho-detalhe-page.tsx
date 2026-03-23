@@ -16,9 +16,7 @@ interface CofrinhoDetalhePageProps {
 }
 
 const formatBRL = (value: string) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    parseFloat(value),
-  );
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(value));
 
 type ModalAberto = 'aporte' | 'retirada' | 'encerrar' | 'editar' | null;
 
@@ -108,31 +106,18 @@ export function CofrinhoDetalhePage({
         {/* Header: emoji + nome + saldo + meta */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            {cofrinho.emoji && (
-              <span className="text-3xl">{cofrinho.emoji}</span>
-            )}
+            {cofrinho.emoji && <span className="text-3xl">{cofrinho.emoji}</span>}
             <h1 className="text-xl font-bold text-text">{cofrinho.nome}</h1>
           </div>
 
-          {cofrinho.descricao && (
-            <p className="text-sm text-text-muted">{cofrinho.descricao}</p>
-          )}
+          {cofrinho.descricao && <p className="text-sm text-text-muted">{cofrinho.descricao}</p>}
 
-          <div className="text-2xl font-bold text-primary">
-            {formatBRL(cofrinho.saldoAtual)}
-          </div>
+          <div className="text-2xl font-bold text-primary">{formatBRL(cofrinho.saldoAtual)}</div>
 
           {meta !== null && (
             <div className="flex flex-col gap-1">
-              <p className="text-xs text-text-muted">
-                Meta: {formatBRL(cofrinho.metaValor!)}
-              </p>
-              <BudgetBar
-                category=""
-                spent={saldo}
-                limit={meta}
-                compact
-              />
+              <p className="text-xs text-text-muted">Meta: {formatBRL(cofrinho.metaValor!)}</p>
+              <BudgetBar category="" spent={saldo} limit={meta} compact />
             </div>
           )}
 
@@ -189,16 +174,22 @@ export function CofrinhoDetalhePage({
             <h2 className="mb-2 text-sm font-bold text-text">Aporte recorrente</h2>
             <div className="flex flex-col gap-1 text-sm text-text-muted">
               <p>
-                Valor: <span className="font-semibold text-text">{formatBRL(aporteRecorrenteAtivo.valor)}</span>
+                Valor:{' '}
+                <span className="font-semibold text-text">
+                  {formatBRL(aporteRecorrenteAtivo.valor)}
+                </span>
               </p>
               <p>
-                Frequencia: <span className="font-semibold text-text">
-                  {frequenciaLabel[aporteRecorrenteAtivo.frequencia] ?? aporteRecorrenteAtivo.frequencia}
+                Frequencia:{' '}
+                <span className="font-semibold text-text">
+                  {frequenciaLabel[aporteRecorrenteAtivo.frequencia] ??
+                    aporteRecorrenteAtivo.frequencia}
                 </span>
               </p>
               {aporteRecorrenteAtivo.dataFimRecorrencia && (
                 <p>
-                  Ate: <span className="font-semibold text-text">
+                  Ate:{' '}
+                  <span className="font-semibold text-text">
                     {new Date(aporteRecorrenteAtivo.dataFimRecorrencia).toLocaleDateString('pt-BR')}
                   </span>
                 </p>
@@ -217,9 +208,7 @@ export function CofrinhoDetalhePage({
 
         {/* Movimentacoes list */}
         <div>
-          <h2 className="mb-3 text-sm font-bold text-text">
-            Movimentacoes
-          </h2>
+          <h2 className="mb-3 text-sm font-bold text-text">Movimentacoes</h2>
           {movimentacoes.length === 0 ? (
             <p className="text-sm text-text-muted">Nenhuma movimentacao registrada.</p>
           ) : (

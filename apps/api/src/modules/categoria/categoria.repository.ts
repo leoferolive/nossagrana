@@ -41,12 +41,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
         criadoEm: categorias.criadoEm,
       })
       .from(categorias)
-      .where(
-        and(
-          eq(categorias.id, input.id),
-          eq(categorias.familiaId, input.familiaId),
-        ),
-      );
+      .where(and(eq(categorias.id, input.id), eq(categorias.familiaId, input.familiaId)));
 
     if (!found) {
       return null;

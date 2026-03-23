@@ -64,10 +64,7 @@ export interface CofrinhoRepository {
     cofrinhoId: string;
     familiaId: string;
   }): Promise<MovimentacaoCofrinho[]>;
-  findAporteRecorrenteAtivo(input: {
-    cofrinhoId: string;
-    familiaId: string;
-  }): Promise<{
+  findAporteRecorrenteAtivo(input: { cofrinhoId: string; familiaId: string }): Promise<{
     transacaoPaiId: string;
     valor: string;
     frequencia: 'mensal' | 'semanal' | 'quinzenal';
@@ -103,8 +100,5 @@ export interface TransacaoRecorrenteCreator {
     frequencia: 'mensal' | 'semanal' | 'quinzenal';
     dataFimRecorrencia?: string | null;
   }): Promise<{ id: string }>;
-  cancelarRecorrencia(input: {
-    transacaoPaiId: string;
-    familiaId: string;
-  }): Promise<void>;
+  cancelarRecorrencia(input: { transacaoPaiId: string; familiaId: string }): Promise<void>;
 }

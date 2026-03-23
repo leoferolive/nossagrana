@@ -3,11 +3,7 @@ import { useState, useEffect } from 'react';
 interface CofrinhoRetiradaModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: {
-    valor: string;
-    descricao?: string | null;
-    voltarAoSaldo: boolean;
-  }) => void;
+  onSubmit: (payload: { valor: string; descricao?: string | null; voltarAoSaldo: boolean }) => void;
   cofrinhoNome: string;
   saldoAtual: string;
 }
@@ -63,9 +59,7 @@ export const CofrinhoRetiradaModal = ({
         </div>
 
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-text">
-            Retirada — {cofrinhoNome}
-          </h2>
+          <h2 className="text-base font-bold text-text">Retirada — {cofrinhoNome}</h2>
           <button
             type="button"
             aria-label="Fechar modal"
@@ -97,9 +91,7 @@ export const CofrinhoRetiradaModal = ({
               className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-warning/40"
             />
             {valor && valorNum > saldoNum && (
-              <span className="text-xs text-danger">
-                Valor excede o saldo disponivel.
-              </span>
+              <span className="text-xs text-danger">Valor excede o saldo disponivel.</span>
             )}
           </label>
 

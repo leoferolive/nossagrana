@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { InMemoryCategoriaRepository } from './categoria.repository.js';
-import { CategoriaService, CategoriaNotFoundError, CategoriaSistemaError } from './categoria.service.js';
+import {
+  CategoriaService,
+  CategoriaNotFoundError,
+  CategoriaSistemaError,
+} from './categoria.service.js';
 
 describe('CategoriaService', () => {
   let service: CategoriaService;

@@ -217,7 +217,10 @@ export const snapshotsMensais = pgTable(
 );
 
 export const cofrinhoStatus = pgEnum('cofrinho_status', ['ativo', 'encerrado']);
-export const movimentacaoCofrinhoTipo = pgEnum('movimentacao_cofrinho_tipo', ['aporte', 'retirada']);
+export const movimentacaoCofrinhoTipo = pgEnum('movimentacao_cofrinho_tipo', [
+  'aporte',
+  'retirada',
+]);
 
 export const cofrinhos = pgTable(
   'cofrinhos',
@@ -238,9 +241,7 @@ export const cofrinhos = pgTable(
     criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
     encerradoEm: timestamp('encerrado_em', { withTimezone: true }),
   },
-  (table) => [
-    index('cofrinhos_familia_id_idx').on(table.familiaId),
-  ],
+  (table) => [index('cofrinhos_familia_id_idx').on(table.familiaId)],
 );
 
 export const movimentacoesCofrinhos = pgTable(

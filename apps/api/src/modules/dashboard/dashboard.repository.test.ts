@@ -5,10 +5,7 @@ const mockDb = vi.hoisted(() => ({
 }));
 vi.mock('../../db/client.js', () => ({ db: mockDb }));
 
-import {
-  DrizzleDashboardRepository,
-  InMemoryDashboardRepository,
-} from './dashboard.repository.js';
+import { DrizzleDashboardRepository, InMemoryDashboardRepository } from './dashboard.repository.js';
 
 describe('InMemoryDashboardRepository', () => {
   let repo: InMemoryDashboardRepository;
@@ -25,10 +22,38 @@ describe('InMemoryDashboardRepository', () => {
   it('getResumoMes agrega receitas e despesas corretamente', async () => {
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'receita', valor: '5000.00', data: '2026-03-05', categoriaId: 'c1' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '1500.00', data: '2026-03-10', categoriaId: 'c2' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '500.00', data: '2026-03-15', categoriaId: 'c1' },
-        { familiaId: 'f2', mesReferencia: '2026-03', tipo: 'despesa', valor: '9999.00', data: '2026-03-01', categoriaId: 'c3' }, // outra familia
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'receita',
+          valor: '5000.00',
+          data: '2026-03-05',
+          categoriaId: 'c1',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '1500.00',
+          data: '2026-03-10',
+          categoriaId: 'c2',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '500.00',
+          data: '2026-03-15',
+          categoriaId: 'c1',
+        },
+        {
+          familiaId: 'f2',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '9999.00',
+          data: '2026-03-01',
+          categoriaId: 'c3',
+        }, // outra familia
       ],
     });
     const r = await repo.getResumoMes('f1', '2026-03');
@@ -45,19 +70,53 @@ describe('InMemoryDashboardRepository', () => {
   it('getSnapshotMes retorna snapshot quando existe', async () => {
     repo.seed({
       snapshots: [
-        { familiaId: 'f1', mesReferencia: '2026-02', totalReceitas: '4000.00', totalDespesas: '3000.00', saldo: '1000.00' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-02',
+          totalReceitas: '4000.00',
+          totalDespesas: '3000.00',
+          saldo: '1000.00',
+        },
       ],
     });
     const s = await repo.getSnapshotMes('f1', '2026-02');
-    expect(s).toMatchObject({ totalReceitas: '4000.00', totalDespesas: '3000.00', saldo: '1000.00' });
+    expect(s).toMatchObject({
+      totalReceitas: '4000.00',
+      totalDespesas: '3000.00',
+      saldo: '1000.00',
+    });
   });
 
   it('getDistribuicaoCategorias retorna apenas despesas, ordenadas por total desc', async () => {
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '100.00', data: '2026-03-01', categoriaId: 'c1', categoriaNome: 'Alimentação' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '400.00', data: '2026-03-02', categoriaId: 'c2', categoriaNome: 'Lazer' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'receita', valor: '5000.00', data: '2026-03-01', categoriaId: 'c3', categoriaNome: 'Salário' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '100.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '400.00',
+          data: '2026-03-02',
+          categoriaId: 'c2',
+          categoriaNome: 'Lazer',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'receita',
+          valor: '5000.00',
+          data: '2026-03-01',
+          categoriaId: 'c3',
+          categoriaNome: 'Salário',
+        },
       ],
     });
     const dist = await repo.getDistribuicaoCategorias('f1', '2026-03');
@@ -70,8 +129,26 @@ describe('InMemoryDashboardRepository', () => {
   it('getDistribuicaoCategorias exclui categorias com sistema=true', async () => {
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '100.00', data: '2026-03-01', categoriaId: 'c1', categoriaNome: 'Alimentação', categoriaSistema: false },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '500.00', data: '2026-03-02', categoriaId: 'c-sys', categoriaNome: 'Cofrinho', categoriaSistema: true },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '100.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+          categoriaSistema: false,
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '500.00',
+          data: '2026-03-02',
+          categoriaId: 'c-sys',
+          categoriaNome: 'Cofrinho',
+          categoriaSistema: true,
+        },
       ],
     });
     const dist = await repo.getDistribuicaoCategorias('f1', '2026-03');
@@ -87,9 +164,30 @@ describe('InMemoryDashboardRepository', () => {
   it('getTransacoesPorDia retorna sparse (só dias com transações)', async () => {
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '100.00', data: '2026-03-05', categoriaId: 'c1' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'receita', valor: '200.00', data: '2026-03-05', categoriaId: 'c2' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '50.00', data: '2026-03-10', categoriaId: 'c1' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '100.00',
+          data: '2026-03-05',
+          categoriaId: 'c1',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'receita',
+          valor: '200.00',
+          data: '2026-03-05',
+          categoriaId: 'c2',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '50.00',
+          data: '2026-03-10',
+          categoriaId: 'c1',
+        },
       ],
     });
     const dias = await repo.getTransacoesPorDia('f1', '2026-03');
@@ -104,9 +202,30 @@ describe('InMemoryDashboardRepository', () => {
   it('getOrcamentosVigentes filtra por vigência', async () => {
     repo.seed({
       orcamentos: [
-        { familiaId: 'f1', categoriaId: 'c1', categoriaNome: 'Alimentação', valorLimite: '1000.00', vigenciaInicio: '2026-01', vigenciaFim: null },
-        { familiaId: 'f1', categoriaId: 'c2', categoriaNome: 'Lazer', valorLimite: '500.00', vigenciaInicio: '2026-01', vigenciaFim: '2026-02' }, // expirado
-        { familiaId: 'f1', categoriaId: 'c3', categoriaNome: 'Transporte', valorLimite: '300.00', vigenciaInicio: '2026-04', vigenciaFim: null }, // futuro
+        {
+          familiaId: 'f1',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+          valorLimite: '1000.00',
+          vigenciaInicio: '2026-01',
+          vigenciaFim: null,
+        },
+        {
+          familiaId: 'f1',
+          categoriaId: 'c2',
+          categoriaNome: 'Lazer',
+          valorLimite: '500.00',
+          vigenciaInicio: '2026-01',
+          vigenciaFim: '2026-02',
+        }, // expirado
+        {
+          familiaId: 'f1',
+          categoriaId: 'c3',
+          categoriaNome: 'Transporte',
+          valorLimite: '300.00',
+          vigenciaInicio: '2026-04',
+          vigenciaFim: null,
+        }, // futuro
       ],
     });
     const orcamentos = await repo.getOrcamentosVigentes('f1', '2026-03');
@@ -117,10 +236,38 @@ describe('InMemoryDashboardRepository', () => {
   it('getGastosPorCategoria agrega despesas por categoria no mês', async () => {
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '300.00', data: '2026-03-01', categoriaId: 'c1' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '200.00', data: '2026-03-10', categoriaId: 'c1' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '100.00', data: '2026-03-15', categoriaId: 'c2' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'receita', valor: '999.00', data: '2026-03-01', categoriaId: 'c1' }, // ignorar receita
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '300.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '200.00',
+          data: '2026-03-10',
+          categoriaId: 'c1',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '100.00',
+          data: '2026-03-15',
+          categoriaId: 'c2',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'receita',
+          valor: '999.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+        }, // ignorar receita
       ],
     });
     const gastos = await repo.getGastosPorCategoria('f1', '2026-03');

@@ -61,9 +61,7 @@ export class CofrinhoService {
   constructor(
     private readonly repository: CofrinhoRepository,
     private readonly transacaoCreator: TransacaoCreator,
-    private readonly getCategoriaCofrinho: (
-      familiaId: string,
-    ) => Promise<{ id: string }>,
+    private readonly getCategoriaCofrinho: (familiaId: string) => Promise<{ id: string }>,
     private readonly transacaoRecorrenteCreator?: TransacaoRecorrenteCreator,
   ) {}
 
@@ -138,30 +136,28 @@ export class CofrinhoService {
 
     if (input.recorrente && input.frequencia) {
       // Check if there's already an active recurring aporte
-      const aporteExistente =
-        await this.repository.findAporteRecorrenteAtivo({
-          cofrinhoId: input.cofrinhoId,
-          familiaId: input.familiaId,
-        });
+      const aporteExistente = await this.repository.findAporteRecorrenteAtivo({
+        cofrinhoId: input.cofrinhoId,
+        familiaId: input.familiaId,
+      });
 
       if (aporteExistente) {
         throw new AporteRecorrenteJaAtivoError();
       }
 
-      const transacao =
-        await this.transacaoRecorrenteCreator!.criarRecorrente({
-          familiaId: input.familiaId,
-          tipo: 'despesa',
-          valor: input.valor,
-          categoriaId: categoria.id,
-          descricao: input.descricao ?? null,
-          data,
-          mesReferencia,
-          usuarioRegistrouId: input.registradoPor,
-          cofrinhoId: input.cofrinhoId,
-          frequencia: input.frequencia,
-          dataFimRecorrencia: input.dataFimRecorrencia ?? null,
-        });
+      const transacao = await this.transacaoRecorrenteCreator!.criarRecorrente({
+        familiaId: input.familiaId,
+        tipo: 'despesa',
+        valor: input.valor,
+        categoriaId: categoria.id,
+        descricao: input.descricao ?? null,
+        data,
+        mesReferencia,
+        usuarioRegistrouId: input.registradoPor,
+        cofrinhoId: input.cofrinhoId,
+        frequencia: input.frequencia,
+        dataFimRecorrencia: input.dataFimRecorrencia ?? null,
+      });
 
       transacaoId = transacao.id;
     } else {
@@ -335,17 +331,11 @@ export class CofrinhoService {
     return encerrado!;
   }
 
-  async listar(input: {
-    familiaId: string;
-    status: 'ativo' | 'encerrado';
-  }): Promise<Cofrinho[]> {
+  async listar(input: { familiaId: string; status: 'ativo' | 'encerrado' }): Promise<Cofrinho[]> {
     return this.repository.list(input);
   }
 
-  async detalhe(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<{
+  async detalhe(input: { id: string; familiaId: string }): Promise<{
     cofrinho: Cofrinho;
     movimentacoes: MovimentacaoCofrinho[];
     aporteRecorrenteAtivo: {
@@ -374,10 +364,7 @@ export class CofrinhoService {
     return { cofrinho, movimentacoes, aporteRecorrenteAtivo };
   }
 
-  async cancelarAporteRecorrente(input: {
-    cofrinhoId: string;
-    familiaId: string;
-  }): Promise<void> {
+  async cancelarAporteRecorrente(input: { cofrinhoId: string; familiaId: string }): Promise<void> {
     const cofrinho = await this.repository.findById({
       id: input.cofrinhoId,
       familiaId: input.familiaId,
@@ -387,11 +374,10 @@ export class CofrinhoService {
       throw new CofrinhoNotFoundError();
     }
 
-    const aporteRecorrente =
-      await this.repository.findAporteRecorrenteAtivo({
-        cofrinhoId: input.cofrinhoId,
-        familiaId: input.familiaId,
-      });
+    const aporteRecorrente = await this.repository.findAporteRecorrenteAtivo({
+      cofrinhoId: input.cofrinhoId,
+      familiaId: input.familiaId,
+    });
 
     if (!aporteRecorrente) {
       throw new AporteRecorrenteNotFoundError();

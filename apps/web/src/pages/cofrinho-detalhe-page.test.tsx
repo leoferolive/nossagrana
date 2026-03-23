@@ -85,11 +85,13 @@ const baseCofrinhoDetalhe: CofrinhoDetalheResponse = {
   aporteRecorrenteAtivo: null,
 };
 
-const setupStore = (overrides: Partial<{
-  cofrinhoSelecionado: CofrinhoDetalheResponse | null;
-  carregando: boolean;
-  erro: string | null;
-}> = {}) => {
+const setupStore = (
+  overrides: Partial<{
+    cofrinhoSelecionado: CofrinhoDetalheResponse | null;
+    carregando: boolean;
+    erro: string | null;
+  }> = {},
+) => {
   mockStore.useCofrinhoStore.mockReturnValue({
     cofrinhoSelecionado: overrides.cofrinhoSelecionado ?? baseCofrinhoDetalhe,
     carregando: overrides.carregando ?? false,

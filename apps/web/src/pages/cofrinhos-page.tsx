@@ -14,11 +14,13 @@ interface CofrinhosPageProps {
 }
 
 const formatBRL = (value: string) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    parseFloat(value),
-  );
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(value));
 
-export function CofrinhosPage({ familiaId, onNavigate: _onNavigate, onVerDetalhe }: CofrinhosPageProps) {
+export function CofrinhosPage({
+  familiaId,
+  onNavigate: _onNavigate,
+  onVerDetalhe,
+}: CofrinhosPageProps) {
   const { cofrinhos, carregando, erro, fetchAll } = useCofrinhoStore();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -120,12 +122,8 @@ export function CofrinhosPage({ familiaId, onNavigate: _onNavigate, onVerDetalhe
                 >
                   {/* Emoji + Nome */}
                   <div className="flex items-center gap-2">
-                    {cofrinho.emoji && (
-                      <span className="text-2xl">{cofrinho.emoji}</span>
-                    )}
-                    <span className="text-sm font-semibold text-text">
-                      {cofrinho.nome}
-                    </span>
+                    {cofrinho.emoji && <span className="text-2xl">{cofrinho.emoji}</span>}
+                    <span className="text-sm font-semibold text-text">{cofrinho.nome}</span>
                   </div>
 
                   {/* Saldo */}
@@ -134,14 +132,7 @@ export function CofrinhosPage({ familiaId, onNavigate: _onNavigate, onVerDetalhe
                   </div>
 
                   {/* Progress bar (only if has meta) */}
-                  {meta !== null && (
-                    <BudgetBar
-                      category=""
-                      spent={saldo}
-                      limit={meta}
-                      compact
-                    />
-                  )}
+                  {meta !== null && <BudgetBar category="" spent={saldo} limit={meta} compact />}
 
                   {/* Badge "Meta atingida!" */}
                   {metaAtingida && (

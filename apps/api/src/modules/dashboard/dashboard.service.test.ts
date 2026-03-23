@@ -23,7 +23,13 @@ describe('DashboardService.getResumo', () => {
     const { repo, service } = buildService();
     repo.seed({
       snapshots: [
-        { familiaId: 'f1', mesReferencia: '2026-02', totalReceitas: '4000.00', totalDespesas: '3000.00', saldo: '1000.00' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-02',
+          totalReceitas: '4000.00',
+          totalDespesas: '3000.00',
+          saldo: '1000.00',
+        },
       ],
     });
     const r = await service.getResumo('f1', '2026-03');
@@ -35,7 +41,14 @@ describe('DashboardService.getResumo', () => {
     const { repo, service } = buildService();
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-02', tipo: 'receita', valor: '3000.00', data: '2026-02-10', categoriaId: 'c1' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-02',
+          tipo: 'receita',
+          valor: '3000.00',
+          data: '2026-02-10',
+          categoriaId: 'c1',
+        },
       ],
     });
     const r = await service.getResumo('f1', '2026-03');
@@ -61,8 +74,24 @@ describe('DashboardService.getGraficos', () => {
     const { repo, service } = buildService();
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '300.00', data: '2026-03-01', categoriaId: 'c1', categoriaNome: 'Alimentação' },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '700.00', data: '2026-03-02', categoriaId: 'c2', categoriaNome: 'Lazer' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '300.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '700.00',
+          data: '2026-03-02',
+          categoriaId: 'c2',
+          categoriaNome: 'Lazer',
+        },
       ],
     });
     const g = await service.getGraficos('f1', '2026-03');
@@ -76,8 +105,26 @@ describe('DashboardService.getGraficos', () => {
     const { repo, service } = buildService();
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '300.00', data: '2026-03-01', categoriaId: 'c1', categoriaNome: 'Alimentação', categoriaSistema: false },
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '500.00', data: '2026-03-02', categoriaId: 'c-sys', categoriaNome: 'Cofrinho', categoriaSistema: true },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '300.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+          categoriaSistema: false,
+        },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '500.00',
+          data: '2026-03-02',
+          categoriaId: 'c-sys',
+          categoriaNome: 'Cofrinho',
+          categoriaSistema: true,
+        },
       ],
     });
     const g = await service.getGraficos('f1', '2026-03');
@@ -91,7 +138,14 @@ describe('DashboardService.getGraficos', () => {
     const { repo, service } = buildService();
     repo.seed({
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '100.00', data: '2026-03-15', categoriaId: 'c1' },
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '100.00',
+          data: '2026-03-15',
+          categoriaId: 'c1',
+        },
       ],
     });
     const g = await service.getGraficos('f1', '2026-03');
@@ -116,14 +170,56 @@ describe('DashboardService.getOrcamento', () => {
     const { repo, service } = buildService();
     repo.seed({
       orcamentos: [
-        { familiaId: 'f1', categoriaId: 'c1', categoriaNome: 'Alimentação', valorLimite: '1000.00', vigenciaInicio: '2026-01', vigenciaFim: null },
-        { familiaId: 'f1', categoriaId: 'c2', categoriaNome: 'Lazer', valorLimite: '500.00', vigenciaInicio: '2026-01', vigenciaFim: null },
-        { familiaId: 'f1', categoriaId: 'c3', categoriaNome: 'Transporte', valorLimite: '300.00', vigenciaInicio: '2026-01', vigenciaFim: null },
+        {
+          familiaId: 'f1',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+          valorLimite: '1000.00',
+          vigenciaInicio: '2026-01',
+          vigenciaFim: null,
+        },
+        {
+          familiaId: 'f1',
+          categoriaId: 'c2',
+          categoriaNome: 'Lazer',
+          valorLimite: '500.00',
+          vigenciaInicio: '2026-01',
+          vigenciaFim: null,
+        },
+        {
+          familiaId: 'f1',
+          categoriaId: 'c3',
+          categoriaNome: 'Transporte',
+          valorLimite: '300.00',
+          vigenciaInicio: '2026-01',
+          vigenciaFim: null,
+        },
       ],
       transacoes: [
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '600.00', data: '2026-03-01', categoriaId: 'c1' }, // 60% → ok
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '425.00', data: '2026-03-01', categoriaId: 'c2' }, // 85% → warning
-        { familiaId: 'f1', mesReferencia: '2026-03', tipo: 'despesa', valor: '315.00', data: '2026-03-01', categoriaId: 'c3' }, // 105% → exceeded
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '600.00',
+          data: '2026-03-01',
+          categoriaId: 'c1',
+        }, // 60% → ok
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '425.00',
+          data: '2026-03-01',
+          categoriaId: 'c2',
+        }, // 85% → warning
+        {
+          familiaId: 'f1',
+          mesReferencia: '2026-03',
+          tipo: 'despesa',
+          valor: '315.00',
+          data: '2026-03-01',
+          categoriaId: 'c3',
+        }, // 105% → exceeded
       ],
     });
     const o = await service.getOrcamento('f1', '2026-03');
@@ -136,7 +232,14 @@ describe('DashboardService.getOrcamento', () => {
     const { repo, service } = buildService();
     repo.seed({
       orcamentos: [
-        { familiaId: 'f1', categoriaId: 'c1', categoriaNome: 'Poupança', valorLimite: '1000.00', vigenciaInicio: '2026-01', vigenciaFim: null },
+        {
+          familiaId: 'f1',
+          categoriaId: 'c1',
+          categoriaNome: 'Poupança',
+          valorLimite: '1000.00',
+          vigenciaInicio: '2026-01',
+          vigenciaFim: null,
+        },
       ],
     });
     const o = await service.getOrcamento('f1', '2026-03');

@@ -14,7 +14,11 @@ import {
   categoriaListSchema,
   categoriaUpdateSchema,
 } from './categoria.schema.js';
-import { CategoriaNotFoundError, CategoriaSistemaError, CategoriaService } from './categoria.service.js';
+import {
+  CategoriaNotFoundError,
+  CategoriaSistemaError,
+  CategoriaService,
+} from './categoria.service.js';
 
 const defaultCategoriaService = (): CategoriaService => {
   if (env.NODE_ENV === 'test') {

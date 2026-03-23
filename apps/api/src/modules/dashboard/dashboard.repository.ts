@@ -99,7 +99,11 @@ export class InMemoryDashboardRepository implements DashboardRepository {
     for (const t of despesas) {
       const existing = map.get(t.categoriaId);
       if (existing) existing.total += parseFloat(t.valor);
-      else map.set(t.categoriaId, { nome: t.categoriaNome ?? t.categoriaId, total: parseFloat(t.valor) });
+      else
+        map.set(t.categoriaId, {
+          nome: t.categoriaNome ?? t.categoriaId,
+          total: parseFloat(t.valor),
+        });
     }
     return Array.from(map.entries())
       .map(([categoriaId, { nome, total }]) => ({
@@ -140,10 +144,7 @@ export class InMemoryDashboardRepository implements DashboardRepository {
     );
   }
 
-  async getGastosPorCategoria(
-    familiaId: string,
-    mesReferencia: string,
-  ): Promise<GastoCategoria[]> {
+  async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<GastoCategoria[]> {
     const despesas = this._transacoes.filter(
       (t) => t.familiaId === familiaId && t.mesReferencia === mesReferencia && t.tipo === 'despesa',
     );
@@ -168,12 +169,7 @@ export class DrizzleDashboardRepository implements DashboardRepository {
         totalDespesas: sql<string>`COALESCE(SUM(CASE WHEN ${transacoes.tipo} = 'despesa' THEN ${transacoes.valor}::numeric ELSE 0 END), 0)::text`,
       })
       .from(transacoes)
-      .where(
-        and(
-          eq(transacoes.familiaId, familiaId),
-          eq(transacoes.mesReferencia, mesReferencia),
-        ),
-      );
+      .where(and(eq(transacoes.familiaId, familiaId), eq(transacoes.mesReferencia, mesReferencia)));
 
     const row = rows[0] ?? { totalReceitas: '0', totalDespesas: '0' };
     const r = parseFloat(row.totalReceitas);
@@ -235,12 +231,7 @@ export class DrizzleDashboardRepository implements DashboardRepository {
         totalReceitas: sql<string>`COALESCE(SUM(CASE WHEN ${transacoes.tipo} = 'receita' THEN ${transacoes.valor}::numeric ELSE 0 END), 0)::text`,
       })
       .from(transacoes)
-      .where(
-        and(
-          eq(transacoes.familiaId, familiaId),
-          eq(transacoes.mesReferencia, mesReferencia),
-        ),
-      )
+      .where(and(eq(transacoes.familiaId, familiaId), eq(transacoes.mesReferencia, mesReferencia)))
       .groupBy(transacoes.data)
       .orderBy(transacoes.data);
   }
@@ -269,10 +260,7 @@ export class DrizzleDashboardRepository implements DashboardRepository {
       );
   }
 
-  async getGastosPorCategoria(
-    familiaId: string,
-    mesReferencia: string,
-  ): Promise<GastoCategoria[]> {
+  async getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<GastoCategoria[]> {
     return db
       .select({
         categoriaId: transacoes.categoriaId,

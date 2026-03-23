@@ -48,11 +48,7 @@ describe('CofrinhoService', () => {
     repo = new InMemoryCofrinhoRepository();
     mockTransacaoCreator = makeMockTransacaoCreator();
     mockTransacaoRecorrenteCreator = makeMockTransacaoRecorrenteCreator();
-    service = new CofrinhoService(
-      repo,
-      mockTransacaoCreator,
-      mockGetCategoriaCofrinho,
-    );
+    service = new CofrinhoService(repo, mockTransacaoCreator, mockGetCategoriaCofrinho);
     serviceComRecorrente = new CofrinhoService(
       repo,
       mockTransacaoCreator,
@@ -576,9 +572,9 @@ describe('CofrinhoService', () => {
     });
 
     it('deve rejeitar se não encontrado', async () => {
-      await expect(
-        service.detalhe({ id: 'inexistente', familiaId: 'f1' }),
-      ).rejects.toThrow(CofrinhoNotFoundError);
+      await expect(service.detalhe({ id: 'inexistente', familiaId: 'f1' })).rejects.toThrow(
+        CofrinhoNotFoundError,
+      );
     });
   });
 

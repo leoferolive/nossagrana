@@ -50,9 +50,7 @@ export const CofrinhoAporteModal = ({
         </div>
 
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-text">
-            Aporte — {cofrinhoNome}
-          </h2>
+          <h2 className="text-base font-bold text-text">Aporte — {cofrinhoNome}</h2>
           <button
             type="button"
             aria-label="Fechar modal"
@@ -93,9 +91,7 @@ export const CofrinhoAporteModal = ({
           </label>
 
           {/* Info */}
-          <p className="text-xs text-text-muted">
-            Sera registrado como saida no mes atual.
-          </p>
+          <p className="text-xs text-text-muted">Sera registrado como saida no mes atual.</p>
         </div>
 
         {/* Ações */}

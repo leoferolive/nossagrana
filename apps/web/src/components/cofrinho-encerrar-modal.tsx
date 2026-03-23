@@ -63,8 +63,7 @@ export const CofrinhoEncerrarModal = ({
         {temSaldo ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-text">
-              Este cofrinho tem{' '}
-              <span className="font-semibold">R$ {saldoAtual}</span> de saldo.
+              Este cofrinho tem <span className="font-semibold">R$ {saldoAtual}</span> de saldo.
             </p>
 
             <fieldset className="flex flex-col gap-2">

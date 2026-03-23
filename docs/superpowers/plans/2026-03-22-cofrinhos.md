@@ -16,55 +16,56 @@
 
 ### packages/types
 
-| File | Action | Responsibility |
-|------|--------|----------------|
+| File                          | Action | Responsibility                                                       |
+| ----------------------------- | ------ | -------------------------------------------------------------------- |
 | `packages/types/src/index.ts` | Modify | Adicionar schemas Zod e types para Cofrinhos (request/response DTOs) |
 
 ### Backend (apps/api)
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `apps/api/src/db/schema.ts` | Modify | Adicionar tabelas `cofrinhos`, `movimentacoes_cofrinho`, enums, campos `sistema` em categorias e `cofrinhoId` em transacoes |
-| `apps/api/src/db/seeds/categorias-padrao.ts` | Modify | Adicionar constante CATEGORIA_SISTEMA_COFRINHO |
-| `apps/api/src/modules/cofrinho/cofrinho.types.ts` | Create | Interfaces de domínio e CofrinhoRepository |
-| `apps/api/src/modules/cofrinho/cofrinho.repository.ts` | Create | DrizzleCofrinhoRepository + InMemoryCofrinhoRepository |
-| `apps/api/src/modules/cofrinho/cofrinho.service.ts` | Create | Lógica de negócio: criar, editar, aportar, retirar, encerrar |
-| `apps/api/src/modules/cofrinho/cofrinho.service.test.ts` | Create | Testes unitários do service (TDD) |
-| `apps/api/src/modules/cofrinho/cofrinho.schema.ts` | Create | Schemas Fastify (JSON Schema para docs/validação) |
-| `apps/api/src/modules/cofrinho/cofrinho.routes.ts` | Create | 8 endpoints REST |
-| `apps/api/src/modules/cofrinho/cofrinho.routes.test.ts` | Create | Testes de integração das rotas |
-| `apps/api/src/modules/categoria/categoria.service.ts` | Modify | Adicionar proteção sistema=true em update/deactivate |
-| `apps/api/src/modules/categoria/categoria.types.ts` | Modify | Adicionar campo `sistema` ao type Categoria |
-| `apps/api/src/modules/categoria/categoria.repository.ts` | Modify | Incluir campo `sistema` nas queries |
-| `apps/api/src/modules/familia/familia.service.ts` | Modify | Seed de categoria "Cofrinho" (sistema=true) ao criar família |
-| `apps/api/src/app.ts` | Modify | Registrar cofrinhoRoutes |
+| File                                                     | Action | Responsibility                                                                                                              |
+| -------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api/src/db/schema.ts`                              | Modify | Adicionar tabelas `cofrinhos`, `movimentacoes_cofrinho`, enums, campos `sistema` em categorias e `cofrinhoId` em transacoes |
+| `apps/api/src/db/seeds/categorias-padrao.ts`             | Modify | Adicionar constante CATEGORIA_SISTEMA_COFRINHO                                                                              |
+| `apps/api/src/modules/cofrinho/cofrinho.types.ts`        | Create | Interfaces de domínio e CofrinhoRepository                                                                                  |
+| `apps/api/src/modules/cofrinho/cofrinho.repository.ts`   | Create | DrizzleCofrinhoRepository + InMemoryCofrinhoRepository                                                                      |
+| `apps/api/src/modules/cofrinho/cofrinho.service.ts`      | Create | Lógica de negócio: criar, editar, aportar, retirar, encerrar                                                                |
+| `apps/api/src/modules/cofrinho/cofrinho.service.test.ts` | Create | Testes unitários do service (TDD)                                                                                           |
+| `apps/api/src/modules/cofrinho/cofrinho.schema.ts`       | Create | Schemas Fastify (JSON Schema para docs/validação)                                                                           |
+| `apps/api/src/modules/cofrinho/cofrinho.routes.ts`       | Create | 8 endpoints REST                                                                                                            |
+| `apps/api/src/modules/cofrinho/cofrinho.routes.test.ts`  | Create | Testes de integração das rotas                                                                                              |
+| `apps/api/src/modules/categoria/categoria.service.ts`    | Modify | Adicionar proteção sistema=true em update/deactivate                                                                        |
+| `apps/api/src/modules/categoria/categoria.types.ts`      | Modify | Adicionar campo `sistema` ao type Categoria                                                                                 |
+| `apps/api/src/modules/categoria/categoria.repository.ts` | Modify | Incluir campo `sistema` nas queries                                                                                         |
+| `apps/api/src/modules/familia/familia.service.ts`        | Modify | Seed de categoria "Cofrinho" (sistema=true) ao criar família                                                                |
+| `apps/api/src/app.ts`                                    | Modify | Registrar cofrinhoRoutes                                                                                                    |
 
 ### Frontend (apps/web)
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `apps/web/src/services/cofrinho.service.ts` | Create | Chamadas à API de Cofrinhos |
-| `apps/web/src/stores/cofrinho.store.ts` | Create | Estado global Zustand |
-| `apps/web/src/pages/cofrinhos-page.tsx` | Create | Lista de cofrinhos + criar novo |
-| `apps/web/src/pages/cofrinhos-page.test.tsx` | Create | Testes da página lista |
-| `apps/web/src/pages/cofrinho-detalhe-page.tsx` | Create | Detalhe + histórico movimentações |
-| `apps/web/src/pages/cofrinho-detalhe-page.test.tsx` | Create | Testes da página detalhe |
-| `apps/web/src/components/cofrinho-modal.tsx` | Create | Modal criar/editar cofrinho |
-| `apps/web/src/components/cofrinho-aporte-modal.tsx` | Create | Modal de aporte |
-| `apps/web/src/components/cofrinho-retirada-modal.tsx` | Create | Modal de retirada |
-| `apps/web/src/components/cofrinho-encerrar-modal.tsx` | Create | Modal de encerramento |
-| `apps/web/src/App.tsx` | Modify | Adicionar screens 'cofrinhos' e 'cofrinho-detalhe' |
-| `apps/web/src/components/sidebar.tsx` | Modify | Adicionar item "Cofrinhos" no grupo 2 |
-| `apps/web/src/components/top-bar.tsx` | Modify | Adicionar título "Cofrinhos" ao screenTitles |
-| `apps/web/src/pages/configuracoes-page.tsx` | Modify | Adicionar item "Cofrinhos" no menu |
-| `apps/web/src/pages/dashboard-page.tsx` | Modify | Adicionar card de resumo dos cofrinhos |
-| `apps/web/src/components/icons.tsx` | Modify | Adicionar IconCofrinho (PiggyBank) |
+| File                                                  | Action | Responsibility                                     |
+| ----------------------------------------------------- | ------ | -------------------------------------------------- |
+| `apps/web/src/services/cofrinho.service.ts`           | Create | Chamadas à API de Cofrinhos                        |
+| `apps/web/src/stores/cofrinho.store.ts`               | Create | Estado global Zustand                              |
+| `apps/web/src/pages/cofrinhos-page.tsx`               | Create | Lista de cofrinhos + criar novo                    |
+| `apps/web/src/pages/cofrinhos-page.test.tsx`          | Create | Testes da página lista                             |
+| `apps/web/src/pages/cofrinho-detalhe-page.tsx`        | Create | Detalhe + histórico movimentações                  |
+| `apps/web/src/pages/cofrinho-detalhe-page.test.tsx`   | Create | Testes da página detalhe                           |
+| `apps/web/src/components/cofrinho-modal.tsx`          | Create | Modal criar/editar cofrinho                        |
+| `apps/web/src/components/cofrinho-aporte-modal.tsx`   | Create | Modal de aporte                                    |
+| `apps/web/src/components/cofrinho-retirada-modal.tsx` | Create | Modal de retirada                                  |
+| `apps/web/src/components/cofrinho-encerrar-modal.tsx` | Create | Modal de encerramento                              |
+| `apps/web/src/App.tsx`                                | Modify | Adicionar screens 'cofrinhos' e 'cofrinho-detalhe' |
+| `apps/web/src/components/sidebar.tsx`                 | Modify | Adicionar item "Cofrinhos" no grupo 2              |
+| `apps/web/src/components/top-bar.tsx`                 | Modify | Adicionar título "Cofrinhos" ao screenTitles       |
+| `apps/web/src/pages/configuracoes-page.tsx`           | Modify | Adicionar item "Cofrinhos" no menu                 |
+| `apps/web/src/pages/dashboard-page.tsx`               | Modify | Adicionar card de resumo dos cofrinhos             |
+| `apps/web/src/components/icons.tsx`                   | Modify | Adicionar IconCofrinho (PiggyBank)                 |
 
 ---
 
 ## Task 1: Shared Types — Schemas Zod para Cofrinhos
 
 **Files:**
+
 - Modify: `packages/types/src/index.ts` (após linha 750, seção final)
 
 - [ ] **Step 1: Adicionar schemas Zod de Cofrinhos ao packages/types**
@@ -98,7 +99,11 @@ export const cofrinhoCreateRequestSchema = z.object({
   nome: z.string().trim().min(1).max(100),
   emoji: z.string().max(10).optional().nullable(),
   descricao: z.string().trim().optional().nullable(),
-  metaValor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido').optional().nullable(),
+  metaValor: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido')
+    .optional()
+    .nullable(),
 });
 export type CofrinhoCreateRequest = z.infer<typeof cofrinhoCreateRequestSchema>;
 
@@ -109,7 +114,11 @@ export const cofrinhoUpdateRequestSchema = z.object({
   nome: z.string().trim().min(1).max(100).optional(),
   emoji: z.string().max(10).optional().nullable(),
   descricao: z.string().trim().optional().nullable(),
-  metaValor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido').optional().nullable(),
+  metaValor: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido')
+    .optional()
+    .nullable(),
 });
 export type CofrinhoUpdateRequest = z.infer<typeof cofrinhoUpdateRequestSchema>;
 
@@ -141,12 +150,14 @@ const movimentacaoCofrinhoSchema = z.object({
 export const cofrinhoDetalheResponseSchema = z.object({
   cofrinho: cofrinhoSchema,
   movimentacoes: z.array(movimentacaoCofrinhoSchema),
-  aporteRecorrenteAtivo: z.object({
-    transacaoPaiId: z.string().uuid(),
-    valor: z.string(),
-    frequencia: transacaoFrequenciaSchema,
-    dataFimRecorrencia: z.string().nullable(),
-  }).nullable(),
+  aporteRecorrenteAtivo: z
+    .object({
+      transacaoPaiId: z.string().uuid(),
+      valor: z.string(),
+      frequencia: transacaoFrequenciaSchema,
+      dataFimRecorrencia: z.string().nullable(),
+    })
+    .nullable(),
 });
 export type CofrinhoDetalheResponse = z.infer<typeof cofrinhoDetalheResponseSchema>;
 
@@ -155,7 +166,11 @@ export const cofrinhoAporteRequestSchema = z.object({
   descricao: z.string().trim().optional().nullable(),
   recorrente: z.boolean().optional().default(false),
   frequencia: transacaoFrequenciaSchema.optional().nullable(),
-  dataFimRecorrencia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  dataFimRecorrencia: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
 });
 export type CofrinhoAporteRequest = z.infer<typeof cofrinhoAporteRequestSchema>;
 
@@ -216,6 +231,7 @@ git commit -m "feat(types): adicionar schemas Zod para módulo Cofrinhos"
 ## Task 2: Database Schema — Novas tabelas e campos
 
 **Files:**
+
 - Modify: `apps/api/src/db/schema.ts` (adicionar após linha 215)
 - Modify: `apps/api/src/db/seeds/categorias-padrao.ts`
 
@@ -233,7 +249,10 @@ Após a tabela `snapshotsMensais` (após linha 215), adicionar:
 
 ```typescript
 export const cofrinhoStatus = pgEnum('cofrinho_status', ['ativo', 'encerrado']);
-export const movimentacaoCofrinhoTipo = pgEnum('movimentacao_cofrinho_tipo', ['aporte', 'retirada']);
+export const movimentacaoCofrinhoTipo = pgEnum('movimentacao_cofrinho_tipo', [
+  'aporte',
+  'retirada',
+]);
 
 export const cofrinhos = pgTable(
   'cofrinhos',
@@ -254,9 +273,7 @@ export const cofrinhos = pgTable(
     criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
     encerradoEm: timestamp('encerrado_em', { withTimezone: true }),
   },
-  (table) => [
-    index('cofrinhos_familia_id_idx').on(table.familiaId),
-  ],
+  (table) => [index('cofrinhos_familia_id_idx').on(table.familiaId)],
 );
 
 export const movimentacoesCofrinhos = pgTable(
@@ -326,6 +343,7 @@ git commit -m "feat(db): adicionar tabelas cofrinhos, movimentacoes_cofrinho e c
 ## Task 3: Backend — Proteção de categorias sistema
 
 **Files:**
+
 - Modify: `apps/api/src/modules/categoria/categoria.types.ts`
 - Modify: `apps/api/src/modules/categoria/categoria.repository.ts`
 - Modify: `apps/api/src/modules/categoria/categoria.service.ts`
@@ -338,7 +356,11 @@ Adicionar teste em `apps/api/src/modules/categoria/categoria.service.test.ts` (c
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CategoriaService, CategoriaNotFoundError, CategoriaSistemaError } from './categoria.service.js';
+import {
+  CategoriaService,
+  CategoriaNotFoundError,
+  CategoriaSistemaError,
+} from './categoria.service.js';
 import { InMemoryCategoriaRepository } from './categoria.repository.js';
 
 describe('CategoriaService', () => {
@@ -352,7 +374,11 @@ describe('CategoriaService', () => {
 
   it('deve rejeitar update de categoria sistema', async () => {
     const cat = await repo.create({
-      familiaId: 'f1', nome: 'Cofrinho', tipo: 'despesa', criadoPor: 'u1', sistema: true,
+      familiaId: 'f1',
+      nome: 'Cofrinho',
+      tipo: 'despesa',
+      criadoPor: 'u1',
+      sistema: true,
     });
     await expect(
       service.update({ id: cat.id, familiaId: 'f1', nome: 'Outro', tipo: 'despesa' }),
@@ -361,18 +387,30 @@ describe('CategoriaService', () => {
 
   it('deve rejeitar deactivate de categoria sistema', async () => {
     const cat = await repo.create({
-      familiaId: 'f1', nome: 'Cofrinho', tipo: 'despesa', criadoPor: 'u1', sistema: true,
+      familiaId: 'f1',
+      nome: 'Cofrinho',
+      tipo: 'despesa',
+      criadoPor: 'u1',
+      sistema: true,
     });
-    await expect(
-      service.deactivate({ id: cat.id, familiaId: 'f1' }),
-    ).rejects.toThrow(CategoriaSistemaError);
+    await expect(service.deactivate({ id: cat.id, familiaId: 'f1' })).rejects.toThrow(
+      CategoriaSistemaError,
+    );
   });
 
   it('deve permitir update de categoria normal', async () => {
     const cat = await repo.create({
-      familiaId: 'f1', nome: 'Lazer', tipo: 'despesa', criadoPor: 'u1',
+      familiaId: 'f1',
+      nome: 'Lazer',
+      tipo: 'despesa',
+      criadoPor: 'u1',
     });
-    const updated = await service.update({ id: cat.id, familiaId: 'f1', nome: 'Diversão', tipo: 'despesa' });
+    const updated = await service.update({
+      id: cat.id,
+      familiaId: 'f1',
+      nome: 'Diversão',
+      tipo: 'despesa',
+    });
     expect(updated.nome).toBe('Diversão');
   });
 });
@@ -390,6 +428,7 @@ Em `categoria.types.ts`, adicionar `sistema: boolean` à interface `Categoria` e
 - [ ] **Step 4: Atualizar repository para incluir campo sistema**
 
 Em `categoria.repository.ts`:
+
 - `DrizzleCategoriaRepository`: incluir `sistema: categorias.sistema` em todas as queries (select, returning)
 - `InMemoryCategoriaRepository`: incluir `sistema` no create (default false) e retornar em todas as operações
 - Adicionar método `findById(input: { id: string; familiaId: string }): Promise<Categoria | null>`
@@ -397,6 +436,7 @@ Em `categoria.repository.ts`:
 - [ ] **Step 5: Implementar proteção no service**
 
 Em `categoria.service.ts`:
+
 - Adicionar `CategoriaSistemaError`
 - Em `update()`: buscar categoria por id, se `sistema === true` → throw `CategoriaSistemaError`
 - Em `deactivate()`: buscar categoria por id, se `sistema === true` → throw `CategoriaSistemaError`
@@ -451,6 +491,7 @@ git commit -m "feat(api): proteger categorias sistema e seed 'Cofrinho' ao criar
 ## Task 4: Backend — Cofrinho types e repository
 
 **Files:**
+
 - Create: `apps/api/src/modules/cofrinho/cofrinho.types.ts`
 - Create: `apps/api/src/modules/cofrinho/cofrinho.repository.ts`
 
@@ -503,7 +544,11 @@ export interface CofrinhoRepository {
     descricao?: string | null;
     metaValor?: string | null;
   }): Promise<Cofrinho | null>;
-  updateSaldo(input: { id: string; familiaId: string; novoSaldo: string }): Promise<Cofrinho | null>;
+  updateSaldo(input: {
+    id: string;
+    familiaId: string;
+    novoSaldo: string;
+  }): Promise<Cofrinho | null>;
   encerrar(input: { id: string; familiaId: string }): Promise<Cofrinho | null>;
   createMovimentacao(input: {
     cofrinhoId: string;
@@ -515,7 +560,10 @@ export interface CofrinhoRepository {
     registradoPor: string;
     mesReferencia: string;
   }): Promise<MovimentacaoCofrinho>;
-  listMovimentacoes(input: { cofrinhoId: string; familiaId: string }): Promise<MovimentacaoCofrinho[]>;
+  listMovimentacoes(input: {
+    cofrinhoId: string;
+    familiaId: string;
+  }): Promise<MovimentacaoCofrinho[]>;
 }
 ```
 
@@ -538,14 +586,16 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
   }
 
   async findById(input: { id: string; familiaId: string }): Promise<Cofrinho | null> {
-    return this.cofrinhos.find(
-      (c) => c.id === input.id && c.familiaId === input.familiaId,
-    ) ?? null;
+    return this.cofrinhos.find((c) => c.id === input.id && c.familiaId === input.familiaId) ?? null;
   }
 
   async create(input: {
-    familiaId: string; nome: string; emoji?: string | null;
-    descricao?: string | null; metaValor?: string | null; criadoPor: string;
+    familiaId: string;
+    nome: string;
+    emoji?: string | null;
+    descricao?: string | null;
+    metaValor?: string | null;
+    criadoPor: string;
   }): Promise<Cofrinho> {
     const cofrinho: Cofrinho = {
       id: randomUUID(),
@@ -565,9 +615,12 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
   }
 
   async update(input: {
-    id: string; familiaId: string;
-    nome?: string; emoji?: string | null;
-    descricao?: string | null; metaValor?: string | null;
+    id: string;
+    familiaId: string;
+    nome?: string;
+    emoji?: string | null;
+    descricao?: string | null;
+    metaValor?: string | null;
   }): Promise<Cofrinho | null> {
     const idx = this.cofrinhos.findIndex(
       (c) => c.id === input.id && c.familiaId === input.familiaId && c.status === 'ativo',
@@ -584,7 +637,11 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
     return this.cofrinhos[idx];
   }
 
-  async updateSaldo(input: { id: string; familiaId: string; novoSaldo: string }): Promise<Cofrinho | null> {
+  async updateSaldo(input: {
+    id: string;
+    familiaId: string;
+    novoSaldo: string;
+  }): Promise<Cofrinho | null> {
     const idx = this.cofrinhos.findIndex(
       (c) => c.id === input.id && c.familiaId === input.familiaId,
     );
@@ -608,10 +665,14 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
   }
 
   async createMovimentacao(input: {
-    cofrinhoId: string; familiaId: string;
-    tipo: 'aporte' | 'retirada'; valor: string;
-    descricao?: string | null; transacaoId?: string | null;
-    registradoPor: string; mesReferencia: string;
+    cofrinhoId: string;
+    familiaId: string;
+    tipo: 'aporte' | 'retirada';
+    valor: string;
+    descricao?: string | null;
+    transacaoId?: string | null;
+    registradoPor: string;
+    mesReferencia: string;
   }): Promise<MovimentacaoCofrinho> {
     const mov: MovimentacaoCofrinho = {
       id: randomUUID(),
@@ -629,7 +690,10 @@ export class InMemoryCofrinhoRepository implements CofrinhoRepository {
     return mov;
   }
 
-  async listMovimentacoes(input: { cofrinhoId: string; familiaId: string }): Promise<MovimentacaoCofrinho[]> {
+  async listMovimentacoes(input: {
+    cofrinhoId: string;
+    familiaId: string;
+  }): Promise<MovimentacaoCofrinho[]> {
     return this.movimentacoes.filter(
       (m) => m.cofrinhoId === input.cofrinhoId && m.familiaId === input.familiaId,
     );
@@ -658,12 +722,14 @@ git commit -m "feat(api): criar types e repository do módulo Cofrinho"
 ## Task 5: Backend — CofrinhoService (TDD)
 
 **Files:**
+
 - Create: `apps/api/src/modules/cofrinho/cofrinho.service.ts`
 - Create: `apps/api/src/modules/cofrinho/cofrinho.service.test.ts`
 
 - [ ] **Step 1: Escrever testes do service**
 
 Criar `cofrinho.service.test.ts` com testes para:
+
 1. `criar()` — cria cofrinho com nome, emoji, meta
 2. `editar()` — atualiza nome/meta, rejeita se não encontrado
 3. `aportar()` — cria transação de despesa + movimentação + incrementa saldo
@@ -732,6 +798,7 @@ export class CofrinhoService {
 ```
 
 Lógica-chave:
+
 - `aportar()`: busca cofrinho → valida ativo → busca categoria "Cofrinho" → calcula mesReferencia (hoje) → cria transação despesa → cria movimentação aporte → incrementa saldo
 - `retirar()`: busca cofrinho → valida saldo ≥ valor → se voltarAoSaldo: cria transação receita → cria movimentação → decrementa saldo
 - `encerrar()`: se saldo > 0 e voltarAoSaldo → chama `retirar()` com valor = saldo. Depois seta status='encerrado'
@@ -753,6 +820,7 @@ git commit -m "feat(api): implementar CofrinhoService com TDD"
 ## Task 5b: Backend — Aporte Recorrente e Cancelamento (TDD)
 
 **Files:**
+
 - Modify: `apps/api/src/modules/cofrinho/cofrinho.service.ts`
 - Modify: `apps/api/src/modules/cofrinho/cofrinho.service.test.ts`
 - Modify: `apps/api/src/modules/cofrinho/cofrinho.types.ts`
@@ -814,10 +882,7 @@ export interface TransacaoRecorrenteCreator {
     frequencia: 'mensal' | 'semanal' | 'quinzenal';
     dataFimRecorrencia?: string | null;
   }): Promise<{ id: string }>;
-  cancelarRecorrencia(input: {
-    transacaoPaiId: string;
-    familiaId: string;
-  }): Promise<void>;
+  cancelarRecorrencia(input: { transacaoPaiId: string; familiaId: string }): Promise<void>;
 }
 
 export interface CofrinhoRepository {
@@ -834,6 +899,7 @@ export interface CofrinhoRepository {
 - [ ] **Step 4: Implementar no service**
 
 Adicionar ao `CofrinhoService`:
+
 - `aportar()` — se `recorrente=true`: usar `transacaoRecorrenteCreator.criarRecorrente()`, validar que não existe aporte recorrente ativo
 - `cancelarAporteRecorrente()` — busca aporte ativo via repo, chama `transacaoRecorrenteCreator.cancelarRecorrencia()`
 
@@ -858,6 +924,7 @@ git commit -m "feat(api): implementar aporte recorrente e cancelamento no Cofrin
 ## Task 6: Backend — Routes e Schema Fastify
 
 **Files:**
+
 - Create: `apps/api/src/modules/cofrinho/cofrinho.schema.ts`
 - Create: `apps/api/src/modules/cofrinho/cofrinho.routes.ts`
 - Create: `apps/api/src/modules/cofrinho/cofrinho.routes.test.ts`
@@ -868,13 +935,27 @@ git commit -m "feat(api): implementar aporte recorrente e cancelamento no Cofrin
 Definir schemas Fastify para validação de request/response (seguindo padrão de `categoria.schema.ts`):
 
 ```typescript
-export const cofrinhoListSchema = { /* querystring, response 200 */ };
-export const cofrinhoDetalheSchema = { /* params, response 200 */ };
-export const cofrinhoCreateSchema = { /* body, response 201 */ };
-export const cofrinhoUpdateSchema = { /* params, body, response 200 */ };
-export const cofrinhoAporteSchema = { /* params, body, response 201 */ };
-export const cofrinhoRetiradaSchema = { /* params, body, response 201 */ };
-export const cofrinhoEncerrarSchema = { /* params, body, response 200 */ };
+export const cofrinhoListSchema = {
+  /* querystring, response 200 */
+};
+export const cofrinhoDetalheSchema = {
+  /* params, response 200 */
+};
+export const cofrinhoCreateSchema = {
+  /* body, response 201 */
+};
+export const cofrinhoUpdateSchema = {
+  /* params, body, response 200 */
+};
+export const cofrinhoAporteSchema = {
+  /* params, body, response 201 */
+};
+export const cofrinhoRetiradaSchema = {
+  /* params, body, response 201 */
+};
+export const cofrinhoEncerrarSchema = {
+  /* params, body, response 200 */
+};
 ```
 
 - [ ] **Step 2: Criar cofrinho.routes.ts**
@@ -909,6 +990,7 @@ app.register(cofrinhoRoutes, { prefix: '/api' });
 - [ ] **Step 4: Escrever testes de rota**
 
 Criar `cofrinho.routes.test.ts` com teste de integração (seguindo padrão existente — buildApp + inject):
+
 - POST /api/cofrinhos → 201
 - GET /api/cofrinhos → 200 com lista
 - POST /api/cofrinhos/:id/aportes → 201
@@ -936,6 +1018,7 @@ git commit -m "feat(api): adicionar rotas REST do módulo Cofrinho"
 ## Task 6b: Backend — Integração do Cron Job com Cofrinhos
 
 **Files:**
+
 - Modify: `apps/api/src/modules/historico/snapshot.job.ts` (ou onde transações recorrentes são geradas)
 - Modify: `apps/api/src/modules/transacao/transacao.service.ts`
 - Create: `apps/api/src/modules/cofrinho/cofrinho.cron-integration.test.ts`
@@ -969,6 +1052,7 @@ Expected: FAIL
 - [ ] **Step 3: Implementar integração**
 
 Na lógica de geração de transações-filhas recorrentes (em `TransacaoService` ou `snapshot.job.ts`):
+
 - Após criar transação-filha, verificar se `transacaoPai.cofrinhoId` existe
 - Se sim: buscar cofrinho, criar `movimentacao_cofrinho` (tipo='aporte', valor da filha, transacaoId=filha.id) e incrementar `saldoAtual`
 - Usar injeção de dependência: receber `CofrinhoRepository` como parâmetro opcional
@@ -990,6 +1074,7 @@ git commit -m "feat(api): integrar cron job de recorrências com módulo Cofrinh
 ## Task 6c: Backend — Filtro de Categorias Sistema nos Relatórios
 
 **Files:**
+
 - Modify: `apps/api/src/modules/relatorio/relatorio.service.ts` (ou repository)
 - Modify: `apps/api/src/modules/relatorio/relatorio.service.test.ts` (ou criar)
 - Modify: `apps/api/src/modules/dashboard/dashboard.service.ts` (ou repository)
@@ -1015,6 +1100,7 @@ Expected: FAIL — "Cofrinho" aparece nos resultados
 - [ ] **Step 3: Implementar filtro**
 
 Na query de distribuição (repository ou service), adicionar JOIN/filtro:
+
 - Excluir transações onde `categorias.sistema = true`
 - Aplicar tanto em `relatorio.distribuicao()` quanto em `dashboard.getGraficos()`
 
@@ -1035,6 +1121,7 @@ git commit -m "feat(api): excluir categorias sistema dos relatórios de despesas
 ## Task 7: Frontend — Service e Store
 
 **Files:**
+
 - Create: `apps/web/src/services/cofrinho.service.ts`
 - Create: `apps/web/src/stores/cofrinho.store.ts`
 - Modify: `apps/web/src/components/icons.tsx`
@@ -1120,6 +1207,7 @@ git commit -m "feat(web): criar service, store e ícone para Cofrinhos"
 ## Task 8: Frontend — Navegação (App.tsx, Sidebar, TopBar, Configurações)
 
 **Files:**
+
 - Modify: `apps/web/src/App.tsx`
 - Modify: `apps/web/src/components/sidebar.tsx`
 - Modify: `apps/web/src/components/top-bar.tsx`
@@ -1180,6 +1268,7 @@ git commit -m "feat(web): integrar Cofrinhos à navegação (Sidebar, TopBar, Co
 ## Task 9: Frontend — Modais (criar, aporte, retirada, encerrar)
 
 **Files:**
+
 - Create: `apps/web/src/components/cofrinho-modal.tsx`
 - Create: `apps/web/src/components/cofrinho-aporte-modal.tsx`
 - Create: `apps/web/src/components/cofrinho-retirada-modal.tsx`
@@ -1188,6 +1277,7 @@ git commit -m "feat(web): integrar Cofrinhos à navegação (Sidebar, TopBar, Co
 - [ ] **Step 1: Criar cofrinho-modal.tsx (criar/editar)**
 
 Seguir padrão de `transacao-modal.tsx` (bottom-sheet mobile / dialog desktop):
+
 - Props: `open`, `familiaId`, `onClose`, `onSubmit`, `cofrinhoEditar?` (para edição)
 - Campos: nome (required), emoji (seletor simples), meta (opcional), descrição (opcional)
 - Overlay `bg-black/60`, container `bg-bg rounded-t-2xl md:rounded-2xl`
@@ -1231,6 +1321,7 @@ git commit -m "feat(web): criar modais de Cofrinhos (criar, aporte, retirada, en
 ## Task 10: Frontend — CofrinhosPage (lista)
 
 **Files:**
+
 - Create: `apps/web/src/pages/cofrinhos-page.tsx`
 - Create: `apps/web/src/pages/cofrinhos-page.test.tsx`
 
@@ -1262,6 +1353,7 @@ interface CofrinhosPageProps {
 ```
 
 Componentes:
+
 - Header com botão "+ Novo Cofrinho"
 - Grid/lista de cards (nome, emoji, saldo, BudgetBar se tiver meta)
 - Badge "Meta atingida" se saldo ≥ metaValor
@@ -1286,6 +1378,7 @@ git commit -m "feat(web): implementar CofrinhosPage (lista de cofrinhos)"
 ## Task 11: Frontend — CofrinhoDetalhePage
 
 **Files:**
+
 - Create: `apps/web/src/pages/cofrinho-detalhe-page.tsx`
 - Create: `apps/web/src/pages/cofrinho-detalhe-page.test.tsx`
 
@@ -1317,6 +1410,7 @@ interface CofrinhoDetalhePageProps {
 ```
 
 Componentes:
+
 - Header: nome + emoji, saldo atual (text-primary), meta (se houver)
 - BudgetBar de progresso (se meta)
 - Botões de ação: Aportar (success), Retirar (warning), Editar, Encerrar (danger)
@@ -1341,6 +1435,7 @@ git commit -m "feat(web): implementar CofrinhoDetalhePage (detalhe + movimentaç
 ## Task 12: Frontend — Dashboard Card de Cofrinhos
 
 **Files:**
+
 - Modify: `apps/web/src/pages/dashboard-page.tsx`
 - Modify: `apps/web/src/pages/dashboard-page.test.tsx`
 
@@ -1362,6 +1457,7 @@ Expected: FAIL
 - [ ] **Step 3: Implementar card de cofrinhos no dashboard**
 
 Após a seção de orçamento (BudgetBar), adicionar seção "Cofrinhos":
+
 - Título com IconCofrinho
 - Lista compacta: emoji + nome + saldo + BudgetBar mini (se meta)
 - Botão "Aportar" rápido em cada item
@@ -1418,12 +1514,14 @@ git commit -m "fix: ajustes finais de CI para módulo Cofrinhos"
 ## Task 14: Frontend — FirstTimeTour + FAQ para Cofrinhos
 
 **Files:**
+
 - Modify: `apps/web/src/pages/cofrinhos-page.tsx`
 - Modify: `apps/web/src/pages/ajuda-page.tsx`
 
 - [ ] **Step 1: Adicionar FirstTimeTour na CofrinhosPage**
 
 Seguir padrão do `dashboard-page.tsx` — usar componente `FirstTimeTour` com `tourKey="cofrinhos"` e passos educativos:
+
 1. "Bem-vindo aos Cofrinhos! Aqui você cria reservas para guardar dinheiro."
 2. "Defina uma meta opcional para acompanhar seu progresso."
 3. "Faça aportes manuais ou configure aportes automáticos mensais."
@@ -1432,6 +1530,7 @@ Seguir padrão do `dashboard-page.tsx` — usar componente `FirstTimeTour` com `
 - [ ] **Step 2: Adicionar entrada no FAQ (AjudaPage)**
 
 Em `ajuda-page.tsx`, adicionar seção/pergunta sobre Cofrinhos:
+
 - "O que são Cofrinhos?" — reservas financeiras da família
 - "Como funciona um aporte?" — registrado como despesa no extrato
 - "O que é 'voltar ao saldo'?" — receita no extrato vs uso fora do sistema

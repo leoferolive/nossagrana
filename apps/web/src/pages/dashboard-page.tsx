@@ -256,9 +256,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             )}
           </div>
           {cofrinhos.length === 0 ? (
-            <p className="text-sm text-text-muted">
-              Sua família ainda não tem cofrinhos.
-            </p>
+            <p className="text-sm text-text-muted">Sua família ainda não tem cofrinhos.</p>
           ) : (
             <div className="space-y-3">
               {cofrinhos.map((c) => (

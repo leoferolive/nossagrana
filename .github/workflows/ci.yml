@@ -101,6 +101,7 @@ jobs:
       - name: Web tests
         env:
           CI: 'true'
+          NODE_OPTIONS: '--max-old-space-size=3072'
         run: pnpm --filter web test
 
       - name: API tests with coverage

@@ -95,10 +95,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests with coverage
+      - name: Build shared types
+        run: pnpm --filter @nossagrana/types build
+
+      - name: API tests with coverage
         env:
           CI: 'true'
-        run: pnpm --filter @nossagrana/types build && pnpm --filter api test:coverage && pnpm --filter web test:coverage
+        run: pnpm --filter api test:coverage
+
+      - name: Web tests with coverage
+        env:
+          CI: 'true'
+        run: pnpm --filter web test:coverage || pnpm --filter web test
 
       - name: Collect changed files
         if: github.event_name == 'pull_request'

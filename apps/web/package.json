@@ -11,7 +11,7 @@
     "lint:fast": "oxlint --config ../../.oxlintrc.json src",
     "type-check": "tsc -p tsconfig.app.json --noEmit",
     "test": "vitest run",
-    "test:coverage": "node --max-old-space-size=1536 ./node_modules/.bin/vitest run --coverage"
+    "test:coverage": "NODE_OPTIONS='--max-old-space-size=1536' vitest run --coverage"
   },
   "dependencies": {
     "@nossagrana/types": "workspace:*",

@@ -201,7 +201,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             <p className="mb-2 text-xs font-semibold text-text-muted">Evolução do mês</p>
             <MiniChart
               data={miniChartData}
-              height={64}
+              height={80}
               color="#EF4444"
               fill
               labels={miniChartLabels}

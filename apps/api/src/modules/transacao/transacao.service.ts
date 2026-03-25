@@ -8,6 +8,11 @@ import type {
   TransacaoRepository,
 } from './transacao.types.js';
 
+/** Maximo de recorrencias quando ha data fim definida */
+const MAX_RECORRENCIAS_COM_FIM = 120;
+/** Maximo de recorrencias adicionais quando nao ha data fim */
+const MAX_RECORRENCIAS_SEM_FIM = 24;
+
 export class TransacaoNotFoundError extends Error {
   constructor() {
     super('Transacao nao encontrada');
@@ -151,12 +156,11 @@ export class TransacaoService {
 
       dataAtual = incrementar(dataAtual);
 
-      const limite = 120; // segurança: máximo de 120 recorrências
       let count = 0;
 
-      while (count < limite) {
+      while (count < MAX_RECORRENCIAS_COM_FIM) {
         if (input.dataFimRecorrencia && dataAtual > input.dataFimRecorrencia) break;
-        if (!input.dataFimRecorrencia && count >= 24) break; // sem prazo: gerar 24 adicionais
+        if (!input.dataFimRecorrencia && count >= MAX_RECORRENCIAS_SEM_FIM) break;
 
         const dataObj2 = new Date(`${dataAtual}T12:00:00Z`);
         const mesRef = calcularMesReferencia({

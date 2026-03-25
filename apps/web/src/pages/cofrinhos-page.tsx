@@ -6,15 +6,13 @@ import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
+import { formatBRL } from '../utils/formatting';
 
 interface CofrinhosPageProps {
   familiaId: string;
   onNavigate: (screen: string) => void;
   onVerDetalhe: (cofrinhoId: string) => void;
 }
-
-const formatBRL = (value: string) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(value));
 
 export function CofrinhosPage({
   familiaId,

@@ -179,6 +179,45 @@ describe('CategoriasPage', () => {
     });
   });
 
+  it('exibe erro ao falhar carregamento de categorias', async () => {
+    useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
+    mockListar.mockRejectedValue(new Error('Falha'));
+    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao carregar categorias/i);
+    });
+  });
+
+  it('exibe erro ao falhar ao salvar categoria', async () => {
+    mockListar.mockResolvedValue({ categorias: CATEGORIAS });
+    mockCriar.mockRejectedValue(new Error('Falha'));
+    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+
+    const addButtons = screen.getAllByRole('button', { name: /nova categoria/i });
+    fireEvent.click(addButtons[0]);
+
+    const input = screen.getByLabelText(/nome/i);
+    fireEvent.change(input, { target: { value: 'Transporte' } });
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao salvar categoria/i);
+    });
+  });
+
+  it('exibe erro ao falhar desativacao de categoria', async () => {
+    mockListar.mockResolvedValue({ categorias: CATEGORIAS });
+    mockDesativar.mockRejectedValue(new Error('Falha'));
+    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+
+    const desativarButtons = screen.getAllByRole('button', { name: /desativar/i });
+    fireEvent.click(desativarButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao desativar categoria/i);
+    });
+  });
+
   it('desativar chama categoriaService.desativar e remove do store', async () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
     mockDesativar.mockResolvedValue({ success: true });

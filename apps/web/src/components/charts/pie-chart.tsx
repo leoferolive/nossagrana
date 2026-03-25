@@ -1,3 +1,5 @@
+import { formatBRLNumber } from '../../utils/formatting';
+
 const COLORS = ['#22C55E', '#3B82F6', '#EF4444', '#F59E0B', '#A78BFA', '#FB923C', '#60A5FA'];
 
 interface PieChartItem {
@@ -36,8 +38,6 @@ const describeArc = (
     'Z',
   ].join(' ');
 };
-
-const formatBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const PieChart = ({ data, size = 120 }: PieChartProps) => {
   if (!data.length) return null;
@@ -85,7 +85,7 @@ export const PieChart = ({ data, size = 120 }: PieChartProps) => {
             />
             <span className="text-text-muted">{s.label}</span>
             <span className="ml-auto font-semibold text-text tabular-nums">
-              {formatBRL(s.value)}
+              {formatBRLNumber(s.value)}
             </span>
             <span className="text-text-dim">({s.pct}%)</span>
           </li>

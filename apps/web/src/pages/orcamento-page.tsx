@@ -5,6 +5,8 @@ import { Target } from 'lucide-react';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
+import { getCurrentMonth } from '../utils/date';
+import { formatBRL } from '../utils/formatting';
 
 interface OrcamentoItem {
   id: string;
@@ -34,16 +36,6 @@ const statusTextColor: Record<string, string> = {
   warning: 'text-warning',
   exceeded: 'text-danger',
 };
-
-const getCurrentMes = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-};
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
   const [orcamentos, setOrcamentos] = useState<OrcamentoItem[]>([]);
@@ -81,7 +73,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
       );
       setCategoriasDisponiveis(despesas.map((c) => ({ id: c.id, nome: c.nome })));
     } catch {
-      // silently fail — categorias are non-critical here
+      setErro('Erro ao carregar categorias disponíveis');
     }
   };
 
@@ -101,7 +93,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
     try {
       await coreFinanceiroService.setOrcamento(familiaId, addCategoriaId, {
         valorLimite: addValorLimite,
-        vigenciaInicio: getCurrentMes(),
+        vigenciaInicio: getCurrentMonth(),
       });
       setShowAddForm(false);
       setAddCategoriaId('');
@@ -121,7 +113,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
     try {
       await coreFinanceiroService.setOrcamento(familiaId, categoriaId, {
         valorLimite: novoLimite,
-        vigenciaInicio: getCurrentMes(),
+        vigenciaInicio: getCurrentMonth(),
       });
       setEditingId(null);
       setNovoLimite('');

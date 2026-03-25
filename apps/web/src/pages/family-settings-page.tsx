@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { ErrorBanner } from '@/components/error-banner';
 import { AuthShell } from '@/components/ui/auth-shell';
 import { familiaService } from '@/services/auth.service';
 import type {
@@ -26,47 +27,55 @@ export const FamilySettingsPage = ({
   >([]);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [isInviteCopied, setIsInviteCopied] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     if (!familiaId) return;
     familiaService
       .listarMembros(familiaId)
       .then((res) => setMembros(res.membros))
-      .catch(() => {});
+      .catch(() => {
+        setErro('Erro ao carregar membros');
+      });
     familiaService
       .listarSolicitacoes(familiaId)
       .then((res) => setSolicitacoesPendentes(res.solicitacoes))
-      .catch(() => {});
+      .catch(() => {
+        setErro('Erro ao carregar solicitações');
+      });
   }, [familiaId]);
 
   const removeMember = async (usuarioId: string) => {
     if (!familiaId) return;
+    setErro(null);
     try {
       await familiaService.removerMembro(familiaId, usuarioId);
       setMembros((current) => current.filter((m) => m.usuarioId !== usuarioId));
     } catch {
-      // silently ignore removal errors
+      setErro('Erro ao remover membro');
     }
   };
 
   const handleRevisarSolicitacao = async (id: string, acao: 'aprovar' | 'rejeitar') => {
     if (!familiaId) return;
+    setErro(null);
     try {
       await familiaService.revisarSolicitacao(id, acao, familiaId);
       setSolicitacoesPendentes((current) => current.filter((s) => s.id !== id));
     } catch {
-      // silently ignore review errors
+      setErro('Erro ao revisar solicitação');
     }
   };
 
   const generateInviteCode = async () => {
     if (!familiaId) return;
+    setErro(null);
     try {
       const res = await familiaService.gerarConvite(familiaId);
       setInviteCode(res.convite.codigo);
       setIsInviteCopied(false);
     } catch {
-      // silently ignore invite errors
+      setErro('Erro ao gerar convite');
     }
   };
 
@@ -83,6 +92,7 @@ export const FamilySettingsPage = ({
 
   const content = (
     <>
+      <ErrorBanner error={erro} />
       {/* Membros */}
       <section className="rounded-xl border border-border bg-panel p-4">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-muted">Membros</h2>

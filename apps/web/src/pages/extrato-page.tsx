@@ -7,7 +7,11 @@ import {
   metodoPagamentoService,
   categoriaService,
 } from '@/services/core-financeiro.service';
+import { useCategoriaStore } from '@/stores/categoria.store';
+import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
+import { getCurrentMonth, shiftMonth } from '@/utils/date';
+import { formatBRL } from '@/utils/formatting';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
@@ -20,23 +24,8 @@ interface ExtratoPageProps {
 
 type FiltroTipo = 'todos' | 'receita' | 'despesa';
 
-function getCurrentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonth(mesReferencia: string, delta: number): string {
-  const [year, month] = mesReferencia.split('-').map(Number);
-  const date = new Date(year, month - 1 + delta, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
 const formatValor = (valor: string, tipo: 'receita' | 'despesa') => {
-  const num = parseFloat(valor);
-  const formatted = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(num);
+  const formatted = formatBRL(valor);
   return tipo === 'receita' ? `+ ${formatted}` : `- ${formatted}`;
 };
 
@@ -98,45 +87,37 @@ export const ExtratoPage = ({
   const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
   const setCarregando = useTransacaoStore((s) => s.setCarregando);
 
+  const { metodos } = useMetodoPagamentoStore();
+  const { categorias } = useCategoriaStore();
+
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
   const [busca, setBusca] = useState('');
   const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);
-  const [metodosMap, setMetodosMap] = useState<Map<string, string>>(new Map());
-  const [categoriasMap, setCategoriasMap] = useState<Map<string, string>>(new Map());
 
-  // Load payment methods
+  const metodosMap = useMemo(() => new Map(metodos.map((m) => [m.id, m.nome])), [metodos]);
+  const categoriasMap = useMemo(() => new Map(categorias.map((c) => [c.id, c.nome])), [categorias]);
+
+  // Load stores if empty
   useEffect(() => {
     if (!familiaId) return;
-    metodoPagamentoService
-      .listar(familiaId)
-      .then((res) => {
-        const map = new Map<string, string>();
-        for (const m of res.metodosPagamento) {
-          map.set(m.id, m.nome);
-        }
-        setMetodosMap(map);
-      })
-      .catch(() => {
-        /* ignore */
-      });
-  }, [familiaId]);
-
-  // Load categories
-  useEffect(() => {
-    if (!familiaId) return;
-    categoriaService
-      .listar(familiaId)
-      .then((res) => {
-        const map = new Map<string, string>();
-        for (const c of res.categorias) {
-          map.set(c.id, c.nome);
-        }
-        setCategoriasMap(map);
-      })
-      .catch(() => {
-        /* ignore */
-      });
+    if (metodos.length === 0) {
+      metodoPagamentoService
+        .listar(familiaId)
+        .then((res) => useMetodoPagamentoStore.getState().setMetodos(res.metodosPagamento))
+        .catch(() => {
+          /* ignore */
+        });
+    }
+    if (categorias.length === 0) {
+      categoriaService
+        .listar(familiaId)
+        .then((res) => useCategoriaStore.getState().setCategorias(res.categorias))
+        .catch(() => {
+          /* ignore */
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familiaId]);
 
   // Load transactions for selected month

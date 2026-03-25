@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
 import { MiniChart } from '../components/charts/mini-chart';
@@ -9,9 +9,7 @@ import { IconCofrinho, IconOrcamento, IconRelatorio } from '../components/icons'
 import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { useDashboardStore } from '../stores/dashboard.store';
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { formatBRL } from '../utils/formatting';
 
 function calcVariacao(atual: string, anterior: string): number | null {
   const ant = parseFloat(anterior);
@@ -70,23 +68,41 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
 
   const isCurrentMonth = mesReferencia === getCurrentMonth();
 
-  const pieData = (graficos?.distribuicaoCategorias ?? []).map((c) => ({
-    label: c.categoriaNome,
-    value: parseFloat(c.total),
-  }));
+  const pieData = useMemo(
+    () =>
+      (graficos?.distribuicaoCategorias ?? []).map((c) => ({
+        label: c.categoriaNome,
+        value: parseFloat(c.total),
+      })),
+    [graficos?.distribuicaoCategorias],
+  );
 
-  const miniChartData = (graficos?.evolucaoDiaria ?? []).map((d) => parseFloat(d.totalDespesas));
-  const miniChartLabels = (graficos?.evolucaoDiaria ?? []).map((d) => d.dia.slice(8));
+  const miniChartData = useMemo(
+    () => (graficos?.evolucaoDiaria ?? []).map((d) => parseFloat(d.totalDespesas)),
+    [graficos?.evolucaoDiaria],
+  );
+
+  const miniChartLabels = useMemo(
+    () => (graficos?.evolucaoDiaria ?? []).map((d) => d.dia.slice(8)),
+    [graficos?.evolucaoDiaria],
+  );
 
   // Tendência mês anterior
   const mesAnterior = resumo?.mesAnterior ?? null;
-  const varReceitas = mesAnterior
-    ? calcVariacao(resumo?.totalReceitas ?? '0', mesAnterior.totalReceitas)
-    : null;
-  const varDespesas = mesAnterior
-    ? calcVariacao(resumo?.totalDespesas ?? '0', mesAnterior.totalDespesas)
-    : null;
-  const varSaldo = mesAnterior ? calcVariacao(resumo?.saldo ?? '0', mesAnterior.saldo) : null;
+  const varReceitas = useMemo(
+    () =>
+      mesAnterior ? calcVariacao(resumo?.totalReceitas ?? '0', mesAnterior.totalReceitas) : null,
+    [resumo?.totalReceitas, mesAnterior],
+  );
+  const varDespesas = useMemo(
+    () =>
+      mesAnterior ? calcVariacao(resumo?.totalDespesas ?? '0', mesAnterior.totalDespesas) : null,
+    [resumo?.totalDespesas, mesAnterior],
+  );
+  const varSaldo = useMemo(
+    () => (mesAnterior ? calcVariacao(resumo?.saldo ?? '0', mesAnterior.saldo) : null),
+    [resumo?.saldo, mesAnterior],
+  );
 
   const dashboardTourSteps = [
     {
@@ -266,10 +282,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
                     <span className="text-sm font-medium text-text">{c.nome}</span>
                   </div>
                   <span className="text-sm font-semibold text-primary">
-                    {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(parseFloat(c.saldoAtual))}
+                    {formatBRL(c.saldoAtual)}
                   </span>
                 </div>
               ))}

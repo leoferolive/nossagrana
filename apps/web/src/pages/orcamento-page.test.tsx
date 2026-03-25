@@ -172,6 +172,15 @@ describe('OrcamentoPage', () => {
     expect(options[0].textContent).toBe('Lazer');
   });
 
+  it('exibe erro ao falhar carregamento de categorias disponiveis', async () => {
+    mockService.getOrcamentos.mockResolvedValue({ orcamentos: [] });
+    mockCategoriaService.listar.mockRejectedValue(new Error('Falha'));
+    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao carregar categorias/i);
+    });
+  });
+
   it('salva novo orçamento de categoria', async () => {
     mockService.setOrcamento.mockResolvedValue({ orcamento: {} });
     render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);

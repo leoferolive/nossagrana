@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto';
+
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
@@ -12,7 +14,17 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   const requireAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
     const secret = request.headers['x-admin-secret'];
-    if (!secret || secret !== env.ADMIN_SECRET) {
+    if (!secret || typeof secret !== 'string') {
+      return reply.code(403).send({ message: 'Acesso negado' });
+    }
+
+    const secretBuffer = Buffer.from(secret);
+    const expectedBuffer = Buffer.from(env.ADMIN_SECRET);
+
+    if (
+      secretBuffer.length !== expectedBuffer.length ||
+      !timingSafeEqual(secretBuffer, expectedBuffer)
+    ) {
       return reply.code(403).send({ message: 'Acesso negado' });
     }
   };

@@ -10,6 +10,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -174,25 +175,34 @@ export const transacoes = pgTable(
     index('transacoes_familia_id_idx').on(table.familiaId),
     index('transacoes_mes_referencia_idx').on(table.mesReferencia),
     index('transacoes_usuario_registrou_id_idx').on(table.usuarioRegistrouId),
+    index('transacoes_categoria_id_idx').on(table.categoriaId),
+    index('transacoes_metodo_pagamento_id_idx').on(table.metodoPagamentoId),
+    index('transacoes_transacao_pai_id_idx').on(table.transacaoPaiId),
   ],
 );
 
-export const orcamentoCategoria = pgTable('orcamento_categoria', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  familiaId: uuid('familia_id')
-    .notNull()
-    .references(() => familias.id),
-  categoriaId: uuid('categoria_id')
-    .notNull()
-    .references(() => categorias.id),
-  valorLimite: numeric('valor_limite', { precision: 14, scale: 2 }).notNull(),
-  vigenciaInicio: text('vigencia_inicio').notNull(),
-  vigenciaFim: text('vigencia_fim'),
-  criadoPor: uuid('criado_por')
-    .notNull()
-    .references(() => users.id),
-  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
-});
+export const orcamentoCategoria = pgTable(
+  'orcamento_categoria',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    categoriaId: uuid('categoria_id')
+      .notNull()
+      .references(() => categorias.id),
+    valorLimite: numeric('valor_limite', { precision: 14, scale: 2 }).notNull(),
+    vigenciaInicio: text('vigencia_inicio').notNull(),
+    vigenciaFim: text('vigencia_fim'),
+    criadoPor: uuid('criado_por')
+      .notNull()
+      .references(() => users.id),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('orcamento_categoria_familia_categoria_idx').on(table.familiaId, table.categoriaId),
+  ],
+);
 
 export const snapshotsMensais = pgTable(
   'snapshots_mensais',
@@ -213,6 +223,7 @@ export const snapshotsMensais = pgTable(
   (table) => [
     index('snapshots_mensais_familia_id_idx').on(table.familiaId),
     index('snapshots_mensais_mes_referencia_idx').on(table.mesReferencia),
+    index('snapshots_mensais_familia_mes_idx').on(table.familiaId, table.mesReferencia),
   ],
 );
 
@@ -268,4 +279,15 @@ export const movimentacoesCofrinhos = pgTable(
     index('movimentacoes_cofrinho_cofrinho_id_idx').on(table.cofrinhoId),
     index('movimentacoes_cofrinho_familia_id_idx').on(table.familiaId),
   ],
+);
+
+export const revokedRefreshTokens = pgTable(
+  'revoked_refresh_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex('revoked_refresh_tokens_token_hash_idx').on(table.tokenHash)],
 );

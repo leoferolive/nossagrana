@@ -20,6 +20,12 @@ import {
   authUpdateSenhaSchema,
 } from './auth.schema.js';
 import { AuthService, EmailAlreadyExistsError, InvalidCredentialsError } from './auth.service.js';
+import {
+  DrizzleRevokedTokenRepository,
+  hashToken,
+  InMemoryRevokedTokenRepository,
+} from './revoked-token.repository.js';
+import type { RevokedTokenRepository } from './revoked-token.repository.js';
 
 const defaultAuthService = (): AuthService => {
   if (env.NODE_ENV === 'test') {
@@ -29,27 +35,17 @@ const defaultAuthService = (): AuthService => {
   return new AuthService(new DrizzleAuthRepository());
 };
 
+const defaultRevokedTokenRepository = (): RevokedTokenRepository => {
+  if (env.NODE_ENV === 'test') {
+    return new InMemoryRevokedTokenRepository();
+  }
+
+  return new DrizzleRevokedTokenRepository();
+};
+
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   const authService = defaultAuthService();
-  const revokedRefreshTokens = new Map<string, number>();
-  const maxRevokedRefreshTokens = 5000;
-
-  const cleanupRevokedRefreshTokens = (nowSeconds: number) => {
-    for (const [token, expiresAt] of revokedRefreshTokens.entries()) {
-      if (expiresAt <= nowSeconds) {
-        revokedRefreshTokens.delete(token);
-      }
-    }
-
-    while (revokedRefreshTokens.size > maxRevokedRefreshTokens) {
-      const oldestToken = revokedRefreshTokens.keys().next().value;
-      if (!oldestToken) {
-        break;
-      }
-
-      revokedRefreshTokens.delete(oldestToken);
-    }
-  };
+  const revokedTokenRepo = defaultRevokedTokenRepository();
 
   fastify.post('/auth/register', { schema: authRegisterSchema }, async (request, reply) => {
     try {
@@ -103,15 +99,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/auth/refresh', { schema: authRefreshSchema }, async (request, reply) => {
     try {
       const payload = authRefreshRequestSchema.parse(request.body);
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      cleanupRevokedRefreshTokens(nowSeconds);
+      const tokenHash = hashToken(payload.refreshToken);
 
-      const revokedExpiration = revokedRefreshTokens.get(payload.refreshToken);
-      if (revokedExpiration && revokedExpiration > nowSeconds) {
+      const isRevoked = await revokedTokenRepo.isRevoked(tokenHash);
+      if (isRevoked) {
         return reply.code(401).send({ message: 'Refresh token invalido' });
       }
-
-      revokedRefreshTokens.delete(payload.refreshToken);
 
       const decodedToken = fastify.jwt.verify<{
         sub: string;
@@ -151,10 +144,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(401).send({ message: 'Refresh token invalido' });
       }
 
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      const expiresAt = decodedToken.exp ?? nowSeconds;
-      revokedRefreshTokens.set(payload.refreshToken, expiresAt);
-      cleanupRevokedRefreshTokens(nowSeconds);
+      const tokenHash = hashToken(payload.refreshToken);
+      const expiresAtSeconds = decodedToken.exp ?? Math.floor(Date.now() / 1000);
+      const expiresAt = new Date(expiresAtSeconds * 1000);
+      await revokedTokenRepo.revokeToken(tokenHash, expiresAt);
 
       return reply.code(204).send();
     } catch {
@@ -187,7 +180,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     '/auth/perfil',
     { preHandler: [fastify.authenticate], schema: authUpdatePerfilSchema },
     async (request) => {
-      const { nome } = request.body as { nome: string };
+      const { nome } = authUpdatePerfilSchema.body.parse(request.body);
       return authService.updatePerfil(request.user.sub, nome);
     },
   );
@@ -196,10 +189,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     '/auth/senha',
     { preHandler: [fastify.authenticate], schema: authUpdateSenhaSchema },
     async (request, reply) => {
-      const { senhaAtual, novaSenha } = request.body as {
-        senhaAtual: string;
-        novaSenha: string;
-      };
+      const { senhaAtual, novaSenha } = authUpdateSenhaSchema.body.parse(request.body);
       try {
         await authService.updateSenha(request.user.sub, senhaAtual, novaSenha);
         return reply.code(204).send();

@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { env } from './config/env.js';
 import { runMigrations } from './db/migrate.js';
+import { iniciarRevokedTokenCleanupJob } from './modules/auth/revoked-token-cleanup.job.js';
 import { iniciarSnapshotJob } from './modules/historico/snapshot.job.js';
 
 const start = async () => {
@@ -19,6 +20,7 @@ const start = async () => {
       port: env.PORT,
     });
     iniciarSnapshotJob();
+    iniciarRevokedTokenCleanupJob();
   } catch (error) {
     app.log.error(error);
     process.exit(1);

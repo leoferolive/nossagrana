@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { categorias, snapshotsMensais, transacoes, users } from '../../db/schema.js';
@@ -92,6 +92,20 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
     if (!t) return { mesReferencia, totalReceitas: '0.00', totalDespesas: '0.00', saldo: '0.00' };
     const saldo = (parseFloat(t.totalReceitas) - parseFloat(t.totalDespesas)).toFixed(2);
     return { mesReferencia, totalReceitas: t.totalReceitas, totalDespesas: t.totalDespesas, saldo };
+  }
+
+  async getResumoTransacoesBatch(
+    familiaId: string,
+    meses: string[],
+  ): Promise<TransacaoResumoRow[]> {
+    return meses.map((mesReferencia) => {
+      const t = this._transacoesResumo.find(
+        (r) => r.familiaId === familiaId && r.mesReferencia === mesReferencia,
+      );
+      if (!t) return { mesReferencia, totalReceitas: '0.00', totalDespesas: '0.00', saldo: '0.00' };
+      const saldo = (parseFloat(t.totalReceitas) - parseFloat(t.totalDespesas)).toFixed(2);
+      return { mesReferencia, totalReceitas: t.totalReceitas, totalDespesas: t.totalDespesas, saldo };
+    });
   }
 
   async getMesesComTransacoes(familiaId: string): Promise<string[]> {
@@ -213,6 +227,38 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     const totalDespesas = parseFloat(row?.totalDespesas ?? '0').toFixed(2);
     const saldo = (parseFloat(totalReceitas) - parseFloat(totalDespesas)).toFixed(2);
     return { mesReferencia, totalReceitas, totalDespesas, saldo };
+  }
+
+  async getResumoTransacoesBatch(
+    familiaId: string,
+    meses: string[],
+  ): Promise<TransacaoResumoRow[]> {
+    if (meses.length === 0) return [];
+
+    const rows = await db
+      .select({
+        mesReferencia: transacoes.mesReferencia,
+        totalReceitas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'receita' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
+        totalDespesas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'despesa' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
+      })
+      .from(transacoes)
+      .where(
+        and(
+          eq(transacoes.familiaId, familiaId),
+          inArray(transacoes.mesReferencia, meses),
+        ),
+      )
+      .groupBy(transacoes.mesReferencia);
+
+    const rowMap = new Map(rows.map((r) => [r.mesReferencia, r]));
+
+    return meses.map((mes) => {
+      const r = rowMap.get(mes);
+      const totalReceitas = parseFloat(r?.totalReceitas ?? '0').toFixed(2);
+      const totalDespesas = parseFloat(r?.totalDespesas ?? '0').toFixed(2);
+      const saldo = (parseFloat(totalReceitas) - parseFloat(totalDespesas)).toFixed(2);
+      return { mesReferencia: mes, totalReceitas, totalDespesas, saldo };
+    });
   }
 
   async getMesesComTransacoes(familiaId: string): Promise<string[]> {

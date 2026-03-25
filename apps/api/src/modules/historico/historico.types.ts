@@ -53,6 +53,10 @@ export interface HistoricoRepository {
   listSnapshots(familiaId: string): Promise<SnapshotRow[]>;
   findSnapshot(familiaId: string, mesReferencia: string): Promise<SnapshotRow | null>;
   getResumoTransacoesMes(familiaId: string, mesReferencia: string): Promise<TransacaoResumoRow>;
+  getResumoTransacoesBatch(
+    familiaId: string,
+    meses: string[],
+  ): Promise<TransacaoResumoRow[]>;
   getMesesComTransacoes(familiaId: string): Promise<string[]>;
   marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
   insertSnapshot(input: SnapshotInsertInput): Promise<SnapshotRow>;

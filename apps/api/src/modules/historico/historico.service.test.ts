@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoricoService } from './historico.service.js';
 import { InMemoryHistoricoRepository } from './historico.repository.js';
 
@@ -102,6 +102,53 @@ describe('HistoricoService', () => {
       });
       const result = await service.list(FAM);
       expect(result.meses.map((m) => m.mesReferencia)).toEqual(['2026-03', '2026-02', '2026-01']);
+    });
+
+    it('usa getResumoTransacoesBatch em vez de N queries individuais para meses sem snapshot', async () => {
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-01',
+        totalReceitas: '1000.00',
+        totalDespesas: '500.00',
+      });
+      repo.seedTransacao({
+        familiaId: FAM,
+        mesReferencia: '2026-03',
+        totalReceitas: '2000.00',
+        totalDespesas: '800.00',
+      });
+      repo.seedSnapshot({
+        familiaId: FAM,
+        mesReferencia: '2026-02',
+        totalReceitas: '1500.00',
+        totalDespesas: '700.00',
+        saldo: '800.00',
+        divergente: false,
+        dadosCategorias: [],
+        dadosUsuarios: [],
+        geradoEm: new Date('2026-02-28'),
+      });
+
+      const batchSpy = vi.spyOn(repo, 'getResumoTransacoesBatch');
+      const singleSpy = vi.spyOn(repo, 'getResumoTransacoesMes');
+
+      const result = await service.list(FAM);
+
+      // Deve usar batch (1 chamada) para meses sem snapshot (jan e mar)
+      expect(batchSpy).toHaveBeenCalledTimes(1);
+      expect(batchSpy).toHaveBeenCalledWith(FAM, ['2026-03', '2026-01']);
+      // Nao deve usar queries individuais
+      expect(singleSpy).not.toHaveBeenCalled();
+
+      expect(result.meses).toHaveLength(3);
+      const jan = result.meses.find((m) => m.mesReferencia === '2026-01')!;
+      expect(jan.totalReceitas).toBe('1000.00');
+      expect(jan.temSnapshot).toBe(false);
+      const fev = result.meses.find((m) => m.mesReferencia === '2026-02')!;
+      expect(fev.temSnapshot).toBe(true);
+      const mar = result.meses.find((m) => m.mesReferencia === '2026-03')!;
+      expect(mar.totalReceitas).toBe('2000.00');
+      expect(mar.temSnapshot).toBe(false);
     });
   });
 

@@ -8,6 +8,7 @@ import {
   categoriaService,
 } from '@/services/core-financeiro.service';
 import { useTransacaoStore } from '@/stores/transacao.store';
+import { getCurrentMonth, shiftMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
@@ -20,17 +21,6 @@ interface ExtratoPageProps {
 }
 
 type FiltroTipo = 'todos' | 'receita' | 'despesa';
-
-function getCurrentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonth(mesReferencia: string, delta: number): string {
-  const [year, month] = mesReferencia.split('-').map(Number);
-  const date = new Date(year, month - 1 + delta, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
 
 const formatValor = (valor: string, tipo: 'receita' | 'despesa') => {
   const formatted = formatBRL(valor);

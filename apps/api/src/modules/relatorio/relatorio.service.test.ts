@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InMemoryRelatorioRepository } from './relatorio.repository.js';
 import { RelatorioService } from './relatorio.service.js';
@@ -179,5 +179,62 @@ describe('RelatorioService', () => {
     expect(marco.totalReceitas).toBe('5000.00');
     expect(marco.totalDespesas).toBe('2000.00');
     expect(marco.saldo).toBe('3000.00');
+  });
+
+  it('tendencias usa getTransacoesBatch em vez de N queries individuais', async () => {
+    repo.seed({
+      transacoes: [
+        {
+          familiaId,
+          tipo: 'receita',
+          valor: '3000.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Salário',
+          mesReferencia: '2026-01',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'despesa',
+          valor: '1000.00',
+          categoriaId: 'cat-2',
+          categoriaNome: 'Alimentação',
+          mesReferencia: '2026-02',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+        {
+          familiaId,
+          tipo: 'receita',
+          valor: '5000.00',
+          categoriaId: 'cat-1',
+          categoriaNome: 'Salário',
+          mesReferencia: '2026-03',
+          usuarioId: 'usr-1',
+          usuarioNome: 'Leo',
+        },
+      ],
+    });
+
+    const batchSpy = vi.spyOn(repo, 'getTransacoesBatch');
+    const singleSpy = vi.spyOn(repo, 'getTransacoes');
+
+    const result = await service.tendencias(familiaId, '2026-03', 3);
+
+    // Deve usar batch (1 chamada) e nao N chamadas individuais
+    expect(batchSpy).toHaveBeenCalledTimes(1);
+    expect(singleSpy).not.toHaveBeenCalled();
+
+    expect(result.meses).toHaveLength(3);
+    const jan = result.meses.find((m) => m.mesReferencia === '2026-01')!;
+    expect(jan.totalReceitas).toBe('3000.00');
+    expect(jan.totalDespesas).toBe('0.00');
+    const fev = result.meses.find((m) => m.mesReferencia === '2026-02')!;
+    expect(fev.totalReceitas).toBe('0.00');
+    expect(fev.totalDespesas).toBe('1000.00');
+    const mar = result.meses.find((m) => m.mesReferencia === '2026-03')!;
+    expect(mar.totalReceitas).toBe('5000.00');
+    expect(mar.totalDespesas).toBe('0.00');
   });
 });

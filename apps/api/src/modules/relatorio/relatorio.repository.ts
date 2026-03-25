@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { categorias, transacoes, users } from '../../db/schema.js';
@@ -29,6 +29,15 @@ export class InMemoryRelatorioRepository implements RelatorioRepository {
       (t) => t.familiaId === familiaId && t.mesReferencia === mesReferencia,
     );
   }
+
+  async getTransacoesBatch(
+    familiaId: string,
+    mesesReferencia: string[],
+  ): Promise<RelatorioTransacaoRow[]> {
+    return this._transacoes.filter(
+      (t) => t.familiaId === familiaId && mesesReferencia.includes(t.mesReferencia),
+    );
+  }
 }
 
 // ─── Drizzle ──────────────────────────────────────────────────────────────────
@@ -51,6 +60,37 @@ export class DrizzleRelatorioRepository implements RelatorioRepository {
       .innerJoin(categorias, eq(transacoes.categoriaId, categorias.id))
       .innerJoin(users, eq(transacoes.usuarioRegistrouId, users.id))
       .where(and(eq(transacoes.familiaId, familiaId), eq(transacoes.mesReferencia, mesReferencia)));
+
+    return rows;
+  }
+
+  async getTransacoesBatch(
+    familiaId: string,
+    mesesReferencia: string[],
+  ): Promise<RelatorioTransacaoRow[]> {
+    if (mesesReferencia.length === 0) return [];
+
+    const rows = await db
+      .select({
+        familiaId: transacoes.familiaId,
+        tipo: transacoes.tipo,
+        valor: transacoes.valor,
+        categoriaId: transacoes.categoriaId,
+        categoriaNome: categorias.nome,
+        categoriaSistema: categorias.sistema,
+        mesReferencia: transacoes.mesReferencia,
+        usuarioId: transacoes.usuarioRegistrouId,
+        usuarioNome: users.nome,
+      })
+      .from(transacoes)
+      .innerJoin(categorias, eq(transacoes.categoriaId, categorias.id))
+      .innerJoin(users, eq(transacoes.usuarioRegistrouId, users.id))
+      .where(
+        and(
+          eq(transacoes.familiaId, familiaId),
+          inArray(transacoes.mesReferencia, mesesReferencia),
+        ),
+      );
 
     return rows;
   }

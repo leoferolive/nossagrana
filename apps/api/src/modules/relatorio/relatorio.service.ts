@@ -73,23 +73,31 @@ export class RelatorioService {
       mesAntesN(mesReferencia, meses - 1 - i),
     );
 
-    const resultados = await Promise.all(
-      mesRefs.map(async (mes) => {
-        const transacoes = await this.repo.getTransacoes(familiaId, mes);
-        let totalReceitas = 0;
-        let totalDespesas = 0;
-        for (const t of transacoes) {
-          if (t.tipo === 'receita') totalReceitas += parseFloat(t.valor);
-          else totalDespesas += parseFloat(t.valor);
-        }
-        return {
-          mesReferencia: mes,
-          totalReceitas: totalReceitas.toFixed(2),
-          totalDespesas: totalDespesas.toFixed(2),
-          saldo: (totalReceitas - totalDespesas).toFixed(2),
-        };
-      }),
-    );
+    // Single batch query instead of N individual queries
+    const todasTransacoes = await this.repo.getTransacoesBatch(familiaId, mesRefs);
+
+    // Group by mesReferencia in memory
+    const porMes = new Map<string, { totalReceitas: number; totalDespesas: number }>();
+    for (const mes of mesRefs) {
+      porMes.set(mes, { totalReceitas: 0, totalDespesas: 0 });
+    }
+    for (const t of todasTransacoes) {
+      const entry = porMes.get(t.mesReferencia);
+      if (entry) {
+        if (t.tipo === 'receita') entry.totalReceitas += parseFloat(t.valor);
+        else entry.totalDespesas += parseFloat(t.valor);
+      }
+    }
+
+    const resultados = mesRefs.map((mes) => {
+      const { totalReceitas, totalDespesas } = porMes.get(mes)!;
+      return {
+        mesReferencia: mes,
+        totalReceitas: totalReceitas.toFixed(2),
+        totalDespesas: totalDespesas.toFixed(2),
+        saldo: (totalReceitas - totalDespesas).toFixed(2),
+      };
+    });
 
     return { meses: resultados };
   }

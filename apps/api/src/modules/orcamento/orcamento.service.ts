@@ -1,12 +1,7 @@
 import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagrana/types';
 
+import { mesAnterior } from '../../utils/date.js';
 import type { OrcamentoRepository, OrcamentoSetInput } from './orcamento.types.js';
-
-function mesAnterior(mes: string): string {
-  const [ano, m] = mes.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, m - 2, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-}
 
 function calcularStatus(percentual: number): 'ok' | 'warning' | 'exceeded' {
   if (percentual >= 100) return 'exceeded';

@@ -1,3 +1,4 @@
+import { adicionarDias, adicionarMeses } from '../../utils/date.js';
 import { calcularMesReferencia } from './mes-referencia.service.js';
 import type {
   CofrinhoHandler,
@@ -6,6 +7,11 @@ import type {
   TransacaoFiltros,
   TransacaoRepository,
 } from './transacao.types.js';
+
+/** Maximo de recorrencias quando ha data fim definida */
+const MAX_RECORRENCIAS_COM_FIM = 120;
+/** Maximo de recorrencias adicionais quando nao ha data fim */
+const MAX_RECORRENCIAS_SEM_FIM = 24;
 
 export class TransacaoNotFoundError extends Error {
   constructor() {
@@ -43,20 +49,6 @@ interface EditarInput {
   metodoPagamentoId?: string | null;
   metodoPagamentoTipo?: 'credito' | 'debito' | 'pix' | 'dinheiro' | null;
   dataFechamento?: number | null;
-}
-
-/** Adiciona meses a uma data no formato "YYYY-MM-DD" */
-function adicionarMeses(dataStr: string, meses: number): string {
-  const [ano, mes, dia] = dataStr.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1 + meses, dia));
-  return d.toISOString().slice(0, 10);
-}
-
-/** Adiciona dias a uma data no formato "YYYY-MM-DD" */
-function adicionarDias(dataStr: string, dias: number): string {
-  const [ano, mes, dia] = dataStr.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1, dia + dias));
-  return d.toISOString().slice(0, 10);
 }
 
 function calcularValorParcela(valorTotal: string, numeroParcelas: number): string {
@@ -164,12 +156,11 @@ export class TransacaoService {
 
       dataAtual = incrementar(dataAtual);
 
-      const limite = 120; // segurança: máximo de 120 recorrências
       let count = 0;
 
-      while (count < limite) {
+      while (count < MAX_RECORRENCIAS_COM_FIM) {
         if (input.dataFimRecorrencia && dataAtual > input.dataFimRecorrencia) break;
-        if (!input.dataFimRecorrencia && count >= 24) break; // sem prazo: gerar 24 adicionais
+        if (!input.dataFimRecorrencia && count >= MAX_RECORRENCIAS_SEM_FIM) break;
 
         const dataObj2 = new Date(`${dataAtual}T12:00:00Z`);
         const mesRef = calcularMesReferencia({

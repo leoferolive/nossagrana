@@ -18,6 +18,10 @@ export interface RelatorioTransacaoRow {
 
 export interface RelatorioRepository {
   getTransacoes(familiaId: string, mesReferencia: string): Promise<RelatorioTransacaoRow[]>;
+  getTransacoesBatch(
+    familiaId: string,
+    mesesReferencia: string[],
+  ): Promise<RelatorioTransacaoRow[]>;
 }
 
 export type {

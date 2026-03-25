@@ -13,32 +13,39 @@ export class HistoricoService {
 
     const snapMap = new Map(snapshots.map((s) => [s.mesReferencia, s]));
 
-    const result = await Promise.all(
-      meses.map(async (mes) => {
-        const snap = snapMap.get(mes);
-        if (snap) {
-          return {
-            mesReferencia: mes,
-            totalReceitas: snap.totalReceitas,
-            totalDespesas: snap.totalDespesas,
-            saldo: snap.saldo,
-            temSnapshot: true,
-            divergente: snap.divergente,
-            geradoEm: snap.geradoEm.toISOString(),
-          };
-        }
-        const resumo = await this.repo.getResumoTransacoesMes(familiaId, mes);
+    // Identify months without snapshot and batch-load their summaries
+    const mesesSemSnapshot = meses.filter((mes) => !snapMap.has(mes));
+    const resumos = await this.repo.getResumoTransacoesBatch(familiaId, mesesSemSnapshot);
+    const resumoMap = new Map(resumos.map((r) => [r.mesReferencia, r]));
+
+    const result = meses.map((mes) => {
+      const snap = snapMap.get(mes);
+      if (snap) {
         return {
           mesReferencia: mes,
-          totalReceitas: resumo.totalReceitas,
-          totalDespesas: resumo.totalDespesas,
-          saldo: resumo.saldo,
-          temSnapshot: false,
-          divergente: false,
-          geradoEm: null,
+          totalReceitas: snap.totalReceitas,
+          totalDespesas: snap.totalDespesas,
+          saldo: snap.saldo,
+          temSnapshot: true,
+          divergente: snap.divergente,
+          geradoEm: snap.geradoEm.toISOString(),
         };
-      }),
-    );
+      }
+      const resumo = resumoMap.get(mes) ?? {
+        totalReceitas: '0.00',
+        totalDespesas: '0.00',
+        saldo: '0.00',
+      };
+      return {
+        mesReferencia: mes,
+        totalReceitas: resumo.totalReceitas,
+        totalDespesas: resumo.totalDespesas,
+        saldo: resumo.saldo,
+        temSnapshot: false,
+        divergente: false,
+        geradoEm: null,
+      };
+    });
 
     return { meses: result };
   }

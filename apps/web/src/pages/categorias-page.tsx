@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { ErrorBanner } from '@/components/error-banner';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 
@@ -22,6 +23,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     if (!familiaId) return;
@@ -29,7 +31,9 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
     categoriaService
       .listar(familiaId)
       .then((res) => setCategorias(res.categorias))
-      .catch(() => {})
+      .catch(() => {
+        setErro('Erro ao carregar categorias');
+      })
       .finally(() => setCarregando(false));
   }, [familiaId, setCategorias, setCarregando]);
 
@@ -56,6 +60,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
 
   const handleSave = async () => {
     setCarregando(true);
+    setErro(null);
     try {
       if (formMode === 'create') {
         const res = await categoriaService.criar({ nome, tipo }, familiaId);
@@ -66,18 +71,19 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
       }
       handleCloseForm();
     } catch {
-      // silencioso por ora
+      setErro('Erro ao salvar categoria');
     } finally {
       setCarregando(false);
     }
   };
 
   const handleDesativar = async (id: string) => {
+    setErro(null);
     try {
       await categoriaService.desativar(id, familiaId);
       removeCategoria(id);
     } catch {
-      // silencioso por ora
+      setErro('Erro ao desativar categoria');
     }
   };
 
@@ -103,6 +109,8 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
           Nova categoria
         </button>
       </header>
+
+      <ErrorBanner error={erro} />
 
       {/* Formulário inline */}
       {formMode !== 'idle' && (

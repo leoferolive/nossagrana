@@ -136,6 +136,49 @@ describe('FamilySettingsPage', () => {
     });
   });
 
+  it('exibe erro ao falhar carregamento de membros', async () => {
+    mockListarMembros.mockRejectedValue(new Error('Falha'));
+    mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
+
+    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao carregar membros/i);
+    });
+  });
+
+  it('exibe erro ao falhar remocao de membro', async () => {
+    mockListarMembros.mockResolvedValue({ membros: MEMBROS });
+    mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
+    mockRemoverMembro.mockRejectedValue(new Error('Falha'));
+
+    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /remover u2/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /remover u2/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao remover membro/i);
+    });
+  });
+
+  it('exibe erro ao falhar geracao de convite', async () => {
+    mockListarMembros.mockResolvedValue({ membros: [] });
+    mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
+    mockGerarConvite.mockRejectedValue(new Error('Falha'));
+
+    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /gerar c.digo de convite/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao gerar convite/i);
+    });
+  });
+
   it('aprovar chama revisarSolicitacao com "aprovar" e remove da lista', async () => {
     mockListarMembros.mockResolvedValue({ membros: [] });
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: SOLICITACOES });

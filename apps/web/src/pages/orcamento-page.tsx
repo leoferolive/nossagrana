@@ -73,7 +73,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
       );
       setCategoriasDisponiveis(despesas.map((c) => ({ id: c.id, nome: c.nome })));
     } catch {
-      // silently fail — categorias are non-critical here
+      setErro('Erro ao carregar categorias disponíveis');
     }
   };
 

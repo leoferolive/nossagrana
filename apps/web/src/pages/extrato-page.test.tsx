@@ -32,6 +32,7 @@ vi.mock('@/services/core-financeiro.service', () => ({
   categoriaService: {
     listar: vi.fn().mockResolvedValue({ categorias: [] }),
   },
+  coreFinanceiroService: {},
 }));
 
 afterEach(() => {
@@ -132,6 +133,62 @@ describe('ExtratoPage', () => {
   it('exibe o tour de extrato', () => {
     render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
     expect(screen.getByTestId('tour-extrato')).toBeInTheDocument();
+  });
+});
+
+describe('ExtratoPage — exibe nomes de categoria e metodo do store', () => {
+  beforeEach(() => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
+    useCategoriaStore.setState({
+      categorias: [
+        {
+          id: 'c1',
+          nome: 'Alimentacao',
+          tipo: 'despesa',
+          familiaId: 'f1',
+          ativo: true,
+          criadoEm: '',
+          atualizadoEm: '',
+        },
+      ],
+      carregando: false,
+      erro: null,
+    });
+    useMetodoPagamentoStore.setState({
+      metodos: [
+        {
+          id: 'm1',
+          nome: 'Cartao Nubank',
+          tipo: 'cartao_credito',
+          familiaId: 'f1',
+          ativo: true,
+          diaFechamento: null,
+          diaVencimento: null,
+          criadoEm: '',
+          atualizadoEm: '',
+        },
+      ],
+      carregando: false,
+      erro: null,
+    });
+    useTransacaoStore.setState({
+      transacoes: [
+        T({ id: 't1', categoriaId: 'c1', metodoPagamentoId: 'm1', descricao: 'Almoço' }),
+      ],
+      carregando: false,
+      erro: null,
+      filtros: {},
+    });
+  });
+
+  it('exibe nome da categoria do store', () => {
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    expect(screen.getAllByText('Alimentacao').length).toBeGreaterThan(0);
+  });
+
+  it('exibe nome do metodo de pagamento do store', () => {
+    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    expect(screen.getAllByText('Cartao Nubank').length).toBeGreaterThan(0);
   });
 });
 

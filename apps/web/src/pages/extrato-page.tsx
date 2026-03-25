@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 
+import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import {
   transacaoService,
@@ -90,6 +91,7 @@ export const ExtratoPage = ({
   const { metodos } = useMetodoPagamentoStore();
   const { categorias } = useCategoriaStore();
 
+  const [erro, setErro] = useState<string | null>(null);
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
   const [busca, setBusca] = useState('');
@@ -106,7 +108,7 @@ export const ExtratoPage = ({
         .listar(familiaId)
         .then((res) => useMetodoPagamentoStore.getState().setMetodos(res.metodosPagamento))
         .catch(() => {
-          /* ignore */
+          setErro('Erro ao carregar métodos de pagamento');
         });
     }
     if (categorias.length === 0) {
@@ -114,7 +116,7 @@ export const ExtratoPage = ({
         .listar(familiaId)
         .then((res) => useCategoriaStore.getState().setCategorias(res.categorias))
         .catch(() => {
-          /* ignore */
+          setErro('Erro ao carregar categorias');
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -184,6 +186,7 @@ export const ExtratoPage = ({
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      <ErrorBanner error={erro} />
       <FirstTimeTour
         tourKey="extrato"
         steps={[

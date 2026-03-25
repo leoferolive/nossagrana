@@ -1,5 +1,3 @@
-export { getCurrentMonth, shiftMonth } from '../utils/date';
-
 function formatMesLabel(mesReferencia: string): string {
   return new Date(`${mesReferencia}-01`).toLocaleString('pt-BR', {
     month: 'long',

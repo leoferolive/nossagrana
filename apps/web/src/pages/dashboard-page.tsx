@@ -6,7 +6,8 @@ import { PieChart } from '../components/charts/pie-chart';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { IconCofrinho, IconOrcamento, IconRelatorio } from '../components/icons';
-import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
+import { MonthNav } from '../components/month-nav';
+import { getCurrentMonth, shiftMonth } from '../utils/date';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { useDashboardStore } from '../stores/dashboard.store';
 import { formatBRL } from '../utils/formatting';
@@ -55,19 +56,6 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
   const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
   const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
-        <p className="text-text-muted">Carregando...</p>
-      </div>
-    );
-  }
-
-  const temTransacoes =
-    resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
-
-  const isCurrentMonth = mesReferencia === getCurrentMonth();
-
   const pieData = useMemo(
     () =>
       (graficos?.distribuicaoCategorias ?? []).map((c) => ({
@@ -103,6 +91,19 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
     () => (mesAnterior ? calcVariacao(resumo?.saldo ?? '0', mesAnterior.saldo) : null),
     [resumo?.saldo, mesAnterior],
   );
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <p className="text-text-muted">Carregando...</p>
+      </div>
+    );
+  }
+
+  const temTransacoes =
+    resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
+
+  const isCurrentMonth = mesReferencia === getCurrentMonth();
 
   const dashboardTourSteps = [
     {

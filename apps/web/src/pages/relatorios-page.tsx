@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
-import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
+import { MonthNav } from '../components/month-nav';
+import { getCurrentMonth, shiftMonth } from '../utils/date';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { coreFinanceiroService } from '../services/core-financeiro.service';

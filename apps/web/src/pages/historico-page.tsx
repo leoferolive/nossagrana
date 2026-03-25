@@ -7,6 +7,7 @@ import { MiniChart } from '../components/charts/mini-chart';
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
+import { formatBRL } from '../utils/formatting';
 
 interface HistoricoPageProps {
   familiaId: string;
@@ -32,9 +33,6 @@ const formatMes = (mesReferencia: string): string => {
   const [ano, mes] = mesReferencia.split('-');
   return `${MES_NOMES[parseInt(mes) - 1]} ${ano}`;
 };
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
   const [meses, setMeses] = useState<HistoricoMesItem[]>([]);

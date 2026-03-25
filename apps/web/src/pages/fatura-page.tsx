@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
+import { formatBRL } from '../utils/formatting';
 
 interface FaturaItem {
   id: string;
@@ -28,9 +29,6 @@ interface FaturaPageProps {
   mesReferencia: string;
   onBack: () => void;
 }
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export function FaturaPage({
   familiaId,

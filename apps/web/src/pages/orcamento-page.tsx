@@ -5,6 +5,7 @@ import { Target } from 'lucide-react';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
+import { formatBRL } from '../utils/formatting';
 
 interface OrcamentoItem {
   id: string;
@@ -41,9 +42,6 @@ const getCurrentMes = (): string => {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 };
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
   const [orcamentos, setOrcamentos] = useState<OrcamentoItem[]>([]);

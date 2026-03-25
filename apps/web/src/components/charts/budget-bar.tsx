@@ -1,11 +1,11 @@
+import { formatBRLNumber } from '../../utils/formatting';
+
 interface BudgetBarProps {
   category: string;
   spent: number;
   limit: number;
   compact?: boolean;
 }
-
-const formatBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const BudgetBar = ({ category, spent, limit, compact = false }: BudgetBarProps) => {
   const pct = limit > 0 ? (spent / limit) * 100 : 0;
@@ -19,9 +19,9 @@ export const BudgetBar = ({ category, spent, limit, compact = false }: BudgetBar
           <span className="tabular-nums">
             <span>{pct.toFixed(0)}%</span>
             {' — '}
-            <span>{formatBRL(spent)}</span>
+            <span>{formatBRLNumber(spent)}</span>
             {'/'}
-            <span>{formatBRL(limit)}</span>
+            <span>{formatBRLNumber(limit)}</span>
           </span>
         )}
         {compact && <span className="tabular-nums font-semibold">{pct.toFixed(0)}%</span>}

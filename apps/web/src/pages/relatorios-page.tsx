@@ -13,15 +13,14 @@ import type {
   RelatorioPorUsuarioItem,
 } from '@nossagrana/types';
 
+import { formatBRL } from '../utils/formatting';
+
 type Tab = 'distribuicao' | 'por-membro' | 'tendencias';
 
 interface RelatoriosPageProps {
   familiaId: string;
   onBack: () => void;
 }
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPageProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('distribuicao');

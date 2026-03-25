@@ -9,9 +9,7 @@ import { IconCofrinho, IconOrcamento, IconRelatorio } from '../components/icons'
 import { MonthNav, getCurrentMonth, shiftMonth } from '../components/month-nav';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { useDashboardStore } from '../stores/dashboard.store';
-
-const formatBRL = (valor: string) =>
-  parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { formatBRL } from '../utils/formatting';
 
 function calcVariacao(atual: string, anterior: string): number | null {
   const ant = parseFloat(anterior);
@@ -266,10 +264,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
                     <span className="text-sm font-medium text-text">{c.nome}</span>
                   </div>
                   <span className="text-sm font-semibold text-primary">
-                    {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(parseFloat(c.saldoAtual))}
+                    {formatBRL(c.saldoAtual)}
                   </span>
                 </div>
               ))}

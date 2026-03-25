@@ -7,6 +7,7 @@ import { CofrinhoModal } from '../components/cofrinho-modal';
 import { CofrinhoRetiradaModal } from '../components/cofrinho-retirada-modal';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
+import { formatBRL } from '../utils/formatting';
 
 interface CofrinhoDetalhePageProps {
   familiaId: string;
@@ -14,9 +15,6 @@ interface CofrinhoDetalhePageProps {
   onBack: () => void;
   onNavigate: (screen: string) => void;
 }
-
-const formatBRL = (value: string) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(value));
 
 type ModalAberto = 'aporte' | 'retirada' | 'encerrar' | 'editar' | null;
 

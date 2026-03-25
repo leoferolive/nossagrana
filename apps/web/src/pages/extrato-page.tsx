@@ -8,6 +8,7 @@ import {
   categoriaService,
 } from '@/services/core-financeiro.service';
 import { useTransacaoStore } from '@/stores/transacao.store';
+import { formatBRL } from '@/utils/formatting';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
@@ -32,11 +33,7 @@ function shiftMonth(mesReferencia: string, delta: number): string {
 }
 
 const formatValor = (valor: string, tipo: 'receita' | 'despesa') => {
-  const num = parseFloat(valor);
-  const formatted = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(num);
+  const formatted = formatBRL(valor);
   return tipo === 'receita' ? `+ ${formatted}` : `- ${formatted}`;
 };
 

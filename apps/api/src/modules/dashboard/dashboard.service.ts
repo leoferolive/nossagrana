@@ -4,20 +4,8 @@ import type {
   DashboardResumoResponse,
 } from '@nossagrana/types';
 
+import { diasNoMes, mesAnterior } from '../../utils/date.js';
 import type { DashboardRepository } from './dashboard.types.js';
-
-/** Retorna número de dias do mês YYYY-MM */
-function diasNoMes(mesReferencia: string): number {
-  const [ano, mes] = mesReferencia.split('-').map(Number);
-  return new Date(ano, mes, 0).getDate();
-}
-
-/** Subtrai 1 mês de YYYY-MM */
-function mesAnterior(mesReferencia: string): string {
-  const [ano, mes] = mesReferencia.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 2, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-}
 
 function calcularStatus(percentual: number): 'ok' | 'warning' | 'exceeded' {
   if (percentual >= 100) return 'exceeded';
@@ -73,10 +61,7 @@ export class DashboardService {
     };
   }
 
-  async getGraficos(
-    familiaId: string,
-    mesReferencia: string,
-  ): Promise<DashboardGraficosResponse> {
+  async getGraficos(familiaId: string, mesReferencia: string): Promise<DashboardGraficosResponse> {
     const [categoriasRaw, diasRaw] = await Promise.all([
       this.repo.getDistribuicaoCategorias(familiaId, mesReferencia),
       this.repo.getTransacoesPorDia(familiaId, mesReferencia),
@@ -104,10 +89,7 @@ export class DashboardService {
     return { distribuicaoCategorias, evolucaoDiaria };
   }
 
-  async getOrcamento(
-    familiaId: string,
-    mesReferencia: string,
-  ): Promise<DashboardOrcamentoItem[]> {
+  async getOrcamento(familiaId: string, mesReferencia: string): Promise<DashboardOrcamentoItem[]> {
     const [orcamentos, gastos] = await Promise.all([
       this.repo.getOrcamentosVigentes(familiaId, mesReferencia),
       this.repo.getGastosPorCategoria(familiaId, mesReferencia),

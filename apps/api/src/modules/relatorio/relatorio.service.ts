@@ -4,14 +4,8 @@ import type {
   RelatorioTendenciasResponse,
 } from '@nossagrana/types';
 
+import { mesAntesN } from '../../utils/date.js';
 import type { RelatorioRepository } from './relatorio.types.js';
-
-// Helper: compute YYYY-MM that is N months before mesReferencia
-function mesAntesN(mesReferencia: string, n: number): string {
-  const [ano, mes] = mesReferencia.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1 - n, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-}
 
 export class RelatorioService {
   constructor(private readonly repo: RelatorioRepository) {}

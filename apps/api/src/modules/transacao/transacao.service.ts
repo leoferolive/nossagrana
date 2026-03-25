@@ -1,3 +1,4 @@
+import { adicionarDias, adicionarMeses } from '../../utils/date.js';
 import { calcularMesReferencia } from './mes-referencia.service.js';
 import type {
   CofrinhoHandler,
@@ -43,20 +44,6 @@ interface EditarInput {
   metodoPagamentoId?: string | null;
   metodoPagamentoTipo?: 'credito' | 'debito' | 'pix' | 'dinheiro' | null;
   dataFechamento?: number | null;
-}
-
-/** Adiciona meses a uma data no formato "YYYY-MM-DD" */
-function adicionarMeses(dataStr: string, meses: number): string {
-  const [ano, mes, dia] = dataStr.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1 + meses, dia));
-  return d.toISOString().slice(0, 10);
-}
-
-/** Adiciona dias a uma data no formato "YYYY-MM-DD" */
-function adicionarDias(dataStr: string, dias: number): string {
-  const [ano, mes, dia] = dataStr.split('-').map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1, dia + dias));
-  return d.toISOString().slice(0, 10);
 }
 
 function calcularValorParcela(valorTotal: string, numeroParcelas: number): string {

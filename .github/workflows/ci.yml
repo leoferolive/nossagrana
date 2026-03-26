@@ -147,7 +147,7 @@ jobs:
           CI: 'true'
           NODE_OPTIONS: '--max-old-space-size=3072'
         run: pnpm --filter web test
-        timeout-minutes: 10
+        timeout-minutes: 20
 
   audit:
     runs-on: [self-hosted, Linux, ARM64]

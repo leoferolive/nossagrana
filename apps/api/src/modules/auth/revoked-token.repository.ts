@@ -6,8 +6,10 @@ import { db } from '../../db/client.js';
 import { revokedRefreshTokens } from '../../db/schema.js';
 
 export interface RevokedTokenRepository {
-  revokeToken(tokenHash: string, expiresAt: Date): Promise<void>;
+  revokeToken(tokenHash: string, expiresAt: Date, userId: string): Promise<void>;
+  revokeAllByUserId(userId: string): Promise<void>;
   isRevoked(tokenHash: string): Promise<boolean>;
+  isUserCompromised(userId: string): Promise<boolean>;
   cleanupExpired(): Promise<number>;
 }
 
@@ -16,10 +18,19 @@ export function hashToken(token: string): string {
 }
 
 export class DrizzleRevokedTokenRepository implements RevokedTokenRepository {
-  async revokeToken(tokenHash: string, expiresAt: Date): Promise<void> {
+  async revokeToken(tokenHash: string, expiresAt: Date, userId: string): Promise<void> {
     await db
       .insert(revokedRefreshTokens)
-      .values({ tokenHash, expiresAt })
+      .values({ tokenHash, expiresAt, userId })
+      .onConflictDoNothing({ target: revokedRefreshTokens.tokenHash });
+  }
+
+  async revokeAllByUserId(userId: string): Promise<void> {
+    const marker = `__compromised__${userId}`;
+    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    await db
+      .insert(revokedRefreshTokens)
+      .values({ tokenHash: marker, expiresAt, userId })
       .onConflictDoNothing({ target: revokedRefreshTokens.tokenHash });
   }
 
@@ -33,6 +44,11 @@ export class DrizzleRevokedTokenRepository implements RevokedTokenRepository {
     return !!found;
   }
 
+  async isUserCompromised(userId: string): Promise<boolean> {
+    const marker = `__compromised__${userId}`;
+    return this.isRevoked(marker);
+  }
+
   async cleanupExpired(): Promise<number> {
     const deleted = await db
       .delete(revokedRefreshTokens)
@@ -44,16 +60,25 @@ export class DrizzleRevokedTokenRepository implements RevokedTokenRepository {
 }
 
 export class InMemoryRevokedTokenRepository implements RevokedTokenRepository {
-  private tokens = new Map<string, { expiresAt: Date; revokedAt: Date }>();
+  private tokens = new Map<string, { expiresAt: Date; revokedAt: Date; userId: string }>();
+  private compromisedUsers = new Set<string>();
 
-  async revokeToken(tokenHash: string, expiresAt: Date): Promise<void> {
+  async revokeToken(tokenHash: string, expiresAt: Date, userId: string): Promise<void> {
     if (!this.tokens.has(tokenHash)) {
-      this.tokens.set(tokenHash, { expiresAt, revokedAt: new Date() });
+      this.tokens.set(tokenHash, { expiresAt, revokedAt: new Date(), userId });
     }
+  }
+
+  async revokeAllByUserId(userId: string): Promise<void> {
+    this.compromisedUsers.add(userId);
   }
 
   async isRevoked(tokenHash: string): Promise<boolean> {
     return this.tokens.has(tokenHash);
+  }
+
+  async isUserCompromised(userId: string): Promise<boolean> {
+    return this.compromisedUsers.has(userId);
   }
 
   async cleanupExpired(): Promise<number> {

@@ -146,6 +146,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const payload = authLogoutRequestSchema.parse(request.body);
 
       const decodedToken = fastify.jwt.verify<{
+        sub: string;
         tokenType?: string;
         exp?: number;
       }>(payload.refreshToken, {
@@ -159,7 +160,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const tokenHash = hashToken(payload.refreshToken);
       const expiresAtSeconds = decodedToken.exp ?? Math.floor(Date.now() / 1000);
       const expiresAt = new Date(expiresAtSeconds * 1000);
-      await revokedTokenRepo.revokeToken(tokenHash, expiresAt);
+      await revokedTokenRepo.revokeToken(tokenHash, expiresAt, decodedToken.sub);
 
       return reply.code(204).send();
     } catch {

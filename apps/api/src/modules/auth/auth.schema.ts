@@ -35,7 +35,8 @@ export const authRefreshSchema = {
   response: {
     200: authRefreshResponseSchema,
     401: z.object({
-      message: z.literal('Refresh token invalido'),
+      message: z.string(),
+      code: z.string().optional(),
     }),
   },
 };

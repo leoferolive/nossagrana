@@ -112,15 +112,27 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         const payload = authRefreshRequestSchema.parse(request.body);
         const tokenHash = hashToken(payload.refreshToken);
 
-        const isRevoked = await revokedTokenRepo.isRevoked(tokenHash);
-        if (isRevoked) {
-          return reply.code(401).send({ message: 'Refresh token invalido' });
+        // Verificar se token específico foi revogado (reuso = roubo)
+        const isTokenRevoked = await revokedTokenRepo.isRevoked(tokenHash);
+        if (isTokenRevoked) {
+          try {
+            const decoded = fastify.jwt.verify<{ sub: string }>(payload.refreshToken, {
+              key: env.REFRESH_TOKEN_SECRET,
+            });
+            await revokedTokenRepo.revokeAllByUserId(decoded.sub);
+          } catch {
+            // Token expirado/inválido — não conseguimos decodificar userId
+          }
+          return reply
+            .code(401)
+            .send({ message: 'Token reuse detected', code: 'TOKEN_REUSE_DETECTED' });
         }
 
         const decodedToken = fastify.jwt.verify<{
           sub: string;
           email: string;
           tokenType?: string;
+          exp?: number;
         }>(payload.refreshToken, {
           key: env.REFRESH_TOKEN_SECRET,
         });
@@ -129,12 +141,38 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           return reply.code(401).send({ message: 'Refresh token invalido' });
         }
 
+        // Verificar se o userId foi marcado como comprometido
+        const isCompromised = await revokedTokenRepo.isUserCompromised(decodedToken.sub);
+        if (isCompromised) {
+          return reply
+            .code(401)
+            .send({ message: 'Token reuse detected', code: 'TOKEN_REUSE_DETECTED' });
+        }
+
+        // Revogar o token atual ANTES de gerar o novo
+        const expiresAtSeconds = decodedToken.exp ?? Math.floor(Date.now() / 1000);
+        const expiresAt = new Date(expiresAtSeconds * 1000);
+        await revokedTokenRepo.revokeToken(tokenHash, expiresAt, decodedToken.sub);
+
+        // Gerar novo par
         const accessToken = fastify.jwt.sign({
           sub: decodedToken.sub,
           email: decodedToken.email,
         });
 
-        return reply.code(200).send({ accessToken });
+        const refreshToken = fastify.jwt.sign(
+          {
+            sub: decodedToken.sub,
+            email: decodedToken.email,
+            tokenType: 'refresh',
+          },
+          {
+            expiresIn: env.REFRESH_TOKEN_EXPIRES_IN,
+            key: env.REFRESH_TOKEN_SECRET,
+          },
+        );
+
+        return reply.code(200).send({ accessToken, refreshToken });
       } catch {
         return reply.code(401).send({ message: 'Refresh token invalido' });
       }

@@ -16,7 +16,7 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        maxForks: process.env.CI ? 1 : 4,
+        maxForks: process.env.CI ? 2 : 4,
       },
     },
     fileParallelism: !process.env.CI,

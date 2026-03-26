@@ -42,6 +42,12 @@ export const buildApp = () => {
     });
   }
 
+  // Security headers (sem CSP — API é JSON puro, não serve HTML)
+  app.register(import('@fastify/helmet'), {
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  });
+
   app.register(import('@fastify/cors'), {
     origin: env.CORS_ORIGIN,
     credentials: true,

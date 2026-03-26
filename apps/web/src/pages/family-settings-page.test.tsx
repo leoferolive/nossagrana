@@ -11,6 +11,7 @@ vi.mock('@/contexts/use-auth', () => ({
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
+    setRefreshToken: vi.fn(),
   }),
 }));
 

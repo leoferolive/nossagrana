@@ -29,6 +29,7 @@ beforeEach(() => {
     login: mockLogin,
     logout: vi.fn(),
     setAccessToken: vi.fn(),
+    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   });
 });

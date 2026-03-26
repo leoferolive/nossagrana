@@ -26,10 +26,13 @@ describe('ApiClient', () => {
         }),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ accessToken: 'access-token-new' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }),
+        new Response(
+          JSON.stringify({ accessToken: 'access-token-new', refreshToken: 'refresh-token-new' }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ ok: true }), {
@@ -46,6 +49,9 @@ describe('ApiClient', () => {
       setAccessToken: (accessToken) => {
         tokenState.accessToken = accessToken;
       },
+      setRefreshToken: (refreshToken) => {
+        tokenState.refreshToken = refreshToken;
+      },
       clearSession: () => {
         tokenState.accessToken = null;
         tokenState.refreshToken = null;
@@ -56,6 +62,7 @@ describe('ApiClient', () => {
 
     expect(result).toEqual({ ok: true });
     expect(tokenState.accessToken).toBe('access-token-new');
+    expect(tokenState.refreshToken).toBe('refresh-token-new');
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:3000/api/auth/refresh');
     const requestHeaders = new Headers(fetchMock.mock.calls[2][1]?.headers);
@@ -84,6 +91,9 @@ describe('ApiClient', () => {
       getRefreshToken: () => tokenState.refreshToken,
       setAccessToken: (accessToken) => {
         tokenState.accessToken = accessToken;
+      },
+      setRefreshToken: (refreshToken) => {
+        tokenState.refreshToken = refreshToken;
       },
       clearSession: () => {
         tokenState.accessToken = null;

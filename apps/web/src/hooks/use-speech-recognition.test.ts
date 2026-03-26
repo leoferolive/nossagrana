@@ -21,8 +21,9 @@ describe('useSpeechRecognition', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    originalSpeechRecognition = (window as Record<string, unknown>).SpeechRecognition;
-    originalWebkitSpeechRecognition = (window as Record<string, unknown>).webkitSpeechRecognition;
+    originalSpeechRecognition = (window as unknown as Record<string, unknown>).SpeechRecognition;
+    originalWebkitSpeechRecognition = (window as unknown as Record<string, unknown>)
+      .webkitSpeechRecognition;
   });
 
   afterEach(() => {
@@ -33,7 +34,7 @@ describe('useSpeechRecognition', () => {
         configurable: true,
       });
     } else {
-      delete (window as Record<string, unknown>).SpeechRecognition;
+      delete (window as unknown as Record<string, unknown>).SpeechRecognition;
     }
     if (originalWebkitSpeechRecognition !== undefined) {
       Object.defineProperty(window, 'webkitSpeechRecognition', {
@@ -42,13 +43,13 @@ describe('useSpeechRecognition', () => {
         configurable: true,
       });
     } else {
-      delete (window as Record<string, unknown>).webkitSpeechRecognition;
+      delete (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
     }
   });
 
   it('isSupported false when API not available', () => {
-    delete (window as Record<string, unknown>).SpeechRecognition;
-    delete (window as Record<string, unknown>).webkitSpeechRecognition;
+    delete (window as unknown as Record<string, unknown>).SpeechRecognition;
+    delete (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
 
     const { result } = renderHook(() => useSpeechRecognition());
 
@@ -84,11 +85,11 @@ describe('useSpeechRecognition', () => {
   });
 
   it('stop() sets isListening to false', () => {
-    let capturedInstance: MockSpeechRecognition | null = null;
+    const instances: MockSpeechRecognition[] = [];
     const CaptureMock = class extends MockSpeechRecognition {
       constructor() {
         super();
-        capturedInstance = this;
+        instances.push(this);
       }
     };
 
@@ -109,15 +110,15 @@ describe('useSpeechRecognition', () => {
     act(() => {
       result.current.stop();
       // Simulate the browser firing onend after stop
-      capturedInstance!.onend?.();
+      instances[0].onend?.();
     });
 
     expect(result.current.isListening).toBe(false);
   });
 
   it('error "not-supported" when starting on unsupported browser', () => {
-    delete (window as Record<string, unknown>).SpeechRecognition;
-    delete (window as Record<string, unknown>).webkitSpeechRecognition;
+    delete (window as unknown as Record<string, unknown>).SpeechRecognition;
+    delete (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
 
     const { result } = renderHook(() => useSpeechRecognition());
 
@@ -130,11 +131,11 @@ describe('useSpeechRecognition', () => {
   });
 
   it('cleanup on unmount (abort called)', () => {
-    let capturedInstance: MockSpeechRecognition | null = null;
+    const instances: MockSpeechRecognition[] = [];
     const CaptureMock = class extends MockSpeechRecognition {
       constructor() {
         super();
-        capturedInstance = this;
+        instances.push(this);
       }
     };
 
@@ -150,10 +151,10 @@ describe('useSpeechRecognition', () => {
       result.current.start();
     });
 
-    expect(capturedInstance).not.toBeNull();
+    expect(instances.length).toBeGreaterThan(0);
 
     unmount();
 
-    expect(capturedInstance!.abort).toHaveBeenCalled();
+    expect(instances[0].abort).toHaveBeenCalled();
   });
 });

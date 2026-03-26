@@ -125,6 +125,43 @@ export const App = () => {
     }
   }, [screen, isAuthenticated, familiasDoUsuario.length]);
 
+  const handleVoiceActivate = useCallback(() => {
+    setVoiceSheetOpen(true);
+    speech.start();
+  }, [speech]);
+
+  const handleVoiceStop = useCallback(() => {
+    speech.stop();
+  }, [speech]);
+
+  const handleVoiceClose = useCallback(() => {
+    speech.stop();
+    setVoiceSheetOpen(false);
+  }, [speech]);
+
+  useEffect(() => {
+    if (voiceSheetOpen && !speech.isListening && speech.finalTranscript) {
+      const parsed = parseVoiceInput(speech.finalTranscript);
+      const catMatch = parsed.descricao
+        ? matchCategory(
+            parsed.descricao,
+            categorias.map((c) => ({ id: c.id, nome: c.nome })),
+          )
+        : null;
+
+      setDadosVoz({
+        tipo: parsed.tipo,
+        valor: parsed.valor,
+        categoriaId: catMatch?.categoriaId ?? null,
+        descricao: parsed.descricao,
+        data: parsed.data,
+      });
+
+      setVoiceSheetOpen(false);
+      setNovaTransacaoOpen(true);
+    }
+  }, [voiceSheetOpen, speech.isListening, speech.finalTranscript, categorias]);
+
   // Telas fora do AppShell (autenticação e onboarding)
   if (
     screen === 'login' ||
@@ -177,43 +214,6 @@ export const App = () => {
   }
 
   const handleNovaTransacao = () => setNovaTransacaoOpen(true);
-
-  const handleVoiceActivate = useCallback(() => {
-    setVoiceSheetOpen(true);
-    speech.start();
-  }, [speech.start]);
-
-  const handleVoiceStop = useCallback(() => {
-    speech.stop();
-  }, [speech.stop]);
-
-  const handleVoiceClose = useCallback(() => {
-    speech.stop();
-    setVoiceSheetOpen(false);
-  }, [speech.stop]);
-
-  useEffect(() => {
-    if (voiceSheetOpen && !speech.isListening && speech.finalTranscript) {
-      const parsed = parseVoiceInput(speech.finalTranscript);
-      const catMatch = parsed.descricao
-        ? matchCategory(
-            parsed.descricao,
-            categorias.map((c) => ({ id: c.id, nome: c.nome })),
-          )
-        : null;
-
-      setDadosVoz({
-        tipo: parsed.tipo,
-        valor: parsed.valor,
-        categoriaId: catMatch?.categoriaId ?? null,
-        descricao: parsed.descricao,
-        data: parsed.data,
-      });
-
-      setVoiceSheetOpen(false);
-      setNovaTransacaoOpen(true);
-    }
-  }, [voiceSheetOpen, speech.isListening, speech.finalTranscript, categorias]);
 
   const handleEditarTransacao = (t: Transacao) => {
     setTransacaoParaEditar({

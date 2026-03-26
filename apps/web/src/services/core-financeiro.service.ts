@@ -343,6 +343,10 @@ const lazyApiClient = new ApiClient({
     const session = readStoredSession();
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, accessToken: token }));
   },
+  setRefreshToken: (token: string) => {
+    const session = readStoredSession();
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, refreshToken: token }));
+  },
   clearSession: () => localStorage.removeItem(AUTH_STORAGE_KEY),
 });
 

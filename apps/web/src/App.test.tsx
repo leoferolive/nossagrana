@@ -88,6 +88,7 @@ vi.mock('./contexts/use-auth', () => ({
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
+    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   })),
 }));
@@ -152,6 +153,7 @@ afterEach(() => {
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
+    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   }));
 });
@@ -180,6 +182,7 @@ describe('App', () => {
         login: vi.fn(),
         logout: vi.fn(),
         setAccessToken: vi.fn(),
+        setRefreshToken: vi.fn(),
         updateFamiliaIdAtiva: vi.fn((id: string) => {
           currentFamiliaId = id;
         }),
@@ -393,6 +396,7 @@ describe('App', () => {
         }),
         logout: vi.fn(),
         setAccessToken: vi.fn(),
+        setRefreshToken: vi.fn(),
         updateFamiliaIdAtiva: vi.fn(),
       }));
 
@@ -414,6 +418,7 @@ describe('App', () => {
         login: vi.fn(),
         logout: vi.fn(),
         setAccessToken: vi.fn(),
+        setRefreshToken: vi.fn(),
         updateFamiliaIdAtiva: updateFamilia,
       }));
 
@@ -551,6 +556,7 @@ describe('App', () => {
         login: vi.fn(),
         logout: logoutMock,
         setAccessToken: vi.fn(),
+        setRefreshToken: vi.fn(),
         updateFamiliaIdAtiva: vi.fn(),
       });
 
@@ -589,6 +595,7 @@ describe('App', () => {
         login: vi.fn(),
         logout: vi.fn(),
         setAccessToken: vi.fn(),
+        setRefreshToken: vi.fn(),
         updateFamiliaIdAtiva: vi.fn(),
       });
 

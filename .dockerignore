@@ -1,0 +1,16 @@
+.env
+.env.*
+.git
+.claude
+node_modules
+coverage
+*.log
+*.test.ts
+*.test.tsx
+vitest.*
+k8s/
+docs/
+.github/
+audit-screenshots/
+planilha/
+.worktrees/

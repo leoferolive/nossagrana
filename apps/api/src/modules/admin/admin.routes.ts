@@ -33,6 +33,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     '/admin/familias/:familiaId/recuperar',
     {
       preHandler: [requireAdmin],
+      config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
       schema: {
         params: z.object({ familiaId: z.string().uuid() }),
         response: {
@@ -60,6 +61,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     '/admin/usuarios/:userId/impersonar',
     {
       preHandler: [requireAdmin],
+      config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
       schema: {
         params: z.object({ userId: z.string().uuid() }),
         response: {

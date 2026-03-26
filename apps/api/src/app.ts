@@ -22,10 +22,31 @@ import { websocketPlugin } from './plugins/websocket.plugin.js';
 export const buildApp = () => {
   const app = Fastify({
     logger: env.NODE_ENV !== 'test',
+    trustProxy: true,
   });
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Rate limiting global: 100 req/min por IP (desabilitado em testes)
+  if (env.NODE_ENV !== 'test') {
+    app.register(import('@fastify/rate-limit'), {
+      max: 100,
+      timeWindow: '1 minute',
+      allowList: (req) => req.url === '/api/health',
+      errorResponseBuilder: (_req, context) => ({
+        error: {
+          message: `Muitas tentativas. Tente novamente em ${Math.ceil(context.ttl / 1000)} segundos.`,
+        },
+      }),
+    });
+  }
+
+  // Security headers (sem CSP — API é JSON puro, não serve HTML)
+  app.register(import('@fastify/helmet'), {
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  });
 
   app.register(import('@fastify/cors'), {
     origin: env.CORS_ORIGIN,

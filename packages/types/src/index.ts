@@ -58,6 +58,7 @@ export type AuthRefreshRequest = z.infer<typeof authRefreshRequestSchema>;
 
 export const authRefreshResponseSchema = z.object({
   accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
 });
 
 export type AuthRefreshResponse = z.infer<typeof authRefreshResponseSchema>;

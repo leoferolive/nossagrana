@@ -16,6 +16,7 @@ interface ApiClientOptions {
   getAccessToken: () => string | null;
   getRefreshToken: () => string | null;
   setAccessToken: (accessToken: string) => void;
+  setRefreshToken: (refreshToken: string) => void;
   clearSession: () => void;
 }
 
@@ -29,6 +30,7 @@ export class ApiClient {
   private readonly getAccessToken: () => string | null;
   private readonly getRefreshToken: () => string | null;
   private readonly setAccessToken: (accessToken: string) => void;
+  private readonly setRefreshToken: (refreshToken: string) => void;
   private readonly clearSession: () => void;
 
   constructor(options: ApiClientOptions) {
@@ -37,6 +39,7 @@ export class ApiClient {
     this.getAccessToken = options.getAccessToken;
     this.getRefreshToken = options.getRefreshToken;
     this.setAccessToken = options.setAccessToken;
+    this.setRefreshToken = options.setRefreshToken;
     this.clearSession = options.clearSession;
   }
 
@@ -91,6 +94,7 @@ export class ApiClient {
 
     const body = (await response.json()) as AuthRefreshResponse;
     this.setAccessToken(body.accessToken);
+    this.setRefreshToken(body.refreshToken);
     return true;
   }
 

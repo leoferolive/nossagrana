@@ -14,7 +14,7 @@ describe('InMemoryRevokedTokenRepository', () => {
       const tokenHash = hashToken('my-refresh-token');
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      await repo.revokeToken(tokenHash, expiresAt);
+      await repo.revokeToken(tokenHash, expiresAt, 'test-user-id');
 
       expect(await repo.isRevoked(tokenHash)).toBe(true);
     });
@@ -23,8 +23,8 @@ describe('InMemoryRevokedTokenRepository', () => {
       const tokenHash = hashToken('my-refresh-token');
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      await repo.revokeToken(tokenHash, expiresAt);
-      await repo.revokeToken(tokenHash, expiresAt);
+      await repo.revokeToken(tokenHash, expiresAt, 'test-user-id');
+      await repo.revokeToken(tokenHash, expiresAt, 'test-user-id');
 
       expect(await repo.isRevoked(tokenHash)).toBe(true);
     });
@@ -39,7 +39,7 @@ describe('InMemoryRevokedTokenRepository', () => {
     it('deve retornar true para token revogado', async () => {
       const tokenHash = hashToken('revoked-token');
       const expiresAt = new Date(Date.now() + 60 * 1000);
-      await repo.revokeToken(tokenHash, expiresAt);
+      await repo.revokeToken(tokenHash, expiresAt, 'test-user-id');
 
       expect(await repo.isRevoked(tokenHash)).toBe(true);
     });
@@ -50,8 +50,8 @@ describe('InMemoryRevokedTokenRepository', () => {
       const expiredHash = hashToken('expired-token');
       const validHash = hashToken('valid-token');
 
-      await repo.revokeToken(expiredHash, new Date(Date.now() - 1000));
-      await repo.revokeToken(validHash, new Date(Date.now() + 60 * 60 * 1000));
+      await repo.revokeToken(expiredHash, new Date(Date.now() - 1000), 'test-user-id');
+      await repo.revokeToken(validHash, new Date(Date.now() + 60 * 60 * 1000), 'test-user-id');
 
       const removed = await repo.cleanupExpired();
 
@@ -62,7 +62,7 @@ describe('InMemoryRevokedTokenRepository', () => {
 
     it('deve retornar 0 quando nao ha tokens expirados', async () => {
       const validHash = hashToken('valid-token');
-      await repo.revokeToken(validHash, new Date(Date.now() + 60 * 60 * 1000));
+      await repo.revokeToken(validHash, new Date(Date.now() + 60 * 60 * 1000), 'test-user-id');
 
       const removed = await repo.cleanupExpired();
       expect(removed).toBe(0);
@@ -73,9 +73,9 @@ describe('InMemoryRevokedTokenRepository', () => {
       const hash2 = hashToken('expired-2');
       const hash3 = hashToken('valid-1');
 
-      await repo.revokeToken(hash1, new Date(Date.now() - 2000));
-      await repo.revokeToken(hash2, new Date(Date.now() - 1000));
-      await repo.revokeToken(hash3, new Date(Date.now() + 60 * 60 * 1000));
+      await repo.revokeToken(hash1, new Date(Date.now() - 2000), 'test-user-id');
+      await repo.revokeToken(hash2, new Date(Date.now() - 1000), 'test-user-id');
+      await repo.revokeToken(hash3, new Date(Date.now() + 60 * 60 * 1000), 'test-user-id');
 
       const removed = await repo.cleanupExpired();
 
@@ -83,6 +83,25 @@ describe('InMemoryRevokedTokenRepository', () => {
       expect(await repo.isRevoked(hash1)).toBe(false);
       expect(await repo.isRevoked(hash2)).toBe(false);
       expect(await repo.isRevoked(hash3)).toBe(true);
+    });
+  });
+
+  describe('revokeAllByUserId', () => {
+    it('deve marcar userId como comprometido', async () => {
+      await repo.revokeAllByUserId('compromised-user');
+      expect(await repo.isUserCompromised('compromised-user')).toBe(true);
+      expect(await repo.isUserCompromised('safe-user')).toBe(false);
+    });
+  });
+
+  describe('isUserCompromised', () => {
+    it('deve retornar false para usuario nao comprometido', async () => {
+      expect(await repo.isUserCompromised('safe-user')).toBe(false);
+    });
+
+    it('deve retornar true para usuario comprometido', async () => {
+      await repo.revokeAllByUserId('compromised-user');
+      expect(await repo.isUserCompromised('compromised-user')).toBe(true);
     });
   });
 

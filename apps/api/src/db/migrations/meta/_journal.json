@@ -43,6 +43,13 @@
       "when": 1774409607859,
       "tag": "0005_flashy_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774487448828,
+      "tag": "0006_careless_terror",
+      "breakpoints": true
     }
   ]
 }

@@ -69,6 +69,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
   }, []);
 
+  const setRefreshToken = useCallback((refreshToken: string) => {
+    setSession((currentSession) => {
+      if (!currentSession) {
+        return null;
+      }
+
+      return {
+        ...currentSession,
+        refreshToken,
+      };
+    });
+  }, []);
+
   const updateFamiliaIdAtiva = useCallback((familiaIdAtiva: string) => {
     const currentRaw = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
     if (currentRaw) {
@@ -90,9 +103,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       login,
       logout,
       setAccessToken,
+      setRefreshToken,
       updateFamiliaIdAtiva,
     }),
-    [login, logout, session, setAccessToken, updateFamiliaIdAtiva],
+    [login, logout, session, setAccessToken, setRefreshToken, updateFamiliaIdAtiva],
   );
 
   useEffect(() => {

@@ -4,8 +4,16 @@ import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
-import { IconParcelas, IconRecorrente } from './icons';
+import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
 import { CustomSelect } from './ui/custom-select';
+
+export interface DadosVoz {
+  tipo: 'receita' | 'despesa' | null;
+  valor: string | null;
+  categoriaId: string | null;
+  descricao: string | null;
+  data: string | null;
+}
 
 interface TransacaoParaEditar {
   id: string;
@@ -25,6 +33,8 @@ interface TransacaoModalProps {
   transacaoParaEditar?: TransacaoParaEditar | null;
   onUpdate?: (id: string, payload: TransacaoUpdateRequest) => void;
   onDelete?: (id: string) => void;
+  dadosVoz?: DadosVoz | null;
+  onVoiceActivate?: () => void;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -37,6 +47,8 @@ export const TransacaoModal = ({
   transacaoParaEditar,
   onUpdate,
   onDelete,
+  dadosVoz,
+  onVoiceActivate,
 }: TransacaoModalProps) => {
   const categorias = useCategoriaStore((s) => s.categorias);
   const setCategorias = useCategoriaStore((s) => s.setCategorias);
@@ -98,7 +110,17 @@ export const TransacaoModal = ({
       setParcelado(false);
       setRecorrente(false);
     }
-  }, [open, transacaoParaEditar]);
+    if (dadosVoz) {
+      setTipo(dadosVoz.tipo ?? 'despesa');
+      setValor(dadosVoz.valor ?? '');
+      setCategoriaId(dadosVoz.categoriaId ?? '');
+      setDescricao(dadosVoz.descricao ?? '');
+      setData(dadosVoz.data ?? today());
+      setMetodoPagamentoId('');
+      setParcelado(false);
+      setRecorrente(false);
+    }
+  }, [open, transacaoParaEditar, dadosVoz]);
 
   const isEditing = !!transacaoParaEditar;
 
@@ -191,6 +213,19 @@ export const TransacaoModal = ({
             ↓ Despesa
           </button>
         </div>
+
+        {/* Voice input button (only when creating, not editing) */}
+        {!isEditing && onVoiceActivate && (
+          <button
+            type="button"
+            aria-label="Preencher por voz"
+            onClick={onVoiceActivate}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm text-text-muted transition hover:border-danger hover:text-danger"
+          >
+            <IconMicrofone size={16} />
+            Preencher por voz
+          </button>
+        )}
 
         <div className="flex flex-col gap-3">
           {/* Valor */}

@@ -118,36 +118,9 @@ jobs:
           MIN_CHANGED_COVERAGE: '80'
         run: pnpm coverage:changed-check
 
-  web-tests:
-    runs-on: [self-hosted, Linux, ARM64]
-    needs: quality
-    # Web tests with jsdom can OOM on RPi 4GB — don't block CI
-    continue-on-error: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build shared types
-        run: pnpm --filter @nossagrana/types build
-
-      - name: Web tests
-        env:
-          CI: 'true'
-          NODE_OPTIONS: '--max-old-space-size=3072'
-        run: pnpm --filter web test
-        timeout-minutes: 30
+  # web-tests: desabilitado no CI (trava no Pi ARM64)
+  # Rodar localmente via skill /run-tests antes de commitar
+  # TODO: migrar para ubuntu-latest quando possível
 
   audit:
     runs-on: [self-hosted, Linux, ARM64]

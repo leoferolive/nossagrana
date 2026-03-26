@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: app.nossagrana.home
+    - host: nossagrana.leoferolive.com.br
       http:
         paths:
           - path: /api

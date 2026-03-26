@@ -13,6 +13,8 @@ spec:
       labels:
         app: nossagrana-web
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: nossagrana-web
           image: ghcr.io/leoferolive/nossagrana-web:latest

@@ -103,12 +103,15 @@ jobs:
           CI: 'true'
         run: pnpm --filter api test:coverage
 
-      - name: Collect changed files
+      - name: Collect changed files (API only)
         if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           {
             echo "CHANGED_FILES<<EOF"
-            git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+            git diff --name-only "$BASE_SHA...$HEAD_SHA" | grep '^apps/api/' || true
             echo "EOF"
           } >> "$GITHUB_ENV"
 

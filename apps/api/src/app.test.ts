@@ -1952,7 +1952,7 @@ describe('Fatura routes', () => {
 });
 
 describe('Admin routes', () => {
-  const adminSecret = 'changeme-admin-secret';
+  const adminSecret = 'test-admin-secret-with-32-chars!!';
   let app: Awaited<ReturnType<typeof buildApp>>;
   let userId: string;
   let familiaId: string;

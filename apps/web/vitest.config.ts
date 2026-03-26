@@ -13,13 +13,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    pool: process.env.CI ? 'threads' : 'forks',
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        maxThreads: process.env.CI ? 1 : undefined,
-      },
       forks: {
-        maxForks: undefined,
+        maxForks: process.env.CI ? 1 : 4,
       },
     },
     fileParallelism: !process.env.CI,

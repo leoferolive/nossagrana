@@ -6,6 +6,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   server: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -13,6 +17,15 @@ export default defineConfig({
         ws: true,
       },
     },
+  },
+  preview: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
+  },
+  optimizeDeps: {
+    exclude: ['browser-whisper'],
   },
   plugins: [
     react(),

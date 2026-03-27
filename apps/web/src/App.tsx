@@ -84,6 +84,7 @@ export const App = () => {
   } | null>(null);
   const [dadosVoz, setDadosVoz] = useState<DadosVoz | null>(null);
   const [voiceSheetOpen, setVoiceSheetOpen] = useState(false);
+  const [voiceRecorded, setVoiceRecorded] = useState(false);
   const categorias = useCategoriaStore((s) => s.categorias);
   const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const speech = useSpeechRecognition();
@@ -139,10 +140,15 @@ export const App = () => {
 
   const handleVoiceActivate = useCallback(() => {
     setVoiceSheetOpen(true);
+    setVoiceRecorded(false);
+  }, []);
+
+  const handleVoicePressStart = useCallback(() => {
     speech.start();
+    setVoiceRecorded(true);
   }, [speech]);
 
-  const handleVoiceStop = useCallback(() => {
+  const handleVoicePressEnd = useCallback(() => {
     speech.stop();
   }, [speech]);
 
@@ -152,7 +158,7 @@ export const App = () => {
   }, [speech]);
 
   useEffect(() => {
-    if (voiceSheetOpen && !speech.isListening && speech.finalTranscript) {
+    if (voiceSheetOpen && voiceRecorded && !speech.isListening && speech.finalTranscript) {
       const parsed = parseVoiceInput(speech.finalTranscript);
       const catMatch = parsed.descricao
         ? matchCategory(
@@ -172,7 +178,7 @@ export const App = () => {
       setVoiceSheetOpen(false);
       setNovaTransacaoOpen(true);
     }
-  }, [voiceSheetOpen, speech.isListening, speech.finalTranscript, categorias]);
+  }, [voiceSheetOpen, voiceRecorded, speech.isListening, speech.finalTranscript, categorias]);
 
   // Telas fora do AppShell (autenticação e onboarding)
   if (
@@ -428,15 +434,13 @@ export const App = () => {
         onVoiceActivate={speech.isSupported ? handleVoiceActivate : undefined}
       />
       <VoiceRecordingSheet
-        isListening={voiceSheetOpen && speech.isListening}
-        isConnected={speech.isConnected}
+        open={voiceSheetOpen}
+        isListening={speech.isListening}
         transcript={speech.transcript}
-        onStop={handleVoiceStop}
+        error={speech.error}
+        onPressStart={handleVoicePressStart}
+        onPressEnd={handleVoicePressEnd}
         onClose={handleVoiceClose}
-        onRetry={() => {
-          speech.stop();
-          setTimeout(() => speech.start(), 100);
-        }}
       />
     </>
   );

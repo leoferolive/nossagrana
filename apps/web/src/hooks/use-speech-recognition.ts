@@ -29,7 +29,6 @@ interface SpeechRecognitionInstance {
 
 export interface UseSpeechRecognitionReturn {
   isListening: boolean;
-  isConnected: boolean;
   transcript: string;
   finalTranscript: string;
   error: string | null;
@@ -47,30 +46,19 @@ function getSpeechRecognition(): SpeechRecognitionConstructor | null {
 }
 
 const FATAL_ERRORS = new Set(['not-allowed', 'service-not-allowed']);
-const MAX_RESTARTS = 15;
 
 export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [finalTranscript, setFinalTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastInterimRef = useRef('');
-  const stoppingRef = useRef(false);
-  const hadFatalErrorRef = useRef(false);
-  const restartCountRef = useRef(0);
   const isSupported = getSpeechRecognition() !== null;
 
   useEffect(() => {
     return () => {
-      stoppingRef.current = true;
-      if (restartTimerRef.current) {
-        clearTimeout(restartTimerRef.current);
-        restartTimerRef.current = null;
-      }
       if (recognitionRef.current) {
         recognitionRef.current.abort();
         recognitionRef.current = null;
@@ -79,13 +67,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, []);
 
   const start = useCallback(() => {
-    // Cancel any pending restart timer
-    if (restartTimerRef.current) {
-      clearTimeout(restartTimerRef.current);
-      restartTimerRef.current = null;
-    }
     if (recognitionRef.current) {
-      stoppingRef.current = true;
       recognitionRef.current.abort();
       recognitionRef.current = null;
     }
@@ -99,10 +81,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     setError(null);
     setTranscript('');
     setFinalTranscript('');
-    setIsConnected(false);
-    stoppingRef.current = false;
-    hadFatalErrorRef.current = false;
-    restartCountRef.current = 0;
     lastInterimRef.current = '';
 
     const recognition = new SpeechRecognitionCtor();
@@ -111,8 +89,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     recognition.interimResults = true;
 
     recognition.onresult = (e: SpeechRecognitionEvent) => {
-      setIsConnected(true);
-      restartCountRef.current = 0;
       let interim = '';
       let final = '';
 
@@ -138,7 +114,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
       if (FATAL_ERRORS.has(e.error)) {
-        hadFatalErrorRef.current = true;
         const errorMap: Record<string, string> = {
           'not-allowed': 'no-permission',
           'service-not-allowed': 'no-permission',
@@ -148,49 +123,12 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onend = () => {
-      if (stoppingRef.current) {
-        stoppingRef.current = false;
-        if (lastInterimRef.current) {
-          setFinalTranscript((prev) => prev + lastInterimRef.current);
-          lastInterimRef.current = '';
-        }
-        setIsListening(false);
-        setIsConnected(false);
-        return;
+      // Promote any pending interim to final
+      if (lastInterimRef.current) {
+        setFinalTranscript((prev) => prev + lastInterimRef.current);
+        lastInterimRef.current = '';
       }
-
-      if (hadFatalErrorRef.current) {
-        setIsListening(false);
-        setIsConnected(false);
-        return;
-      }
-
-      restartCountRef.current += 1;
-      if (restartCountRef.current > MAX_RESTARTS) {
-        setError('network');
-        if (lastInterimRef.current) {
-          setFinalTranscript((prev) => prev + lastInterimRef.current);
-          lastInterimRef.current = '';
-        }
-        setIsListening(false);
-        setIsConnected(false);
-        return;
-      }
-
-      const delay = Math.min(restartCountRef.current * 500, 2000);
-      restartTimerRef.current = setTimeout(() => {
-        restartTimerRef.current = null;
-        if (stoppingRef.current) return;
-        try {
-          recognition.start();
-        } catch {
-          if (lastInterimRef.current) {
-            setFinalTranscript((prev) => prev + lastInterimRef.current);
-            lastInterimRef.current = '';
-          }
-          setIsListening(false);
-        }
-      }, delay);
+      setIsListening(false);
     };
 
     recognitionRef.current = recognition;
@@ -199,7 +137,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, []);
 
   const stop = useCallback(() => {
-    stoppingRef.current = true;
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
@@ -207,7 +144,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
   return {
     isListening,
-    isConnected,
     transcript,
     finalTranscript,
     error,

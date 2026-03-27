@@ -170,13 +170,14 @@ jobs:
 
       - name: Install semgrep
         run: |
-          sudo apt-get install -y python3.12-venv
-          python3 -m venv /tmp/semgrep-venv
-          /tmp/semgrep-venv/bin/pip install semgrep --quiet
+          if [ ! -f ~/semgrep-venv/bin/semgrep ]; then
+            python3 -m venv ~/semgrep-venv
+            ~/semgrep-venv/bin/pip install semgrep --quiet
+          fi
 
       - name: Semgrep scan
         run: |
-          /tmp/semgrep-venv/bin/semgrep scan \
+          ~/semgrep-venv/bin/semgrep scan \
             --config p/owasp-top-ten \
             --config p/javascript \
             --config p/typescript \

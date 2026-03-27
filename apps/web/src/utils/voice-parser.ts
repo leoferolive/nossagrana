@@ -116,24 +116,56 @@ function extractTipo(text: string): 'receita' | 'despesa' | null {
   return null;
 }
 
+function parseCompositeNumberWords(text: string): number | null {
+  // Match composite number phrases: "vinte e cinco", "cento e vinte", "mil e duzentos"
+  const words = text.split(/\s+/);
+  let total = 0;
+  let found = false;
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const value = NUMBER_WORDS[word];
+    if (value !== undefined) {
+      found = true;
+      // Check for "X e Y" pattern (e.g., "vinte e cinco", "cento e vinte")
+      if (
+        i + 2 < words.length &&
+        words[i + 1] === 'e' &&
+        NUMBER_WORDS[words[i + 2]] !== undefined
+      ) {
+        total += value + NUMBER_WORDS[words[i + 2]];
+        i += 2;
+      } else {
+        total += value;
+      }
+    }
+  }
+
+  return found ? total : null;
+}
+
 function extractValor(text: string): { valor: string | null; matched: string[] } {
   const lower = text.toLowerCase();
   const matched: string[] = [];
 
   // Pattern 0: "100 brl" or "brl 100" — treat BRL like R$
-  const brlMatch = lower.match(/(?:brl\s*(\d+)([.,](\d{1,2}))?|(\d+)([.,](\d{1,2}))?\s*brl)/);
+  const brlMatch = lower.match(
+    /(?:brl\s*(\d[\d.]*\d|\d+),?(\d{1,2})?|(\d[\d.]*\d|\d+),?(\d{1,2})?\s*brl)/,
+  );
   if (brlMatch) {
-    const intPart = brlMatch[1] || brlMatch[4];
-    const decPart = brlMatch[3] || brlMatch[6] || '00';
+    const rawInt = brlMatch[1] || brlMatch[3];
+    const intPart = rawInt.replace(/\./g, ''); // strip thousand separators
+    const decPart = brlMatch[2] || brlMatch[4] || '00';
     matched.push(brlMatch[0]);
     return { valor: `${intPart}.${decPart.padEnd(2, '0')}`, matched };
   }
 
-  // Pattern 1: R$ 123,45 or R$ 123.45 or R$ 123
-  const rsCurrencyMatch = lower.match(/r\$\s*(\d+)([.,](\d{1,2}))?/);
+  // Pattern 1: "R$ 1.234,56" or "R$ 123,45" or "R$ 123"
+  // Handles pt-BR thousand separator (.) and decimal separator (,)
+  const rsCurrencyMatch = lower.match(/r\$\s*(\d[\d.]*\d|\d+)(?:,(\d{1,2}))?/);
   if (rsCurrencyMatch) {
-    const intPart = rsCurrencyMatch[1];
-    const decPart = rsCurrencyMatch[3] || '00';
+    const intPart = rsCurrencyMatch[1].replace(/\./g, ''); // strip thousand separators
+    const decPart = rsCurrencyMatch[2] || '00';
     matched.push(rsCurrencyMatch[0]);
     return { valor: `${intPart}.${decPart.padEnd(2, '0')}`, matched };
   }
@@ -145,14 +177,23 @@ function extractValor(text: string): { valor: string | null; matched: string[] }
     return { valor: `${ePattern[1]}.${ePattern[2].padEnd(2, '0')}`, matched };
   }
 
-  // Pattern 3: "123,45" or "123.45"
-  const decimalMatch = lower.match(/(\d+)[.,](\d{1,2})/);
+  // Pattern 3: "1.234,56" (pt-BR format with thousand separator)
+  const ptBrFullMatch = lower.match(/(\d{1,3}(?:\.\d{3})+),(\d{1,2})/);
+  if (ptBrFullMatch) {
+    const intPart = ptBrFullMatch[1].replace(/\./g, '');
+    matched.push(ptBrFullMatch[0]);
+    return { valor: `${intPart}.${ptBrFullMatch[2].padEnd(2, '0')}`, matched };
+  }
+
+  // Pattern 4: "123,45" or "123.45" (decimal, no thousand separator)
+  // Distinguish from thousand separator: thousand groups have exactly 3 digits after dot
+  const decimalMatch = lower.match(/(\d+)[.,](\d{1,2})(?!\d)/);
   if (decimalMatch) {
     matched.push(decimalMatch[0]);
     return { valor: `${decimalMatch[1]}.${decimalMatch[2].padEnd(2, '0')}`, matched };
   }
 
-  // Pattern 4: "123 reais" or standalone number
+  // Pattern 5: "123 reais" or standalone number
   const reaisMatch = lower.match(/(\d+)\s*reais/);
   if (reaisMatch) {
     matched.push(reaisMatch[0]);
@@ -165,13 +206,11 @@ function extractValor(text: string): { valor: string | null; matched: string[] }
     return { valor: `${standaloneNum[1]}.00`, matched };
   }
 
-  // Pattern 5: Number words with word boundary
-  for (const [word, value] of Object.entries(NUMBER_WORDS)) {
-    const regex = new RegExp('\\b' + word + '\\b');
-    if (regex.test(lower)) {
-      matched.push(word);
-      return { valor: `${value}.00`, matched };
-    }
+  // Pattern 6: Composite number words ("vinte e cinco", "cento e vinte")
+  const compositeValue = parseCompositeNumberWords(lower);
+  if (compositeValue !== null) {
+    matched.push('number-words');
+    return { valor: `${compositeValue}.00`, matched };
   }
 
   return { valor: null, matched };

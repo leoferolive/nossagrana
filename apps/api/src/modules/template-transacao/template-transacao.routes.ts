@@ -7,9 +7,14 @@ import {
   templateTransacaoUpdateParamsSchema,
   templateTransacaoUpdateRequestSchema,
 } from '@nossagrana/types';
+import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
+import { db } from '../../db/client.js';
+import { transacoes } from '../../db/schema.js';
+import { DrizzleCofrinhoRepository, InMemoryCofrinhoRepository } from '../cofrinho/cofrinho.repository.js';
+import { CofrinhoService } from '../cofrinho/cofrinho.service.js';
 import { DrizzleTemplateTransacaoRepository, InMemoryTemplateTransacaoRepository } from './template-transacao.repository.js';
 import {
   templateTransacaoAplicarSchema,
@@ -25,17 +30,83 @@ import {
   TemplateTransacaoService,
 } from './template-transacao.service.js';
 
+const testTransacaoCreator = {
+  criar: async () => ({ id: randomUUID() }),
+};
+
+const realTransacaoCreator = {
+  criar: async (input: {
+    familiaId: string;
+    tipo: 'receita' | 'despesa';
+    valor: string;
+    categoriaId: string;
+    descricao: string | null;
+    data: string;
+    mesReferencia: string;
+    usuarioRegistrouId: string;
+    metodoPagamentoId?: string | null;
+    cofrinhoId?: string | null;
+  }) => {
+    const [row] = await db
+      .insert(transacoes)
+      .values({
+        familiaId: input.familiaId,
+        tipo: input.tipo,
+        valor: input.valor,
+        categoriaId: input.categoriaId,
+        descricao: input.descricao,
+        data: input.data,
+        mesReferencia: input.mesReferencia,
+        usuarioRegistrouId: input.usuarioRegistrouId,
+        metodoPagamentoId: input.metodoPagamentoId ?? null,
+        cofrinhoId: input.cofrinhoId ?? null,
+      })
+      .returning({ id: transacoes.id });
+    return { id: row.id };
+  },
+};
+
+const testGetCategoriaCofrinho = async () => ({ id: randomUUID() });
+
+const realGetCategoriaCofrinho = async (familiaId: string) => {
+  const { and, eq } = await import('drizzle-orm');
+  const { categorias } = await import('../../db/schema.js');
+  const [cat] = await db
+    .select({ id: categorias.id })
+    .from(categorias)
+    .where(
+      and(
+        eq(categorias.familiaId, familiaId),
+        eq(categorias.nome, 'Cofrinho'),
+        eq(categorias.sistema, true),
+      ),
+    );
+  if (!cat) throw new Error('Categoria Cofrinho não encontrada');
+  return cat;
+};
+
 const defaultService = (): TemplateTransacaoService => {
-  const repo =
-    env.NODE_ENV === 'test'
-      ? new InMemoryTemplateTransacaoRepository()
-      : new DrizzleTemplateTransacaoRepository();
+  if (env.NODE_ENV === 'test') {
+    return new TemplateTransacaoService(
+      new InMemoryTemplateTransacaoRepository(),
+      testTransacaoCreator,
+      new CofrinhoService(
+        new InMemoryCofrinhoRepository(),
+        testTransacaoCreator,
+        testGetCategoriaCofrinho,
+      ),
+    );
+  }
 
-  // Placeholder creators — Task 8 will wire real implementations
-  const transacaoCreator = { criar: async () => ({ id: '' }) };
-  const cofrinhoService = { aportar: async () => ({ cofrinho: {}, movimentacao: {} }) };
-
-  return new TemplateTransacaoService(repo, transacaoCreator as never, cofrinhoService as never);
+  return new TemplateTransacaoService(
+    new DrizzleTemplateTransacaoRepository(),
+    realTransacaoCreator,
+    new CofrinhoService(
+      new DrizzleCofrinhoRepository(),
+      realTransacaoCreator,
+      realGetCategoriaCofrinho,
+    ),
+  );
 };
 
 export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {

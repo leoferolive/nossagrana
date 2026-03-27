@@ -114,6 +114,8 @@ export class CofrinhoService {
     recorrente?: boolean;
     frequencia?: 'mensal' | 'semanal' | 'quinzenal' | null;
     dataFimRecorrencia?: string | null;
+    mesReferencia?: string;
+    data?: string;
   }): Promise<{ cofrinho: Cofrinho; movimentacao: MovimentacaoCofrinho }> {
     const cofrinho = await this.repository.findById({
       id: input.cofrinhoId,
@@ -129,8 +131,8 @@ export class CofrinhoService {
     }
 
     const categoria = await this.getCategoriaCofrinho(input.familiaId);
-    const mesReferencia = getMesReferencia();
-    const data = getDataHoje();
+    const mesReferencia = input.mesReferencia ?? getMesReferencia();
+    const data = input.data ?? getDataHoje();
 
     let transacaoId: string;
 

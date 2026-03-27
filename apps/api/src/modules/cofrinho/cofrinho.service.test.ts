@@ -578,6 +578,34 @@ describe('CofrinhoService', () => {
     });
   });
 
+  describe('aportar com mesReferencia e data opcionais', () => {
+    it('usa valores fornecidos quando mesReferencia e data são passados', async () => {
+      const cofrinho = await service.criar({
+        familiaId: 'f1',
+        nome: 'Viagem',
+        criadoPor: 'u1',
+      });
+
+      const result = await service.aportar({
+        cofrinhoId: cofrinho.id,
+        familiaId: 'f1',
+        valor: '300.00',
+        registradoPor: 'u1',
+        mesReferencia: '2026-01',
+        data: '2026-01-15',
+      });
+
+      // Verify movimentacao uses the provided mesReferencia
+      expect(result.movimentacao.mesReferencia).toBe('2026-01');
+
+      // Verify transacaoCreator.criar was called with the provided data and mesReferencia
+      expect(mockTransacaoCreator.criar).toHaveBeenCalledOnce();
+      const criarCall = mockTransacaoCreator.criar.mock.calls[0][0];
+      expect(criarCall.mesReferencia).toBe('2026-01');
+      expect(criarCall.data).toBe('2026-01-15');
+    });
+  });
+
   describe('aportar recorrente', () => {
     it('deve criar transação-pai recorrente + primeira movimentação', async () => {
       const cofrinho = await serviceComRecorrente.criar({

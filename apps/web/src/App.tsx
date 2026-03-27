@@ -11,6 +11,7 @@ import { TransacaoModal } from '@/components/transacao-modal';
 import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { matchCategory } from '@/utils/category-matcher';
 import { parseVoiceInput } from '@/utils/voice-parser';
@@ -83,8 +84,20 @@ export const App = () => {
   } | null>(null);
   const [dadosVoz, setDadosVoz] = useState<DadosVoz | null>(null);
   const [voiceSheetOpen, setVoiceSheetOpen] = useState(false);
+  const [voiceRecorded, setVoiceRecorded] = useState(false);
   const categorias = useCategoriaStore((s) => s.categorias);
+  const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const speech = useSpeechRecognition();
+
+  // Pre-load categories so voice matching works even before modal is opened
+  useEffect(() => {
+    if (familiaId && categorias.length === 0) {
+      categoriaService
+        .listar(familiaId)
+        .then((res) => setCategorias(res.categorias))
+        .catch(() => {});
+    }
+  }, [familiaId, categorias.length, setCategorias]);
 
   const handleLoginSuccess = useCallback(
     (familias: FamiliaMinhasItem[]) => {
@@ -127,10 +140,15 @@ export const App = () => {
 
   const handleVoiceActivate = useCallback(() => {
     setVoiceSheetOpen(true);
+    setVoiceRecorded(false);
+  }, []);
+
+  const handleVoicePressStart = useCallback(() => {
     speech.start();
+    setVoiceRecorded(true);
   }, [speech]);
 
-  const handleVoiceStop = useCallback(() => {
+  const handleVoicePressEnd = useCallback(() => {
     speech.stop();
   }, [speech]);
 
@@ -140,7 +158,7 @@ export const App = () => {
   }, [speech]);
 
   useEffect(() => {
-    if (voiceSheetOpen && !speech.isListening && speech.finalTranscript) {
+    if (voiceSheetOpen && voiceRecorded && !speech.isListening && speech.finalTranscript) {
       const parsed = parseVoiceInput(speech.finalTranscript);
       const catMatch = parsed.descricao
         ? matchCategory(
@@ -160,7 +178,7 @@ export const App = () => {
       setVoiceSheetOpen(false);
       setNovaTransacaoOpen(true);
     }
-  }, [voiceSheetOpen, speech.isListening, speech.finalTranscript, categorias]);
+  }, [voiceSheetOpen, voiceRecorded, speech.isListening, speech.finalTranscript, categorias]);
 
   // Telas fora do AppShell (autenticação e onboarding)
   if (
@@ -416,9 +434,12 @@ export const App = () => {
         onVoiceActivate={speech.isSupported ? handleVoiceActivate : undefined}
       />
       <VoiceRecordingSheet
-        isListening={voiceSheetOpen && speech.isListening}
+        open={voiceSheetOpen}
+        isListening={speech.isListening}
         transcript={speech.transcript}
-        onStop={handleVoiceStop}
+        error={speech.error}
+        onPressStart={handleVoicePressStart}
+        onPressEnd={handleVoicePressEnd}
         onClose={handleVoiceClose}
       />
     </>

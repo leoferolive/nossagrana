@@ -305,5 +305,53 @@ describe('parseVoiceInput', () => {
         data: '2026-03-25',
       });
     });
+
+    it('should parse "é gastei 100 BRL no mercado" (filler + BRL)', () => {
+      const result = parseVoiceInput('é gastei 100 BRL no mercado');
+      expect(result.tipo).toBe('despesa');
+      expect(result.valor).toBe('100.00');
+      expect(result.descricao).toBe('mercado');
+    });
+
+    it('should strip filler words from description', () => {
+      const result = parseVoiceInput('é, gastei 50 reais no mercado');
+      expect(result.descricao).toBe('mercado');
+    });
+
+    it('should handle "100 brl" as currency', () => {
+      const result = parseVoiceInput('paguei 100 brl de luz');
+      expect(result.valor).toBe('100.00');
+      expect(result.descricao).toBe('luz');
+    });
+
+    it('should handle "R$ 1.234,56" with thousand separator', () => {
+      const result = parseVoiceInput('gastei R$ 1.234,56 no mercado');
+      expect(result.valor).toBe('1234.56');
+    });
+
+    it('should handle "R$ 1.234" (thousand separator, no decimals)', () => {
+      const result = parseVoiceInput('recebi R$ 1.234');
+      expect(result.valor).toBe('1234.00');
+    });
+
+    it('should handle "1.234,56" without R$ prefix', () => {
+      const result = parseVoiceInput('gastei 1.234,56 no aluguel');
+      expect(result.valor).toBe('1234.56');
+    });
+
+    it('should parse "vinte e cinco" as 25', () => {
+      const result = parseVoiceInput('gastei vinte e cinco no lanche');
+      expect(result.valor).toBe('25.00');
+    });
+
+    it('should parse "cento e vinte" as 120', () => {
+      const result = parseVoiceInput('paguei cento e vinte de luz');
+      expect(result.valor).toBe('120.00');
+    });
+
+    it('should parse "duzentos e cinquenta" as 250', () => {
+      const result = parseVoiceInput('gastei duzentos e cinquenta');
+      expect(result.valor).toBe('250.00');
+    });
   });
 });

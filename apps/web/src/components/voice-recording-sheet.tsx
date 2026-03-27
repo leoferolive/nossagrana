@@ -1,19 +1,25 @@
-import { Square } from 'lucide-react';
+import { IconMicrofone } from './icons';
 
 interface VoiceRecordingSheetProps {
+  open: boolean;
   isListening: boolean;
   transcript: string;
-  onStop: () => void;
+  error: string | null;
+  onPressStart: () => void;
+  onPressEnd: () => void;
   onClose: () => void;
 }
 
 export function VoiceRecordingSheet({
+  open,
   isListening,
   transcript,
-  onStop,
+  error,
+  onPressStart,
+  onPressEnd,
   onClose,
 }: VoiceRecordingSheetProps) {
-  if (!isListening) {
+  if (!open) {
     return null;
   }
 
@@ -29,19 +35,23 @@ export function VoiceRecordingSheet({
         className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-bg px-6 pb-8 pt-6 shadow-soft"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Waveform bars */}
+        {/* Waveform bars — only animate when listening */}
         <div className="mb-4 flex items-center justify-center gap-1">
           {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-6 w-1 animate-pulse rounded-full bg-danger"
-              style={{ animationDelay: `${i * 150}ms` }}
+              className={`h-6 w-1 rounded-full ${isListening ? 'animate-pulse bg-danger' : 'bg-border'}`}
+              style={isListening ? { animationDelay: `${i * 150}ms` } : undefined}
             />
           ))}
         </div>
 
-        {/* Ouvindo text */}
-        <p className="mb-4 text-center text-lg font-semibold text-danger">Ouvindo...</p>
+        {/* Status text */}
+        <p
+          className={`mb-4 text-center text-lg font-semibold ${isListening ? 'text-danger' : 'text-text-muted'}`}
+        >
+          {isListening ? 'Ouvindo...' : 'Segure o botão para falar'}
+        </p>
 
         {/* Transcript area */}
         <div
@@ -50,22 +60,39 @@ export function VoiceRecordingSheet({
         >
           {transcript ? (
             <p className="text-text">{transcript}</p>
+          ) : error ? (
+            <p className="text-danger">Erro: {error}. Tente novamente.</p>
           ) : (
-            <p className="text-text-muted">Diga algo como &quot;gastei 50 no mercado&quot;</p>
+            <p className="text-text-muted">
+              {isListening
+                ? 'Diga algo como "gastei 50 no mercado"'
+                : 'Segure o botão abaixo e fale sua transação'}
+            </p>
           )}
         </div>
 
-        {/* Stop button */}
+        {/* Press-to-talk button */}
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
-            aria-label="Parar gravação"
-            onClick={onStop}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-danger text-white"
+            aria-label={isListening ? 'Gravando — solte para parar' : 'Segure para falar'}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onPressStart();
+            }}
+            onPointerUp={onPressEnd}
+            onPointerLeave={isListening ? onPressEnd : undefined}
+            className={`flex h-16 w-16 items-center justify-center rounded-full transition-all select-none ${
+              isListening
+                ? 'scale-110 bg-danger text-white shadow-lg shadow-danger/30'
+                : 'bg-surface text-text-muted hover:bg-danger hover:text-white'
+            }`}
           >
-            <Square className="h-5 w-5 fill-current" />
+            <IconMicrofone className="h-7 w-7" />
           </button>
-          <span className="text-sm text-text-muted">Toque para parar</span>
+          <span className="text-sm text-text-muted">
+            {isListening ? 'Solte para processar' : 'Segure para falar'}
+          </span>
         </div>
       </div>
     </div>

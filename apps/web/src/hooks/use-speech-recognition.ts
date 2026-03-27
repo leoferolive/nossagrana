@@ -45,6 +45,8 @@ function getSpeechRecognition(): SpeechRecognitionConstructor | null {
   return win.SpeechRecognition ?? win.webkitSpeechRecognition ?? null;
 }
 
+const FATAL_ERRORS = new Set(['not-allowed', 'service-not-allowed']);
+
 export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -52,19 +54,25 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const lastInterimRef = useRef('');
   const isSupported = getSpeechRecognition() !== null;
 
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.abort();
+        recognitionRef.current = null;
       }
     };
   }, []);
 
   const start = useCallback(() => {
-    const SpeechRecognitionCtor = getSpeechRecognition();
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+      recognitionRef.current = null;
+    }
 
+    const SpeechRecognitionCtor = getSpeechRecognition();
     if (!SpeechRecognitionCtor) {
       setError('not-supported');
       return;
@@ -73,10 +81,11 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     setError(null);
     setTranscript('');
     setFinalTranscript('');
+    lastInterimRef.current = '';
 
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = 'pt-BR';
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onresult = (e: SpeechRecognitionEvent) => {
@@ -96,19 +105,29 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
       if (final) {
         setFinalTranscript((prev) => prev + final);
+        lastInterimRef.current = '';
+      } else {
+        lastInterimRef.current = interim;
       }
-      setTranscript(interim);
+      setTranscript(interim || final);
     };
 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      const errorMap: Record<string, string> = {
-        'not-allowed': 'no-permission',
-      };
-      setError(errorMap[e.error] ?? e.error);
-      setIsListening(false);
+      if (FATAL_ERRORS.has(e.error)) {
+        const errorMap: Record<string, string> = {
+          'not-allowed': 'no-permission',
+          'service-not-allowed': 'no-permission',
+        };
+        setError(errorMap[e.error] ?? e.error);
+      }
     };
 
     recognition.onend = () => {
+      // Promote any pending interim to final
+      if (lastInterimRef.current) {
+        setFinalTranscript((prev) => prev + lastInterimRef.current);
+        lastInterimRef.current = '';
+      }
       setIsListening(false);
     };
 

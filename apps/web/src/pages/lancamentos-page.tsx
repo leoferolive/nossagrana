@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 
+import { IconConfiguracoes } from '@/components/icons';
 import { LancamentosResumo } from '@/components/lancamentos-resumo';
 import { TemplateGrupo } from '@/components/template-grupo';
+import { TemplatesGerenciarModal } from '@/components/templates-gerenciar-modal';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
 
 interface LancamentosPageProps {
@@ -42,6 +44,7 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
   } = useTemplateTransacaoStore();
 
   const [sucesso, setSucesso] = useState<{ transacoesCriadas: number; aportesCriados: number } | null>(null);
+  const [gerenciarAberto, setGerenciarAberto] = useState(false);
 
   useEffect(() => {
     void fetchTemplates(familiaId);
@@ -87,7 +90,25 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <h1 className="text-xl font-bold text-text">Lançamentos do Mês</h1>
+        <button
+          type="button"
+          aria-label="Gerenciar templates"
+          onClick={() => setGerenciarAberto(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted transition hover:text-text"
+        >
+          <IconConfiguracoes size={14} />
+          Gerenciar
+        </button>
       </header>
+
+      <TemplatesGerenciarModal
+        open={gerenciarAberto}
+        onClose={() => {
+          setGerenciarAberto(false);
+          void fetchTemplates(familiaId);
+        }}
+        familiaId={familiaId}
+      />
 
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* Month selector */}

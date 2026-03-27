@@ -94,12 +94,16 @@ function findKeywordCategory(descricao: string): string | null {
   return null;
 }
 
+function stripAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function findCategoryByName(
   nome: string,
   categorias: Array<{ id: string; nome: string }>,
 ): { id: string; nome: string } | undefined {
-  const lowerNome = nome.toLowerCase();
-  return categorias.find((c) => c.nome.toLowerCase() === lowerNome);
+  const normalized = stripAccents(nome.toLowerCase());
+  return categorias.find((c) => stripAccents(c.nome.toLowerCase()) === normalized);
 }
 
 export function matchCategory(
@@ -119,12 +123,12 @@ export function matchCategory(
     }
   }
 
-  // Layer 2: Fuzzy match
-  const lowerDescricao = descricao.toLowerCase();
+  // Layer 2: Fuzzy match (accent-insensitive)
+  const normalizedDescricao = stripAccents(descricao.toLowerCase());
   let bestMatch: { id: string; similarity: number } | null = null;
 
   for (const categoria of categorias) {
-    const sim = similarity(lowerDescricao, categoria.nome.toLowerCase());
+    const sim = similarity(normalizedDescricao, stripAccents(categoria.nome.toLowerCase()));
     if (sim >= 0.6 && (!bestMatch || sim > bestMatch.similarity)) {
       bestMatch = { id: categoria.id, similarity: sim };
     }

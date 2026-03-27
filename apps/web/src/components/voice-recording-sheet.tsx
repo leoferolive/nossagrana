@@ -2,16 +2,20 @@ import { Square } from 'lucide-react';
 
 interface VoiceRecordingSheetProps {
   isListening: boolean;
+  isConnected: boolean;
   transcript: string;
   onStop: () => void;
   onClose: () => void;
+  onRetry?: () => void;
 }
 
 export function VoiceRecordingSheet({
   isListening,
+  isConnected,
   transcript,
   onStop,
   onClose,
+  onRetry,
 }: VoiceRecordingSheetProps) {
   if (!isListening) {
     return null;
@@ -40,18 +44,28 @@ export function VoiceRecordingSheet({
           ))}
         </div>
 
-        {/* Ouvindo text */}
-        <p className="mb-4 text-center text-lg font-semibold text-danger">Ouvindo...</p>
+        {/* Status text */}
+        <p className="mb-4 text-center text-lg font-semibold text-danger">
+          {isConnected ? 'Ouvindo...' : 'Conectando...'}
+        </p>
 
         {/* Transcript area */}
         <div
           aria-live="polite"
           className="mb-6 min-h-[3rem] rounded-lg bg-surface px-4 py-3 text-center"
+          onClick={!isConnected && onRetry ? onRetry : undefined}
+          role={!isConnected && onRetry ? 'button' : undefined}
         >
           {transcript ? (
             <p className="text-text">{transcript}</p>
-          ) : (
+          ) : isConnected ? (
             <p className="text-text-muted">Diga algo como &quot;gastei 50 no mercado&quot;</p>
+          ) : (
+            <p className="text-text-muted cursor-pointer">
+              Conectando ao serviço de voz...
+              <br />
+              <span className="text-danger underline">Toque aqui para reconectar</span>
+            </p>
           )}
         </div>
 

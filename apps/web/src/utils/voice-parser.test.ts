@@ -305,5 +305,23 @@ describe('parseVoiceInput', () => {
         data: '2026-03-25',
       });
     });
+
+    it('should parse "é gastei 100 BRL no mercado" (filler + BRL)', () => {
+      const result = parseVoiceInput('é gastei 100 BRL no mercado');
+      expect(result.tipo).toBe('despesa');
+      expect(result.valor).toBe('100.00');
+      expect(result.descricao).toBe('mercado');
+    });
+
+    it('should strip filler words from description', () => {
+      const result = parseVoiceInput('é, gastei 50 reais no mercado');
+      expect(result.descricao).toBe('mercado');
+    });
+
+    it('should handle "100 brl" as currency', () => {
+      const result = parseVoiceInput('paguei 100 brl de luz');
+      expect(result.valor).toBe('100.00');
+      expect(result.descricao).toBe('luz');
+    });
   });
 });

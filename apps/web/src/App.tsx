@@ -11,6 +11,7 @@ import { TransacaoModal } from '@/components/transacao-modal';
 import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { matchCategory } from '@/utils/category-matcher';
 import { parseVoiceInput } from '@/utils/voice-parser';
@@ -84,7 +85,18 @@ export const App = () => {
   const [dadosVoz, setDadosVoz] = useState<DadosVoz | null>(null);
   const [voiceSheetOpen, setVoiceSheetOpen] = useState(false);
   const categorias = useCategoriaStore((s) => s.categorias);
+  const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const speech = useSpeechRecognition();
+
+  // Pre-load categories so voice matching works even before modal is opened
+  useEffect(() => {
+    if (familiaId && categorias.length === 0) {
+      categoriaService
+        .listar(familiaId)
+        .then((res) => setCategorias(res.categorias))
+        .catch(() => {});
+    }
+  }, [familiaId, categorias.length, setCategorias]);
 
   const handleLoginSuccess = useCallback(
     (familias: FamiliaMinhasItem[]) => {
@@ -417,9 +429,14 @@ export const App = () => {
       />
       <VoiceRecordingSheet
         isListening={voiceSheetOpen && speech.isListening}
+        isConnected={speech.isConnected}
         transcript={speech.transcript}
         onStop={handleVoiceStop}
         onClose={handleVoiceClose}
+        onRetry={() => {
+          speech.stop();
+          setTimeout(() => speech.start(), 100);
+        }}
       />
     </>
   );

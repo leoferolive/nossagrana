@@ -75,9 +75,13 @@ const WEEKDAY_MAP: Record<string, number> = {
 const PREPOSITIONS = [
   'no',
   'na',
+  'nos',
+  'nas',
   'de',
   'do',
   'da',
+  'dos',
+  'das',
   'em',
   'com',
   'pra',
@@ -87,6 +91,9 @@ const PREPOSITIONS = [
   'pela',
   'ao',
 ];
+
+// Filler words and currency indicators to strip from description
+const FILLER_WORDS = ['é', 'eh', 'ah', 'hm', 'brl', 'reais', 'real', 'conto', 'contos'];
 
 const ALL_TIPO_KEYWORDS = [...DESPESA_KEYWORDS, ...RECEITA_KEYWORDS];
 const DATE_KEYWORDS = ['anteontem', 'ontem', 'hoje', ...Object.keys(WEEKDAY_MAP)];
@@ -112,6 +119,15 @@ function extractTipo(text: string): 'receita' | 'despesa' | null {
 function extractValor(text: string): { valor: string | null; matched: string[] } {
   const lower = text.toLowerCase();
   const matched: string[] = [];
+
+  // Pattern 0: "100 brl" or "brl 100" — treat BRL like R$
+  const brlMatch = lower.match(/(?:brl\s*(\d+)([.,](\d{1,2}))?|(\d+)([.,](\d{1,2}))?\s*brl)/);
+  if (brlMatch) {
+    const intPart = brlMatch[1] || brlMatch[4];
+    const decPart = brlMatch[3] || brlMatch[6] || '00';
+    matched.push(brlMatch[0]);
+    return { valor: `${intPart}.${decPart.padEnd(2, '0')}`, matched };
+  }
 
   // Pattern 1: R$ 123,45 or R$ 123.45 or R$ 123
   const rsCurrencyMatch = lower.match(/r\$\s*(\d+)([.,](\d{1,2}))?/);
@@ -210,8 +226,9 @@ function extractDescricao(text: string): string | null {
     remaining = remaining.replace(new RegExp('\\b' + kw + '\\b', 'g'), ' ');
   }
 
-  // Remove valor patterns: R$ prefix, numbers, "reais", number words
+  // Remove valor patterns: R$/BRL prefix, numbers, "reais", number words
   remaining = remaining.replace(/r\$\s*\d+([.,]\d{1,2})?/g, ' ');
+  remaining = remaining.replace(/\bbrl\b/g, ' ');
   remaining = remaining.replace(/\d+\s+e\s+\d{1,2}/g, ' ');
   remaining = remaining.replace(/\d+[.,]\d{1,2}/g, ' ');
   remaining = remaining.replace(/\d+\s*reais/g, ' ');
@@ -231,6 +248,15 @@ function extractDescricao(text: string): string | null {
   // Remove prepositions
   for (const prep of PREPOSITIONS) {
     remaining = remaining.replace(new RegExp('\\b' + prep + '\\b', 'g'), ' ');
+  }
+
+  // Remove stray punctuation from transcription (before filler removal)
+  remaining = remaining.replace(/[,;.!?]+/g, ' ');
+
+  // Remove filler words and currency indicators
+  // Use (?:^|\s) and (?:\s|$) instead of \b for accented characters like "é"
+  for (const filler of FILLER_WORDS) {
+    remaining = remaining.replace(new RegExp('(?:^|\\s)' + filler + '(?:\\s|$)', 'g'), ' ');
   }
 
   // Clean whitespace

@@ -1,5 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#0f766e" />
-  <circle cx="32" cy="32" r="20" fill="#14b8a6" />
-  <text x="32" y="38" font-size="20" text-anchor="middle" fill="#f8fafc" font-family="Arial">N</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#99f6e4"/>
+      <stop offset="100%" stop-color="#5eead4"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Coin outer ring -->
+  <circle cx="32" cy="32" r="23" fill="none" stroke="url(#accent)" stroke-width="3" opacity="0.4"/>
+  <!-- Inner coin fill -->
+  <circle cx="32" cy="32" r="19" fill="#14b8a6" opacity="0.3"/>
+  <!-- Bold N monogram -->
+  <path d="M22 44V20h4l12 16.5V20h4v24h-4L26 27.5V44z" fill="#f0fdfa"/>
+  <!-- Bottom accent bar -->
+  <rect x="14" y="52" width="36" height="2.5" rx="1.25" fill="#5eead4" opacity="0.35"/>
 </svg>

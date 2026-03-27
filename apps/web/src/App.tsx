@@ -6,8 +6,14 @@ import type {
 import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import type { DadosVoz } from '@/components/transacao-modal';
 import { TransacaoModal } from '@/components/transacao-modal';
+import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
+import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { useCategoriaStore } from '@/stores/categoria.store';
+import { matchCategory } from '@/utils/category-matcher';
+import { parseVoiceInput } from '@/utils/voice-parser';
 import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
 import { CofrinhoDetalhePage } from '@/pages/cofrinho-detalhe-page';
@@ -75,6 +81,10 @@ export const App = () => {
     data: string;
     metodoPagamentoId: string | null;
   } | null>(null);
+  const [dadosVoz, setDadosVoz] = useState<DadosVoz | null>(null);
+  const [voiceSheetOpen, setVoiceSheetOpen] = useState(false);
+  const categorias = useCategoriaStore((s) => s.categorias);
+  const speech = useSpeechRecognition();
 
   const handleLoginSuccess = useCallback(
     (familias: FamiliaMinhasItem[]) => {
@@ -114,6 +124,43 @@ export const App = () => {
         .catch(() => setScreen('onboarding'));
     }
   }, [screen, isAuthenticated, familiasDoUsuario.length]);
+
+  const handleVoiceActivate = useCallback(() => {
+    setVoiceSheetOpen(true);
+    speech.start();
+  }, [speech]);
+
+  const handleVoiceStop = useCallback(() => {
+    speech.stop();
+  }, [speech]);
+
+  const handleVoiceClose = useCallback(() => {
+    speech.stop();
+    setVoiceSheetOpen(false);
+  }, [speech]);
+
+  useEffect(() => {
+    if (voiceSheetOpen && !speech.isListening && speech.finalTranscript) {
+      const parsed = parseVoiceInput(speech.finalTranscript);
+      const catMatch = parsed.descricao
+        ? matchCategory(
+            parsed.descricao,
+            categorias.map((c) => ({ id: c.id, nome: c.nome })),
+          )
+        : null;
+
+      setDadosVoz({
+        tipo: parsed.tipo,
+        valor: parsed.valor,
+        categoriaId: catMatch?.categoriaId ?? null,
+        descricao: parsed.descricao,
+        data: parsed.data,
+      });
+
+      setVoiceSheetOpen(false);
+      setNovaTransacaoOpen(true);
+    }
+  }, [voiceSheetOpen, speech.isListening, speech.finalTranscript, categorias]);
 
   // Telas fora do AppShell (autenticação e onboarding)
   if (
@@ -342,6 +389,7 @@ export const App = () => {
         currentScreen={screen}
         onNavigate={(s) => setScreen(s as Screen)}
         onNovaTransacao={handleNovaTransacao}
+        onVoiceActivate={speech.isSupported ? handleVoiceActivate : undefined}
         onLogout={handleLogout}
         familiaNome={familiaNomeAtiva}
       >
@@ -353,15 +401,25 @@ export const App = () => {
         onClose={() => {
           setNovaTransacaoOpen(false);
           setTransacaoParaEditar(null);
+          setDadosVoz(null);
         }}
         onSubmit={async (payload) => {
           if (!familiaId) return;
           await transacaoService.registrar(payload, familiaId);
           setNovaTransacaoOpen(false);
+          setDadosVoz(null);
         }}
         transacaoParaEditar={transacaoParaEditar}
         onUpdate={handleUpdateTransacao}
         onDelete={handleDeleteTransacao}
+        dadosVoz={dadosVoz}
+        onVoiceActivate={speech.isSupported ? handleVoiceActivate : undefined}
+      />
+      <VoiceRecordingSheet
+        isListening={voiceSheetOpen && speech.isListening}
+        transcript={speech.transcript}
+        onStop={handleVoiceStop}
+        onClose={handleVoiceClose}
       />
     </>
   );

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
+import type { DadosVoz } from './transacao-modal';
 import { TransacaoModal } from './transacao-modal';
 
 afterEach(() => {
@@ -95,5 +96,87 @@ describe('TransacaoModal', () => {
     // Open the custom select dropdown
     fireEvent.click(screen.getByRole('combobox', { name: /método de pagamento/i }));
     expect(screen.getByText('Nubank')).toBeInTheDocument();
+  });
+
+  describe('voice input', () => {
+    const dadosVoz: DadosVoz = {
+      tipo: 'despesa',
+      valor: '42.50',
+      categoriaId: 'c1',
+      descricao: 'Almoço no restaurante',
+      data: '2026-03-20',
+    };
+
+    it('pre-fills form from dadosVoz', () => {
+      useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          dadosVoz={dadosVoz}
+        />,
+      );
+
+      expect(screen.getByLabelText(/valor/i)).toHaveValue(42.5);
+      expect(screen.getByLabelText(/descrição/i)).toHaveValue('Almoço no restaurante');
+      expect(screen.getByLabelText(/^data$/i)).toHaveValue('2026-03-20');
+    });
+
+    it('shows mic button when onVoiceActivate provided', () => {
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onVoiceActivate={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: /preencher por voz/i })).toBeInTheDocument();
+    });
+
+    it('does NOT show mic button when editing', () => {
+      const transacaoParaEditar = {
+        id: 't1',
+        tipo: 'despesa' as const,
+        valor: '100',
+        categoriaId: 'c1',
+        descricao: 'Teste',
+        data: '2026-03-20',
+        metodoPagamentoId: null,
+      };
+
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          transacaoParaEditar={transacaoParaEditar}
+          onVoiceActivate={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /preencher por voz/i })).not.toBeInTheDocument();
+    });
+
+    it('calls onVoiceActivate when mic button clicked', () => {
+      const onVoiceActivate = vi.fn();
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onVoiceActivate={onVoiceActivate}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /preencher por voz/i }));
+      expect(onVoiceActivate).toHaveBeenCalledOnce();
+    });
   });
 });

@@ -43,4 +43,7 @@ export {
 
   // Cofrinhos
   PiggyBank as IconCofrinho,
+
+  // Voz
+  Mic as IconMicrofone,
 } from 'lucide-react';

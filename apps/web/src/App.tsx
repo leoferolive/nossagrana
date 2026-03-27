@@ -10,7 +10,7 @@ import type { DadosVoz } from '@/components/transacao-modal';
 import { TransacaoModal } from '@/components/transacao-modal';
 import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
-import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { useWhisperTranscription } from '@/hooks/use-whisper-transcription';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { matchCategory } from '@/utils/category-matcher';
@@ -87,7 +87,7 @@ export const App = () => {
   const [voiceRecorded, setVoiceRecorded] = useState(false);
   const categorias = useCategoriaStore((s) => s.categorias);
   const setCategorias = useCategoriaStore((s) => s.setCategorias);
-  const speech = useSpeechRecognition();
+  const whisper = useWhisperTranscription();
 
   // Pre-load categories so voice matching works even before modal is opened
   useEffect(() => {
@@ -144,22 +144,28 @@ export const App = () => {
   }, []);
 
   const handleVoiceStart = useCallback(() => {
-    speech.start();
+    whisper.startRecording();
     setVoiceRecorded(true);
-  }, [speech]);
+  }, [whisper]);
 
   const handleVoiceStop = useCallback(() => {
-    speech.stop();
-  }, [speech]);
+    whisper.stopRecording();
+  }, [whisper]);
 
   const handleVoiceClose = useCallback(() => {
-    speech.stop();
+    whisper.stopRecording();
     setVoiceSheetOpen(false);
-  }, [speech]);
+  }, [whisper]);
 
   useEffect(() => {
-    if (voiceSheetOpen && voiceRecorded && !speech.isListening && speech.finalTranscript) {
-      const parsed = parseVoiceInput(speech.finalTranscript);
+    if (
+      voiceSheetOpen &&
+      voiceRecorded &&
+      !whisper.isRecording &&
+      !whisper.isProcessing &&
+      whisper.transcript
+    ) {
+      const parsed = parseVoiceInput(whisper.transcript);
       const catMatch = parsed.descricao
         ? matchCategory(
             parsed.descricao,
@@ -178,7 +184,14 @@ export const App = () => {
       setVoiceSheetOpen(false);
       setNovaTransacaoOpen(true);
     }
-  }, [voiceSheetOpen, voiceRecorded, speech.isListening, speech.finalTranscript, categorias]);
+  }, [
+    voiceSheetOpen,
+    voiceRecorded,
+    whisper.isRecording,
+    whisper.isProcessing,
+    whisper.transcript,
+    categorias,
+  ]);
 
   // Telas fora do AppShell (autenticação e onboarding)
   if (
@@ -407,7 +420,7 @@ export const App = () => {
         currentScreen={screen}
         onNavigate={(s) => setScreen(s as Screen)}
         onNovaTransacao={handleNovaTransacao}
-        onVoiceActivate={speech.isSupported ? handleVoiceActivate : undefined}
+        onVoiceActivate={whisper.isSupported ? handleVoiceActivate : undefined}
         onLogout={handleLogout}
         familiaNome={familiaNomeAtiva}
       >
@@ -431,13 +444,16 @@ export const App = () => {
         onUpdate={handleUpdateTransacao}
         onDelete={handleDeleteTransacao}
         dadosVoz={dadosVoz}
-        onVoiceActivate={speech.isSupported ? handleVoiceActivate : undefined}
+        onVoiceActivate={whisper.isSupported ? handleVoiceActivate : undefined}
       />
       <VoiceRecordingSheet
         open={voiceSheetOpen}
-        isListening={speech.isListening}
-        transcript={speech.transcript}
-        error={speech.error}
+        isRecording={whisper.isRecording}
+        isProcessing={whisper.isProcessing}
+        isModelLoading={whisper.isModelLoading}
+        modelProgress={whisper.modelProgress}
+        transcript={whisper.transcript}
+        error={whisper.error}
         onStart={handleVoiceStart}
         onStop={handleVoiceStop}
         onClose={handleVoiceClose}

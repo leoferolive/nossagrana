@@ -2,7 +2,11 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockCollect = vi.fn();
-const mockTranscribe = vi.fn(() => ({ collect: mockCollect }));
+const mockTranscribe = vi.fn(
+  (_file?: File, _opts?: { onProgress?: (evt: { stage: string; progress: number }) => void }) => ({
+    collect: mockCollect,
+  }),
+);
 
 vi.mock('browser-whisper', () => ({
   BrowserWhisper: vi.fn().mockImplementation(() => ({
@@ -167,7 +171,10 @@ describe('useWhisperTranscription', () => {
   it('model progress callback updates during loading stage', async () => {
     let capturedOnProgress: ((evt: { stage: string; progress: number }) => void) | undefined;
     mockTranscribe.mockImplementation(
-      (_file: File, opts?: { onProgress?: (evt: { stage: string; progress: number }) => void }) => {
+      (
+        _file?: File,
+        opts?: { onProgress?: (evt: { stage: string; progress: number }) => void },
+      ) => {
         capturedOnProgress = opts?.onProgress;
         return { collect: mockCollect };
       },

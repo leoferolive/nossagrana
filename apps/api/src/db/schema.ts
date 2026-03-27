@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -295,5 +296,34 @@ export const revokedRefreshTokens = pgTable(
   (table) => [
     uniqueIndex('revoked_refresh_tokens_token_hash_idx').on(table.tokenHash),
     index('revoked_refresh_tokens_user_id_idx').on(table.userId),
+  ],
+);
+
+export const templatesTransacao = pgTable(
+  'templates_transacao',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    nome: text('nome').notNull(),
+    tipo: transacaoTipo('tipo').notNull(),
+    categoriaId: uuid('categoria_id').references(() => categorias.id),
+    metodoPagamentoId: uuid('metodo_pagamento_id').references(() => metodosPagamento.id),
+    cofrinhoId: uuid('cofrinho_id').references(() => cofrinhos.id),
+    ordem: integer('ordem').notNull().default(0),
+    valorPadrao: numeric('valor_padrao', { precision: 14, scale: 2 }),
+    ativo: boolean('ativo').notNull().default(true),
+    criadoPor: uuid('criado_por')
+      .notNull()
+      .references(() => users.id),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+    atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_templates_transacao_familia_id').on(table.familiaId),
+    uniqueIndex('uq_templates_transacao_familia_nome_tipo')
+      .on(table.familiaId, table.nome, table.tipo)
+      .where(eq(table.ativo, true)),
   ],
 );

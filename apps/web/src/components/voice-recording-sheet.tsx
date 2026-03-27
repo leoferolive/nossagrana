@@ -2,7 +2,10 @@ import { IconMicrofone } from './icons';
 
 interface VoiceRecordingSheetProps {
   open: boolean;
-  isListening: boolean;
+  isRecording: boolean;
+  isProcessing: boolean;
+  isModelLoading: boolean;
+  modelProgress: number;
   transcript: string;
   error: string | null;
   onStart: () => void;
@@ -12,7 +15,10 @@ interface VoiceRecordingSheetProps {
 
 export function VoiceRecordingSheet({
   open,
-  isListening,
+  isRecording,
+  isProcessing,
+  isModelLoading,
+  modelProgress,
   transcript,
   error,
   onStart,
@@ -22,6 +28,22 @@ export function VoiceRecordingSheet({
   if (!open) {
     return null;
   }
+
+  const isBusy = isProcessing || isModelLoading;
+
+  const statusText = isRecording
+    ? 'Gravando...'
+    : isModelLoading
+      ? `Baixando modelo de voz... ${modelProgress}%`
+      : isProcessing
+        ? 'Transcrevendo...'
+        : 'Toque no microfone para falar';
+
+  const hintText = isRecording
+    ? 'Diga algo como "gastei 50 no mercado"'
+    : isBusy
+      ? 'Aguarde o processamento...'
+      : 'Toque no botão abaixo e fale sua transação';
 
   return (
     <div
@@ -35,25 +57,35 @@ export function VoiceRecordingSheet({
         className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-bg px-6 pb-8 pt-6 shadow-soft"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Waveform bars — only animate when listening */}
+        {/* Waveform bars */}
         <div className="mb-4 flex items-center justify-center gap-1">
           {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className={`h-6 w-1 rounded-full ${isListening ? 'animate-pulse bg-danger' : 'bg-border'}`}
-              style={isListening ? { animationDelay: `${i * 150}ms` } : undefined}
+              className={`h-6 w-1 rounded-full ${isRecording ? 'animate-pulse bg-danger' : 'bg-border'}`}
+              style={isRecording ? { animationDelay: `${i * 150}ms` } : undefined}
             />
           ))}
         </div>
 
         {/* Status text */}
         <p
-          className={`mb-4 text-center text-lg font-semibold ${isListening ? 'text-danger' : 'text-text-muted'}`}
+          className={`mb-4 text-center text-lg font-semibold ${isRecording ? 'text-danger' : 'text-text-muted'}`}
         >
-          {isListening ? 'Ouvindo...' : 'Toque no microfone para falar'}
+          {statusText}
         </p>
 
-        {/* Transcript area */}
+        {/* Progress bar for model download */}
+        {isModelLoading && (
+          <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-border">
+            <div
+              className="h-full rounded-full bg-success transition-all"
+              style={{ width: `${modelProgress}%` }}
+            />
+          </div>
+        )}
+
+        {/* Transcript / hint area */}
         <div
           aria-live="polite"
           className="mb-6 min-h-[3rem] rounded-lg bg-surface px-4 py-3 text-center"
@@ -62,33 +94,38 @@ export function VoiceRecordingSheet({
             <p className="text-text">{transcript}</p>
           ) : error ? (
             <p className="text-danger">
-              Erro de conexão. Toque no microfone para tentar novamente.
+              Erro ao transcrever. Toque no microfone para tentar novamente.
             </p>
           ) : (
-            <p className="text-text-muted">
-              {isListening
-                ? 'Diga algo como "gastei 50 no mercado"'
-                : 'Toque no botão abaixo e fale sua transação'}
-            </p>
+            <p className="text-text-muted">{hintText}</p>
           )}
         </div>
 
-        {/* Toggle mic button */}
+        {/* Mic button */}
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
-            aria-label={isListening ? 'Parar gravação' : 'Iniciar gravação'}
-            onClick={isListening ? onStop : onStart}
+            aria-label={
+              isBusy
+                ? 'Aguarde o processamento'
+                : isRecording
+                  ? 'Parar gravação'
+                  : 'Iniciar gravação'
+            }
+            disabled={isBusy}
+            onClick={isRecording ? onStop : onStart}
             className={`flex h-16 w-16 items-center justify-center rounded-full transition-all select-none ${
-              isListening
-                ? 'scale-110 bg-danger text-white shadow-lg shadow-danger/30'
-                : 'bg-surface text-text-muted hover:bg-danger hover:text-white'
+              isBusy
+                ? 'cursor-not-allowed bg-border text-text-muted'
+                : isRecording
+                  ? 'scale-110 bg-danger text-white shadow-lg shadow-danger/30'
+                  : 'bg-surface text-text-muted hover:bg-danger hover:text-white'
             }`}
           >
             <IconMicrofone className="h-7 w-7" />
           </button>
           <span className="text-sm text-text-muted">
-            {isListening ? 'Toque para parar' : 'Toque para falar'}
+            {isBusy ? 'Processando...' : isRecording ? 'Toque para parar' : 'Toque para falar'}
           </span>
         </div>
       </div>

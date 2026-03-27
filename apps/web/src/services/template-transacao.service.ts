@@ -11,7 +11,7 @@ import type {
 import type { ApiClient } from './api-client';
 import { lazyApiClient } from './core-financeiro.service';
 
-export class TemplateTransacaoService {
+class TemplateTransacaoService {
   constructor(private readonly api: ApiClient) {}
 
   async listar(familiaId: string, tipo?: 'receita' | 'despesa'): Promise<TemplateTransacaoListResponse> {

@@ -89,6 +89,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     recognition.interimResults = true;
 
     recognition.onresult = (e: SpeechRecognitionEvent) => {
+      console.log('[speech] onresult');
       let interim = '';
       let final = '';
 
@@ -113,16 +114,16 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      if (FATAL_ERRORS.has(e.error)) {
-        const errorMap: Record<string, string> = {
-          'not-allowed': 'no-permission',
-          'service-not-allowed': 'no-permission',
-        };
-        setError(errorMap[e.error] ?? e.error);
-      }
+      console.log('[speech] onerror:', e.error);
+      const errorMap: Record<string, string> = {
+        'not-allowed': 'no-permission',
+        'service-not-allowed': 'no-permission',
+      };
+      setError(errorMap[e.error] ?? e.error);
     };
 
     recognition.onend = () => {
+      console.log('[speech] onend, lastInterim:', JSON.stringify(lastInterimRef.current));
       // Promote any pending interim to final
       if (lastInterimRef.current) {
         setFinalTranscript((prev) => prev + lastInterimRef.current);
@@ -132,11 +133,13 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognitionRef.current = recognition;
+    console.log('[speech] start()');
     recognition.start();
     setIsListening(true);
   }, []);
 
   const stop = useCallback(() => {
+    console.log('[speech] stop()');
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }

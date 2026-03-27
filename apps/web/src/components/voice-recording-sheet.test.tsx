@@ -13,14 +13,14 @@ describe('VoiceRecordingSheet', () => {
     isListening: false,
     transcript: '',
     error: null,
-    onPressStart: vi.fn(),
-    onPressEnd: vi.fn(),
+    onStart: vi.fn(),
+    onStop: vi.fn(),
     onClose: vi.fn(),
   };
 
   it('renders when open is true', () => {
     render(<VoiceRecordingSheet {...defaultProps} />);
-    expect(screen.getByText('Segure o botão para falar')).toBeInTheDocument();
+    expect(screen.getByText('Toque no microfone para falar')).toBeInTheDocument();
   });
 
   it('does NOT render when open is false', () => {
@@ -51,21 +51,21 @@ describe('VoiceRecordingSheet', () => {
 
   it('shows idle placeholder when not listening', () => {
     render(<VoiceRecordingSheet {...defaultProps} />);
-    expect(screen.getByText('Segure o botão abaixo e fale sua transação')).toBeInTheDocument();
+    expect(screen.getByText('Toque no botão abaixo e fale sua transação')).toBeInTheDocument();
   });
 
-  it('calls onPressStart on pointerDown', () => {
-    const onPressStart = vi.fn();
-    render(<VoiceRecordingSheet {...defaultProps} onPressStart={onPressStart} />);
-    fireEvent.pointerDown(screen.getByLabelText('Segure para falar'));
-    expect(onPressStart).toHaveBeenCalledTimes(1);
+  it('calls onStart when mic button clicked while not listening', () => {
+    const onStart = vi.fn();
+    render(<VoiceRecordingSheet {...defaultProps} onStart={onStart} />);
+    fireEvent.click(screen.getByLabelText('Iniciar gravação'));
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onPressEnd on pointerUp', () => {
-    const onPressEnd = vi.fn();
-    render(<VoiceRecordingSheet {...defaultProps} isListening={true} onPressEnd={onPressEnd} />);
-    fireEvent.pointerUp(screen.getByLabelText('Gravando — solte para parar'));
-    expect(onPressEnd).toHaveBeenCalledTimes(1);
+  it('calls onStop when mic button clicked while listening', () => {
+    const onStop = vi.fn();
+    render(<VoiceRecordingSheet {...defaultProps} isListening={true} onStop={onStop} />);
+    fireEvent.click(screen.getByLabelText('Parar gravação'));
+    expect(onStop).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when backdrop is clicked', () => {
@@ -77,6 +77,6 @@ describe('VoiceRecordingSheet', () => {
 
   it('shows error message', () => {
     render(<VoiceRecordingSheet {...defaultProps} error="no-permission" />);
-    expect(screen.getByText(/no-permission/)).toBeInTheDocument();
+    expect(screen.getByText(/Erro de conexão/)).toBeInTheDocument();
   });
 });

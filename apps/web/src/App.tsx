@@ -143,12 +143,12 @@ export const App = () => {
     setVoiceRecorded(false);
   }, []);
 
-  const handleVoicePressStart = useCallback(() => {
+  const handleVoiceStart = useCallback(() => {
     speech.start();
     setVoiceRecorded(true);
   }, [speech]);
 
-  const handleVoicePressEnd = useCallback(() => {
+  const handleVoiceStop = useCallback(() => {
     speech.stop();
   }, [speech]);
 
@@ -438,8 +438,8 @@ export const App = () => {
         isListening={speech.isListening}
         transcript={speech.transcript}
         error={speech.error}
-        onPressStart={handleVoicePressStart}
-        onPressEnd={handleVoicePressEnd}
+        onStart={handleVoiceStart}
+        onStop={handleVoiceStop}
         onClose={handleVoiceClose}
       />
     </>

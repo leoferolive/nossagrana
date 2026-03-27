@@ -5,8 +5,8 @@ interface VoiceRecordingSheetProps {
   isListening: boolean;
   transcript: string;
   error: string | null;
-  onPressStart: () => void;
-  onPressEnd: () => void;
+  onStart: () => void;
+  onStop: () => void;
   onClose: () => void;
 }
 
@@ -15,8 +15,8 @@ export function VoiceRecordingSheet({
   isListening,
   transcript,
   error,
-  onPressStart,
-  onPressEnd,
+  onStart,
+  onStop,
   onClose,
 }: VoiceRecordingSheetProps) {
   if (!open) {
@@ -25,7 +25,7 @@ export function VoiceRecordingSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60"
+      className="fixed inset-0 z-[60] bg-black/60"
       data-testid="voice-sheet-backdrop"
       onClick={onClose}
     >
@@ -50,7 +50,7 @@ export function VoiceRecordingSheet({
         <p
           className={`mb-4 text-center text-lg font-semibold ${isListening ? 'text-danger' : 'text-text-muted'}`}
         >
-          {isListening ? 'Ouvindo...' : 'Segure o botão para falar'}
+          {isListening ? 'Ouvindo...' : 'Toque no microfone para falar'}
         </p>
 
         {/* Transcript area */}
@@ -61,27 +61,24 @@ export function VoiceRecordingSheet({
           {transcript ? (
             <p className="text-text">{transcript}</p>
           ) : error ? (
-            <p className="text-danger">Erro: {error}. Tente novamente.</p>
+            <p className="text-danger">
+              Erro de conexão. Toque no microfone para tentar novamente.
+            </p>
           ) : (
             <p className="text-text-muted">
               {isListening
                 ? 'Diga algo como "gastei 50 no mercado"'
-                : 'Segure o botão abaixo e fale sua transação'}
+                : 'Toque no botão abaixo e fale sua transação'}
             </p>
           )}
         </div>
 
-        {/* Press-to-talk button */}
+        {/* Toggle mic button */}
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
-            aria-label={isListening ? 'Gravando — solte para parar' : 'Segure para falar'}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              onPressStart();
-            }}
-            onPointerUp={onPressEnd}
-            onPointerLeave={isListening ? onPressEnd : undefined}
+            aria-label={isListening ? 'Parar gravação' : 'Iniciar gravação'}
+            onClick={isListening ? onStop : onStart}
             className={`flex h-16 w-16 items-center justify-center rounded-full transition-all select-none ${
               isListening
                 ? 'scale-110 bg-danger text-white shadow-lg shadow-danger/30'
@@ -91,7 +88,7 @@ export function VoiceRecordingSheet({
             <IconMicrofone className="h-7 w-7" />
           </button>
           <span className="text-sm text-text-muted">
-            {isListening ? 'Solte para processar' : 'Segure para falar'}
+            {isListening ? 'Toque para parar' : 'Toque para falar'}
           </span>
         </div>
       </div>

@@ -3,7 +3,9 @@ import {
   CATEGORIAS_PADRAO_DESPESA,
   CATEGORIAS_PADRAO_RECEITA,
 } from '../../db/seeds/categorias-padrao.js';
+import { TEMPLATES_PADRAO } from '../../db/seeds/templates-padrao.js';
 import type { CategoriaRepository } from '../categoria/categoria.types.js';
+import type { TemplateTransacaoRepository } from '../template-transacao/template-transacao.types.js';
 import type { FamiliaRepository } from './familia.types.js';
 
 interface CreateFamiliaInput {
@@ -90,6 +92,7 @@ export class FamiliaService {
   constructor(
     private readonly familiaRepository: FamiliaRepository,
     private readonly categoriaRepository?: CategoriaRepository,
+    private readonly templateTransacaoRepository?: TemplateTransacaoRepository,
   ) {}
 
   async create(input: CreateFamiliaInput) {
@@ -125,6 +128,28 @@ export class FamiliaService {
         criadoPor: input.usuarioId,
         sistema: true,
       });
+
+      // Criar templates padrão vinculados às categorias recém-criadas
+      if (this.templateTransacaoRepository) {
+        const categorias = await this.categoriaRepository.listByFamiliaId({
+          familiaId: familia.id,
+        });
+        const catMap = new Map(categorias.map((c) => [`${c.nome}:${c.tipo}`, c.id]));
+
+        await Promise.all(
+          TEMPLATES_PADRAO.map((t) => {
+            const categoriaId = catMap.get(`${t.categoria}:${t.tipo}`) ?? null;
+            return this.templateTransacaoRepository!.create({
+              familiaId: familia.id,
+              nome: t.nome,
+              tipo: t.tipo,
+              categoriaId,
+              ordem: t.ordem,
+              criadoPor: input.usuarioId,
+            });
+          }),
+        );
+      }
     }
 
     return familia;

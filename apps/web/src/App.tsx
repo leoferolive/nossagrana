@@ -19,6 +19,7 @@ import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
 import { CofrinhoDetalhePage } from '@/pages/cofrinho-detalhe-page';
 import { CofrinhosPage } from '@/pages/cofrinhos-page';
+import { LancamentosPage } from '@/pages/lancamentos-page';
 import { ConfiguracoesPage } from '@/pages/configuracoes-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
@@ -54,7 +55,8 @@ type Screen =
   | 'configuracoes'
   | 'perfil'
   | 'cofrinhos'
-  | 'cofrinho-detalhe';
+  | 'cofrinho-detalhe'
+  | 'lancamentos';
 
 type Transacao = TransacaoListResponse['transacoes'][number];
 
@@ -329,6 +331,10 @@ export const App = () => {
           onNavigate={(s) => setScreen(s as Screen)}
         />
       );
+    }
+
+    if (screen === 'lancamentos') {
+      return <LancamentosPage familiaId={familiaId} onNavigate={(s) => setScreen(s as Screen)} />;
     }
 
     if (screen === 'relatorios') {

@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { InMemoryCategoriaRepository } from '../categoria/categoria.repository.js';
+import { InMemoryTemplateTransacaoRepository } from '../template-transacao/template-transacao.repository.js';
 import {
   CATEGORIAS_PADRAO_DESPESA,
   CATEGORIAS_PADRAO_RECEITA,
   CATEGORIA_SISTEMA_COFRINHO,
 } from '../../db/seeds/categorias-padrao.js';
+import { TEMPLATES_PADRAO } from '../../db/seeds/templates-padrao.js';
 import {
   FamiliaMemberNotFoundError,
   FamiliaNotFoundError,
@@ -55,6 +57,24 @@ describe('FamiliaService', () => {
 
     const cofrinho = categorias.find((c) => c.nome === CATEGORIA_SISTEMA_COFRINHO);
     expect(cofrinho?.sistema).toBe(true);
+  });
+
+  it('seeds default templates when creating a family', async () => {
+    const familiaRepository = buildRepository();
+    const categoriaRepository = new InMemoryCategoriaRepository();
+    const templateRepository = new InMemoryTemplateTransacaoRepository();
+    const service = new FamiliaService(familiaRepository, categoriaRepository, templateRepository);
+
+    await service.create({ nome: 'Familia Teste', usuarioId: 'u1' });
+
+    const templates = await templateRepository.listByFamiliaId({ familiaId: 'f1' });
+    expect(templates).toHaveLength(TEMPLATES_PADRAO.length);
+
+    const nomes = templates.map((t) => t.nome);
+    expect(nomes).toContain('Salário');
+    expect(nomes).toContain('Luz');
+    expect(nomes).toContain('Supermercado');
+    expect(nomes).toContain('Combustível');
   });
 
   it('blocks invite creation for non-admin user', async () => {

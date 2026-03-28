@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BarChart2,
   CalendarDays,
+  ClipboardList,
   CreditCard,
   HelpCircle,
   House,
@@ -29,6 +30,7 @@ const navGroups = [
       { id: 'extrato', icon: Receipt, label: 'Extrato' },
       { id: 'relatorios', icon: BarChart2, label: 'Relatórios' },
       { id: 'historico', icon: CalendarDays, label: 'Histórico' },
+      { id: 'lancamentos', icon: ClipboardList, label: 'Lançamentos' },
     ],
   },
   {

@@ -19,6 +19,10 @@ import {
   DrizzleCategoriaRepository,
   InMemoryCategoriaRepository,
 } from '../categoria/categoria.repository.js';
+import {
+  DrizzleTemplateTransacaoRepository,
+  InMemoryTemplateTransacaoRepository,
+} from '../template-transacao/template-transacao.repository.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 import {
   familiaBuscarSchema,
@@ -50,10 +54,18 @@ import {
 
 const defaultFamiliaService = (): FamiliaService => {
   if (env.NODE_ENV === 'test') {
-    return new FamiliaService(new InMemoryFamiliaRepository(), new InMemoryCategoriaRepository());
+    return new FamiliaService(
+      new InMemoryFamiliaRepository(),
+      new InMemoryCategoriaRepository(),
+      new InMemoryTemplateTransacaoRepository(),
+    );
   }
 
-  return new FamiliaService(new DrizzleFamiliaRepository(), new DrizzleCategoriaRepository());
+  return new FamiliaService(
+    new DrizzleFamiliaRepository(),
+    new DrizzleCategoriaRepository(),
+    new DrizzleTemplateTransacaoRepository(),
+  );
 };
 
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {

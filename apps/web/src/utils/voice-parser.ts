@@ -1,4 +1,4 @@
-export interface VoiceParseResult {
+interface VoiceParseResult {
   tipo: 'receita' | 'despesa' | null;
   valor: string | null;
   descricao: string | null;

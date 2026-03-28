@@ -898,3 +898,5 @@ export const dashboardCofrinhoResponseSchema = z.object({
   cofrinhos: z.array(cofrinhoResumoSchema),
 });
 export type DashboardCofrinhoResponse = z.infer<typeof dashboardCofrinhoResponseSchema>;
+
+export * from './template-transacao.js';

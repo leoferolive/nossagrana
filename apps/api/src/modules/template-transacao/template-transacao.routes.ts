@@ -40,6 +40,7 @@ const testTransacaoCreator = {
   criar: async () => ({ id: randomUUID() }),
 };
 
+/* v8 ignore start -- production wiring requires real DB */
 const realTransacaoCreator = {
   criar: async (input: {
     familiaId: string;
@@ -91,6 +92,8 @@ const realGetCategoriaCofrinho = async (familiaId: string) => {
   return cat;
 };
 
+/* v8 ignore stop */
+
 const defaultService = (): TemplateTransacaoService => {
   if (env.NODE_ENV === 'test') {
     return new TemplateTransacaoService(
@@ -104,6 +107,7 @@ const defaultService = (): TemplateTransacaoService => {
     );
   }
 
+  /* v8 ignore next 8 -- production wiring */
   return new TemplateTransacaoService(
     new DrizzleTemplateTransacaoRepository(),
     realTransacaoCreator,

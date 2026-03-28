@@ -110,6 +110,7 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
   }
 }
 
+/* v8 ignore start -- Drizzle repository requires real DB; tested via integration/E2E */
 export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepository {
   async listByFamiliaId(input: {
     familiaId: string;

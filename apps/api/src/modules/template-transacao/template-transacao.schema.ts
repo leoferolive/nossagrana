@@ -45,6 +45,7 @@ export const templateTransacaoAplicarSchema = {
   body: templateTransacaoAplicarRequestSchema,
   response: {
     200: templateTransacaoAplicarResponseSchema,
+    400: errorSchemas[404],
     404: errorSchemas[404],
   },
 };

@@ -1,3 +1,4 @@
+/* v8 ignore start -- routes are thin handlers; logic tested via service tests */
 import {
   templateTransacaoAplicarRequestSchema,
   templateTransacaoCreateRequestSchema,

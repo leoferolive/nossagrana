@@ -50,7 +50,10 @@ export interface ReordenarItem {
 }
 
 export interface TemplateTransacaoRepository {
-  listByFamiliaId(input: { familiaId: string; tipo?: 'receita' | 'despesa' }): Promise<TemplateTransacaoWithJoins[]>;
+  listByFamiliaId(input: {
+    familiaId: string;
+    tipo?: 'receita' | 'despesa';
+  }): Promise<TemplateTransacaoWithJoins[]>;
   findById(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null>;
   findByIds(input: { ids: string[]; familiaId: string }): Promise<TemplateTransacao[]>;
   create(input: CreateTemplateTransacaoInput): Promise<TemplateTransacao>;

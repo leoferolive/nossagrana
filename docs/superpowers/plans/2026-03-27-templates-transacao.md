@@ -18,43 +18,44 @@
 
 ### Novos Arquivos
 
-| Arquivo | Responsabilidade |
-|---------|-----------------|
-| `packages/types/src/template-transacao.ts` | Zod schemas e tipos compartilhados |
-| `apps/api/src/db/migrations/0007_*.sql` | Migration da tabela `templates_transacao` |
-| `apps/api/src/modules/template-transacao/template-transacao.types.ts` | Interfaces do domínio |
-| `apps/api/src/modules/template-transacao/template-transacao.schema.ts` | Schemas Fastify |
-| `apps/api/src/modules/template-transacao/template-transacao.repository.ts` | Drizzle + InMemory repos |
-| `apps/api/src/modules/template-transacao/template-transacao.service.ts` | Lógica de negócio |
-| `apps/api/src/modules/template-transacao/template-transacao.routes.ts` | Endpoints Fastify |
-| `apps/api/src/modules/template-transacao/template-transacao.service.test.ts` | Testes do service |
-| `apps/api/src/modules/template-transacao/template-transacao.repository.test.ts` | Testes do repository |
-| `apps/api/src/scripts/seed-templates.ts` | Seed dos 51 templates da planilha |
-| `apps/web/src/services/template-transacao.service.ts` | Chamadas à API |
-| `apps/web/src/stores/template-transacao.store.ts` | Zustand store |
-| `apps/web/src/pages/lancamentos-page.tsx` | Página principal |
-| `apps/web/src/pages/lancamentos-page.test.tsx` | Testes da página |
-| `apps/web/src/components/template-grupo.tsx` | Grupo de templates por categoria |
-| `apps/web/src/components/template-valor-input.tsx` | Input de valor por template |
-| `apps/web/src/components/lancamentos-resumo.tsx` | Card de totais |
+| Arquivo                                                                         | Responsabilidade                          |
+| ------------------------------------------------------------------------------- | ----------------------------------------- |
+| `packages/types/src/template-transacao.ts`                                      | Zod schemas e tipos compartilhados        |
+| `apps/api/src/db/migrations/0007_*.sql`                                         | Migration da tabela `templates_transacao` |
+| `apps/api/src/modules/template-transacao/template-transacao.types.ts`           | Interfaces do domínio                     |
+| `apps/api/src/modules/template-transacao/template-transacao.schema.ts`          | Schemas Fastify                           |
+| `apps/api/src/modules/template-transacao/template-transacao.repository.ts`      | Drizzle + InMemory repos                  |
+| `apps/api/src/modules/template-transacao/template-transacao.service.ts`         | Lógica de negócio                         |
+| `apps/api/src/modules/template-transacao/template-transacao.routes.ts`          | Endpoints Fastify                         |
+| `apps/api/src/modules/template-transacao/template-transacao.service.test.ts`    | Testes do service                         |
+| `apps/api/src/modules/template-transacao/template-transacao.repository.test.ts` | Testes do repository                      |
+| `apps/api/src/scripts/seed-templates.ts`                                        | Seed dos 51 templates da planilha         |
+| `apps/web/src/services/template-transacao.service.ts`                           | Chamadas à API                            |
+| `apps/web/src/stores/template-transacao.store.ts`                               | Zustand store                             |
+| `apps/web/src/pages/lancamentos-page.tsx`                                       | Página principal                          |
+| `apps/web/src/pages/lancamentos-page.test.tsx`                                  | Testes da página                          |
+| `apps/web/src/components/template-grupo.tsx`                                    | Grupo de templates por categoria          |
+| `apps/web/src/components/template-valor-input.tsx`                              | Input de valor por template               |
+| `apps/web/src/components/lancamentos-resumo.tsx`                                | Card de totais                            |
 
 ### Arquivos Modificados
 
-| Arquivo | Mudança |
-|---------|---------|
-| `apps/api/src/db/schema.ts` | Adicionar tabela `templatesTransacao` |
-| `apps/api/src/app.ts:17,70` | Registrar `templateTransacaoRoutes` |
+| Arquivo                                                             | Mudança                                                 |
+| ------------------------------------------------------------------- | ------------------------------------------------------- |
+| `apps/api/src/db/schema.ts`                                         | Adicionar tabela `templatesTransacao`                   |
+| `apps/api/src/app.ts:17,70`                                         | Registrar `templateTransacaoRoutes`                     |
 | `apps/api/src/modules/cofrinho/cofrinho.service.ts:108-117,132-133` | Aceitar `mesReferencia`/`data` opcionais no `aportar()` |
-| `apps/api/src/modules/cofrinho/cofrinho.service.test.ts` | Teste do `aportar()` com `mesReferencia` |
-| `packages/types/src/index.ts` | Re-exportar `template-transacao.ts` |
-| `apps/web/src/App.tsx:39-57` | Adicionar Screen `'lancamentos'` e rota |
-| `apps/web/src/components/sidebar.tsx:25-48` | Adicionar item "Lançamentos" |
+| `apps/api/src/modules/cofrinho/cofrinho.service.test.ts`            | Teste do `aportar()` com `mesReferencia`                |
+| `packages/types/src/index.ts`                                       | Re-exportar `template-transacao.ts`                     |
+| `apps/web/src/App.tsx:39-57`                                        | Adicionar Screen `'lancamentos'` e rota                 |
+| `apps/web/src/components/sidebar.tsx:25-48`                         | Adicionar item "Lançamentos"                            |
 
 ---
 
 ## Task 1: Shared Types (packages/types)
 
 **Files:**
+
 - Create: `packages/types/src/template-transacao.ts`
 - Modify: `packages/types/src/index.ts`
 
@@ -103,7 +104,11 @@ export const templateTransacaoCreateRequestSchema = z.object({
   categoriaId: z.string().uuid().nullable().optional(),
   metodoPagamentoId: z.string().uuid().nullable().optional(),
   cofrinhoId: z.string().uuid().nullable().optional(),
-  valorPadrao: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+  valorPadrao: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/)
+    .nullable()
+    .optional(),
   ordem: z.number().int().min(0).optional().default(0),
 });
 export type TemplateTransacaoCreateRequest = z.infer<typeof templateTransacaoCreateRequestSchema>;
@@ -119,7 +124,11 @@ export const templateTransacaoUpdateRequestSchema = z.object({
   categoriaId: z.string().uuid().nullable().optional(),
   metodoPagamentoId: z.string().uuid().nullable().optional(),
   cofrinhoId: z.string().uuid().nullable().optional(),
-  valorPadrao: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+  valorPadrao: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/)
+    .nullable()
+    .optional(),
   ordem: z.number().int().min(0).optional(),
 });
 export type TemplateTransacaoUpdateRequest = z.infer<typeof templateTransacaoUpdateRequestSchema>;
@@ -149,7 +158,9 @@ export const templateTransacaoAplicarResponseSchema = z.object({
   aportesCriados: z.number().int(),
   total: z.number().int(),
 });
-export type TemplateTransacaoAplicarResponse = z.infer<typeof templateTransacaoAplicarResponseSchema>;
+export type TemplateTransacaoAplicarResponse = z.infer<
+  typeof templateTransacaoAplicarResponseSchema
+>;
 
 // --- Reordenar request ---
 export const templateTransacaoReordenarItemSchema = z.object({
@@ -160,7 +171,9 @@ export const templateTransacaoReordenarItemSchema = z.object({
 export const templateTransacaoReordenarRequestSchema = z.object({
   itens: z.array(templateTransacaoReordenarItemSchema).min(1),
 });
-export type TemplateTransacaoReordenarRequest = z.infer<typeof templateTransacaoReordenarRequestSchema>;
+export type TemplateTransacaoReordenarRequest = z.infer<
+  typeof templateTransacaoReordenarRequestSchema
+>;
 
 // --- List query ---
 export const templateTransacaoListQuerySchema = z.object({
@@ -193,6 +206,7 @@ git commit -m "feat(types): schemas e tipos para template-transacao"
 ## Task 2: Schema Drizzle + Migration
 
 **Files:**
+
 - Modify: `apps/api/src/db/schema.ts`
 - Create: migration via `drizzle-kit generate`
 
@@ -242,6 +256,7 @@ Expected: Cria arquivo em `apps/api/src/db/migrations/0007_*.sql`
 - [ ] **Step 3: Revisar SQL gerado**
 
 Verificar que o SQL contém:
+
 - `CREATE TABLE templates_transacao` com todas as colunas
 - FKs para `familias`, `categorias`, `metodos_pagamento`, `cofrinhos`, `users`
 - Índice em `familia_id`
@@ -260,6 +275,7 @@ git commit -m "feat(db): tabela templates_transacao com migration"
 ## Task 3: Backend Types + InMemory Repository
 
 **Files:**
+
 - Create: `apps/api/src/modules/template-transacao/template-transacao.types.ts`
 - Create: `apps/api/src/modules/template-transacao/template-transacao.repository.ts`
 - Create: `apps/api/src/modules/template-transacao/template-transacao.repository.test.ts`
@@ -326,29 +342,17 @@ export interface TemplateTransacaoRepository {
     tipo?: 'receita' | 'despesa';
   }): Promise<TemplateTransacaoWithJoins[]>;
 
-  findById(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<TemplateTransacao | null>;
+  findById(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null>;
 
-  findByIds(input: {
-    ids: string[];
-    familiaId: string;
-  }): Promise<TemplateTransacao[]>;
+  findByIds(input: { ids: string[]; familiaId: string }): Promise<TemplateTransacao[]>;
 
   create(input: CreateTemplateTransacaoInput): Promise<TemplateTransacao>;
 
   update(input: UpdateTemplateTransacaoInput): Promise<TemplateTransacao | null>;
 
-  deactivate(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<TemplateTransacao | null>;
+  deactivate(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null>;
 
-  reordenar(input: {
-    familiaId: string;
-    itens: ReordenarItem[];
-  }): Promise<void>;
+  reordenar(input: { familiaId: string; itens: ReordenarItem[] }): Promise<void>;
 }
 ```
 
@@ -376,10 +380,7 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
   }): Promise<TemplateTransacaoWithJoins[]> {
     return this.templates
       .filter(
-        (t) =>
-          t.familiaId === input.familiaId &&
-          t.ativo &&
-          (!input.tipo || t.tipo === input.tipo),
+        (t) => t.familiaId === input.familiaId && t.ativo && (!input.tipo || t.tipo === input.tipo),
       )
       .sort((a, b) => a.ordem - b.ordem)
       .map((t) => ({
@@ -391,21 +392,11 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
       }));
   }
 
-  async findById(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<TemplateTransacao | null> {
-    return (
-      this.templates.find(
-        (t) => t.id === input.id && t.familiaId === input.familiaId,
-      ) ?? null
-    );
+  async findById(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null> {
+    return this.templates.find((t) => t.id === input.id && t.familiaId === input.familiaId) ?? null;
   }
 
-  async findByIds(input: {
-    ids: string[];
-    familiaId: string;
-  }): Promise<TemplateTransacao[]> {
+  async findByIds(input: { ids: string[]; familiaId: string }): Promise<TemplateTransacao[]> {
     return this.templates.filter(
       (t) => input.ids.includes(t.id) && t.familiaId === input.familiaId && t.ativo,
     );
@@ -444,9 +435,7 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
       nome: input.nome ?? current.nome,
       categoriaId: input.categoriaId !== undefined ? input.categoriaId : current.categoriaId,
       metodoPagamentoId:
-        input.metodoPagamentoId !== undefined
-          ? input.metodoPagamentoId
-          : current.metodoPagamentoId,
+        input.metodoPagamentoId !== undefined ? input.metodoPagamentoId : current.metodoPagamentoId,
       cofrinhoId: input.cofrinhoId !== undefined ? input.cofrinhoId : current.cofrinhoId,
       ordem: input.ordem ?? current.ordem,
       valorPadrao: input.valorPadrao !== undefined ? input.valorPadrao : current.valorPadrao,
@@ -456,10 +445,7 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
     return updated;
   }
 
-  async deactivate(input: {
-    id: string;
-    familiaId: string;
-  }): Promise<TemplateTransacao | null> {
+  async deactivate(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null> {
     const idx = this.templates.findIndex(
       (t) => t.id === input.id && t.familiaId === input.familiaId,
     );
@@ -473,10 +459,7 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
     return this.templates[idx];
   }
 
-  async reordenar(input: {
-    familiaId: string;
-    itens: ReordenarItem[];
-  }): Promise<void> {
+  async reordenar(input: { familiaId: string; itens: ReordenarItem[] }): Promise<void> {
     for (const item of input.itens) {
       const idx = this.templates.findIndex(
         (t) => t.id === item.id && t.familiaId === input.familiaId,
@@ -511,12 +494,18 @@ describe('InMemoryTemplateTransacaoRepository', () => {
 
   it('cria e lista templates por familiaId', async () => {
     await repo.create({
-      familiaId: 'f1', nome: 'Luz', tipo: 'despesa',
-      categoriaId: 'cat1', criadoPor: 'u1',
+      familiaId: 'f1',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'cat1',
+      criadoPor: 'u1',
     });
     await repo.create({
-      familiaId: 'f2', nome: 'Salário', tipo: 'receita',
-      categoriaId: 'cat2', criadoPor: 'u2',
+      familiaId: 'f2',
+      nome: 'Salário',
+      tipo: 'receita',
+      categoriaId: 'cat2',
+      criadoPor: 'u2',
     });
 
     const f1 = await repo.listByFamiliaId({ familiaId: 'f1' });
@@ -525,8 +514,20 @@ describe('InMemoryTemplateTransacaoRepository', () => {
   });
 
   it('filtra por tipo', async () => {
-    await repo.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
-    await repo.create({ familiaId: 'f1', nome: 'Salário', tipo: 'receita', categoriaId: 'c2', criadoPor: 'u1' });
+    await repo.create({
+      familiaId: 'f1',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+    });
+    await repo.create({
+      familiaId: 'f1',
+      nome: 'Salário',
+      tipo: 'receita',
+      categoriaId: 'c2',
+      criadoPor: 'u1',
+    });
 
     const receitas = await repo.listByFamiliaId({ familiaId: 'f1', tipo: 'receita' });
     expect(receitas).toHaveLength(1);
@@ -534,7 +535,13 @@ describe('InMemoryTemplateTransacaoRepository', () => {
   });
 
   it('não lista templates inativos', async () => {
-    const t = await repo.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+    const t = await repo.create({
+      familiaId: 'f1',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+    });
     await repo.deactivate({ id: t.id, familiaId: 'f1' });
 
     const lista = await repo.listByFamiliaId({ familiaId: 'f1' });
@@ -542,8 +549,20 @@ describe('InMemoryTemplateTransacaoRepository', () => {
   });
 
   it('isolamento multi-tenant: família A não vê templates de família B', async () => {
-    await repo.create({ familiaId: 'fA', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
-    await repo.create({ familiaId: 'fB', nome: 'Gás', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u2' });
+    await repo.create({
+      familiaId: 'fA',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+    });
+    await repo.create({
+      familiaId: 'fB',
+      nome: 'Gás',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u2',
+    });
 
     const fA = await repo.listByFamiliaId({ familiaId: 'fA' });
     expect(fA).toHaveLength(1);
@@ -554,7 +573,13 @@ describe('InMemoryTemplateTransacaoRepository', () => {
   });
 
   it('update parcial', async () => {
-    const t = await repo.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+    const t = await repo.create({
+      familiaId: 'f1',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+    });
     const updated = await repo.update({ id: t.id, familiaId: 'f1', nome: 'Energia' });
 
     expect(updated?.nome).toBe('Energia');
@@ -562,10 +587,30 @@ describe('InMemoryTemplateTransacaoRepository', () => {
   });
 
   it('reordena templates', async () => {
-    const t1 = await repo.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1', ordem: 0 });
-    const t2 = await repo.create({ familiaId: 'f1', nome: 'Gás', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1', ordem: 1 });
+    const t1 = await repo.create({
+      familiaId: 'f1',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+      ordem: 0,
+    });
+    const t2 = await repo.create({
+      familiaId: 'f1',
+      nome: 'Gás',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+      ordem: 1,
+    });
 
-    await repo.reordenar({ familiaId: 'f1', itens: [{ id: t1.id, ordem: 1 }, { id: t2.id, ordem: 0 }] });
+    await repo.reordenar({
+      familiaId: 'f1',
+      itens: [
+        { id: t1.id, ordem: 1 },
+        { id: t2.id, ordem: 0 },
+      ],
+    });
 
     const lista = await repo.listByFamiliaId({ familiaId: 'f1' });
     expect(lista[0].nome).toBe('Gás');
@@ -573,8 +618,20 @@ describe('InMemoryTemplateTransacaoRepository', () => {
   });
 
   it('findByIds retorna apenas templates ativos da família', async () => {
-    const t1 = await repo.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
-    const t2 = await repo.create({ familiaId: 'f1', nome: 'Gás', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+    const t1 = await repo.create({
+      familiaId: 'f1',
+      nome: 'Luz',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+    });
+    const t2 = await repo.create({
+      familiaId: 'f1',
+      nome: 'Gás',
+      tipo: 'despesa',
+      categoriaId: 'c1',
+      criadoPor: 'u1',
+    });
     await repo.deactivate({ id: t2.id, familiaId: 'f1' });
 
     const found = await repo.findByIds({ ids: [t1.id, t2.id], familiaId: 'f1' });
@@ -601,6 +658,7 @@ git commit -m "feat(api): types e InMemory repository para template-transacao"
 ## Task 4: Service (CRUD + Aplicar)
 
 **Files:**
+
 - Create: `apps/api/src/modules/template-transacao/template-transacao.service.ts`
 - Create: `apps/api/src/modules/template-transacao/template-transacao.service.test.ts`
 
@@ -638,24 +696,45 @@ describe('TemplateTransacaoService', () => {
   describe('create', () => {
     it('cria template com sucesso', async () => {
       const t = await service.create({
-        familiaId: 'f1', nome: 'Luz', tipo: 'despesa',
-        categoriaId: 'c1', criadoPor: 'u1',
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
       });
       expect(t.nome).toBe('Luz');
       expect(t.ativo).toBe(true);
     });
 
     it('rejeita duplicata (mesmo nome + tipo + família)', async () => {
-      await service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+      await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
       await expect(
-        service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c2', criadoPor: 'u1' }),
+        service.create({
+          familiaId: 'f1',
+          nome: 'Luz',
+          tipo: 'despesa',
+          categoriaId: 'c2',
+          criadoPor: 'u1',
+        }),
       ).rejects.toThrow(TemplateTransacaoDuplicateError);
     });
   });
 
   describe('update', () => {
     it('atualiza template existente', async () => {
-      const t = await service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+      const t = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
       const updated = await service.update({ id: t.id, familiaId: 'f1', nome: 'Energia Elétrica' });
       expect(updated.nome).toBe('Energia Elétrica');
     });
@@ -669,7 +748,13 @@ describe('TemplateTransacaoService', () => {
 
   describe('deactivate', () => {
     it('desativa template', async () => {
-      const t = await service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+      const t = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
       const result = await service.deactivate({ id: t.id, familiaId: 'f1' });
       expect(result.ativo).toBe(false);
     });
@@ -677,7 +762,13 @@ describe('TemplateTransacaoService', () => {
 
   describe('aplicar', () => {
     it('cria transações normais para templates sem cofrinho', async () => {
-      const t = await service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+      const t = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
 
       const result = await service.aplicar({
         familiaId: 'f1',
@@ -703,7 +794,13 @@ describe('TemplateTransacaoService', () => {
     });
 
     it('chama cofrinhoService.aportar para templates com cofrinhoId', async () => {
-      const t = await service.create({ familiaId: 'f1', nome: 'Fundo Emergência', tipo: 'despesa', cofrinhoId: 'cof-1', criadoPor: 'u1' });
+      const t = await service.create({
+        familiaId: 'f1',
+        nome: 'Fundo Emergência',
+        tipo: 'despesa',
+        cofrinhoId: 'cof-1',
+        criadoPor: 'u1',
+      });
 
       const result = await service.aplicar({
         familiaId: 'f1',
@@ -728,8 +825,20 @@ describe('TemplateTransacaoService', () => {
     });
 
     it('filtra itens com valor zero', async () => {
-      const t1 = await service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
-      const t2 = await service.create({ familiaId: 'f1', nome: 'Gás', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+      const t1 = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
+      const t2 = await service.create({
+        familiaId: 'f1',
+        nome: 'Gás',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
 
       const result = await service.aplicar({
         familiaId: 'f1',
@@ -746,7 +855,13 @@ describe('TemplateTransacaoService', () => {
     });
 
     it('lança erro se template não pertence à família', async () => {
-      const t = await service.create({ familiaId: 'f1', nome: 'Luz', tipo: 'despesa', categoriaId: 'c1', criadoPor: 'u1' });
+      const t = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
 
       await expect(
         service.aplicar({
@@ -836,9 +951,7 @@ export class TemplateTransacaoService {
     const existing = await this.repository.listByFamiliaId({
       familiaId: input.familiaId,
     });
-    const duplicate = existing.find(
-      (t) => t.nome === input.nome && t.tipo === input.tipo,
-    );
+    const duplicate = existing.find((t) => t.nome === input.nome && t.tipo === input.tipo);
     if (duplicate) {
       throw new TemplateTransacaoDuplicateError();
     }
@@ -948,6 +1061,7 @@ git commit -m "feat(api): service template-transacao com CRUD e aplicar"
 ## Task 5: Drizzle Repository
 
 **Files:**
+
 - Modify: `apps/api/src/modules/template-transacao/template-transacao.repository.ts`
 
 - [ ] **Step 1: Adicionar DrizzleTemplateTransacaoRepository**
@@ -1017,10 +1131,7 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
       .select()
       .from(templatesTransacao)
       .where(
-        and(
-          eq(templatesTransacao.id, input.id),
-          eq(templatesTransacao.familiaId, input.familiaId),
-        ),
+        and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)),
       );
     return row ? { ...row, tipo: row.tipo as 'receita' | 'despesa' } : null;
   }
@@ -1070,10 +1181,7 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
       .update(templatesTransacao)
       .set(values)
       .where(
-        and(
-          eq(templatesTransacao.id, input.id),
-          eq(templatesTransacao.familiaId, input.familiaId),
-        ),
+        and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)),
       )
       .returning();
     return row ? { ...row, tipo: row.tipo as 'receita' | 'despesa' } : null;
@@ -1084,10 +1192,7 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
       .update(templatesTransacao)
       .set({ ativo: false, atualizadoEm: new Date() })
       .where(
-        and(
-          eq(templatesTransacao.id, input.id),
-          eq(templatesTransacao.familiaId, input.familiaId),
-        ),
+        and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)),
       )
       .returning();
     return row ? { ...row, tipo: row.tipo as 'receita' | 'despesa' } : null;
@@ -1126,6 +1231,7 @@ git commit -m "feat(api): Drizzle repository para template-transacao"
 ## Task 6: Fastify Schema + Routes + Registro
 
 **Files:**
+
 - Create: `apps/api/src/modules/template-transacao/template-transacao.schema.ts`
 - Create: `apps/api/src/modules/template-transacao/template-transacao.routes.ts`
 - Modify: `apps/api/src/app.ts`
@@ -1222,11 +1328,7 @@ const defaultService = (): TemplateTransacaoService => {
     aportar: async () => ({ cofrinho: {}, movimentacao: {} }),
   };
 
-  return new TemplateTransacaoService(
-    repo,
-    transacaoCreator as never,
-    cofrinhoService as never,
-  );
+  return new TemplateTransacaoService(repo, transacaoCreator as never, cofrinhoService as never);
 };
 
 export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
@@ -1420,7 +1522,7 @@ import { templateTransacaoRoutes } from './modules/template-transacao/template-t
 Adicionar registro após a linha 70 (após `app.register(relatorioRoutes, ...)`):
 
 ```typescript
-  app.register(templateTransacaoRoutes, { prefix: '/api' });
+app.register(templateTransacaoRoutes, { prefix: '/api' });
 ```
 
 - [ ] **Step 4: Verificar build compila**
@@ -1440,6 +1542,7 @@ git commit -m "feat(api): routes e schemas Fastify para template-transacao"
 ## Task 7: Estender CofrinhoService.aportar() para aceitar mesReferencia/data
 
 **Files:**
+
 - Modify: `apps/api/src/modules/cofrinho/cofrinho.service.ts:108-117,132-133`
 - Modify: `apps/api/src/modules/cofrinho/cofrinho.service.test.ts`
 
@@ -1488,8 +1591,8 @@ Em `apps/api/src/modules/cofrinho/cofrinho.service.ts`, linhas 108-117, adiciona
 Nas linhas 132-133, usar os valores do input se fornecidos:
 
 ```typescript
-    const mesReferencia = input.mesReferencia ?? getMesReferencia();
-    const data = input.data ?? getDataHoje();
+const mesReferencia = input.mesReferencia ?? getMesReferencia();
+const data = input.data ?? getDataHoje();
 ```
 
 - [ ] **Step 3: Rodar testes (Green)**
@@ -1509,6 +1612,7 @@ git commit -m "feat(api): CofrinhoService.aportar aceita mesReferencia/data opci
 ## Task 8: Wire Up Real Dependencies nas Routes
 
 **Files:**
+
 - Modify: `apps/api/src/modules/template-transacao/template-transacao.routes.ts`
 
 - [ ] **Step 1: Conectar TransacaoCreator e CofrinhoService reais**
@@ -1516,6 +1620,7 @@ git commit -m "feat(api): CofrinhoService.aportar aceita mesReferencia/data opci
 Substituir o `defaultService()` placeholder nas routes por wiring real. Verificar como os outros módulos (cofrinho.routes.ts) instanciam dependências e seguir o mesmo padrão.
 
 A `defaultService()` deve:
+
 1. Instanciar `DrizzleTemplateTransacaoRepository` (ou InMemory em testes)
 2. Criar um adapter `TransacaoCreator` que chama `TransacaoService.registrar()` (adaptando a interface)
 3. Instanciar `CofrinhoService` com suas dependências reais
@@ -1539,6 +1644,7 @@ git commit -m "feat(api): wire up dependências reais no template-transacao rout
 ## Task 9: Frontend Service + Store
 
 **Files:**
+
 - Create: `apps/web/src/services/template-transacao.service.ts`
 - Create: `apps/web/src/stores/template-transacao.store.ts`
 
@@ -1567,10 +1673,9 @@ export class TemplateTransacaoService {
     tipo?: 'receita' | 'despesa',
   ): Promise<TemplateTransacaoListResponse> {
     const query = tipo ? `?tipo=${tipo}` : '';
-    return this.api.request<TemplateTransacaoListResponse>(
-      `/api/templates-transacao${query}`,
-      { headers: { 'X-Familia-Id': familiaId } },
-    );
+    return this.api.request<TemplateTransacaoListResponse>(`/api/templates-transacao${query}`, {
+      headers: { 'X-Familia-Id': familiaId },
+    });
   }
 
   async criar(
@@ -1589,14 +1694,11 @@ export class TemplateTransacaoService {
     id: string,
     payload: TemplateTransacaoUpdateRequest,
   ): Promise<TemplateTransacaoCreateResponse> {
-    return this.api.request<TemplateTransacaoCreateResponse>(
-      `/api/templates-transacao/${id}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'X-Familia-Id': familiaId },
-        body: JSON.stringify(payload),
-      },
-    );
+    return this.api.request<TemplateTransacaoCreateResponse>(`/api/templates-transacao/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Familia-Id': familiaId },
+      body: JSON.stringify(payload),
+    });
   }
 
   async excluir(familiaId: string, id: string): Promise<void> {
@@ -1610,20 +1712,14 @@ export class TemplateTransacaoService {
     familiaId: string,
     payload: TemplateTransacaoAplicarRequest,
   ): Promise<TemplateTransacaoAplicarResponse> {
-    return this.api.request<TemplateTransacaoAplicarResponse>(
-      '/api/templates-transacao/aplicar',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Familia-Id': familiaId },
-        body: JSON.stringify(payload),
-      },
-    );
+    return this.api.request<TemplateTransacaoAplicarResponse>('/api/templates-transacao/aplicar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Familia-Id': familiaId },
+      body: JSON.stringify(payload),
+    });
   }
 
-  async reordenar(
-    familiaId: string,
-    payload: TemplateTransacaoReordenarRequest,
-  ): Promise<void> {
+  async reordenar(familiaId: string, payload: TemplateTransacaoReordenarRequest): Promise<void> {
     await this.api.request('/api/templates-transacao/reordenar', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'X-Familia-Id': familiaId },
@@ -1755,6 +1851,7 @@ git commit -m "feat(web): service e Zustand store para template-transacao"
 ## Task 10: Frontend — Componentes auxiliares
 
 **Files:**
+
 - Create: `apps/web/src/components/template-valor-input.tsx`
 - Create: `apps/web/src/components/template-grupo.tsx`
 - Create: `apps/web/src/components/lancamentos-resumo.tsx`
@@ -1793,6 +1890,7 @@ git commit -m "feat(web): componentes auxiliares para tela de lançamentos"
 ## Task 11: Frontend — Página Lançamentos + Navegação
 
 **Files:**
+
 - Create: `apps/web/src/pages/lancamentos-page.tsx`
 - Create: `apps/web/src/pages/lancamentos-page.test.tsx`
 - Modify: `apps/web/src/App.tsx`
@@ -1801,6 +1899,7 @@ git commit -m "feat(web): componentes auxiliares para tela de lançamentos"
 - [ ] **Step 1: Escrever testes da página (Red)**
 
 Testar:
+
 - Exibe loading enquanto carrega templates
 - Exibe lista de templates agrupados por tipo/categoria
 - Permite preencher valores
@@ -1813,6 +1912,7 @@ Usar padrão: mock do service + setState no store.
 - [ ] **Step 2: Implementar LancamentosPage (Green)**
 
 Componente com:
+
 - Seletor de mês (◀ ▶)
 - Templates agrupados: Receitas → Despesas por categoria → Cofrinhos
 - Card de resumo com totais
@@ -1826,6 +1926,7 @@ Layout responsivo com tokens semânticos.
 - [ ] **Step 3: Adicionar Screen e rota em App.tsx**
 
 Em `apps/web/src/App.tsx`:
+
 - Adicionar `'lancamentos'` ao tipo `Screen` (após `'cofrinho-detalhe'`)
 - Importar `LancamentosPage`
 - Adicionar case no renderScreen
@@ -1833,6 +1934,7 @@ Em `apps/web/src/App.tsx`:
 - [ ] **Step 4: Adicionar item no Sidebar**
 
 Em `apps/web/src/components/sidebar.tsx`:
+
 - Importar ícone `ClipboardList` de `lucide-react`
 - Adicionar `{ id: 'lancamentos', icon: ClipboardList, label: 'Lançamentos' }` no primeiro grupo de navegação (após `'historico'`)
 
@@ -1853,12 +1955,14 @@ git commit -m "feat(web): página Lançamentos do Mês com navegação"
 ## Task 12: Frontend — Modal de Gerenciamento de Templates
 
 **Files:**
+
 - Create: `apps/web/src/components/templates-gerenciar-modal.tsx`
 - Create: `apps/web/src/components/templates-gerenciar-modal.test.tsx`
 
 - [ ] **Step 1: Escrever testes (Red)**
 
 Testar:
+
 - Exibe lista de templates existentes
 - Permite criar novo template (nome, tipo, categoria)
 - Permite editar nome/categoria de template existente
@@ -1868,6 +1972,7 @@ Testar:
 - [ ] **Step 2: Implementar modal (Green)**
 
 Modal/dialog com:
+
 - Lista de templates agrupados por tipo (receita/despesa)
 - Botão "Adicionar Template" que abre form inline
 - Form: nome (text), tipo (select), categoria (select), valorPadrao (opcional), cofrinhoId (opcional)
@@ -1895,11 +2000,13 @@ git commit -m "feat(web): modal de gerenciamento de templates"
 ## Task 13: Seed Script dos Templates da Planilha
 
 **Files:**
+
 - Create: `apps/api/src/scripts/seed-templates.ts`
 
 - [ ] **Step 1: Criar script**
 
 Script que:
+
 1. Recebe `familiaId` como argumento ou variável de ambiente
 2. Conecta ao banco via Drizzle
 3. Busca categorias da família

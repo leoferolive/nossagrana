@@ -5,7 +5,12 @@ interface TemplateValorInputProps {
   cofrinhoEmoji?: string | null;
 }
 
-export function TemplateValorInput({ nome, valor, onChange, cofrinhoEmoji }: TemplateValorInputProps) {
+export function TemplateValorInput({
+  nome,
+  valor,
+  onChange,
+  cofrinhoEmoji,
+}: TemplateValorInputProps) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2.5">
       <span className="flex items-center gap-1.5 text-sm text-text">

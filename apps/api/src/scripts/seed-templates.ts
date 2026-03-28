@@ -7,7 +7,12 @@ import { fileURLToPath } from 'url';
 
 import { categorias, cofrinhos, templatesTransacao, users } from '../db/schema.js';
 
-config({ path: path.resolve(import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
+config({
+  path: path.resolve(
+    import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)),
+    '../../.env',
+  ),
+});
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
@@ -44,67 +49,343 @@ type TemplateDefinicao = (TemplateCategoria | TemplateCofrinho) & {
 
 const TEMPLATES: TemplateDefinicao[] = [
   // Receitas
-  { ordem: 0, nome: 'Salário Leo', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Salario' },
-  { ordem: 1, nome: 'Salário Beta', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Salario' },
-  { ordem: 2, nome: '13º Leo', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Outros' },
-  { ordem: 3, nome: '13º Beta', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Outros' },
-  { ordem: 4, nome: 'Férias Leo', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Outros' },
-  { ordem: 5, nome: 'Férias Beta', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Outros' },
-  { ordem: 6, nome: 'Outros Receitas', transacaoTipo: 'receita', tipo: 'categoria', categoriaNome: 'Outros' },
+  {
+    ordem: 0,
+    nome: 'Salário Leo',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Salario',
+  },
+  {
+    ordem: 1,
+    nome: 'Salário Beta',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Salario',
+  },
+  {
+    ordem: 2,
+    nome: '13º Leo',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Outros',
+  },
+  {
+    ordem: 3,
+    nome: '13º Beta',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Outros',
+  },
+  {
+    ordem: 4,
+    nome: 'Férias Leo',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Outros',
+  },
+  {
+    ordem: 5,
+    nome: 'Férias Beta',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Outros',
+  },
+  {
+    ordem: 6,
+    nome: 'Outros Receitas',
+    transacaoTipo: 'receita',
+    tipo: 'categoria',
+    categoriaNome: 'Outros',
+  },
 
   // Despesas — Moradia
   { ordem: 7, nome: 'Luz', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
   { ordem: 8, nome: 'Gás', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
-  { ordem: 9, nome: 'Internet', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
-  { ordem: 10, nome: 'YouTube Premium', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Assinaturas' },
-  { ordem: 11, nome: 'Supermercado/Alimentação', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Alimentacao' },
-  { ordem: 12, nome: 'Casa', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
-  { ordem: 13, nome: 'IPTU', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
-  { ordem: 14, nome: 'Seguro Residencial', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
-  { ordem: 15, nome: 'Condomínio', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
-  { ordem: 16, nome: 'Financiamento Imóvel', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Moradia' },
+  {
+    ordem: 9,
+    nome: 'Internet',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Moradia',
+  },
+  {
+    ordem: 10,
+    nome: 'YouTube Premium',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Assinaturas',
+  },
+  {
+    ordem: 11,
+    nome: 'Supermercado/Alimentação',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Alimentacao',
+  },
+  {
+    ordem: 12,
+    nome: 'Casa',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Moradia',
+  },
+  {
+    ordem: 13,
+    nome: 'IPTU',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Moradia',
+  },
+  {
+    ordem: 14,
+    nome: 'Seguro Residencial',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Moradia',
+  },
+  {
+    ordem: 15,
+    nome: 'Condomínio',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Moradia',
+  },
+  {
+    ordem: 16,
+    nome: 'Financiamento Imóvel',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Moradia',
+  },
 
   // Despesas — Saúde
-  { ordem: 17, nome: 'Seguro de Vida Leo', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Saude' },
-  { ordem: 18, nome: 'Consulta/Exames', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Saude' },
-  { ordem: 19, nome: 'Vacina', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Saude' },
-  { ordem: 20, nome: 'Plano Dental', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Saude' },
-  { ordem: 21, nome: 'Medicamentos', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Saude' },
+  {
+    ordem: 17,
+    nome: 'Seguro de Vida Leo',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Saude',
+  },
+  {
+    ordem: 18,
+    nome: 'Consulta/Exames',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Saude',
+  },
+  {
+    ordem: 19,
+    nome: 'Vacina',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Saude',
+  },
+  {
+    ordem: 20,
+    nome: 'Plano Dental',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Saude',
+  },
+  {
+    ordem: 21,
+    nome: 'Medicamentos',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Saude',
+  },
 
   // Despesas — Transporte
-  { ordem: 22, nome: 'Financiamento Carro', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 23, nome: 'Seguro Auto', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 24, nome: 'Combustível', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 25, nome: 'Revisão', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 26, nome: 'IPVA', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 27, nome: 'Veloe', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 28, nome: 'Uber', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 29, nome: 'Lavagem', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
-  { ordem: 30, nome: 'Estacionamento', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Transporte' },
+  {
+    ordem: 22,
+    nome: 'Financiamento Carro',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 23,
+    nome: 'Seguro Auto',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 24,
+    nome: 'Combustível',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 25,
+    nome: 'Revisão',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 26,
+    nome: 'IPVA',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 27,
+    nome: 'Veloe',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 28,
+    nome: 'Uber',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 29,
+    nome: 'Lavagem',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
+  {
+    ordem: 30,
+    nome: 'Estacionamento',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Transporte',
+  },
 
   // Despesas — Cofrinhos
-  { ordem: 31, nome: 'Fundo de Emergência', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'Fundo de Emergência' },
-  { ordem: 32, nome: 'Aposentadoria', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'Aposentadoria' },
-  { ordem: 33, nome: 'Viagens', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'Viagens' },
+  {
+    ordem: 31,
+    nome: 'Fundo de Emergência',
+    transacaoTipo: 'despesa',
+    tipo: 'cofrinho',
+    cofrinhoNome: 'Fundo de Emergência',
+  },
+  {
+    ordem: 32,
+    nome: 'Aposentadoria',
+    transacaoTipo: 'despesa',
+    tipo: 'cofrinho',
+    cofrinhoNome: 'Aposentadoria',
+  },
+  {
+    ordem: 33,
+    nome: 'Viagens',
+    transacaoTipo: 'despesa',
+    tipo: 'cofrinho',
+    cofrinhoNome: 'Viagens',
+  },
   { ordem: 34, nome: 'Carro', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'Carro' },
   { ordem: 35, nome: 'Flor', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'Flor' },
   { ordem: 36, nome: 'AP', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'AP' },
-  { ordem: 37, nome: 'Poliana', transacaoTipo: 'despesa', tipo: 'cofrinho', cofrinhoNome: 'Poliana' },
+  {
+    ordem: 37,
+    nome: 'Poliana',
+    transacaoTipo: 'despesa',
+    tipo: 'cofrinho',
+    cofrinhoNome: 'Poliana',
+  },
 
   // Despesas — Pessoais
-  { ordem: 38, nome: 'Celular Beta', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Assinaturas' },
-  { ordem: 39, nome: 'Celular Leo', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Assinaturas' },
-  { ordem: 40, nome: 'Mensal Leo', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Compras' },
-  { ordem: 41, nome: 'Mensal Beta', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Compras' },
-  { ordem: 42, nome: 'Mensal Poli', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Compras' },
-  { ordem: 43, nome: 'Passeios', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Lazer' },
-  { ordem: 44, nome: 'Plano Livelo', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Assinaturas' },
-  { ordem: 45, nome: 'ABACUS', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Assinaturas' },
-  { ordem: 46, nome: 'Clube Smiles', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Assinaturas' },
-  { ordem: 47, nome: 'Academia', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Saude' },
-  { ordem: 48, nome: 'Natação Poli', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Educacao' },
-  { ordem: 49, nome: 'Creche', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Educacao' },
-  { ordem: 50, nome: 'Outros Despesas', transacaoTipo: 'despesa', tipo: 'categoria', categoriaNome: 'Outros' },
+  {
+    ordem: 38,
+    nome: 'Celular Beta',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Assinaturas',
+  },
+  {
+    ordem: 39,
+    nome: 'Celular Leo',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Assinaturas',
+  },
+  {
+    ordem: 40,
+    nome: 'Mensal Leo',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Compras',
+  },
+  {
+    ordem: 41,
+    nome: 'Mensal Beta',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Compras',
+  },
+  {
+    ordem: 42,
+    nome: 'Mensal Poli',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Compras',
+  },
+  {
+    ordem: 43,
+    nome: 'Passeios',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Lazer',
+  },
+  {
+    ordem: 44,
+    nome: 'Plano Livelo',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Assinaturas',
+  },
+  {
+    ordem: 45,
+    nome: 'ABACUS',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Assinaturas',
+  },
+  {
+    ordem: 46,
+    nome: 'Clube Smiles',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Assinaturas',
+  },
+  {
+    ordem: 47,
+    nome: 'Academia',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Saude',
+  },
+  {
+    ordem: 48,
+    nome: 'Natação Poli',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Educacao',
+  },
+  {
+    ordem: 49,
+    nome: 'Creche',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Educacao',
+  },
+  {
+    ordem: 50,
+    nome: 'Outros Despesas',
+    transacaoTipo: 'despesa',
+    tipo: 'categoria',
+    categoriaNome: 'Outros',
+  },
 ];
 
 const COFRINHOS_NOMES = [
@@ -122,10 +403,7 @@ async function main() {
   console.log(`familiaId: ${familiaId}`);
 
   // 1. Buscar um usuário da família para criadoPor
-  const usuariosFamilia = await db
-    .select({ id: users.id, nome: users.nome })
-    .from(users)
-    .limit(1);
+  const usuariosFamilia = await db.select({ id: users.id, nome: users.nome }).from(users).limit(1);
 
   if (usuariosFamilia.length === 0) {
     console.error('Nenhum usuário encontrado no banco. Crie um usuário primeiro.');
@@ -259,17 +537,10 @@ async function main() {
   const existentes = await db
     .select({ nome: templatesTransacao.nome, tipo: templatesTransacao.tipo })
     .from(templatesTransacao)
-    .where(
-      and(
-        eq(templatesTransacao.familiaId, familiaId),
-        eq(templatesTransacao.ativo, true),
-      ),
-    );
+    .where(and(eq(templatesTransacao.familiaId, familiaId), eq(templatesTransacao.ativo, true)));
 
   const existentesSet = new Set(existentes.map((t) => `${t.nome}:${t.tipo}`));
-  const novos = templatesParaInserir.filter(
-    (t) => !existentesSet.has(`${t.nome}:${t.tipo}`),
-  );
+  const novos = templatesParaInserir.filter((t) => !existentesSet.has(`${t.nome}:${t.tipo}`));
   const duplicatas = templatesParaInserir.length - novos.length;
 
   if (duplicatas > 0) {

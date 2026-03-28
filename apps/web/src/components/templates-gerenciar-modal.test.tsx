@@ -94,7 +94,12 @@ beforeEach(() => {
     fetchTemplates: mockFetchTemplates,
   });
   useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
-  useCofrinhoStore.setState({ cofrinhos: [], cofrinhoSelecionado: null, carregando: false, erro: null });
+  useCofrinhoStore.setState({
+    cofrinhos: [],
+    cofrinhoSelecionado: null,
+    carregando: false,
+    erro: null,
+  });
 });
 
 describe('TemplatesGerenciarModal', () => {
@@ -158,7 +163,10 @@ describe('TemplatesGerenciarModal', () => {
     fireEvent.click(screen.getByLabelText('Salvar template'));
 
     await waitFor(() => {
-      expect(mockCriar).toHaveBeenCalledWith('f1', expect.objectContaining({ nome: 'Novo Template', tipo: 'receita' }));
+      expect(mockCriar).toHaveBeenCalledWith(
+        'f1',
+        expect.objectContaining({ nome: 'Novo Template', tipo: 'receita' }),
+      );
     });
     await waitFor(() => {
       expect(mockFetchTemplates).toHaveBeenCalledWith('f1');
@@ -246,7 +254,11 @@ describe('TemplatesGerenciarModal', () => {
     fireEvent.click(screen.getByLabelText('Salvar edição'));
 
     await waitFor(() => {
-      expect(mockEditar).toHaveBeenCalledWith('f1', 't1', expect.objectContaining({ nome: 'Salário Editado' }));
+      expect(mockEditar).toHaveBeenCalledWith(
+        'f1',
+        't1',
+        expect.objectContaining({ nome: 'Salário Editado' }),
+      );
     });
   });
 
@@ -264,7 +276,21 @@ describe('TemplatesGerenciarModal', () => {
 
   it('exibe cofrinho no select apenas para despesas', () => {
     useCofrinhoStore.setState({
-      cofrinhos: [{ id: 'cf1', familiaId: 'f1', nome: 'Viagem', emoji: '✈️', descricao: null, metaValor: null, saldoAtual: '0', ativo: true, criadoPor: 'u1', criadoEm: '2026-01-01', atualizadoEm: '2026-01-01' }],
+      cofrinhos: [
+        {
+          id: 'cf1',
+          familiaId: 'f1',
+          nome: 'Viagem',
+          emoji: '✈️',
+          descricao: null,
+          metaValor: null,
+          saldoAtual: '0',
+          status: 'ativo' as const,
+          criadoPor: 'u1',
+          criadoEm: '2026-01-01',
+          encerradoEm: null,
+        },
+      ],
       cofrinhoSelecionado: null,
       carregando: false,
       erro: null,

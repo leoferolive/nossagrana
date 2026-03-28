@@ -39,7 +39,11 @@ export const templateTransacaoCreateRequestSchema = z.object({
   categoriaId: z.string().uuid().nullable().optional(),
   metodoPagamentoId: z.string().uuid().nullable().optional(),
   cofrinhoId: z.string().uuid().nullable().optional(),
-  valorPadrao: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+  valorPadrao: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/)
+    .nullable()
+    .optional(),
   ordem: z.number().int().min(0).optional().default(0),
 });
 export type TemplateTransacaoCreateRequest = z.infer<typeof templateTransacaoCreateRequestSchema>;
@@ -55,7 +59,11 @@ export const templateTransacaoUpdateRequestSchema = z.object({
   categoriaId: z.string().uuid().nullable().optional(),
   metodoPagamentoId: z.string().uuid().nullable().optional(),
   cofrinhoId: z.string().uuid().nullable().optional(),
-  valorPadrao: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+  valorPadrao: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/)
+    .nullable()
+    .optional(),
   ordem: z.number().int().min(0).optional(),
 });
 export type TemplateTransacaoUpdateRequest = z.infer<typeof templateTransacaoUpdateRequestSchema>;
@@ -85,7 +93,9 @@ export const templateTransacaoAplicarResponseSchema = z.object({
   aportesCriados: z.number().int(),
   total: z.number().int(),
 });
-export type TemplateTransacaoAplicarResponse = z.infer<typeof templateTransacaoAplicarResponseSchema>;
+export type TemplateTransacaoAplicarResponse = z.infer<
+  typeof templateTransacaoAplicarResponseSchema
+>;
 
 // --- Reordenar request ---
 export const templateTransacaoReordenarItemSchema = z.object({
@@ -96,7 +106,9 @@ export const templateTransacaoReordenarItemSchema = z.object({
 export const templateTransacaoReordenarRequestSchema = z.object({
   itens: z.array(templateTransacaoReordenarItemSchema).min(1),
 });
-export type TemplateTransacaoReordenarRequest = z.infer<typeof templateTransacaoReordenarRequestSchema>;
+export type TemplateTransacaoReordenarRequest = z.infer<
+  typeof templateTransacaoReordenarRequestSchema
+>;
 
 // --- List query ---
 export const templateTransacaoListQuerySchema = z.object({

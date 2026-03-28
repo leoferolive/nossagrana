@@ -8,11 +8,15 @@ import type {
 } from './template-transacao.types.js';
 
 export class TemplateNotFoundError extends Error {
-  constructor() { super('Template não encontrado'); }
+  constructor() {
+    super('Template não encontrado');
+  }
 }
 
 export class TemplateTransacaoDuplicateError extends Error {
-  constructor() { super('Já existe um template com este nome e tipo nesta família'); }
+  constructor() {
+    super('Já existe um template com este nome e tipo nesta família');
+  }
 }
 
 interface TransacaoCreator {
@@ -49,7 +53,10 @@ export class TemplateTransacaoService {
     private readonly cofrinhoService: CofrinhoAportarService,
   ) {}
 
-  async listByFamiliaId(input: { familiaId: string; tipo?: 'receita' | 'despesa' }): Promise<TemplateTransacaoWithJoins[]> {
+  async listByFamiliaId(input: {
+    familiaId: string;
+    tipo?: 'receita' | 'despesa';
+  }): Promise<TemplateTransacaoWithJoins[]> {
     return this.repository.listByFamiliaId(input);
   }
 
@@ -86,7 +93,10 @@ export class TemplateTransacaoService {
     if (itensValidos.length === 0) return { transacoesCriadas: 0, aportesCriados: 0, total: 0 };
 
     const templateIds = itensValidos.map((i) => i.templateId);
-    const templates = await this.repository.findByIds({ ids: templateIds, familiaId: input.familiaId });
+    const templates = await this.repository.findByIds({
+      ids: templateIds,
+      familiaId: input.familiaId,
+    });
     if (templates.length !== templateIds.length) throw new TemplateNotFoundError();
 
     const templateMap = new Map(templates.map((t) => [t.id, t]));

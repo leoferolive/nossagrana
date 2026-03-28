@@ -13,9 +13,15 @@ import type { FastifyPluginAsync } from 'fastify';
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { transacoes } from '../../db/schema.js';
-import { DrizzleCofrinhoRepository, InMemoryCofrinhoRepository } from '../cofrinho/cofrinho.repository.js';
+import {
+  DrizzleCofrinhoRepository,
+  InMemoryCofrinhoRepository,
+} from '../cofrinho/cofrinho.repository.js';
 import { CofrinhoService } from '../cofrinho/cofrinho.service.js';
-import { DrizzleTemplateTransacaoRepository, InMemoryTemplateTransacaoRepository } from './template-transacao.repository.js';
+import {
+  DrizzleTemplateTransacaoRepository,
+  InMemoryTemplateTransacaoRepository,
+} from './template-transacao.repository.js';
 import {
   templateTransacaoAplicarSchema,
   templateTransacaoCreateSchema,
@@ -129,7 +135,8 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
         templates: templates.map((t) => ({
           ...t,
           criadoEm: t.criadoEm instanceof Date ? t.criadoEm.toISOString() : t.criadoEm,
-          atualizadoEm: t.atualizadoEm instanceof Date ? t.atualizadoEm.toISOString() : t.atualizadoEm,
+          atualizadoEm:
+            t.atualizadoEm instanceof Date ? t.atualizadoEm.toISOString() : t.atualizadoEm,
         })),
       });
     },
@@ -159,8 +166,14 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(201).send({
           template: {
             ...template,
-            criadoEm: template.criadoEm instanceof Date ? template.criadoEm.toISOString() : template.criadoEm,
-            atualizadoEm: template.atualizadoEm instanceof Date ? template.atualizadoEm.toISOString() : template.atualizadoEm,
+            criadoEm:
+              template.criadoEm instanceof Date
+                ? template.criadoEm.toISOString()
+                : template.criadoEm,
+            atualizadoEm:
+              template.atualizadoEm instanceof Date
+                ? template.atualizadoEm.toISOString()
+                : template.atualizadoEm,
           },
         });
       } catch (error) {
@@ -196,8 +209,14 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(200).send({
           template: {
             ...template,
-            criadoEm: template.criadoEm instanceof Date ? template.criadoEm.toISOString() : template.criadoEm,
-            atualizadoEm: template.atualizadoEm instanceof Date ? template.atualizadoEm.toISOString() : template.atualizadoEm,
+            criadoEm:
+              template.criadoEm instanceof Date
+                ? template.criadoEm.toISOString()
+                : template.criadoEm,
+            atualizadoEm:
+              template.atualizadoEm instanceof Date
+                ? template.atualizadoEm.toISOString()
+                : template.atualizadoEm,
           },
         });
       } catch (error) {
@@ -226,8 +245,14 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(200).send({
           template: {
             ...template,
-            criadoEm: template.criadoEm instanceof Date ? template.criadoEm.toISOString() : template.criadoEm,
-            atualizadoEm: template.atualizadoEm instanceof Date ? template.atualizadoEm.toISOString() : template.atualizadoEm,
+            criadoEm:
+              template.criadoEm instanceof Date
+                ? template.criadoEm.toISOString()
+                : template.criadoEm,
+            atualizadoEm:
+              template.atualizadoEm instanceof Date
+                ? template.atualizadoEm.toISOString()
+                : template.atualizadoEm,
           },
         });
       } catch (error) {

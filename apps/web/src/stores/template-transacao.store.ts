@@ -1,4 +1,7 @@
-import type { TemplateTransacaoAplicarResponse, TemplateTransacaoListItem } from '@nossagrana/types';
+import type {
+  TemplateTransacaoAplicarResponse,
+  TemplateTransacaoListItem,
+} from '@nossagrana/types';
 import { create } from 'zustand';
 
 import { templateTransacaoService } from '../services/template-transacao.service';

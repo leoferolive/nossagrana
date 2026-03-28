@@ -7,13 +7,7 @@ import { useCategoriaStore } from '@/stores/categoria.store';
 import { useCofrinhoStore } from '@/stores/cofrinho.store';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
 
-import {
-  IconAdicionar,
-  IconEditar,
-  IconExcluir,
-  IconFechar,
-  IconSalvar,
-} from './icons';
+import { IconAdicionar, IconEditar, IconExcluir, IconFechar, IconSalvar } from './icons';
 
 interface TemplatesGerenciarModalProps {
   open: boolean;
@@ -45,7 +39,11 @@ function useFormTemplate(initial: FormState = FORM_VAZIO) {
   return { form, setField, reset, setForm };
 }
 
-export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesGerenciarModalProps) {
+export function TemplatesGerenciarModal({
+  open,
+  onClose,
+  familiaId,
+}: TemplatesGerenciarModalProps) {
   const { templates, fetchTemplates } = useTemplateTransacaoStore();
   const { categorias } = useCategoriaStore();
   const { cofrinhos } = useCofrinhoStore();
@@ -88,6 +86,7 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
         categoriaId: criar.form.categoriaId || null,
         valorPadrao: criar.form.valorPadrao || null,
         cofrinhoId: criar.form.cofrinhoId || null,
+        ordem: 0,
       });
       await fetchTemplates(familiaId);
       criar.reset();
@@ -168,7 +167,9 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
             >
               <option value="">Sem categoria</option>
               {categorias.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
               ))}
             </select>
             <input
@@ -190,7 +191,9 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
               >
                 <option value="">Sem cofrinho</option>
                 {cofrinhos.map((c) => (
-                  <option key={c.id} value={c.id}>{c.emoji ?? ''} {c.nome}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.emoji ?? ''} {c.nome}
+                  </option>
                 ))}
               </select>
             )}
@@ -198,7 +201,10 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
               <button
                 type="button"
                 aria-label="Cancelar edição"
-                onClick={() => { setEditandoId(null); editar.reset(); }}
+                onClick={() => {
+                  setEditandoId(null);
+                  editar.reset();
+                }}
                 className="flex-1 rounded border border-border py-1.5 text-xs text-text-muted transition hover:text-text"
               >
                 Cancelar
@@ -249,7 +255,10 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
     }
 
     return (
-      <div key={template.id} className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
+      <div
+        key={template.id}
+        className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2"
+      >
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm text-text">{template.nome}</span>
           {(template.categoriaNome ?? template.cofrinhoNome) && (
@@ -329,9 +338,7 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
           {receitas.length === 0 ? (
             <p className="text-xs text-text-muted">Nenhuma receita cadastrada.</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {receitas.map(renderTemplate)}
-            </div>
+            <div className="flex flex-col gap-2">{receitas.map(renderTemplate)}</div>
           )}
         </section>
 
@@ -343,9 +350,7 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
           {despesas.length === 0 ? (
             <p className="text-xs text-text-muted">Nenhuma despesa cadastrada.</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {despesas.map(renderTemplate)}
-            </div>
+            <div className="flex flex-col gap-2">{despesas.map(renderTemplate)}</div>
           )}
         </section>
 
@@ -379,7 +384,9 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
               >
                 <option value="">Sem categoria</option>
                 {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
                 ))}
               </select>
               <input
@@ -401,7 +408,9 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
                 >
                   <option value="">Sem cofrinho</option>
                   {cofrinhos.map((c) => (
-                    <option key={c.id} value={c.id}>{c.emoji ?? ''} {c.nome}</option>
+                    <option key={c.id} value={c.id}>
+                      {c.emoji ?? ''} {c.nome}
+                    </option>
                   ))}
                 </select>
               )}
@@ -409,7 +418,10 @@ export function TemplatesGerenciarModal({ open, onClose, familiaId }: TemplatesG
                 <button
                   type="button"
                   aria-label="Cancelar criação"
-                  onClick={() => { setMostraCriar(false); criar.reset(); }}
+                  onClick={() => {
+                    setMostraCriar(false);
+                    criar.reset();
+                  }}
                   className="flex-1 rounded border border-border py-1.5 text-xs text-text-muted transition hover:text-text"
                 >
                   Cancelar

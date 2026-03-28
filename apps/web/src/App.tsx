@@ -334,12 +334,7 @@ export const App = () => {
     }
 
     if (screen === 'lancamentos') {
-      return (
-        <LancamentosPage
-          familiaId={familiaId}
-          onNavigate={(s) => setScreen(s as Screen)}
-        />
-      );
+      return <LancamentosPage familiaId={familiaId} onNavigate={(s) => setScreen(s as Screen)} />;
     }
 
     if (screen === 'relatorios') {

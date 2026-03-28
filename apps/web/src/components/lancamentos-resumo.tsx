@@ -41,9 +41,7 @@ export function LancamentosResumo({ templates, valores }: LancamentosResumoProps
         </div>
         <div className="mt-1 border-t border-border pt-2 flex items-center justify-between">
           <span className="text-sm font-semibold text-text">Saldo</span>
-          <span
-            className={`text-sm font-bold ${saldo >= 0 ? 'text-success' : 'text-danger'}`}
-          >
+          <span className={`text-sm font-bold ${saldo >= 0 ? 'text-success' : 'text-danger'}`}>
             {formatBRL(saldo)}
           </span>
         </div>

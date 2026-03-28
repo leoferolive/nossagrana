@@ -1,7 +1,7 @@
 import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
-  ignore: ['docs/wireframes/**', 'audit-screenshots/**'],
+  ignore: ['docs/wireframes/**'],
   ignoreDependencies: ['lint-staged'],
   rules: {
     duplicates: 'off',
@@ -12,7 +12,14 @@ const config: KnipConfig = {
     '.': {
       entry: ['scripts/*.mjs'],
     },
-    'apps/api': {},
+    'apps/api': {
+      entry: [
+        'src/server.ts',
+        'src/db/migrate.ts',
+        'src/scripts/**/*.ts',
+        'src/modules/auth/revoked-token-cleanup.job.ts',
+      ],
+    },
     'apps/web': {},
     'packages/types': {},
     'apps/e2e': {

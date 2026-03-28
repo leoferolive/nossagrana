@@ -16,11 +16,22 @@ import type {
 export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRepository {
   private templates: TemplateTransacao[] = [];
 
-  async listByFamiliaId(input: { familiaId: string; tipo?: 'receita' | 'despesa' }): Promise<TemplateTransacaoWithJoins[]> {
+  async listByFamiliaId(input: {
+    familiaId: string;
+    tipo?: 'receita' | 'despesa';
+  }): Promise<TemplateTransacaoWithJoins[]> {
     return this.templates
-      .filter((t) => t.familiaId === input.familiaId && t.ativo && (!input.tipo || t.tipo === input.tipo))
+      .filter(
+        (t) => t.familiaId === input.familiaId && t.ativo && (!input.tipo || t.tipo === input.tipo),
+      )
       .sort((a, b) => a.ordem - b.ordem)
-      .map((t) => ({ ...t, categoriaNome: null, metodoPagamentoNome: null, cofrinhoNome: null, cofrinhoEmoji: null }));
+      .map((t) => ({
+        ...t,
+        categoriaNome: null,
+        metodoPagamentoNome: null,
+        cofrinhoNome: null,
+        cofrinhoEmoji: null,
+      }));
   }
 
   async findById(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null> {
@@ -28,7 +39,9 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
   }
 
   async findByIds(input: { ids: string[]; familiaId: string }): Promise<TemplateTransacao[]> {
-    return this.templates.filter((t) => input.ids.includes(t.id) && t.familiaId === input.familiaId && t.ativo);
+    return this.templates.filter(
+      (t) => input.ids.includes(t.id) && t.familiaId === input.familiaId && t.ativo,
+    );
   }
 
   async create(input: CreateTemplateTransacaoInput): Promise<TemplateTransacao> {
@@ -52,14 +65,17 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
   }
 
   async update(input: UpdateTemplateTransacaoInput): Promise<TemplateTransacao | null> {
-    const idx = this.templates.findIndex((t) => t.id === input.id && t.familiaId === input.familiaId);
+    const idx = this.templates.findIndex(
+      (t) => t.id === input.id && t.familiaId === input.familiaId,
+    );
     if (idx === -1) return null;
     const current = this.templates[idx];
     const updated: TemplateTransacao = {
       ...current,
       nome: input.nome ?? current.nome,
       categoriaId: input.categoriaId !== undefined ? input.categoriaId : current.categoriaId,
-      metodoPagamentoId: input.metodoPagamentoId !== undefined ? input.metodoPagamentoId : current.metodoPagamentoId,
+      metodoPagamentoId:
+        input.metodoPagamentoId !== undefined ? input.metodoPagamentoId : current.metodoPagamentoId,
       cofrinhoId: input.cofrinhoId !== undefined ? input.cofrinhoId : current.cofrinhoId,
       ordem: input.ordem ?? current.ordem,
       valorPadrao: input.valorPadrao !== undefined ? input.valorPadrao : current.valorPadrao,
@@ -70,7 +86,9 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
   }
 
   async deactivate(input: { id: string; familiaId: string }): Promise<TemplateTransacao | null> {
-    const idx = this.templates.findIndex((t) => t.id === input.id && t.familiaId === input.familiaId);
+    const idx = this.templates.findIndex(
+      (t) => t.id === input.id && t.familiaId === input.familiaId,
+    );
     if (idx === -1) return null;
     this.templates[idx] = { ...this.templates[idx], ativo: false, atualizadoEm: new Date() };
     return this.templates[idx];
@@ -78,16 +96,25 @@ export class InMemoryTemplateTransacaoRepository implements TemplateTransacaoRep
 
   async reordenar(input: { familiaId: string; itens: ReordenarItem[] }): Promise<void> {
     for (const item of input.itens) {
-      const idx = this.templates.findIndex((t) => t.id === item.id && t.familiaId === input.familiaId);
+      const idx = this.templates.findIndex(
+        (t) => t.id === item.id && t.familiaId === input.familiaId,
+      );
       if (idx !== -1) {
-        this.templates[idx] = { ...this.templates[idx], ordem: item.ordem, atualizadoEm: new Date() };
+        this.templates[idx] = {
+          ...this.templates[idx],
+          ordem: item.ordem,
+          atualizadoEm: new Date(),
+        };
       }
     }
   }
 }
 
 export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepository {
-  async listByFamiliaId(input: { familiaId: string; tipo?: 'receita' | 'despesa' }): Promise<TemplateTransacaoWithJoins[]> {
+  async listByFamiliaId(input: {
+    familiaId: string;
+    tipo?: 'receita' | 'despesa';
+  }): Promise<TemplateTransacaoWithJoins[]> {
     const rows = await db
       .select({
         id: templatesTransacao.id,
@@ -131,7 +158,9 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
     const [row] = await db
       .select()
       .from(templatesTransacao)
-      .where(and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)));
+      .where(
+        and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)),
+      );
 
     if (!row) return null;
     return { ...row, tipo: row.tipo as 'receita' | 'despesa' };
@@ -178,7 +207,8 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
 
     if (input.nome !== undefined) setFields.nome = input.nome;
     if (input.categoriaId !== undefined) setFields.categoriaId = input.categoriaId;
-    if (input.metodoPagamentoId !== undefined) setFields.metodoPagamentoId = input.metodoPagamentoId;
+    if (input.metodoPagamentoId !== undefined)
+      setFields.metodoPagamentoId = input.metodoPagamentoId;
     if (input.cofrinhoId !== undefined) setFields.cofrinhoId = input.cofrinhoId;
     if (input.ordem !== undefined) setFields.ordem = input.ordem;
     if (input.valorPadrao !== undefined) setFields.valorPadrao = input.valorPadrao;
@@ -186,7 +216,9 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
     const [row] = await db
       .update(templatesTransacao)
       .set(setFields)
-      .where(and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)))
+      .where(
+        and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)),
+      )
       .returning();
 
     if (!row) return null;
@@ -197,7 +229,9 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
     const [row] = await db
       .update(templatesTransacao)
       .set({ ativo: false, atualizadoEm: new Date() })
-      .where(and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)))
+      .where(
+        and(eq(templatesTransacao.id, input.id), eq(templatesTransacao.familiaId, input.familiaId)),
+      )
       .returning();
 
     if (!row) return null;
@@ -209,7 +243,12 @@ export class DrizzleTemplateTransacaoRepository implements TemplateTransacaoRepo
       await db
         .update(templatesTransacao)
         .set({ ordem: item.ordem, atualizadoEm: new Date() })
-        .where(and(eq(templatesTransacao.id, item.id), eq(templatesTransacao.familiaId, input.familiaId)));
+        .where(
+          and(
+            eq(templatesTransacao.id, item.id),
+            eq(templatesTransacao.familiaId, input.familiaId),
+          ),
+        );
     }
   }
 }

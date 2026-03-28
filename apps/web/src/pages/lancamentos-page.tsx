@@ -11,10 +11,7 @@ interface LancamentosPageProps {
   onNavigate: (screen: string) => void;
 }
 
-const MESES = [
-  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
-];
+const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 function formatMesLabel(mes: string): string {
   const [ano, mesNum] = mes.split('-');
@@ -43,7 +40,10 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
     aplicar,
   } = useTemplateTransacaoStore();
 
-  const [sucesso, setSucesso] = useState<{ transacoesCriadas: number; aportesCriados: number } | null>(null);
+  const [sucesso, setSucesso] = useState<{
+    transacoesCriadas: number;
+    aportesCriados: number;
+  } | null>(null);
   const [gerenciarAberto, setGerenciarAberto] = useState(false);
 
   useEffect(() => {
@@ -55,7 +55,10 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
     setSucesso(null);
     try {
       const result = await aplicar(familiaId);
-      setSucesso({ transacoesCriadas: result.transacoesCriadas, aportesCriados: result.aportesCriados });
+      setSucesso({
+        transacoesCriadas: result.transacoesCriadas,
+        aportesCriados: result.aportesCriados,
+      });
     } catch {
       // error handled in store
     }
@@ -75,15 +78,12 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
   const despesas = templates.filter((t) => t.tipo === 'despesa' && !t.cofrinhoId);
 
   // Group despesas by categoriaNome
-  const despesasPorCategoria = despesas.reduce<Record<string, typeof despesas>>(
-    (acc, t) => {
-      const cat = t.categoriaNome ?? 'Sem categoria';
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(t);
-      return acc;
-    },
-    {},
-  );
+  const despesasPorCategoria = despesas.reduce<Record<string, typeof despesas>>((acc, t) => {
+    const cat = t.categoriaNome ?? 'Sem categoria';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(t);
+    return acc;
+  }, {});
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -187,7 +187,8 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
             {/* Success */}
             {sucesso && (
               <p className="rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-sm text-success">
-                {sucesso.transacoesCriadas} transações e {sucesso.aportesCriados} aportes criados com sucesso!
+                {sucesso.transacoesCriadas} transações e {sucesso.aportesCriados} aportes criados
+                com sucesso!
               </p>
             )}
 

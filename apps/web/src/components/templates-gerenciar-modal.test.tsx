@@ -130,9 +130,9 @@ describe('TemplatesGerenciarModal', () => {
     expect(screen.getByText(/despesas/i)).toBeInTheDocument();
   });
 
-  it('chama fetchTemplates ao abrir', () => {
+  it('reseta estado ao abrir (não faz fetch, página é responsável)', () => {
     render(<TemplatesGerenciarModal {...defaultProps} />);
-    expect(mockFetchTemplates).toHaveBeenCalledWith('f1');
+    expect(mockFetchTemplates).not.toHaveBeenCalled();
   });
 
   it('mostra botão "Adicionar"', () => {

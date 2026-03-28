@@ -60,7 +60,6 @@ export function TemplatesGerenciarModal({
 
   useEffect(() => {
     if (open) {
-      void fetchTemplates(familiaId);
       setMostraCriar(false);
       setEditandoId(null);
       setConfirmandoExcluirId(null);
@@ -69,7 +68,7 @@ export function TemplatesGerenciarModal({
       editar.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, familiaId]);
+  }, [open]);
 
   if (!open) return null;
 

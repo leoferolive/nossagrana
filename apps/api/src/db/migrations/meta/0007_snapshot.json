@@ -1164,7 +1164,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"templates_transacao\".\"ativo\" = $1",
+          "where": "\"templates_transacao\".\"ativo\" = true",
           "concurrently": false,
           "method": "btree",
           "with": {}

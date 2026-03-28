@@ -20,4 +20,4 @@ ALTER TABLE "templates_transacao" ADD CONSTRAINT "templates_transacao_metodo_pag
 ALTER TABLE "templates_transacao" ADD CONSTRAINT "templates_transacao_cofrinho_id_cofrinhos_id_fk" FOREIGN KEY ("cofrinho_id") REFERENCES "public"."cofrinhos"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "templates_transacao" ADD CONSTRAINT "templates_transacao_criado_por_users_id_fk" FOREIGN KEY ("criado_por") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_templates_transacao_familia_id" ON "templates_transacao" USING btree ("familia_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "uq_templates_transacao_familia_nome_tipo" ON "templates_transacao" USING btree ("familia_id","nome","tipo") WHERE "templates_transacao"."ativo" = $1;
+CREATE UNIQUE INDEX "uq_templates_transacao_familia_nome_tipo" ON "templates_transacao" USING btree ("familia_id","nome","tipo") WHERE "templates_transacao"."ativo" = true;

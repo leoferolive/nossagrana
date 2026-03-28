@@ -9,7 +9,7 @@ import path from 'path';
 import postgres from 'postgres';
 import { fileURLToPath } from 'url';
 
-import { categorias, familias, templatesTransacao, users, usuarioFamilia } from '../db/schema.js';
+import { categorias, familias, templatesTransacao, usuarioFamilia } from '../db/schema.js';
 import { TEMPLATES_PADRAO } from '../db/seeds/templates-padrao.js';
 
 config({

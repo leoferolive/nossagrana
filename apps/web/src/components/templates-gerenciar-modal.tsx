@@ -44,7 +44,8 @@ export function TemplatesGerenciarModal({
   onClose,
   familiaId,
 }: TemplatesGerenciarModalProps) {
-  const { templates, fetchTemplates } = useTemplateTransacaoStore();
+  const templates = useTemplateTransacaoStore((s) => s.templates);
+  const fetchTemplates = useTemplateTransacaoStore((s) => s.fetchTemplates);
   const { categorias } = useCategoriaStore();
   const { cofrinhos } = useCofrinhoStore();
 

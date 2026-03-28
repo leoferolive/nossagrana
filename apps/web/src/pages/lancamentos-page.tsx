@@ -27,18 +27,16 @@ function addMonths(mes: string, delta: number): string {
 }
 
 export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: LancamentosPageProps) {
-  const {
-    templates,
-    valores,
-    mesReferencia,
-    carregando,
-    salvando,
-    erro,
-    fetchTemplates,
-    setValor,
-    setMesReferencia,
-    aplicar,
-  } = useTemplateTransacaoStore();
+  const templates = useTemplateTransacaoStore((s) => s.templates);
+  const valores = useTemplateTransacaoStore((s) => s.valores);
+  const mesReferencia = useTemplateTransacaoStore((s) => s.mesReferencia);
+  const carregando = useTemplateTransacaoStore((s) => s.carregando);
+  const salvando = useTemplateTransacaoStore((s) => s.salvando);
+  const erro = useTemplateTransacaoStore((s) => s.erro);
+  const fetchTemplates = useTemplateTransacaoStore((s) => s.fetchTemplates);
+  const setValor = useTemplateTransacaoStore((s) => s.setValor);
+  const setMesReferencia = useTemplateTransacaoStore((s) => s.setMesReferencia);
+  const aplicar = useTemplateTransacaoStore((s) => s.aplicar);
 
   const [sucesso, setSucesso] = useState<{
     transacoesCriadas: number;

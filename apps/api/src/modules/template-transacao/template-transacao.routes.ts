@@ -32,6 +32,7 @@ import {
   templateTransacaoUpdateSchema,
 } from './template-transacao.schema.js';
 import {
+  TemplateSemCategoriaError,
   TemplateNotFoundError,
   TemplateTransacaoDuplicateError,
   TemplateTransacaoService,
@@ -289,6 +290,9 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (error) {
         if (error instanceof TemplateNotFoundError) {
           return reply.code(404).send({ message: error.message });
+        }
+        if (error instanceof TemplateSemCategoriaError) {
+          return reply.code(400).send({ message: error.message });
         }
         throw error;
       }

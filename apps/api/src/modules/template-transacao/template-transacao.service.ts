@@ -19,6 +19,12 @@ export class TemplateTransacaoDuplicateError extends Error {
   }
 }
 
+export class TemplateSemCategoriaError extends Error {
+  constructor() {
+    super('Template sem cofrinho precisa ter categoria associada');
+  }
+}
+
 interface TransacaoCreator {
   criar(input: {
     familiaId: string;
@@ -118,11 +124,12 @@ export class TemplateTransacaoService {
         });
         aportesCriados++;
       } else {
+        if (!template.categoriaId) throw new TemplateSemCategoriaError();
         await this.transacaoCreator.criar({
           familiaId: input.familiaId,
           tipo: template.tipo,
           valor: item.valor,
-          categoriaId: template.categoriaId!,
+          categoriaId: template.categoriaId,
           descricao: template.nome,
           data,
           mesReferencia: input.mesReferencia,

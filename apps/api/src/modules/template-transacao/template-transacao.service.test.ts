@@ -4,6 +4,7 @@ import {
   TemplateTransacaoService,
   TemplateNotFoundError,
   TemplateTransacaoDuplicateError,
+  TemplateSemCategoriaError,
 } from './template-transacao.service.js';
 import type { TemplateTransacaoRepository } from './template-transacao.types.js';
 
@@ -176,6 +177,23 @@ describe('TemplateTransacaoService', () => {
       });
       expect(result.total).toBe(1);
       expect(mockTransacaoCreator.criar).toHaveBeenCalledTimes(1);
+    });
+
+    it('lança erro se template sem cofrinho não tem categoriaId', async () => {
+      const t = await service.create({
+        familiaId: 'f1',
+        nome: 'Sem Categoria',
+        tipo: 'despesa',
+        criadoPor: 'u1',
+      });
+      await expect(
+        service.aplicar({
+          familiaId: 'f1',
+          usuarioId: 'u1',
+          mesReferencia: '2026-03',
+          itens: [{ templateId: t.id, valor: '100.00' }],
+        }),
+      ).rejects.toThrow(TemplateSemCategoriaError);
     });
 
     it('lança erro se template não pertence à família', async () => {

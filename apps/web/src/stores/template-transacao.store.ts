@@ -70,8 +70,8 @@ export const useTemplateTransacaoStore = create<TemplateTransacaoStore>((set, ge
   async aplicar(familiaId: string) {
     const { mesReferencia, valores } = get();
     const itens = Object.entries(valores)
-      .filter(([, valor]) => parseFloat(valor) > 0)
-      .map(([templateId, valor]) => ({ templateId, valor }));
+      .map(([templateId, valor]) => ({ templateId, valor: valor.replace(',', '.') }))
+      .filter(({ valor }) => parseFloat(valor) > 0);
 
     if (itens.length === 0) throw new Error('Preencha ao menos um valor');
 

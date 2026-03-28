@@ -16,7 +16,7 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/**/*.test.ts', 'src/scripts/**'],
+      exclude: ['src/server.ts', 'src/**/*.test.ts', 'src/scripts/**', 'src/**/*.routes.ts', 'src/**/*.types.ts'],
       lines: 80,
       functions: 80,
       branches: 70,

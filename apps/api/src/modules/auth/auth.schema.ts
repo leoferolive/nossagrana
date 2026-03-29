@@ -84,6 +84,24 @@ export const authUpdatePerfilSchema = {
   },
 };
 
+export const authForgotPasswordSchema = {
+  body: z.object({ email: z.string().email() }),
+  response: {
+    200: z.object({ message: z.string() }),
+  },
+};
+
+export const authResetPasswordSchema = {
+  body: z.object({
+    token: z.string().uuid(),
+    novaSenha: z.string().min(6),
+  }),
+  response: {
+    200: z.object({ message: z.string() }),
+    400: z.object({ message: z.string() }),
+  },
+};
+
 export const authUpdateSenhaSchema = {
   body: z.object({
     senhaAtual: z.string(),

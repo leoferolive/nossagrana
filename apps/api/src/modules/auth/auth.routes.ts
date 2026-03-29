@@ -7,19 +7,35 @@ import {
 import type { FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
+import { ConsoleEmailSender } from '../email/email.console-sender.js';
+import { EmailService } from '../email/email.service.js';
+import { SmtpEmailSender } from '../email/email.smtp-sender.js';
+
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
 import {
   authFamiliaContextSchema,
+  authForgotPasswordSchema,
   authLoginSchema,
   authLogoutSchema,
   authMeSchema,
   authPerfilSchema,
   authRefreshSchema,
   authRegisterSchema,
+  authResetPasswordSchema,
   authUpdatePerfilSchema,
   authUpdateSenhaSchema,
 } from './auth.schema.js';
-import { AuthService, EmailAlreadyExistsError, InvalidCredentialsError } from './auth.service.js';
+import {
+  AuthService,
+  EmailAlreadyExistsError,
+  hashPassword,
+  InvalidCredentialsError,
+} from './auth.service.js';
+import {
+  DrizzlePasswordResetRepository,
+  InMemoryPasswordResetRepository,
+} from './password-reset.repository.js';
+import { InvalidResetTokenError, PasswordResetService } from './password-reset.service.js';
 import {
   DrizzleRevokedTokenRepository,
   hashToken,
@@ -43,9 +59,47 @@ const defaultRevokedTokenRepository = (): RevokedTokenRepository => {
   return new DrizzleRevokedTokenRepository();
 };
 
+const defaultEmailService = (): EmailService => {
+  if (env.SMTP_USERNAME) {
+    const sender = new SmtpEmailSender({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      user: env.SMTP_USERNAME,
+      pass: env.SMTP_PASSWORD,
+      from: env.EMAIL_FROM,
+      fromName: env.EMAIL_FROM_NAME,
+    });
+    return new EmailService(sender);
+  }
+
+  return new EmailService(new ConsoleEmailSender());
+};
+
+const defaultPasswordResetService = (emailService: EmailService): PasswordResetService => {
+  if (env.NODE_ENV === 'test') {
+    return new PasswordResetService(
+      new InMemoryAuthRepository(),
+      new InMemoryPasswordResetRepository(),
+      emailService,
+      env.CORS_ORIGIN,
+      hashPassword,
+    );
+  }
+
+  return new PasswordResetService(
+    new DrizzleAuthRepository(),
+    new DrizzlePasswordResetRepository(),
+    emailService,
+    env.CORS_ORIGIN,
+    hashPassword,
+  );
+};
+
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   const authService = defaultAuthService();
   const revokedTokenRepo = defaultRevokedTokenRepository();
+  const emailService = defaultEmailService();
+  const passwordResetService = defaultPasswordResetService(emailService);
 
   fastify.post(
     '/auth/register',
@@ -246,6 +300,33 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(204).send();
       } catch {
         return reply.code(401).send({ message: 'Senha atual incorreta' });
+      }
+    },
+  );
+
+  fastify.post(
+    '/auth/forgot-password',
+    { schema: authForgotPasswordSchema, config: { rateLimit: { max: 3, timeWindow: '1 minute' } } },
+    async (request) => {
+      const { email } = authForgotPasswordSchema.body.parse(request.body);
+      await passwordResetService.requestReset(email);
+      return { message: 'Se o e-mail existir, um link de redefinição será enviado.' };
+    },
+  );
+
+  fastify.post(
+    '/auth/reset-password',
+    { schema: authResetPasswordSchema, config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const { token, novaSenha } = authResetPasswordSchema.body.parse(request.body);
+      try {
+        await passwordResetService.resetPassword(token, novaSenha);
+        return { message: 'Senha redefinida com sucesso.' };
+      } catch (error) {
+        if (error instanceof InvalidResetTokenError) {
+          return reply.code(400).send({ message: error.message });
+        }
+        throw error;
       }
     },
   );

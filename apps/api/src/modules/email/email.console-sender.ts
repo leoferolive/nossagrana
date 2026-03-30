@@ -1,4 +1,3 @@
-/* v8 ignore start -- dev-only sender; logic is trivial */
 import type { EmailPayload, EmailSender } from './email.types.js';
 export class ConsoleEmailSender implements EmailSender {
   async send(payload: EmailPayload): Promise<void> {

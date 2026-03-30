@@ -5,6 +5,7 @@ import { passwordResetTokens } from '../../db/schema.js';
 
 import type { PasswordResetRepository, PasswordResetToken } from './password-reset.types.js';
 
+/* v8 ignore start -- Drizzle repository requires real DB; tested via integration/E2E */
 export class DrizzlePasswordResetRepository implements PasswordResetRepository {
   async createToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
     await db.insert(passwordResetTokens).values({ userId, tokenHash, expiresAt });
@@ -43,6 +44,7 @@ export class DrizzlePasswordResetRepository implements PasswordResetRepository {
       .where(and(eq(passwordResetTokens.userId, userId), eq(passwordResetTokens.used, false)));
   }
 }
+/* v8 ignore stop */
 
 export class InMemoryPasswordResetRepository implements PasswordResetRepository {
   private tokens: PasswordResetToken[] = [];

@@ -11,6 +11,7 @@ interface SmtpConfig {
   fromName: string;
 }
 
+/* v8 ignore start -- SMTP sender requires real mail server; tested manually */
 export class SmtpEmailSender implements EmailSender {
   private readonly transporter: nodemailer.Transporter;
   private readonly from: string;

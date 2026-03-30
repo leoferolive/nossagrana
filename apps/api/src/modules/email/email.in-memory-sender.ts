@@ -7,6 +7,7 @@ export class InMemoryEmailSender implements EmailSender {
     this.sent.push(payload);
   }
 
+  /* v8 ignore next 3 -- test utility method */
   clear(): void {
     this.sent.length = 0;
   }

@@ -94,7 +94,7 @@ export const authForgotPasswordSchema = {
 export const authResetPasswordSchema = {
   body: z.object({
     token: z.string().uuid(),
-    novaSenha: z.string().min(6),
+    novaSenha: z.string().min(8).max(128),
   }),
   response: {
     200: z.object({ message: z.string() }),
@@ -105,7 +105,7 @@ export const authResetPasswordSchema = {
 export const authUpdateSenhaSchema = {
   body: z.object({
     senhaAtual: z.string(),
-    novaSenha: z.string().min(6),
+    novaSenha: z.string().min(8).max(128),
   }),
   response: {
     204: z.null(),

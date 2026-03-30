@@ -75,11 +75,15 @@ const defaultEmailService = (): EmailService => {
   return new EmailService(new ConsoleEmailSender());
 };
 
-const defaultPasswordResetService = (emailService: EmailService): PasswordResetService => {
+const defaultPasswordResetService = (
+  emailService: EmailService,
+  revokedTokenRepo: RevokedTokenRepository,
+): PasswordResetService => {
   if (env.NODE_ENV === 'test') {
     return new PasswordResetService(
       new InMemoryAuthRepository(),
       new InMemoryPasswordResetRepository(),
+      revokedTokenRepo,
       emailService,
       env.CORS_ORIGIN,
       hashPassword,
@@ -89,6 +93,7 @@ const defaultPasswordResetService = (emailService: EmailService): PasswordResetS
   return new PasswordResetService(
     new DrizzleAuthRepository(),
     new DrizzlePasswordResetRepository(),
+    revokedTokenRepo,
     emailService,
     env.CORS_ORIGIN,
     hashPassword,
@@ -99,7 +104,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   const authService = defaultAuthService();
   const revokedTokenRepo = defaultRevokedTokenRepository();
   const emailService = defaultEmailService();
-  const passwordResetService = defaultPasswordResetService(emailService);
+  const passwordResetService = defaultPasswordResetService(emailService, revokedTokenRepo);
 
   fastify.post(
     '/auth/register',

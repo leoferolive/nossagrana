@@ -6,13 +6,14 @@ import { EmailService } from '../email/email.service.js';
 import { InMemoryAuthRepository } from './auth.repository.js';
 import { InMemoryPasswordResetRepository } from './password-reset.repository.js';
 import { InvalidResetTokenError, PasswordResetService } from './password-reset.service.js';
-import { hashToken } from './revoked-token.repository.js';
+import { hashToken, InMemoryRevokedTokenRepository } from './revoked-token.repository.js';
 
 const mockHash = async (password: string): Promise<string> => `hashed:${password}`;
 
 describe('PasswordResetService', () => {
   let authRepo: InMemoryAuthRepository;
   let resetRepo: InMemoryPasswordResetRepository;
+  let revokedTokenRepo: InMemoryRevokedTokenRepository;
   let emailSender: InMemoryEmailSender;
   let emailService: EmailService;
   let service: PasswordResetService;
@@ -20,11 +21,13 @@ describe('PasswordResetService', () => {
   beforeEach(() => {
     authRepo = new InMemoryAuthRepository();
     resetRepo = new InMemoryPasswordResetRepository();
+    revokedTokenRepo = new InMemoryRevokedTokenRepository();
     emailSender = new InMemoryEmailSender();
     emailService = new EmailService(emailSender);
     service = new PasswordResetService(
       authRepo,
       resetRepo,
+      revokedTokenRepo,
       emailService,
       'http://localhost:5173',
       mockHash,
@@ -75,6 +78,24 @@ describe('PasswordResetService', () => {
 
       const updatedUser = await authRepo.findById(user.id);
       expect(updatedUser!.senhaHash).toBe('hashed:novaSenha123');
+    });
+
+    it('revokes all refresh tokens after password reset', async () => {
+      const user = await authRepo.createUser({
+        nome: 'Carlos',
+        email: 'carlos@test.com',
+        senhaHash: 'oldHash',
+      });
+
+      await service.requestReset('carlos@test.com');
+
+      const tokenUrl = emailSender.sent[0].html.match(/reset-password\?token=([a-f0-9-]+)/);
+      const token = tokenUrl![1];
+
+      await service.resetPassword(token, 'novaSenha123');
+
+      const isCompromised = await revokedTokenRepo.isUserCompromised(user.id);
+      expect(isCompromised).toBe(true);
     });
 
     it('throws for invalid token', async () => {

@@ -31,6 +31,7 @@ export const templateTransacaoUpdateSchema = {
   response: {
     200: templateTransacaoCreateResponseSchema,
     404: errorSchemas[404],
+    409: errorSchemas[409],
   },
 };
 

@@ -28,7 +28,11 @@ export class PasswordResetService {
     await this.resetRepo.createToken(user.id, tokenHash, expiresAt);
 
     const resetUrl = `${this.frontendUrl}/reset-password?token=${token}`;
-    await this.emailService.sendPasswordReset(user.email, user.nome, resetUrl);
+    try {
+      await this.emailService.sendPasswordReset(user.email, user.nome, resetUrl);
+    } catch {
+      // Swallow email failures to preserve anti-enumeration contract
+    }
   }
 
   async resetPassword(token: string, novaSenha: string): Promise<void> {

@@ -11,4 +11,4 @@ DROP INDEX "uq_templates_transacao_familia_nome_tipo";--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "password_reset_tokens_token_hash_idx" ON "password_reset_tokens" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "password_reset_tokens_user_id_idx" ON "password_reset_tokens" USING btree ("user_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "uq_templates_transacao_familia_nome_tipo" ON "templates_transacao" USING btree ("familia_id","nome","tipo") WHERE "templates_transacao"."ativo" = $1;
+CREATE UNIQUE INDEX "uq_templates_transacao_familia_nome_tipo" ON "templates_transacao" USING btree ("familia_id","nome","tipo") WHERE "templates_transacao"."ativo" = true;

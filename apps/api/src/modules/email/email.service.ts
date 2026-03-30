@@ -14,17 +14,24 @@ function loadTemplate(name: EmailTemplate): HandlebarsTemplateDelegate<TemplateD
   return Handlebars.compile<TemplateData>(source);
 }
 
-const templates = {
-  'password-reset': loadTemplate('password-reset'),
-  'email-verification': loadTemplate('email-verification'),
-  'magic-link': loadTemplate('magic-link'),
-};
+let _templates: Record<EmailTemplate, HandlebarsTemplateDelegate<TemplateData>> | null = null;
+
+function getTemplates() {
+  if (!_templates) {
+    _templates = {
+      'password-reset': loadTemplate('password-reset'),
+      'email-verification': loadTemplate('email-verification'),
+      'magic-link': loadTemplate('magic-link'),
+    };
+  }
+  return _templates;
+}
 
 export class EmailService {
   constructor(private readonly sender: EmailSender) {}
 
   async sendPasswordReset(to: string, userName: string, actionUrl: string): Promise<void> {
-    const html = templates['password-reset']({
+    const html = getTemplates()['password-reset']({
       userName,
       actionUrl,
       expirationMinutes: 60,
@@ -37,7 +44,7 @@ export class EmailService {
   }
 
   async sendEmailVerification(to: string, userName: string, actionUrl: string): Promise<void> {
-    const html = templates['email-verification']({
+    const html = getTemplates()['email-verification']({
       userName,
       actionUrl,
     });
@@ -49,7 +56,7 @@ export class EmailService {
   }
 
   async sendMagicLink(to: string, userName: string, actionUrl: string): Promise<void> {
-    const html = templates['magic-link']({
+    const html = getTemplates()['magic-link']({
       userName,
       actionUrl,
       expirationMinutes: 10,

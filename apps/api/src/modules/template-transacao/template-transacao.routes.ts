@@ -229,6 +229,9 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
         if (error instanceof TemplateNotFoundError) {
           return reply.code(404).send({ message: error.message });
         }
+        if (error instanceof TemplateTransacaoDuplicateError) {
+          return reply.code(409).send({ message: error.message });
+        }
         throw error;
       }
     },

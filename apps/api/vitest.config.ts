@@ -22,6 +22,8 @@ export default defineConfig({
         'src/scripts/**',
         'src/**/*.routes.ts',
         'src/**/*.types.ts',
+        'src/modules/email/email.console-sender.ts',
+        'src/modules/email/email.smtp-sender.ts',
       ],
       lines: 80,
       functions: 80,

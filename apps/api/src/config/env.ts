@@ -12,6 +12,12 @@ const envSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
+  SMTP_HOST: z.string().default('smtp-relay.brevo.com'),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USERNAME: z.string().default(''),
+  SMTP_PASSWORD: z.string().default(''),
+  EMAIL_FROM: z.string().default('no-reply@nossagrana.leoferolive.com.br'),
+  EMAIL_FROM_NAME: z.string().default('NossaGrana'),
   ADMIN_SECRET: z
     .string()
     .min(32)

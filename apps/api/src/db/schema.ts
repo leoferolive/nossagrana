@@ -282,6 +282,24 @@ export const movimentacoesCofrinhos = pgTable(
   ],
 );
 
+export const passwordResetTokens = pgTable(
+  'password_reset_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    used: boolean('used').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('password_reset_tokens_token_hash_idx').on(table.tokenHash),
+    index('password_reset_tokens_user_id_idx').on(table.userId),
+  ],
+);
+
 export const revokedRefreshTokens = pgTable(
   'revoked_refresh_tokens',
   {

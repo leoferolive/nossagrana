@@ -2046,7 +2046,7 @@ describe('Admin routes', () => {
     const res = await app.inject({
       method: 'PATCH',
       url: '/api/auth/senha',
-      payload: { senhaAtual: 'errada', novaSenha: 'nova123' },
+      payload: { senhaAtual: 'errada', novaSenha: 'nova12345' },
       headers: { authorization: `Bearer ${accessToken}` },
     });
     expect(res.statusCode).toBe(401);

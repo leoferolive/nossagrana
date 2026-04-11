@@ -11,7 +11,7 @@ import {
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
-import { getCurrentMonth, shiftMonth } from '@/utils/date';
+import { formatMesLabel, getCurrentMonth, shiftMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
@@ -136,10 +136,7 @@ export const ExtratoPage = ({
   const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
   const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
-  const mesLabel = new Date(`${mesReferencia}-01`).toLocaleString('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const mesLabel = formatMesLabel(mesReferencia);
   const isCurrentMonth = mesReferencia === getCurrentMonth();
 
   const transacoesFiltradas = useMemo(

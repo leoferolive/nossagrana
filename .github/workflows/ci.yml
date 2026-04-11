@@ -156,6 +156,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cleanup stale gitleaks tarball
+        run: rm -f /tmp/gitleaks.tmp
+
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v2
         env:

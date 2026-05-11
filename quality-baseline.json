@@ -1,0 +1,10 @@
+{
+  "complexity": 20,
+  "max-depth": 0,
+  "max-lines": 7,
+  "max-lines-per-function": 62,
+  "max-params": 2,
+  "sonarjs/cognitive-complexity": 3,
+  "sonarjs/no-duplicate-string": 3,
+  "sonarjs/no-identical-functions": 0
+}

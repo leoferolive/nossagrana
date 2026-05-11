@@ -59,20 +59,8 @@ jobs:
       - name: Prettier check (changed files)
         run: pnpm format:check:changed
 
-      - name: Oxlint fast-pass
-        run: pnpm lint:fast
-
-      - name: ESLint
-        run: pnpm lint
-
-      - name: Type check
-        run: pnpm type-check
-
-      - name: Build
-        run: pnpm build
-
-      - name: Dead code check (Knip)
-        run: pnpm knip
+      - name: Quality Gate
+        run: pnpm quality:ci
 
   api-tests:
     runs-on: [self-hosted, Linux, ARM64]

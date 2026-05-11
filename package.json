@@ -18,6 +18,9 @@
     "knip": "knip",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "quality": "node scripts/quality-gate.mjs",
+    "quality:ci": "node scripts/quality-gate.mjs --ci",
+    "ratchet:update": "node scripts/ratchet-check.mjs --update",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -18,6 +18,9 @@
     "knip": "knip",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "quality": "node scripts/quality-gate.mjs",
+    "quality:ci": "node scripts/quality-gate.mjs --ci",
+    "ratchet:update": "node scripts/ratchet-check.mjs --update",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -27,6 +30,7 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-sonarjs": "^4.0.3",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
     "knip": "^5.87.0",

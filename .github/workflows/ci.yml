@@ -59,20 +59,29 @@ jobs:
       - name: Prettier check (changed files)
         run: pnpm format:check:changed
 
-      - name: Oxlint fast-pass
-        run: pnpm lint:fast
+      - name: Quality Gate
+        run: pnpm quality:ci
 
-      - name: ESLint
-        run: pnpm lint
+  build:
+    runs-on: [self-hosted, Linux, ARM64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Type check
-        run: pnpm type-check
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
-
-      - name: Dead code check (Knip)
-        run: pnpm knip
 
   api-tests:
     runs-on: [self-hosted, Linux, ARM64]

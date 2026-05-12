@@ -20,7 +20,7 @@ const familiaHeader = (familiaId: string) => ({ 'X-Familia-Id': familiaId });
 
 // ─── Cofrinhos ───────────────────────────────────────────────────────────────
 
-export class CofrinhoService {
+class CofrinhoService {
   constructor(private readonly api: ApiClient) {}
 
   async listar(familiaId: string, status = 'ativo'): Promise<CofrinhoListResponse> {

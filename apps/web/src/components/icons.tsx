@@ -13,12 +13,8 @@ export {
   Pencil as IconEditar,
   Trash2 as IconExcluir,
   Save as IconSalvar,
-  Check as IconConfirmar,
 
   // Financeiro
-  TrendingUp as IconReceita,
-  TrendingDown as IconDespesa,
-  Wallet as IconSaldo,
   CreditCard as IconCartao,
   BarChart2 as IconRelatorio,
   CalendarDays as IconHistorico,
@@ -27,7 +23,6 @@ export {
 
   // Família / Usuário
   Users as IconFamilia,
-  UserPlus as IconConvite,
   UserCircle as IconPerfil,
   Settings as IconConfiguracoes,
 
@@ -36,8 +31,6 @@ export {
 
   // Informação
   HelpCircle as IconAjuda,
-  Info as IconInfo,
-  AlertTriangle as IconAlerta,
   RefreshCw as IconRecorrente,
   Layers as IconParcelas,
 

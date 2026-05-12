@@ -64,10 +64,8 @@ for (const r of results) {
   const time = r.status === 'skip' ? '—' : `${r.ms}ms`;
   console.log(`${icon} ${r.desc.padEnd(w1)}  ${time.padStart(8)}`);
 }
-for (const r of results.filter((x) => !['pass', 'skip'].includes(x.status))) {
-  // se houve falha, código != 0
-  process.exit(1);
-}
+// Se houve falha em qualquer step, código != 0
+if (results.some((r) => r.status === 'fail')) process.exit(1);
 // Se algum step não rodou (fail-fast cortou), também falha
 if (results.length < steps.length) process.exit(1);
 console.log('─'.repeat(w1 + 18));

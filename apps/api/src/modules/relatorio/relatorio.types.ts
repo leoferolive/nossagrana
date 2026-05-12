@@ -1,9 +1,3 @@
-import type {
-  RelatorioDistribuicaoResponse,
-  RelatorioPorUsuarioResponse,
-  RelatorioTendenciasResponse,
-} from '@nossagrana/types';
-
 export interface RelatorioTransacaoRow {
   familiaId: string;
   tipo: 'receita' | 'despesa';
@@ -23,9 +17,3 @@ export interface RelatorioRepository {
     mesesReferencia: string[],
   ): Promise<RelatorioTransacaoRow[]>;
 }
-
-export type {
-  RelatorioDistribuicaoResponse,
-  RelatorioPorUsuarioResponse,
-  RelatorioTendenciasResponse,
-};

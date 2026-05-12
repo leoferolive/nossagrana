@@ -1,4 +1,4 @@
-export interface CategoryMatch {
+interface CategoryMatch {
   categoriaId: string;
   confidence: 'high' | 'medium' | 'low';
 }

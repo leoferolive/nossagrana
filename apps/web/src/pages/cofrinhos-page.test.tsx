@@ -11,7 +11,6 @@ vi.mock('@/services/cofrinho.service', () => ({
     criar: (...args: unknown[]) => mockCriar(...args),
     listar: vi.fn(),
   },
-  CofrinhoService: vi.fn(),
 }));
 
 vi.mock('@/contexts/use-auth', () => ({

@@ -64,7 +64,6 @@ jobs:
 
   build:
     runs-on: [self-hosted, Linux, ARM64]
-    needs: quality
     steps:
       - name: Checkout
         uses: actions/checkout@v4

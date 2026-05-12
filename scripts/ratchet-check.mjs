@@ -15,6 +15,23 @@ const RULES = [
   'sonarjs/no-identical-functions',
 ];
 
+function assertBaselineConsistency(baseline) {
+  const baselineKeys = Object.keys(baseline);
+  const missingInBaseline = RULES.filter((r) => !baselineKeys.includes(r));
+  const orphansInBaseline = baselineKeys.filter((k) => !RULES.includes(k));
+  if (missingInBaseline.length || orphansInBaseline.length) {
+    console.error('Inconsistência baseline:');
+    if (missingInBaseline.length) {
+      console.error(`  Regras em RULES mas faltando em baseline: ${missingInBaseline.join(', ')}`);
+    }
+    if (orphansInBaseline.length) {
+      console.error(`  Regras em baseline mas removidas de RULES: ${orphansInBaseline.join(', ')}`);
+    }
+    console.error('Atualize quality-baseline.json ou RULES.');
+    process.exit(1);
+  }
+}
+
 function countViolations() {
   const r = spawnSync('pnpm', ['exec', 'eslint', '.', '--format', 'json'], {
     encoding: 'utf8',
@@ -41,6 +58,8 @@ if (update || !fs.existsSync(BASELINE_PATH)) {
 }
 
 const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8'));
+assertBaselineConsistency(baseline);
+
 const regressions = [];
 for (const rule of RULES) {
   const before = baseline[rule] ?? 0;

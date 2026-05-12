@@ -28,6 +28,7 @@ const steps = [
     args: ['scripts/ratchet-check.mjs'],
     desc: 'Ratchet de complexidade',
   },
+  { id: 'build', cmd: 'pnpm', args: ['build'], desc: 'Build (vite/tsc emit)' },
 ];
 
 // Testes web só rodam fora do CI (ARM64 Pi)

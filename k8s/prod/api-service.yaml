@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: nossagrana-api
   namespace: nossagrana
+  labels:
+    app: nossagrana-api
 spec:
   selector:
     app: nossagrana-api

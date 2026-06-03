@@ -42,6 +42,12 @@
     "pnpm": ">=9"
   },
   "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "fast-uri@<3.1.2": ">=3.1.2",
+      "fast-jwt@<6.2.4": ">=6.2.4"
+    }
+  },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,md,yaml,yml}": "prettier --write"
   }

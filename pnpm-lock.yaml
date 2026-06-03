@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  fast-uri@<3.1.2: '>=3.1.2'
+  fast-jwt@<6.2.4: '>=6.2.4'
+
 importers:
   .:
     devDependencies:
@@ -78,16 +82,19 @@ importers:
         version: 16.6.1
       drizzle-orm:
         specifier: ^0.45.2
-        version: 0.45.2(postgres@3.4.8)
+        version: 0.45.2(@opentelemetry/api@1.9.1)(postgres@3.4.8)
       fastify:
-        specifier: ^5.8.4
-        version: 5.8.4
+        specifier: ^5.8.5
+        version: 5.8.5
+      fastify-metrics:
+        specifier: ^13.2.0
+        version: 13.2.0(fastify@5.8.5)
       fastify-plugin:
         specifier: ^5.0.1
         version: 5.1.0
       fastify-type-provider-zod:
         specifier: ^4.0.2
-        version: 4.0.2(fastify@5.8.4)(zod@3.25.76)
+        version: 4.0.2(fastify@5.8.5)(zod@3.25.76)
       handlebars:
         specifier: ^4.7.9
         version: 4.7.9
@@ -2033,6 +2040,13 @@ packages:
       }
     engines: { node: '>= 8' }
 
+  '@opentelemetry/api@1.9.1':
+    resolution:
+      {
+        integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==,
+      }
+    engines: { node: '>=8.0.0' }
+
   '@oxc-resolver/binding-android-arm-eabi@11.19.1':
     resolution:
       {
@@ -3247,6 +3261,12 @@ packages:
       }
     engines: { node: '>=8' }
 
+  bintrees@1.0.2:
+    resolution:
+      {
+        integrity: sha512-VOMgTMwjAaUG580SXn3LacVgjurrbMme7ZZNYGSSV7mmtY6QQRh0Eg3pwIcntQ77DErK1L0NxkbetjcoXzVwKw==,
+      }
+
   bn.js@4.12.3:
     resolution:
       {
@@ -4083,10 +4103,10 @@ packages:
         integrity: sha512-oRCntNDY/329HJPlmdNLIdogNtt6Vyjb1WuT01Soss3slIdyUp8kAcDU3saQTOquEK8KFVfwIIF7FebxUAu+yA==,
       }
 
-  fast-jwt@6.2.2:
+  fast-jwt@6.2.4:
     resolution:
       {
-        integrity: sha512-lzy+8JVyBOvwxjydFRBKLFVe1elRArL37pHRX1zHPt4T7FP7kNIpqauE1lOjZlD79DBzzRzQmp+28wbsY13weA==,
+        integrity: sha512-IoQa53wI6TbARU2yelb0L44ggFQnP2qVcwswCSYHbCAWuwpr70icDb3QjG0v01I8Tt01rVGDkN/rRvpk0lKFTA==,
       }
     engines: { node: '>=20' }
 
@@ -4102,10 +4122,10 @@ packages:
         integrity: sha512-g6KuKWmFXc0fID8WWH0jit4g0AGBoJhCkJMb1RmbsSEUNvQ+ZC8D6CUZ+GtF8nMzSPXnhiePyyqqipzNNEnHjg==,
       }
 
-  fast-uri@3.1.0:
+  fast-uri@3.1.2:
     resolution:
       {
-        integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==,
+        integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==,
       }
 
   fastfall@1.5.1:
@@ -4114,6 +4134,19 @@ packages:
         integrity: sha512-KH6p+Z8AKPXnmA7+Iz2Lh8ARCMr+8WNPVludm1LGkZoD2MjY6LVnRMtTKhkdzI+jr0RzQWXKzKyBJm1zoHEL4Q==,
       }
     engines: { node: '>=0.10.0' }
+
+  fastify-metrics@13.2.0:
+    resolution:
+      {
+        integrity: sha512-WPCjpqkEMCImwHLEA+8OR95zxSupLlK6iqaAPkBiQWYUsMCDkr45Qt1sQVPjoJ8WjZDpCShv3I0Q7XG7dPg3aQ==,
+      }
+    engines: { node: '>=20', pnpm: '>=10' }
+    peerDependencies:
+      '@platformatic/prom-client': ^1.0.0
+      fastify: '>=5'
+    peerDependenciesMeta:
+      '@platformatic/prom-client':
+        optional: true
 
   fastify-plugin@5.1.0:
     resolution:
@@ -4130,10 +4163,10 @@ packages:
       fastify: ^5.0.0
       zod: ^3.14.2
 
-  fastify@5.8.4:
+  fastify@5.8.5:
     resolution:
       {
-        integrity: sha512-sa42J1xylbBAYUWALSBoyXKPDUvM3OoNOibIefA+Oha57FryXKKCZarA1iDntOCWp3O35voZLuDg2mdODXtPzQ==,
+        integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==,
       }
 
   fastparallel@2.4.1:
@@ -5694,6 +5727,13 @@ packages:
         integrity: sha512-a39t9ApHNx2L4+HBnQKqxxHNs1r7KF+Intd8Q/g1bUh6q0WIp9voPXJ/x0j+ZL45KF1pJd9+q2jLIRMfvEshkA==,
       }
 
+  prom-client@15.1.3:
+    resolution:
+      {
+        integrity: sha512-6ZiOBfCywsD4k1BN9IX0uZhF+tJkV8q8llP64G5Hajs4JOeVLPCwpPVcpXy3BwYiUGgyJzsJJQeOIv7+hDSq8g==,
+      }
+    engines: { node: ^16 || ^18 || >=20 }
+
   punycode@2.3.1:
     resolution:
       {
@@ -6354,6 +6394,12 @@ packages:
       }
     engines: { node: '>=14.0.0' }
     hasBin: true
+
+  tdigest@0.1.2:
+    resolution:
+      {
+        integrity: sha512-+G0LLgjjo9BZX2MfdvPfH+MKLCrxlXSYec5DaPYP1fe6Iyhf0/fSmJ0bFiZ1F8BT6cGXl2LpltQptzjXKWEkKA==,
+      }
 
   temp-dir@2.0.0:
     resolution:
@@ -8182,7 +8228,7 @@ snapshots:
     dependencies:
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 3.1.0
+      fast-uri: 3.1.2
 
   '@fastify/cors@11.2.0':
     dependencies:
@@ -8206,7 +8252,7 @@ snapshots:
     dependencies:
       '@fastify/error': 4.2.0
       '@lukeed/ms': 2.0.2
-      fast-jwt: 6.2.2
+      fast-jwt: 6.2.4
       fastify-plugin: 5.1.0
       steed: 1.1.3
 
@@ -8302,6 +8348,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
+
+  '@opentelemetry/api@1.9.1': {}
 
   '@oxc-resolver/binding-android-arm-eabi@11.19.1':
     optional: true
@@ -8877,7 +8925,7 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.0
+      fast-uri: 3.1.2
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -9003,6 +9051,8 @@ snapshots:
   baseline-browser-mapping@2.10.18: {}
 
   binary-extensions@2.3.0: {}
+
+  bintrees@1.0.2: {}
 
   bn.js@4.12.3: {}
 
@@ -9225,8 +9275,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.45.2(postgres@3.4.8):
+  drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(postgres@3.4.8):
     optionalDependencies:
+      '@opentelemetry/api': 1.9.1
       postgres: 3.4.8
 
   dunder-proto@1.0.1:
@@ -9557,11 +9608,11 @@ snapshots:
       '@fastify/merge-json-schemas': 0.2.1
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 3.1.0
+      fast-uri: 3.1.2
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
-  fast-jwt@6.2.2:
+  fast-jwt@6.2.4:
     dependencies:
       '@lukeed/ms': 2.0.2
       asn1.js: 5.4.1
@@ -9575,22 +9626,28 @@ snapshots:
     dependencies:
       fast-decode-uri-component: 1.0.1
 
-  fast-uri@3.1.0: {}
+  fast-uri@3.1.2: {}
 
   fastfall@1.5.1:
     dependencies:
       reusify: 1.1.0
 
+  fastify-metrics@13.2.0(fastify@5.8.5):
+    dependencies:
+      fastify: 5.8.5
+      fastify-plugin: 5.1.0
+      prom-client: 15.1.3
+
   fastify-plugin@5.1.0: {}
 
-  fastify-type-provider-zod@4.0.2(fastify@5.8.4)(zod@3.25.76):
+  fastify-type-provider-zod@4.0.2(fastify@5.8.5)(zod@3.25.76):
     dependencies:
       '@fastify/error': 4.2.0
-      fastify: 5.8.4
+      fastify: 5.8.5
       zod: 3.25.76
       zod-to-json-schema: 3.25.1(zod@3.25.76)
 
-  fastify@5.8.4:
+  fastify@5.8.5:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
       '@fastify/error': 4.2.0
@@ -10504,6 +10561,11 @@ snapshots:
 
   process-warning@5.0.0: {}
 
+  prom-client@15.1.3:
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      tdigest: 0.1.2
+
   punycode@2.3.1: {}
 
   queue-microtask@1.2.3: {}
@@ -10960,6 +11022,10 @@ snapshots:
     transitivePeerDependencies:
       - tsx
       - yaml
+
+  tdigest@0.1.2:
+    dependencies:
+      bintrees: 1.0.2
 
   temp-dir@2.0.0: {}
 

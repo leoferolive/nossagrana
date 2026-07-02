@@ -21,7 +21,7 @@ jobs:
       rc_sha: ${{ steps.version.outputs.rc_sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
@@ -103,7 +103,7 @@ jobs:
     steps:
       - name: Apagar imagens RC antigas da API (manter ultimas 3)
         continue-on-error: true
-        uses: actions/delete-package-versions@v5
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
         with:
           package-name: nossagrana-dev-api
           package-type: container
@@ -113,7 +113,7 @@ jobs:
 
       - name: Apagar imagens RC antigas do Web (manter ultimas 3)
         continue-on-error: true
-        uses: actions/delete-package-versions@v5
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
         with:
           package-name: nossagrana-dev-web
           package-type: container

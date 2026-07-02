@@ -18,7 +18,7 @@ on:
 
 jobs:
   prepare:
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-latest
     outputs:
       resolved_sha: ${{ steps.meta.outputs.resolved_sha }}
       build_time: ${{ steps.meta.outputs.build_time }}
@@ -81,7 +81,7 @@ jobs:
 
   build-and-push-api:
     needs: prepare
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
@@ -124,7 +124,7 @@ jobs:
 
   build-and-push-web:
     needs: prepare
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
@@ -167,7 +167,7 @@ jobs:
 
   deploy:
     needs: [prepare, build-and-push-api, build-and-push-web]
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout (manifests k8s)
         uses: actions/checkout@v4

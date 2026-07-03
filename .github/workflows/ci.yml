@@ -180,14 +180,9 @@ jobs:
 
       - name: Semgrep scan
         run: |
-          # Regras de hardening de supply-chain do pnpm excluidas temporariamente:
-          # exigem settings do pnpm 10 (projeto em pnpm 9.15). Rastreado na issue #34.
           ~/semgrep-venv/bin/semgrep scan \
             --config p/owasp-top-ten \
             --config p/javascript \
             --config p/typescript \
             --config p/secrets \
-            --exclude-rule package_managers.pnpm.pnpm-block-exotic-sub-dependencies.pnpm-block-exotic-sub-dependencies \
-            --exclude-rule package_managers.pnpm.pnpm-missing-minimum-release-age.pnpm-minimum-release-age \
-            --exclude-rule package_managers.pnpm.pnpm-trust-policy.pnpm-trust-policy \
             --error

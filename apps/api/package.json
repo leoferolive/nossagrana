@@ -30,7 +30,7 @@
     "fastify-type-provider-zod": "^4.0.2",
     "handlebars": "^4.7.9",
     "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.5",
+    "nodemailer": "^9.0.1",
     "postgres": "^3.4.7",
     "zod": "^3.24.2"
   },

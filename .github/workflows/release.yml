@@ -13,7 +13,7 @@ concurrency:
 jobs:
   release:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.version.outputs.release_tag }}
       release_sha: ${{ steps.version.outputs.release_sha }}
@@ -21,7 +21,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -91,7 +91,7 @@ jobs:
   summary:
     needs: [release, deploy-dev]
     if: always()
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-latest
     steps:
       - name: Resumo do workflow
         run: |

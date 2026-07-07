@@ -38,6 +38,29 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
+      # A imagem é construída a partir de `ref` mas rotulada com `tag`. Se `tag`
+      # existir como git tag e apontar para outro commit, uma imagem vX.Y.Z
+      # carregaria código de outro lugar — falhar aqui bloqueia todos os jobs
+      # (build/deploy dependem de prepare). Tags de imagem que não são git tags
+      # (ex.: RC criada no próprio run) só precisam existir OU casar com o ref.
+      - name: Validar alinhamento tag ↔ ref
+        env:
+          TAG: ${{ inputs.tag }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          TAG_SHA="$(git rev-list -n 1 "$TAG" 2>/dev/null || true)"
+          REF_SHA="$(git rev-parse HEAD)"
+          if [ -z "$TAG_SHA" ]; then
+            echo "::error::Tag '$TAG' não existe como git tag no repositório. Crie a tag antes do deploy ou use uma tag existente."
+            exit 1
+          fi
+          if [ "$TAG_SHA" != "$REF_SHA" ]; then
+            echo "::error::Desalinhamento: tag '$TAG' -> $TAG_SHA, mas ref '$REF' -> $REF_SHA. A imagem seria rotulada com uma tag que não corresponde ao código buildado."
+            exit 1
+          fi
+          echo "OK: tag '$TAG' e ref '$REF' apontam para $REF_SHA"
+
       - name: Resolve deploy metadata
         id: meta
         run: |

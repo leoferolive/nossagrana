@@ -11,6 +11,44 @@ PWA de gestão financeira familiar, self-hosted em Raspberry Pi 4B com K3s.
 Permite que uma família registre receitas e despesas, acompanhe saldo em tempo real,
 controle cartões de crédito e visualize relatórios e insights financeiros.
 
+---
+
+## Entidades e Módulos Principais
+
+Domínio: **gestão financeira familiar** — cada usuário pertence a uma ou mais
+**famílias**, e todos os dados financeiros são isolados por `familia_id` (multi-tenant).
+
+### Entidades (tabelas Drizzle em `apps/api/src/db/schema.ts`)
+
+| Entidade                | Descrição                                                                 |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `users`                 | Usuários (nome, email, hash de senha)                                     |
+| `familias`              | Família (unidade de isolamento; suporta soft delete via `deleted_at`)     |
+| `usuario_familia`       | Vínculo usuário↔família com papel (`admin`/`membro`)                       |
+| `convites`              | Convites por código para entrar numa família                              |
+| `solicitacoes_entrada`  | Pedidos de entrada em família (pendente/aprovada/rejeitada)               |
+| `categorias`            | Categorias de `receita`/`despesa` (algumas de sistema)                     |
+| `metodos_pagamento`     | Métodos: `credito`/`debito`/`pix`/`dinheiro` (cartão tem fechamento/venc.) |
+| `transacoes`            | Lançamentos (receita/despesa) com parcelamento e recorrência              |
+| `orcamento_categoria`   | Limites de gasto por categoria com vigência                               |
+| `snapshots_mensais`     | Snapshot imutável do fechamento mensal (com flag `divergente`)            |
+| `cofrinhos`             | Cofrinhos/metas de poupança com saldo e status (`ativo`/`encerrado`)      |
+| `movimentacoes_cofrinho`| Aportes e retiradas de cofrinho                                           |
+| `templates_transacao`   | Modelos reutilizáveis de lançamento                                       |
+| `password_reset_tokens` / `revoked_refresh_tokens` | Suporte a auth (reset de senha, revogação de refresh) |
+
+### Módulos da API (`apps/api/src/modules/`)
+
+`auth`, `familia`, `categoria`, `metodo-pagamento`, `transacao` (inclui
+`mes-referencia`), `orcamento`, `cofrinho`, `dashboard`, `relatorio`, `historico`,
+`template-transacao`, `email`, `admin`, `health`, `ws` (WebSocket em tempo real).
+
+### Telas da Web (`apps/web/src/pages/`)
+
+login, sign-up, onboarding, familia-selector, dashboard, lancamentos, extrato,
+orcamento, categorias, metodos-pagamento, cofrinhos (+ detalhe), fatura, relatorios,
+historico, perfil, configuracoes, family-settings, ajuda.
+
 **Documentação completa em `/docs/`:**
 
 - `PRD.md` — requisitos completos, modelo de dados e regras de negócio

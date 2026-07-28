@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { getCurrentMonth, shiftMonth } from './date';
+import { formatMesLabel, getCurrentMonth, shiftMonth } from './date';
 
 describe('getCurrentMonth', () => {
   afterEach(() => {
@@ -52,5 +52,26 @@ describe('shiftMonth', () => {
 
   it('shifts backward by multiple months across year boundary', () => {
     expect(shiftMonth('2026-02', -3)).toBe('2025-11');
+  });
+});
+
+describe('formatMesLabel', () => {
+  // Regressão: new Date("YYYY-MM-01") é parseado como UTC meia-noite.
+  // Em TZ negativa (America/Sao_Paulo, GMT-3) isso vira o último dia do mês
+  // anterior às 21h local, fazendo toLocaleString retornar o mês errado.
+  it('retorna "abril de 2026" para "2026-04" mesmo em TZ negativa', () => {
+    expect(formatMesLabel('2026-04')).toBe('abril de 2026');
+  });
+
+  it('retorna "janeiro de 2026" para "2026-01"', () => {
+    expect(formatMesLabel('2026-01')).toBe('janeiro de 2026');
+  });
+
+  it('retorna "dezembro de 2026" para "2026-12"', () => {
+    expect(formatMesLabel('2026-12')).toBe('dezembro de 2026');
+  });
+
+  it('retorna "março de 2026" para "2026-03"', () => {
+    expect(formatMesLabel('2026-03')).toBe('março de 2026');
   });
 });

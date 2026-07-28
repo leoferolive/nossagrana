@@ -1,9 +1,4 @@
-function formatMesLabel(mesReferencia: string): string {
-  return new Date(`${mesReferencia}-01`).toLocaleString('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  });
-}
+import { formatMesLabel } from '../utils/date';
 
 interface MonthNavProps {
   mesReferencia: string;

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   validate-inputs:
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-latest
     steps:
       - name: Validar formato da tag estavel
         run: |
@@ -28,7 +28,7 @@ jobs:
           fi
 
       - name: Checkout para validacao de tag/ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
 
@@ -70,7 +70,7 @@ jobs:
   summary:
     needs: [validate-inputs, deploy-dev]
     if: always()
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-latest
     steps:
       - name: Resumo do workflow
         run: |

@@ -112,9 +112,16 @@ throw new ValidationError(
 );
 ```
 
-Ao validar com Zod, propagar `error.issues` (path + mensagem) na resposta de
-erro em vez de uma mensagem genérica — isso já é o padrão do formato de erro
-em `.claude/rules/api-design.md`.
+**Exceção:** para senha, token (JWT, refresh token), header `Authorization` ou
+qualquer outro segredo, não incluir o valor recebido na mensagem — descrever
+o formato esperado sem ecoar o valor (ex. "token ausente ou malformado"). Ver
+`.claude/rules/security.md` (nunca logar secrets, tokens ou senhas).
+
+Ao validar com Zod, o formato de resposta de erro é o definido em
+`.claude/rules/api-design.md` (`{ error: { message, code? } }`). Se o
+handler de erro futuramente precisar expor detalhes por campo (path +
+mensagem do Zod), isso é uma mudança de contrato de API — atualizar
+`api-design.md` e o handler de erro junto, não assumir que já existe.
 
 ## Comentários
 

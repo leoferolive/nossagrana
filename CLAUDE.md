@@ -20,22 +20,22 @@ Domínio: **gestão financeira familiar** — cada usuário pertence a uma ou ma
 
 ### Entidades (tabelas Drizzle em `apps/api/src/db/schema.ts`)
 
-| Entidade                | Descrição                                                                 |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `users`                 | Usuários (nome, email, hash de senha)                                     |
-| `familias`              | Família (unidade de isolamento; suporta soft delete via `deleted_at`)     |
-| `usuario_familia`       | Vínculo usuário↔família com papel (`admin`/`membro`)                       |
-| `convites`              | Convites por código para entrar numa família                              |
-| `solicitacoes_entrada`  | Pedidos de entrada em família (pendente/aprovada/rejeitada)               |
-| `categorias`            | Categorias de `receita`/`despesa` (algumas de sistema)                     |
-| `metodos_pagamento`     | Métodos: `credito`/`debito`/`pix`/`dinheiro` (cartão tem fechamento/venc.) |
-| `transacoes`            | Lançamentos (receita/despesa) com parcelamento e recorrência              |
-| `orcamento_categoria`   | Limites de gasto por categoria com vigência                               |
-| `snapshots_mensais`     | Snapshot imutável do fechamento mensal (com flag `divergente`)            |
-| `cofrinhos`             | Cofrinhos/metas de poupança com saldo e status (`ativo`/`encerrado`)      |
-| `movimentacoes_cofrinho`| Aportes e retiradas de cofrinho                                           |
-| `templates_transacao`   | Modelos reutilizáveis de lançamento                                       |
-| `password_reset_tokens` / `revoked_refresh_tokens` | Suporte a auth (reset de senha, revogação de refresh) |
+| Entidade                                           | Descrição                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------- |
+| `users`                                            | Usuários (nome, email, hash de senha)                                      |
+| `familias`                                         | Família (unidade de isolamento; suporta soft delete via `deleted_at`)      |
+| `usuario_familia`                                  | Vínculo usuário↔família com papel (`admin`/`membro`)                       |
+| `convites`                                         | Convites por código para entrar numa família                               |
+| `solicitacoes_entrada`                             | Pedidos de entrada em família (pendente/aprovada/rejeitada)                |
+| `categorias`                                       | Categorias de `receita`/`despesa` (algumas de sistema)                     |
+| `metodos_pagamento`                                | Métodos: `credito`/`debito`/`pix`/`dinheiro` (cartão tem fechamento/venc.) |
+| `transacoes`                                       | Lançamentos (receita/despesa) com parcelamento e recorrência               |
+| `orcamento_categoria`                              | Limites de gasto por categoria com vigência                                |
+| `snapshots_mensais`                                | Snapshot imutável do fechamento mensal (com flag `divergente`)             |
+| `cofrinhos`                                        | Cofrinhos/metas de poupança com saldo e status (`ativo`/`encerrado`)       |
+| `movimentacoes_cofrinho`                           | Aportes e retiradas de cofrinho                                            |
+| `templates_transacao`                              | Modelos reutilizáveis de lançamento                                        |
+| `password_reset_tokens` / `revoked_refresh_tokens` | Suporte a auth (reset de senha, revogação de refresh)                      |
 
 ### Módulos da API (`apps/api/src/modules/`)
 

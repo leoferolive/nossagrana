@@ -20,22 +20,22 @@ Domínio: **gestão financeira familiar** — cada usuário pertence a uma ou ma
 
 ### Entidades (tabelas Drizzle em `apps/api/src/db/schema.ts`)
 
-| Entidade                | Descrição                                                                 |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `users`                 | Usuários (nome, email, hash de senha)                                     |
-| `familias`              | Família (unidade de isolamento; suporta soft delete via `deleted_at`)     |
-| `usuario_familia`       | Vínculo usuário↔família com papel (`admin`/`membro`)                       |
-| `convites`              | Convites por código para entrar numa família                              |
-| `solicitacoes_entrada`  | Pedidos de entrada em família (pendente/aprovada/rejeitada)               |
-| `categorias`            | Categorias de `receita`/`despesa` (algumas de sistema)                     |
-| `metodos_pagamento`     | Métodos: `credito`/`debito`/`pix`/`dinheiro` (cartão tem fechamento/venc.) |
-| `transacoes`            | Lançamentos (receita/despesa) com parcelamento e recorrência              |
-| `orcamento_categoria`   | Limites de gasto por categoria com vigência                               |
-| `snapshots_mensais`     | Snapshot imutável do fechamento mensal (com flag `divergente`)            |
-| `cofrinhos`             | Cofrinhos/metas de poupança com saldo e status (`ativo`/`encerrado`)      |
-| `movimentacoes_cofrinho`| Aportes e retiradas de cofrinho                                           |
-| `templates_transacao`   | Modelos reutilizáveis de lançamento                                       |
-| `password_reset_tokens` / `revoked_refresh_tokens` | Suporte a auth (reset de senha, revogação de refresh) |
+| Entidade                                           | Descrição                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------- |
+| `users`                                            | Usuários (nome, email, hash de senha)                                      |
+| `familias`                                         | Família (unidade de isolamento; suporta soft delete via `deleted_at`)      |
+| `usuario_familia`                                  | Vínculo usuário↔família com papel (`admin`/`membro`)                       |
+| `convites`                                         | Convites por código para entrar numa família                               |
+| `solicitacoes_entrada`                             | Pedidos de entrada em família (pendente/aprovada/rejeitada)                |
+| `categorias`                                       | Categorias de `receita`/`despesa` (algumas de sistema)                     |
+| `metodos_pagamento`                                | Métodos: `credito`/`debito`/`pix`/`dinheiro` (cartão tem fechamento/venc.) |
+| `transacoes`                                       | Lançamentos (receita/despesa) com parcelamento e recorrência               |
+| `orcamento_categoria`                              | Limites de gasto por categoria com vigência                                |
+| `snapshots_mensais`                                | Snapshot imutável do fechamento mensal (com flag `divergente`)             |
+| `cofrinhos`                                        | Cofrinhos/metas de poupança com saldo e status (`ativo`/`encerrado`)       |
+| `movimentacoes_cofrinho`                           | Aportes e retiradas de cofrinho                                            |
+| `templates_transacao`                              | Modelos reutilizáveis de lançamento                                        |
+| `password_reset_tokens` / `revoked_refresh_tokens` | Suporte a auth (reset de senha, revogação de refresh)                      |
 
 ### Módulos da API (`apps/api/src/modules/`)
 
@@ -117,35 +117,17 @@ nossagrana/
 - Rodar os testes e simular a esteira CI antes de fechar a task
 - Fazer commit ao final de cada task concluída, antes de iniciar a próxima
 
-### Nomenclatura
+### Estilo, Testes, Segurança e API
 
-- TypeScript: `camelCase` para variáveis/funções, `PascalCase` para tipos/interfaces/classes
-- Banco de dados: `snake_case` para tabelas e colunas
-- Arquivos e pastas: `kebab-case`
-- Rotas da API: `kebab-case` (ex: `/metodos-pagamento`)
+As regras detalhadas de estilo de código, testes, segurança e design de API
+vivem em `.claude/rules/`, e esses arquivos são a fonte única da verdade —
+não duplicar o conteúdo deles aqui:
 
-### TypeScript
-
-- Sempre tipado — evitar `any`
-- Usar tipos de `packages/types` para DTOs compartilhados
-- Preferir `interface` para objetos, `type` para unions e aliases
-
-### Backend (Fastify)
-
-- Toda rota deve ter schema Zod para validação de input e output
-- Separar concerns: routes → service → repository
-- Toda query ao banco via Drizzle (sem SQL raw a não ser que necessário)
-- Autenticar rotas via plugin de JWT
-- Sempre validar que `familia_id` do recurso pertence ao usuário autenticado
-
-### Frontend (React)
-
-- Componentes funcionais com hooks
-- Sem prop drilling: usar Zustand para estado global
-- Tailwind para estilos — sem CSS modules ou styled-components
-- Centralizar paleta semântica e estilos em tokens (theme do Tailwind/CSS variables), evitando valores hardcoded espalhados
-- Usar uma única biblioteca de ícones em toda a aplicação, com mapeamento semântico consistente por contexto/tela
-- Axios ou fetch nativo para chamadas à API
+- `.claude/rules/code-style.md` — nomenclatura, estrutura de módulo/página,
+  TypeScript, tamanho de função/arquivo, comentários, dependências, logging
+- `.claude/rules/testing.md` — TDD, cobertura, testes backend/frontend/E2E, F.I.R.S.T.
+- `.claude/rules/security.md` — isolamento multi-tenant, JWT, secrets, validação
+- `.claude/rules/api-design.md` — rotas, formato de response, paginação
 
 ---
 

@@ -5,8 +5,17 @@
 **Regra #1**: Toda query que acessa dados financeiros DEVE filtrar por `familia_id`.
 
 - No repository: incluir `where: eq(table.familiaId, familiaId)` em toda query
-- No service: receber `familiaId` do token JWT e repassar ao repository
+- No service: receber `familiaId` já validado e repassar ao repository
 - Nos testes: criar dados de duas famílias e validar que família A não vê dados da família B
+
+**Regra #2 (obrigatória, não opcional)**: o JWT não carrega claim de família — o
+`familiaId` chega por header/param (`x-familia-id`) controlado pelo cliente.
+Toda rota que recebe um `familiaId` DEVE validar, via o prehandler
+`requireFamiliaScope`, que o usuário autenticado é de fato membro daquela
+família antes de repassar o ID ao repository. Filtrar a query pelo ID
+recebido não é suficiente por si só — sem essa verificação de posse, um
+usuário autenticado poderia forjar o header e ler/escrever dados de outra
+família.
 
 ## Autenticação JWT
 

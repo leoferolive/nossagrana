@@ -64,15 +64,15 @@ O comando `pnpm quality` será **shell sequencial** (Node script em `scripts/qua
 
 ## Tech Stack (adicionado por este plano)
 
-| Item | Versão | Motivo |
-|---|---|---|
-| `eslint-plugin-sonarjs` | `^3.x` | `cognitive-complexity`, `no-duplicate-string`, `no-identical-functions` |
-| `eslint` builtin rules | já em `^9.23` | `complexity`, `max-depth`, `max-lines`, `max-lines-per-function`, `max-params` |
-| Script `scripts/quality-gate.mjs` | novo | Orquestrador + impressão da tabela |
-| Script `scripts/ratchet-check.mjs` | novo | Compara violações atuais vs baseline |
-| Arquivo `quality-baseline.json` | novo, versionado | Piso de violações |
-| `.github/dependabot.yml` | novo | Atualizações npm + actions semanais |
-| `docs/quality-gate.md` | novo | Dimensões, thresholds, limitações |
+| Item                               | Versão           | Motivo                                                                         |
+| ---------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| `eslint-plugin-sonarjs`            | `^3.x`           | `cognitive-complexity`, `no-duplicate-string`, `no-identical-functions`        |
+| `eslint` builtin rules             | já em `^9.23`    | `complexity`, `max-depth`, `max-lines`, `max-lines-per-function`, `max-params` |
+| Script `scripts/quality-gate.mjs`  | novo             | Orquestrador + impressão da tabela                                             |
+| Script `scripts/ratchet-check.mjs` | novo             | Compara violações atuais vs baseline                                           |
+| Arquivo `quality-baseline.json`    | novo, versionado | Piso de violações                                                              |
+| `.github/dependabot.yml`           | novo             | Atualizações npm + actions semanais                                            |
+| `docs/quality-gate.md`             | novo             | Dimensões, thresholds, limitações                                              |
 
 **NÃO adicionamos:**
 
@@ -85,17 +85,17 @@ O comando `pnpm quality` será **shell sequencial** (Node script em `scripts/qua
 
 O post da Codeminer42 usa thresholds Rails (cobertura ≥95%, complexity ≤6, ABC ≤15). **Não vamos copiar.** Justificativas por dimensão:
 
-| Dimensão | Threshold | Justificativa |
-|---|---|---|
-| Cobertura linhas (API) | **80%** (mantém atual) | Já configurado em `apps/api/vitest.config.ts`. Mexer agora descalibra. Ratchet futuro pode subir. |
-| Cobertura branches | **70%** (mantém atual) | Idem. |
-| Cobertura linhas (arquivos alterados) | **80%** (mantém atual) | Já em `scripts/check-changed-coverage.mjs`. |
-| `complexity` (ciclomática por função) | **≤ 10** | Valor padrão do ESLint. O post Rails usa 6, mas Ruby tem blocos/yields que reduzem ciclos; TypeScript com early-returns naturalmente fica entre 5 e 10. Começar conservador e usar ratchet. |
-| `max-lines-per-function` | **≤ 50** (sem contar blank/comments) | Funções Fastify route handlers já tendem a 30–50 linhas com schema. 50 dá margem sem permitir megafunções. |
-| `max-lines` (por arquivo) | **≤ 400** | Arquivos `*.routes.ts` agregam várias rotas e podem passar de 200 linhas legitimamente; 400 corta apenas casos patológicos. |
-| `max-depth` | **≤ 4** | Padrão ESLint. Nested if/for além disso pede refactor. |
-| `max-params` | **≤ 5** | Funções com mais de 5 parâmetros = sinal de objeto de configuração. |
-| `sonarjs/cognitive-complexity` | **≤ 15** | Default do plugin. Cognitive complexity penaliza aninhamento mais do que ciclomática — sinal mais útil para legibilidade. |
+| Dimensão                              | Threshold                            | Justificativa                                                                                                                                                                               |
+| ------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cobertura linhas (API)                | **80%** (mantém atual)               | Já configurado em `apps/api/vitest.config.ts`. Mexer agora descalibra. Ratchet futuro pode subir.                                                                                           |
+| Cobertura branches                    | **70%** (mantém atual)               | Idem.                                                                                                                                                                                       |
+| Cobertura linhas (arquivos alterados) | **80%** (mantém atual)               | Já em `scripts/check-changed-coverage.mjs`.                                                                                                                                                 |
+| `complexity` (ciclomática por função) | **≤ 10**                             | Valor padrão do ESLint. O post Rails usa 6, mas Ruby tem blocos/yields que reduzem ciclos; TypeScript com early-returns naturalmente fica entre 5 e 10. Começar conservador e usar ratchet. |
+| `max-lines-per-function`              | **≤ 50** (sem contar blank/comments) | Funções Fastify route handlers já tendem a 30–50 linhas com schema. 50 dá margem sem permitir megafunções.                                                                                  |
+| `max-lines` (por arquivo)             | **≤ 400**                            | Arquivos `*.routes.ts` agregam várias rotas e podem passar de 200 linhas legitimamente; 400 corta apenas casos patológicos.                                                                 |
+| `max-depth`                           | **≤ 4**                              | Padrão ESLint. Nested if/for além disso pede refactor.                                                                                                                                      |
+| `max-params`                          | **≤ 5**                              | Funções com mais de 5 parâmetros = sinal de objeto de configuração.                                                                                                                         |
+| `sonarjs/cognitive-complexity`        | **≤ 15**                             | Default do plugin. Cognitive complexity penaliza aninhamento mais do que ciclomática — sinal mais útil para legibilidade.                                                                   |
 
 **Importante:** essas regras entram como **`warn`** inicialmente, não `error`. O `ratchet-check.mjs` é quem falha o build comparando contagem de warnings vs baseline. Isso evita que mil arquivos quebrem de uma vez.
 
@@ -136,10 +136,12 @@ nossagrana/
 **Steps:**
 
 - [ ] **1.1** Instalar `eslint-plugin-sonarjs`:
+
   ```bash
   cd /home/leoferolive/projetos/nossagrana-wt-quality-gate
   pnpm add -Dw eslint-plugin-sonarjs
   ```
+
   **Esperado:** `+ eslint-plugin-sonarjs 3.x.x` em devDependencies do root.
 
 - [ ] **1.2** Editar `eslint.config.mjs` — adicionar import e bloco de regras de complexidade. Adicionar AO FINAL (antes de `eslintConfigPrettier`):
@@ -179,9 +181,11 @@ nossagrana/
   ```
 
 - [ ] **1.3** Rodar lint para confirmar que **passa** (warnings não bloqueiam):
+
   ```bash
   pnpm lint
   ```
+
   **Esperado:** comando termina com exit 0; haverá lista de warnings.
 
 - [ ] **1.4** Capturar quantidade de warnings em JSON para a baseline:
@@ -209,20 +213,37 @@ nossagrana/
   const isCI = process.argv.includes('--ci') || process.env.CI === 'true';
 
   const steps = [
-    { id: 'oxlint',      cmd: 'pnpm', args: ['lint:fast'],               desc: 'Lint rápido (Oxlint)' },
-    { id: 'eslint',      cmd: 'pnpm', args: ['lint'],                    desc: 'Lint completo (ESLint)' },
-    { id: 'types',       cmd: 'pnpm', args: ['type-check'],              desc: 'TypeScript strict' },
-    { id: 'test-cov',    cmd: 'pnpm', args: ['--filter','api','test:coverage'], desc: 'Testes + cobertura API' },
-    { id: 'changed-cov', cmd: 'pnpm', args: ['coverage:changed-check'],  desc: 'Cobertura ≥80% nos arquivos alterados', optional: !process.env.CHANGED_FILES },
-    { id: 'knip',        cmd: 'pnpm', args: ['knip'],                    desc: 'Dead code (Knip)' },
-    { id: 'ratchet',     cmd: 'node', args: ['scripts/ratchet-check.mjs'], desc: 'Ratchet de complexidade' },
+    { id: 'oxlint', cmd: 'pnpm', args: ['lint:fast'], desc: 'Lint rápido (Oxlint)' },
+    { id: 'eslint', cmd: 'pnpm', args: ['lint'], desc: 'Lint completo (ESLint)' },
+    { id: 'types', cmd: 'pnpm', args: ['type-check'], desc: 'TypeScript strict' },
+    {
+      id: 'test-cov',
+      cmd: 'pnpm',
+      args: ['--filter', 'api', 'test:coverage'],
+      desc: 'Testes + cobertura API',
+    },
+    {
+      id: 'changed-cov',
+      cmd: 'pnpm',
+      args: ['coverage:changed-check'],
+      desc: 'Cobertura ≥80% nos arquivos alterados',
+      optional: !process.env.CHANGED_FILES,
+    },
+    { id: 'knip', cmd: 'pnpm', args: ['knip'], desc: 'Dead code (Knip)' },
+    {
+      id: 'ratchet',
+      cmd: 'node',
+      args: ['scripts/ratchet-check.mjs'],
+      desc: 'Ratchet de complexidade',
+    },
   ];
 
   // Testes web só rodam fora do CI (ARM64 Pi)
   if (!isCI) {
     steps.splice(4, 0, {
       id: 'test-web',
-      cmd: 'pnpm', args: ['--filter','web','test','--','--run'],
+      cmd: 'pnpm',
+      args: ['--filter', 'web', 'test', '--', '--run'],
       desc: 'Testes Web (apenas local)',
     });
   }
@@ -242,7 +263,7 @@ nossagrana/
   }
 
   // Tabela final
-  const w1 = Math.max(...results.map(r => r.desc.length), 30);
+  const w1 = Math.max(...results.map((r) => r.desc.length), 30);
   console.log('\n' + '─'.repeat(w1 + 18));
   console.log('Quality Gate'.padEnd(w1 + 18));
   console.log('─'.repeat(w1 + 18));
@@ -251,7 +272,7 @@ nossagrana/
     const time = r.status === 'skip' ? '—' : `${r.ms}ms`;
     console.log(`${icon} ${r.desc.padEnd(w1)}  ${time.padStart(8)}`);
   }
-  for (const r of results.filter(x => !['pass','skip'].includes(x.status))) {
+  for (const r of results.filter((x) => !['pass', 'skip'].includes(x.status))) {
     // se houve falha, código != 0
     process.exit(1);
   }
@@ -262,11 +283,13 @@ nossagrana/
   ```
 
 - [ ] **2.2** Tornar executável:
+
   ```bash
   chmod +x scripts/quality-gate.mjs
   ```
 
 - [ ] **2.3** Adicionar scripts no `package.json` raiz:
+
   ```json
   "quality": "node scripts/quality-gate.mjs",
   "quality:ci": "node scripts/quality-gate.mjs --ci",
@@ -314,7 +337,7 @@ nossagrana/
     });
     // ESLint retorna 1 se há warnings/errors; ignoramos esse exit code
     const report = JSON.parse(r.stdout);
-    const counts = Object.fromEntries(RULES.map(r => [r, 0]));
+    const counts = Object.fromEntries(RULES.map((r) => [r, 0]));
     for (const file of report) {
       for (const m of file.messages) {
         if (RULES.includes(m.ruleId)) counts[m.ruleId]++;
@@ -359,9 +382,11 @@ nossagrana/
   ```
 
 - [ ] **3.2** Gerar baseline inicial:
+
   ```bash
   pnpm ratchet:update
   ```
+
   **Esperado:** cria `quality-baseline.json` com as contagens atuais.
 
 - [ ] **3.3** Confirmar que rodar sem alterações **passa**:
@@ -379,6 +404,7 @@ nossagrana/
 **Steps:**
 
 - [ ] **4.1** Criar `.github/dependabot.yml`:
+
   ```yaml
   version: 2
   updates:
@@ -425,10 +451,12 @@ nossagrana/
 **Steps:**
 
 - [ ] **5.1** Ler o ci.yml atual e localizar o job `quality`. Substituir os steps de oxlint/eslint/type-check/build/knip por:
+
   ```yaml
   - name: Quality Gate
     run: pnpm quality:ci
   ```
+
   Manter o step de build separado se a CI faz upload de artifacts.
 
 - [ ] **5.2** Confirmar que `coverage:changed-check` continua sendo chamado no job `api-tests` (com `CHANGED_FILES` setado) — **não mover** para dentro do `quality:ci` no modo CI, pois requer `git diff`.
@@ -448,7 +476,7 @@ nossagrana/
 
 - [ ] **6.1** Editar `.claude/skills/pre-commit/SKILL.md`. Substituir a seção "Pipeline (mesma ordem da CI)" inteira por:
 
-  ```markdown
+  ````markdown
   ## Pipeline
 
   Um único comando roda tudo (Prettier nos arquivos staged é feito pelo Husky):
@@ -456,9 +484,9 @@ nossagrana/
   ```bash
   pnpm quality
   ```
+  ````
 
   O script imprime tabela `✓/✗` ao final. Se algo falhar, ele para no primeiro erro e mostra qual etapa quebrou. Etapas (na ordem):
-
   1. Oxlint (rápido)
   2. ESLint (com regras de complexidade)
   3. Type-check
@@ -469,11 +497,15 @@ nossagrana/
   8. Ratchet de complexidade (compara com `quality-baseline.json`)
 
   **Se o ratchet falhar:** você introduziu novas violações de complexidade. Refatore ou, se justificável (raro), rode `pnpm ratchet:update` para atualizar a baseline.
+
+  ```
+
   ```
 
 - [ ] **6.2** Manter intactas as seções "Pré-requisito" (build de types) e "Regras Críticas".
 
 - [ ] **6.3** Substituir a seção "Se Tudo Passar" por:
+
   ```markdown
   ## Se Tudo Passar
 
@@ -519,6 +551,7 @@ nossagrana/
   ```
 
 - [ ] **7.2** Adicionar item ao "Checklist Mental por Arquivo":
+
   ```markdown
   - [ ] Funções com ≤ 10 de complexidade ciclomática? ≤ 50 linhas?
   ```
@@ -535,7 +568,7 @@ nossagrana/
 
 - [ ] **8.1** Adicionar seção nova em `CLAUDE.md` raiz, logo após "Processo de Desenvolvimento":
 
-  ```markdown
+  ````markdown
   ### Quality Gate
 
   Antes de qualquer commit, rodar:
@@ -543,12 +576,16 @@ nossagrana/
   ```bash
   pnpm quality
   ```
+  ````
 
   Esse comando roda lint, type-check, testes, cobertura, knip e ratchet de complexidade em sequência, parando no primeiro erro. A skill `pre-commit` referencia esse mesmo script.
 
   **Não bypasse o gate.** Se uma etapa falhar, corrija — não rode `git commit --no-verify`. Se o ratchet falhar legitimamente (refactor que aumenta uma métrica pontual), atualize a baseline com `pnpm ratchet:update` e justifique no commit message.
 
   Limitações conhecidas do gate em `docs/quality-gate.md`.
+
+  ```
+
   ```
 
 ---
@@ -568,21 +605,21 @@ nossagrana/
 
   ## Dimensões medidas
 
-  | Dimensão | Ferramenta | Threshold | Bloqueia? |
-  |---|---|---|---|
-  | Lint rápido | Oxlint | regras default | sim (error) |
-  | Lint completo | ESLint + typescript-eslint | regras strict | sim (error) |
-  | Type strict | tsc --noEmit | strict: true | sim (error) |
-  | Cobertura linhas (API) | Vitest v8 | ≥ 80% | sim |
-  | Cobertura branches | Vitest v8 | ≥ 70% | sim |
-  | Cobertura arq. alterados | check-changed-coverage | ≥ 80% | sim (se CHANGED_FILES) |
-  | Dead code | Knip | zero exports não usados | sim |
-  | Complexidade ciclomática | ESLint `complexity` | ≤ 10 | ratchet |
-  | Cognitive complexity | sonarjs | ≤ 15 | ratchet |
-  | Linhas por função | ESLint | ≤ 50 | ratchet |
-  | Linhas por arquivo | ESLint | ≤ 400 | ratchet |
-  | Profundidade nesting | ESLint | ≤ 4 | ratchet |
-  | Parâmetros por função | ESLint | ≤ 5 | ratchet |
+  | Dimensão                 | Ferramenta                 | Threshold               | Bloqueia?              |
+  | ------------------------ | -------------------------- | ----------------------- | ---------------------- |
+  | Lint rápido              | Oxlint                     | regras default          | sim (error)            |
+  | Lint completo            | ESLint + typescript-eslint | regras strict           | sim (error)            |
+  | Type strict              | tsc --noEmit               | strict: true            | sim (error)            |
+  | Cobertura linhas (API)   | Vitest v8                  | ≥ 80%                   | sim                    |
+  | Cobertura branches       | Vitest v8                  | ≥ 70%                   | sim                    |
+  | Cobertura arq. alterados | check-changed-coverage     | ≥ 80%                   | sim (se CHANGED_FILES) |
+  | Dead code                | Knip                       | zero exports não usados | sim                    |
+  | Complexidade ciclomática | ESLint `complexity`        | ≤ 10                    | ratchet                |
+  | Cognitive complexity     | sonarjs                    | ≤ 15                    | ratchet                |
+  | Linhas por função        | ESLint                     | ≤ 50                    | ratchet                |
+  | Linhas por arquivo       | ESLint                     | ≤ 400                   | ratchet                |
+  | Profundidade nesting     | ESLint                     | ≤ 4                     | ratchet                |
+  | Parâmetros por função    | ESLint                     | ≤ 5                     | ratchet                |
 
   ## Como funciona o ratchet
 
@@ -625,10 +662,12 @@ nossagrana/
 ### Tarefa 10 — Validação ponta-a-ponta
 
 - [ ] **10.1** Rodar tudo localmente:
+
   ```bash
   pnpm install
   pnpm quality
   ```
+
   **Esperado:** tabela `✓` em todas as linhas.
 
 - [ ] **10.2** Forçar uma regressão de complexidade (criar função com 11 branches) e confirmar que `pnpm quality` falha na etapa "Ratchet".
@@ -641,13 +680,13 @@ nossagrana/
 
 ## Alinhamento com skills existentes
 
-| Skill | Mudança | Risco |
-|---|---|---|
-| `pre-commit` | Pipeline de 9 comandos vira `pnpm quality`. Regras Críticas preservadas. | Baixo — o agente já usa o script, comportamento idêntico. |
-| `code-quality-guard` (`autoApply: true`) | Adiciona Regra 8 (complexidade) e um item no checklist mental. **Não** remove nem altera as 7 regras existentes. | Médio — autoApply afeta todo trabalho; mas a adição é incremental e contextual. |
-| `tdd-workflow` | Sem mudança. | Nenhum. |
-| `generate-module` | Sem mudança. Funções geradas naturalmente passam nos thresholds. | Nenhum. |
-| `drizzle-migration`, `create-page`, `create-e2e-test` | Sem mudança. | Nenhum. |
+| Skill                                                 | Mudança                                                                                                          | Risco                                                                           |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `pre-commit`                                          | Pipeline de 9 comandos vira `pnpm quality`. Regras Críticas preservadas.                                         | Baixo — o agente já usa o script, comportamento idêntico.                       |
+| `code-quality-guard` (`autoApply: true`)              | Adiciona Regra 8 (complexidade) e um item no checklist mental. **Não** remove nem altera as 7 regras existentes. | Médio — autoApply afeta todo trabalho; mas a adição é incremental e contextual. |
+| `tdd-workflow`                                        | Sem mudança.                                                                                                     | Nenhum.                                                                         |
+| `generate-module`                                     | Sem mudança. Funções geradas naturalmente passam nos thresholds.                                                 | Nenhum.                                                                         |
+| `drizzle-migration`, `create-page`, `create-e2e-test` | Sem mudança.                                                                                                     | Nenhum.                                                                         |
 
 **Princípio:** o gate é uma camada de **medição**, não substitui as skills de **execução**. A skill `pre-commit` continua existindo porque mantém o contexto sobre "regras críticas" (schema Fastify, exports de types) que o agente precisa ter em mente — mas o pipeline de comandos vira uma linha.
 

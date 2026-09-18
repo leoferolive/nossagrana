@@ -7,6 +7,8 @@ updates:
       day: monday
       time: '06:00'
       timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       eslint:
@@ -27,3 +29,5 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 7

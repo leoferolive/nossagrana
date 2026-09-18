@@ -27,6 +27,25 @@ Toda implementação segue o ciclo **Red → Green → Refactor**:
 - Padrão: `[nome]-page.test.tsx`, `[nome].test.tsx`
 - Testar estados: loading, sucesso, erro, vazio
 
+## Mocks de I/O Externo
+
+Além dos repositórios **InMemory** (backend) e `vi.mock` de chamadas à API
+(frontend), qualquer outro I/O externo — filesystem, serviços de terceiros,
+integrações — deve ser mockado com uma **fake class nomeada** em vez de stub
+inline. Uma fake class documenta o contrato do que está sendo substituído e é
+reutilizável entre testes, ao contrário de um objeto `{ foo: vi.fn() }` solto
+no meio do teste.
+
+## Princípio F.I.R.S.T.
+
+Todo teste (unitário, integração ou E2E) deve seguir:
+
+- **Fast**: roda rápido o suficiente para não desestimular execução frequente
+- **Independent**: não depende de ordem de execução nem de estado deixado por outro teste
+- **Repeatable**: mesmo resultado em qualquer ambiente (local, CI)
+- **Self-validating**: passa ou falha sem inspeção manual do output
+- **Timely**: escrito junto com o código (TDD), não depois
+
 ## E2E — Playwright
 
 - Usar fixtures do projeto: `authContext`, `familiaId`, `authenticatedPage`

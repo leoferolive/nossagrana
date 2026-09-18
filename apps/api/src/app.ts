@@ -18,6 +18,7 @@ import { templateTransacaoRoutes } from './modules/template-transacao/template-t
 import { wsRoutes } from './modules/ws/ws.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
+import { metricsPlugin_ } from './plugins/metrics.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
 
 export const buildApp = () => {
@@ -34,7 +35,7 @@ export const buildApp = () => {
     app.register(import('@fastify/rate-limit'), {
       max: 100,
       timeWindow: '1 minute',
-      allowList: (req) => req.url === '/api/health',
+      allowList: (req) => req.url === '/api/health' || req.url === '/metrics',
       errorResponseBuilder: (_req, context) => ({
         error: {
           message: `Muitas tentativas. Tente novamente em ${Math.ceil(context.ttl / 1000)} segundos.`,
@@ -53,6 +54,8 @@ export const buildApp = () => {
     origin: env.CORS_ORIGIN,
     credentials: true,
   });
+
+  app.register(metricsPlugin_);
 
   app.register(authPlugin);
   app.register(familiaScopePlugin);

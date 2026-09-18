@@ -117,17 +117,18 @@ nossagrana/
 - Rodar os testes e simular a esteira CI antes de fechar a task
 - Fazer commit ao final de cada task concluída, antes de iniciar a próxima
 
-### Estilo, Testes, Segurança e API
+### Estilo, Testes, Segurança, API e Quality Gate
 
-As regras detalhadas de estilo de código, testes, segurança e design de API
-vivem em `.claude/rules/`, e esses arquivos são a fonte única da verdade —
-não duplicar o conteúdo deles aqui:
+As regras detalhadas de estilo de código, testes, segurança, design de API e
+quality gate vivem em `.claude/rules/`, e esses arquivos são a fonte única da
+verdade — não duplicar o conteúdo deles aqui:
 
 - `.claude/rules/code-style.md` — nomenclatura, estrutura de módulo/página,
   TypeScript, tamanho de função/arquivo, comentários, dependências, logging
 - `.claude/rules/testing.md` — TDD, cobertura, testes backend/frontend/E2E, F.I.R.S.T.
 - `.claude/rules/security.md` — isolamento multi-tenant, JWT, secrets, validação
 - `.claude/rules/api-design.md` — rotas, formato de response, paginação
+- `.claude/rules/quality-gate.md` — gate obrigatório antes de commit (`pnpm quality`)
 
 ---
 

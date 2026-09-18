@@ -27,7 +27,7 @@ interface SpeechRecognitionInstance {
   abort: () => void;
 }
 
-export interface UseSpeechRecognitionReturn {
+interface UseSpeechRecognitionReturn {
   isListening: boolean;
   transcript: string;
   finalTranscript: string;

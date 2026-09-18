@@ -1,9 +1,3 @@
-import type {
-  OrcamentoHistoricoResponse,
-  OrcamentoItem,
-  OrcamentoListResponse,
-} from '@nossagrana/types';
-
 export interface OrcamentoVigenteRow {
   id: string;
   categoriaId: string;
@@ -38,5 +32,3 @@ export interface OrcamentoRepository {
   insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow>;
   listHistorico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow[]>;
 }
-
-export type { OrcamentoHistoricoResponse, OrcamentoItem, OrcamentoListResponse };

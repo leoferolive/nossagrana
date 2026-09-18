@@ -73,6 +73,30 @@ Usar Prettier integrado. Se criar/modificar arquivos, formatar antes de commitar
 pnpm exec prettier --write <arquivo>
 ```
 
+## Regra 8: Complexidade
+
+ESLint reporta (warn) funções com:
+
+- `complexity` (ciclomática) > 10
+- `cognitive-complexity` > 15
+- `max-lines-per-function` > 50
+- `max-depth` > 4
+- `max-params` > 5
+
+Warnings não quebram o lint, mas o **ratchet** (`pnpm quality` etapa final) falha se o número total de violações aumentar.
+
+**Ao escrever uma função nova:**
+
+- Prefira early-returns sobre `else` aninhado.
+- Extraia condicionais complexas em funções nomeadas.
+- Use objetos de configuração quando precisar de mais de 5 parâmetros.
+
+**Refatorações que ajudam:**
+
+- `if (!x) return; ...` em vez de `if (x) { ... }`.
+- Helpers privados no mesmo arquivo (não exportados) — Knip não reclama.
+- Substituir `switch` longos por dicionários (`Record<K, fn>`).
+
 ## Checklist Mental por Arquivo
 
 Ao terminar de editar qualquer arquivo, verificar mentalmente:
@@ -83,3 +107,4 @@ Ao terminar de editar qualquer arquivo, verificar mentalmente:
 - [ ] Tipos explícitos (sem `any`)?
 - [ ] Valores decimais normalizados (vírgula → ponto)?
 - [ ] Arquivo formatado com Prettier?
+- [ ] Funções com ≤ 10 de complexidade ciclomática? ≤ 50 linhas?

@@ -1,9 +1,4 @@
-import type {
-  HistoricoDetalheResponse,
-  HistoricoListResponse,
-  SnapshotDadosCategoria,
-  SnapshotDadosUsuario,
-} from '@nossagrana/types';
+import type { SnapshotDadosCategoria, SnapshotDadosUsuario } from '@nossagrana/types';
 
 export interface SnapshotRow {
   id: string;
@@ -53,10 +48,7 @@ export interface HistoricoRepository {
   listSnapshots(familiaId: string): Promise<SnapshotRow[]>;
   findSnapshot(familiaId: string, mesReferencia: string): Promise<SnapshotRow | null>;
   getResumoTransacoesMes(familiaId: string, mesReferencia: string): Promise<TransacaoResumoRow>;
-  getResumoTransacoesBatch(
-    familiaId: string,
-    meses: string[],
-  ): Promise<TransacaoResumoRow[]>;
+  getResumoTransacoesBatch(familiaId: string, meses: string[]): Promise<TransacaoResumoRow[]>;
   getMesesComTransacoes(familiaId: string): Promise<string[]>;
   marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
   insertSnapshot(input: SnapshotInsertInput): Promise<SnapshotRow>;
@@ -69,5 +61,3 @@ export interface HistoricoRepository {
     mesReferencia: string,
   ): Promise<TransacaoUsuarioSumaRow[]>;
 }
-
-export type { HistoricoDetalheResponse, HistoricoListResponse };

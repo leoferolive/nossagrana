@@ -16,80 +16,26 @@ Se alterou `packages/types/src/`, faça build dos types primeiro:
 pnpm --filter @nossagrana/types build
 ```
 
-## Pipeline (mesma ordem da CI)
+## Pipeline
 
-### 1. Prettier — formato do código
-
-```bash
-pnpm format:check:changed
-```
-
-Se falhar, corrigir automaticamente:
+Um único comando roda tudo (Prettier nos arquivos staged é feito pelo Husky):
 
 ```bash
-git diff --name-only origin/main...HEAD | xargs pnpm exec prettier --write --ignore-unknown
+pnpm quality
 ```
 
-### 2. Oxlint — lint rápido
+O script imprime tabela `✓/✗` ao final. Se algo falhar, ele para no primeiro erro e mostra qual etapa quebrou. Etapas (na ordem):
 
-```bash
-pnpm lint:fast
-```
+1. Oxlint (rápido)
+2. ESLint (com regras de complexidade)
+3. Type-check
+4. Testes API com cobertura
+5. Testes Web (apenas local, não roda em `--ci`)
+6. `coverage:changed-check` (se `CHANGED_FILES` setado)
+7. Knip (dead code)
+8. Ratchet de complexidade (compara com `quality-baseline.json`)
 
-### 3. ESLint
-
-```bash
-pnpm lint
-```
-
-Se falhar com erros de import não usado ou variável não usada, remover o código morto.
-
-### 4. Type Check
-
-```bash
-pnpm type-check
-```
-
-**Erros comuns que causam reprovação:**
-
-- `reply.code(X)` com código HTTP não declarado no schema da rota → adicionar o código ao schema (`response: { 200: ..., 400: ..., 404: ... }`)
-- Import de membro inexportado de `@nossagrana/types` → verificar se `pnpm --filter @nossagrana/types build` foi executado
-- `any` implícito → tipar explicitamente
-- Arquivo fora do escopo do tsconfig sendo incluído → verificar `include`/`exclude` do tsconfig
-
-### 5. Build
-
-```bash
-pnpm build
-```
-
-### 6. Dead Code (Knip)
-
-```bash
-pnpm knip
-```
-
-Se detectar exports não usados, remover. Se for falso positivo (ex: routes registradas dinamicamente), adicionar ao `knip.config.ts`.
-
-### 7. Testes API
-
-```bash
-pnpm --filter api test -- --run
-```
-
-### 8. Testes Web (NÃO roda no CI — obrigatório local)
-
-```bash
-pnpm --filter web test -- --run
-```
-
-### 9. Coverage dos arquivos alterados (simular CI gate)
-
-```bash
-pnpm --filter api test:coverage
-```
-
-Verificar que arquivos alterados têm ≥80% de cobertura de linhas.
+**Se o ratchet falhar:** você introduziu novas violações de complexidade. Refatore ou, se justificável (raro), rode `pnpm ratchet:update` para atualizar a baseline.
 
 ## Regras Críticas
 
@@ -103,4 +49,4 @@ Verificar que arquivos alterados têm ≥80% de cobertura de linhas.
 
 ## Se Tudo Passar
 
-Pode commitar. Informar ao usuário: "CI simulation OK — todas as 9 etapas passaram."
+A tabela final mostra todos os `✓`. Pode commitar.

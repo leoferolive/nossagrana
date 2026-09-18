@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  fast-uri@<3.1.4: '>=3.1.4'
+  fast-uri@<4.1.3: '>=4.1.3'
   find-my-way@<9.7.0: '>=9.7.0'
   fast-jwt@<6.2.4: '>=6.2.4'
   ws@<8.21.0: '>=8.21.0'
@@ -86,17 +86,17 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(postgres@3.4.8)
       fastify:
-        specifier: ^5.8.5
-        version: 5.8.5
+        specifier: ^5.12.3
+        version: 5.12.3
       fastify-metrics:
         specifier: ^13.2.0
-        version: 13.2.0(fastify@5.8.5)
+        version: 13.2.0(fastify@5.12.3)
       fastify-plugin:
         specifier: ^5.0.1
         version: 5.1.0
       fastify-type-provider-zod:
         specifier: ^4.0.2
-        version: 4.0.2(fastify@5.8.5)(zod@3.25.76)
+        version: 4.0.2(fastify@5.12.3)(zod@3.25.76)
       handlebars:
         specifier: ^4.7.9
         version: 4.7.9
@@ -104,8 +104,8 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1
       nodemailer:
-        specifier: ^9.0.1
-        version: 9.0.3
+        specifier: ^9.1.1
+        version: 9.1.1
       postgres:
         specifier: ^3.4.7
         version: 3.4.8
@@ -4134,6 +4134,12 @@ packages:
         integrity: sha512-oRCntNDY/329HJPlmdNLIdogNtt6Vyjb1WuT01Soss3slIdyUp8kAcDU3saQTOquEK8KFVfwIIF7FebxUAu+yA==,
       }
 
+  fast-json-stringify@7.0.1:
+    resolution:
+      {
+        integrity: sha512-eRSayARSbbwlBjpP4vnTTIRD5QPcIrmihPxDeN1DtKnHPg66UuJLx+8hlK1kaFdjvzyQ/dzALoi4vwAQ+T+iZA==,
+      }
+
   fast-jwt@6.2.4:
     resolution:
       {
@@ -4153,10 +4159,10 @@ packages:
         integrity: sha512-g6KuKWmFXc0fID8WWH0jit4g0AGBoJhCkJMb1RmbsSEUNvQ+ZC8D6CUZ+GtF8nMzSPXnhiePyyqqipzNNEnHjg==,
       }
 
-  fast-uri@4.1.1:
+  fast-uri@4.1.4:
     resolution:
       {
-        integrity: sha512-YPOs1zD5TG2+EZt+r88LwF6mclA7TPkpwMP7ZN3TO2HiHS8TXvq7QA/17iJsV9dubcLo/f8eEYqMBruyQV21hQ==,
+        integrity: sha512-dODXrIxlS9JSdgAnhIUKOosKV1oMtU2VtVw87QRaHzyl5jxO290Ii5tEZfCfzfWNHi3jKWwBSdQj0qIyshdZdQ==,
       }
 
   fastfall@1.5.1:
@@ -4194,10 +4200,10 @@ packages:
       fastify: ^5.0.0
       zod: ^3.14.2
 
-  fastify@5.8.5:
+  fastify@5.12.3:
     resolution:
       {
-        integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==,
+        integrity: sha512-reZ8wce5VNCcufIt9AVtzZa3L4u1j8esikn7OEgHWLVpRpL5R7Y2+Xzj70OUkv5zDfzUAxXZT6cu4Rt0zr3EKA==,
       }
 
   fastparallel@2.4.1:
@@ -5351,10 +5357,10 @@ packages:
         integrity: sha512-1h5gKZCF+pO/o3Iqt5Jp7wc9rH3eJJ0+nh/CIoiRwjRxde/hAHyLPXYN4V3CqKAbiZPSeJFSWHmJsbkicta0Eg==,
       }
 
-  nodemailer@9.0.3:
+  nodemailer@9.1.1:
     resolution:
       {
-        integrity: sha512-n+YP+NKwR5zRWa60k3GiQ6Q3B4KXCoAw40dAKeCtYn020iNN74aWK2liXIC3ZEATeGql7we3tE3t8QwhY0eskw==,
+        integrity: sha512-izw9mVKFix6YSnC9eLgV6g1opl9DUlRio9ZNcq+Wu9Ujn2UwF+8Nl0B8nz22kEC+CTZCvinkxwJ0DeFbb6NwcQ==,
       }
     engines: { node: '>=6.0.0' }
 
@@ -5752,10 +5758,10 @@ packages:
         integrity: sha512-3c2LzQ3rY9d0hc1emcsHhfT9Jwz0cChib/QN89oME2R451w5fy3f0afAhERFZAwrbDU43wk12d0ORBpDVME50Q==,
       }
 
-  process-warning@5.0.0:
+  process-warning@5.1.0:
     resolution:
       {
-        integrity: sha512-a39t9ApHNx2L4+HBnQKqxxHNs1r7KF+Intd8Q/g1bUh6q0WIp9voPXJ/x0j+ZL45KF1pJd9+q2jLIRMfvEshkA==,
+        integrity: sha512-jQSaVHsPgtyw60e1rQ/A+/ArPEj/S8pS/vFnyGa/gYFXrKk/6RuDkoqVDQ5NI5MmS01698ltlAk0NoDBNLujRw==,
       }
 
   prom-client@15.1.3:
@@ -8259,7 +8265,7 @@ snapshots:
     dependencies:
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 4.1.1
+      fast-uri: 4.1.4
 
   '@fastify/cors@11.2.0':
     dependencies:
@@ -8956,7 +8962,7 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 4.1.1
+      fast-uri: 4.1.4
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -9639,7 +9645,16 @@ snapshots:
       '@fastify/merge-json-schemas': 0.2.1
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
-      fast-uri: 4.1.1
+      fast-uri: 4.1.4
+      json-schema-ref-resolver: 3.0.0
+      rfdc: 1.4.1
+
+  fast-json-stringify@7.0.1:
+    dependencies:
+      '@fastify/merge-json-schemas': 0.2.1
+      ajv: 8.18.0
+      ajv-formats: 3.0.1(ajv@8.18.0)
+      fast-uri: 4.1.4
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
@@ -9657,28 +9672,28 @@ snapshots:
     dependencies:
       fast-decode-uri-component: 1.0.1
 
-  fast-uri@4.1.1: {}
+  fast-uri@4.1.4: {}
 
   fastfall@1.5.1:
     dependencies:
       reusify: 1.1.0
 
-  fastify-metrics@13.2.0(fastify@5.8.5):
+  fastify-metrics@13.2.0(fastify@5.12.3):
     dependencies:
-      fastify: 5.8.5
+      fastify: 5.12.3
       fastify-plugin: 5.1.0
       prom-client: 15.1.3
 
   fastify-plugin@5.1.0: {}
 
-  fastify-type-provider-zod@4.0.2(fastify@5.8.5)(zod@3.25.76):
+  fastify-type-provider-zod@4.0.2(fastify@5.12.3)(zod@3.25.76):
     dependencies:
       '@fastify/error': 4.2.0
-      fastify: 5.8.5
+      fastify: 5.12.3
       zod: 3.25.76
       zod-to-json-schema: 3.25.1(zod@3.25.76)
 
-  fastify@5.8.5:
+  fastify@5.12.3:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
       '@fastify/error': 4.2.0
@@ -9686,11 +9701,11 @@ snapshots:
       '@fastify/proxy-addr': 5.1.0
       abstract-logging: 2.0.1
       avvio: 9.2.0
-      fast-json-stringify: 6.3.0
+      fast-json-stringify: 7.0.1
       find-my-way: 9.7.0
       light-my-request: 6.6.0
       pino: 10.3.1
-      process-warning: 5.0.0
+      process-warning: 5.1.0
       rfdc: 1.4.1
       secure-json-parse: 4.1.0
       semver: 7.7.4
@@ -10356,7 +10371,7 @@ snapshots:
 
   node-releases@2.0.37: {}
 
-  nodemailer@9.0.3: {}
+  nodemailer@9.1.1: {}
 
   normalize-path@3.0.0: {}
 
@@ -10514,7 +10529,7 @@ snapshots:
       on-exit-leak-free: 2.1.2
       pino-abstract-transport: 3.0.0
       pino-std-serializers: 7.1.0
-      process-warning: 5.0.0
+      process-warning: 5.1.0
       quick-format-unescaped: 4.0.4
       real-require: 0.2.0
       safe-stable-stringify: 2.5.0
@@ -10590,7 +10605,7 @@ snapshots:
 
   process-warning@4.0.1: {}
 
-  process-warning@5.0.0: {}
+  process-warning@5.1.0: {}
 
   prom-client@15.1.3:
     dependencies:

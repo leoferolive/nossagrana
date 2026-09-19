@@ -9,17 +9,19 @@
 
 ## Execution & Validation (Highest Priority)
 
-1. **[2026-07-07] Validar alinhamento tag↔ref antes de qualquer deploy manual**
+1. **[2026-09-19] CI cobre API, mas Web/E2E ficam fora do quality gate**
+   Do instead: ao alterar frontend ou fluxos críticos, rodar `pnpm --filter web test` e a suíte `apps/e2e` explicitamente; não interpretar `pnpm quality:ci` como cobertura completa.
+2. **[2026-07-07] Validar alinhamento tag↔ref antes de qualquer deploy manual**
    Do instead: `git rev-list -n1 <tag>` deve ser igual a `git rev-parse <ref>`; "tag está na main" = `git merge-base --is-ancestor $(git rev-list -n1 <tag>) origin/main`. O reusable `deploy-environment.yml` builda do `ref` e rotula com `tag` — divergência gera imagem errada sob rótulo estável (guard automático no job `prepare`; skill `verify-deploy` para conferência local).
-2. **[2026-07-07] release.yml pode criar várias tags de uma vez**
+3. **[2026-07-07] release.yml pode criar várias tags de uma vez**
    Do instead: antes do deploy-prod, confirmar que a tag passada CONTÉM a mudança desejada (`git merge-base --is-ancestor <commit> <tag>`), não apenas usar "a mais nova".
-3. **[2026-03-15] Prettier antes do push: formatar TODOS os arquivos alterados desde main**
+4. **[2026-03-15] Prettier antes do push: formatar TODOS os arquivos alterados desde main**
    Do instead: `git diff --name-only origin/main...HEAD | xargs pnpm exec prettier --write --ignore-unknown` — a CI checa todos os arquivos do PR, não só o último commit.
-4. **[2026-03-14] Sempre fazer `git fetch origin && git log origin/main` antes de iniciar qualquer task**
+5. **[2026-03-14] Sempre fazer `git fetch origin && git log origin/main` antes de iniciar qualquer task**
    Do instead: verificar o estado real do `origin/main` no início de cada sessão para não reimplementar trabalho já mergeado.
-5. **[2026-03-12] `tsc -b` no frontend pode gerar JS em `src/` se `noEmit` nao estiver ativo**
+6. **[2026-03-12] `tsc -b` no frontend pode gerar JS em `src/` se `noEmit` nao estiver ativo**
    Do instead: usar `tsc --noEmit` nos scripts de build/type-check do web para evitar artefatos versionaveis.
-6. **[2026-03-11] Validate critical flows after every meaningful code change**
+7. **[2026-03-11] Validate critical flows after every meaningful code change**
    Do instead: run the smallest relevant automated checks first, then broaden only if needed.
 
 ## Shell & Command Reliability

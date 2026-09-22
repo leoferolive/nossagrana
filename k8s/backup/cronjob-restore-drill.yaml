@@ -1,0 +1,141 @@
+# Restore drill diário do NossaGrana (issue #48). Ver docs/backup/RUNBOOK.md.
+#
+# Roda 30 min após o `pg-backup` (03:20 BRT), lê o dump mais recente do PVC
+# `postgres-backup` em modo somente leitura e restaura `nossagrana_prod` num
+# PostgreSQL descartável (sidecar nativo, emptyDir, escuta só em 127.0.0.1).
+# O pod não recebe nenhuma credencial do Postgres de produção.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nossagrana-restore-drill
+  labels:
+    app: nossagrana-restore-drill
+spec:
+  schedule: '50 3 * * *'
+  # Sem timeZone o controller do k3s usa o fuso do nó (ver cluster/README.md
+  # do self-workflows); explícito evita drift se o nó mudar.
+  timeZone: America/Sao_Paulo
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # Sem retry: um drill que falha é evidência — reexecutar mascararia a falha.
+      backoffLimit: 0
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app: nossagrana-restore-drill
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            # uid/gid do usuário postgres na imagem Debian oficial.
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            # Sidecar nativo (restartPolicy: Always): o container principal só
+            # inicia após o startupProbe e o Job termina quando ele termina.
+            - name: scratch-postgres
+              image: pgvector/pgvector:pg17
+              restartPolicy: Always
+              args:
+                - -c
+                - listen_addresses=127.0.0.1
+                # Banco descartável: durabilidade é irrelevante, velocidade não.
+                - -c
+                - fsync=off
+                - -c
+                - synchronous_commit=off
+                - -c
+                - full_page_writes=off
+                - -c
+                - shared_buffers=32MB
+              env:
+                # trust é seguro aqui: o servidor só escuta no loopback do próprio pod.
+                - name: POSTGRES_HOST_AUTH_METHOD
+                  value: trust
+                - name: PGDATA
+                  value: /var/lib/postgresql/data/pgdata
+              startupProbe:
+                exec:
+                  command: ['pg_isready', '-h', '127.0.0.1', '-U', 'postgres']
+                periodSeconds: 2
+                failureThreshold: 60
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 96Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ['ALL']
+              volumeMounts:
+                - name: scratch-data
+                  mountPath: /var/lib/postgresql/data
+                - name: scratch-run
+                  mountPath: /var/run/postgresql
+          containers:
+            - name: restore-drill
+              image: pgvector/pgvector:pg17
+              command: ['sh', '/drill/restore-drill.sh']
+              env:
+                - name: PGHOST
+                  value: 127.0.0.1
+                - name: PGUSER
+                  value: postgres
+                - name: BACKUP_DIR
+                  value: /backup
+                - name: SOURCE_DB_NAME
+                  value: nossagrana_prod
+                # RPO 24h + margem para duração/atraso do pg-backup.
+                - name: MAX_BACKUP_AGE_HOURS
+                  value: '26'
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ['ALL']
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: drill-script
+                  mountPath: /drill
+                  readOnly: true
+                - name: drill-tmp
+                  mountPath: /tmp
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: postgres-backup
+                readOnly: true
+            - name: drill-script
+              configMap:
+                name: nossagrana-restore-drill-script
+            - name: scratch-data
+              emptyDir:
+                sizeLimit: 1Gi
+            - name: scratch-run
+              emptyDir:
+                sizeLimit: 16Mi
+            - name: drill-tmp
+              emptyDir:
+                sizeLimit: 512Mi

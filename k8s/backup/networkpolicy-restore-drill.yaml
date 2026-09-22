@@ -1,0 +1,22 @@
+# Isola o pod do restore drill (issue #48): sem ingress nem egress.
+# O drill só fala com o PostgreSQL descartável via loopback, que não passa por
+# NetworkPolicy.
+#
+# ATENÇÃO: em 2026-09-22 um pod com este label ainda alcançou o Postgres de
+# produção — o controller de NetworkPolicy do k3s não está ativo no cluster.
+# Esta policy é defesa em profundidade para quando ele for ligado; a garantia
+# efetiva é o pod não ter credencial de produção e usar PGHOST=127.0.0.1,
+# verificado por k8s/backup/tests/manifests.test.sh.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nossagrana-restore-drill-isolation
+  labels:
+    app: nossagrana-restore-drill
+spec:
+  podSelector:
+    matchLabels:
+      app: nossagrana-restore-drill
+  policyTypes:
+    - Ingress
+    - Egress

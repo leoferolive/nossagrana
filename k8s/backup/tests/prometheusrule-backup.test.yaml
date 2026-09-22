@@ -1,0 +1,160 @@
+# Testes das regras de alerta de backup (issue #49) com séries sintéticas.
+# Rodar: bash k8s/backup/tests/prometheusrule-backup.test.sh
+# Intervalo de 1m; `time()` = tempo de avaliação em segundos desde 0.
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # Saudável: backups de 1h atrás, execução mais recente bem-sucedida, disco ok.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-backup"}'
+        values: '3600x120'
+      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-backup"}'
+        values: '3500x120'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="restic-backup"}'
+        values: '3600x120'
+      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="restic-backup"}'
+        values: '3500x120'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="nossagrana-restore-drill"}'
+        values: '3600x120'
+      - series: 'kube_cronjob_info{namespace="database",cronjob="pg-backup"}'
+        values: '1x120'
+      - series: 'kube_cronjob_info{namespace="database",cronjob="restic-backup"}'
+        values: '1x120'
+      - series: 'kube_cronjob_info{namespace="database",cronjob="nossagrana-restore-drill"}'
+        values: '1x120'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/srv/backups",fstype="ext4"}'
+        values: '500x120'
+      - series: 'node_filesystem_size_bytes{mountpoint="/srv/backups",fstype="ext4"}'
+        values: '1000x120'
+    alert_rule_test:
+      - eval_time: 2h
+        alertname: NossaGranaBackupStale
+        exp_alerts: []
+      - eval_time: 2h
+        alertname: NossaGranaBackupJobNotSucceeded
+        exp_alerts: []
+      - eval_time: 2h
+        alertname: NossaGranaRestoreDrillStale
+        exp_alerts: []
+      - eval_time: 2h
+        alertname: NossaGranaBackupCronJobMissing
+        exp_alerts: []
+      - eval_time: 2h
+        alertname: NossaGranaBackupDiskLow
+        exp_alerts: []
+
+  # pg-backup parou de ter sucesso: último sucesso em t=0, avaliado em 27h (> RPO+margem).
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-backup"}'
+        values: '0x1700'
+    alert_rule_test:
+      - eval_time: 25h
+        alertname: NossaGranaBackupStale
+        exp_alerts: []
+      - eval_time: 27h
+        alertname: NossaGranaBackupStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: pg-backup
+            exp_annotations:
+              summary: 'nossagrana: backup pg-backup sem sucesso há mais de 26h (RPO violado)'
+              description: 'Último sucesso de pg-backup há 1d 3h 0m 0s.'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
+
+  # restic-backup (cópia off-site) agendado há 2h sem sucesso desde a véspera.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="restic-backup"}'
+        values: '86400x240'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="restic-backup"}'
+        values: '0x240'
+    alert_rule_test:
+      - eval_time: 3h
+        alertname: NossaGranaBackupJobNotSucceeded
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: restic-backup
+            exp_annotations:
+              summary: 'nossagrana: última execução de restic-backup não teve sucesso'
+              description: 'O agendamento mais recente de restic-backup não concluiu com sucesso. Ver logs do último Job.'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
+
+  # Job em andamento (agendado há 10min, ainda sem sucesso novo) não alerta.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-backup"}'
+        values: '86400x60'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-backup"}'
+        values: '85800x60'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: NossaGranaBackupJobNotSucceeded
+        exp_alerts: []
+
+  # Restore drill sem sucesso há 27h.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="nossagrana-restore-drill"}'
+        values: '0x1700'
+    alert_rule_test:
+      - eval_time: 27h
+        alertname: NossaGranaRestoreDrillStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: nossagrana-restore-drill
+            exp_annotations:
+              summary: 'nossagrana: restore drill sem sucesso há mais de 26h'
+              description: 'Último restore comprovado há 1d 3h 0m 0s.'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#restore-drill-falhando
+
+  # CronJob do drill removido: só ele aparece como ausente.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_info{namespace="database",cronjob="pg-backup"}'
+        values: '1x120'
+      - series: 'kube_cronjob_info{namespace="database",cronjob="restic-backup"}'
+        values: '1x120'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: NossaGranaBackupCronJobMissing
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: nossagrana-restore-drill
+            exp_annotations:
+              summary: 'nossagrana: CronJob nossagrana-restore-drill de backup/restore não existe no cluster'
+              description: 'Sem o CronJob, o pipeline de backup para em silêncio. Reaplicar os manifests.'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#cronjob-ausente
+
+  # Disco de destino com 5% livre por mais de 30min.
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/srv/backups",fstype="ext4"}'
+        values: '50x60'
+      - series: 'node_filesystem_size_bytes{mountpoint="/srv/backups",fstype="ext4"}'
+        values: '1000x60'
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: NossaGranaBackupDiskLow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              namespace: database
+              mountpoint: /srv/backups
+              fstype: ext4
+            exp_annotations:
+              summary: 'nossagrana: menos de 10% livre em /srv/backups (destino de backup)'
+              description: '5% livre em /srv/backups; próximos backups podem falhar.'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#espaço-em-disco

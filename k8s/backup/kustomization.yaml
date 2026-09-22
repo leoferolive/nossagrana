@@ -1,0 +1,22 @@
+# Backup/restore do NossaGrana (epic #44). Aplicação manual — não faz parte do
+# deploy da aplicação (deploy-environment.yml aplica só k8s/<env>):
+#
+#   kubectl apply -k k8s/backup
+#
+# O script vira ConfigMap com hash no nome: editar restore-drill.sh e reaplicar
+# atualiza o CronJob automaticamente, sem ConfigMap duplicado à mão.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: database
+resources:
+  - cronjob-restore-drill.yaml
+  - networkpolicy-restore-drill.yaml
+  - prometheusrule-backup.yaml
+configMapGenerator:
+  - name: nossagrana-restore-drill-script
+    files:
+      - restore-drill.sh
+      - extract-database.sh
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: nossagrana-backup

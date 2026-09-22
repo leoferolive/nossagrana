@@ -156,6 +156,27 @@ jobs:
       - name: Production dependency audit
         run: pnpm security:audit
 
+  # Backup/restore (epic #44): restore real via Docker contra as migrations
+  # atuais — uma migration que quebre o restore falha aqui, não no drill das 03:50.
+  backup-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Shellcheck
+        run: shellcheck k8s/backup/*.sh k8s/backup/tests/*.sh
+
+      - name: Manifest invariants
+        run: bash k8s/backup/tests/manifests.test.sh
+
+      - name: Alert rules (promtool)
+        run: bash k8s/backup/tests/prometheusrule-backup.test.sh
+
+      - name: Restore drill (PostgreSQL real)
+        run: bash k8s/backup/tests/restore-drill.test.sh
+
   gitleaks:
     runs-on: ubuntu-latest
     needs: quality

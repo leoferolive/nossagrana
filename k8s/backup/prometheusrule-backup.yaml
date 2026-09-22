@@ -1,0 +1,98 @@
+# Alertas do pipeline de backup/restore do NossaGrana (issue #49).
+# Política (RPO/RTO) em docs/backup/POLICY.md; resposta em docs/backup/RUNBOOK.md.
+#
+# Fonte: kube-state-metrics (CronJobs do namespace `database`) e node-exporter.
+#   pg-backup                → pg_dumpall diário no PVC `postgres-backup` (03:20)
+#   restic-backup            → cópia cifrada para HD USB + Google Drive (04:00)
+#   nossagrana-restore-drill → restore em banco descartável (03:50)
+# Roteamento: Alertmanager do kps → Telegram (severity critical/warning).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nossagrana-backup
+  labels:
+    app: nossagrana
+    # Exigido pelo ruleSelector do Prometheus do kube-prometheus-stack.
+    release: kps
+spec:
+  groups:
+    - name: nossagrana.backup
+      interval: 1m
+      rules:
+        # RPO = 24h; 26h dá margem para duração do job e atraso do scheduler.
+        - alert: NossaGranaBackupStale
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup"}
+              > 26 * 3600
+          for: 15m
+          labels:
+            namespace: database
+            severity: critical
+          annotations:
+            summary: 'nossagrana: backup {{ $labels.cronjob }} sem sucesso há mais de 26h (RPO violado)'
+            description: 'Último sucesso de {{ $labels.cronjob }} há {{ $value | humanizeDuration }}.'
+            runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
+
+        # O último agendamento não virou sucesso em 1h (deadline dos jobs ≤ 15min):
+        # falha de dump, tamanho mínimo, upload/restic ou restore. Resolve sozinho
+        # no próximo sucesso, ao contrário do KubeJobFailed.
+        - alert: NossaGranaBackupJobNotSucceeded
+          expr: |
+            (
+              kube_cronjob_status_last_schedule_time{namespace="database",cronjob=~"pg-backup|restic-backup|nossagrana-restore-drill"}
+              - on (namespace, cronjob)
+              kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|nossagrana-restore-drill"}
+            ) > 3600
+          for: 15m
+          labels:
+            namespace: database
+            severity: critical
+          annotations:
+            summary: 'nossagrana: última execução de {{ $labels.cronjob }} não teve sucesso'
+            description: 'O agendamento mais recente de {{ $labels.cronjob }} não concluiu com sucesso. Ver logs do último Job.'
+            runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
+
+        # Restore comprovado: sem drill bem-sucedido em 26h, não há garantia de que
+        # o backup mais recente é restaurável.
+        - alert: NossaGranaRestoreDrillStale
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{namespace="database",cronjob="nossagrana-restore-drill"}
+              > 26 * 3600
+          for: 15m
+          labels:
+            namespace: database
+            severity: critical
+          annotations:
+            summary: 'nossagrana: restore drill sem sucesso há mais de 26h'
+            description: 'Último restore comprovado há {{ $value | humanizeDuration }}.'
+            runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#restore-drill-falhando
+
+        # CronJob removido/renomeado: as regras acima ficariam silenciosas.
+        - alert: NossaGranaBackupCronJobMissing
+          expr: |
+            absent(kube_cronjob_info{namespace="database",cronjob="pg-backup"})
+              or absent(kube_cronjob_info{namespace="database",cronjob="restic-backup"})
+              or absent(kube_cronjob_info{namespace="database",cronjob="nossagrana-restore-drill"})
+          for: 1h
+          labels:
+            namespace: database
+            severity: critical
+          annotations:
+            summary: 'nossagrana: CronJob {{ $labels.cronjob }} de backup/restore não existe no cluster'
+            description: 'Sem o CronJob, o pipeline de backup para em silêncio. Reaplicar os manifests.'
+            runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#cronjob-ausente
+
+        # "/" guarda o PVC postgres-backup (local-path); /srv/backups o repo restic local.
+        - alert: NossaGranaBackupDiskLow
+          expr: |
+            node_filesystem_avail_bytes{mountpoint=~"/|/srv/backups",fstype!~"tmpfs|overlay"}
+              / node_filesystem_size_bytes{mountpoint=~"/|/srv/backups",fstype!~"tmpfs|overlay"}
+              < 0.10
+          for: 30m
+          labels:
+            namespace: database
+            severity: warning
+          annotations:
+            summary: 'nossagrana: menos de 10% livre em {{ $labels.mountpoint }} (destino de backup)'
+            description: '{{ $value | humanizePercentage }} livre em {{ $labels.mountpoint }}; próximos backups podem falhar.'
+            runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#espaço-em-disco

@@ -12,7 +12,9 @@ gravado e depois exposto por joins (ex.: `categoriaNome` nos templates).
 
 - `ReferenciaOwnershipValidator.validar({ familiaId, categoria?, metodoPagamento?, cofrinho? })`
   roda **antes de qualquer escrita** e lança `ReferenciaInvalidaError` →
-  HTTP **422** `{ code: 'REFERENCIA_INVALIDA', message }`.
+  HTTP **422** no envelope de `api-design.md`:
+  `{ error: { message, code: 'REFERENCIA_INVALIDA' } }` (handler central em
+  `referencia-ownership.http.ts`, declarado no schema de resposta das rotas).
 - ID de outra família e ID inexistente têm **a mesma resposta** (`nao_encontrada`);
   a mensagem ecoa só o ID recebido e a família do próprio usuário.
 - `referenciaEsperada(id, idAtual)`: vínculo **novo ou alterado** exige registro

@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
+import { env } from '../config/env.js';
+
 import { InMemoryCategoriaRepository } from '../modules/categoria/categoria.repository.js';
 import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.repository.js';
 import { InMemoryMetodoPagamentoRepository } from '../modules/metodo-pagamento/metodo-pagamento.repository.js';
@@ -29,6 +31,12 @@ export function criarRepositoriosInMemoryCompartilhados(): RepositoriosInMemoryC
     metodosPagamento: new InMemoryMetodoPagamentoRepository(),
     cofrinhos: new InMemoryCofrinhoRepository(),
   };
+}
+
+/** Em NODE_ENV=test, as rotas desta instância da app compartilham os mesmos repositórios. */
+export function decorarRepositoriosInMemoryDeTeste(app: FastifyInstance): void {
+  if (env.NODE_ENV !== 'test') return;
+  app.decorate('repositoriosInMemory', criarRepositoriosInMemoryCompartilhados());
 }
 
 /** Plugin registrado isoladamente (sem buildApp) recebe um conjunto próprio. */

@@ -9,6 +9,8 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import { referenciaInvalidaResponseSchema } from '../../shared/referencia-ownership/referencia-ownership.http.js';
+
 const errorSchemas = {
   404: z.object({ message: z.string() }),
   409: z.object({ message: z.string() }),
@@ -23,6 +25,7 @@ export const templateTransacaoCreateSchema = {
   response: {
     201: templateTransacaoCreateResponseSchema,
     409: errorSchemas[409],
+    422: referenciaInvalidaResponseSchema,
   },
 };
 
@@ -32,6 +35,7 @@ export const templateTransacaoUpdateSchema = {
     200: templateTransacaoCreateResponseSchema,
     404: errorSchemas[404],
     409: errorSchemas[409],
+    422: referenciaInvalidaResponseSchema,
   },
 };
 
@@ -48,6 +52,7 @@ export const templateTransacaoAplicarSchema = {
     200: templateTransacaoAplicarResponseSchema,
     400: errorSchemas[404],
     404: errorSchemas[404],
+    422: referenciaInvalidaResponseSchema,
   },
 };
 

@@ -1,0 +1,52 @@
+import Fastify from 'fastify';
+import { describe, expect, it } from 'vitest';
+
+import { registrarRespostaReferenciaInvalida } from './referencia-ownership.http.js';
+import { ReferenciaInvalidaError } from './referencia-ownership.validator.js';
+
+function appQueLanca(erro: Error) {
+  const app = Fastify({ logger: false });
+  registrarRespostaReferenciaInvalida(app);
+  app.get('/falha', async () => {
+    throw erro;
+  });
+  return app;
+}
+
+describe('registrarRespostaReferenciaInvalida', () => {
+  it('responde 422 no envelope { error: { message, code } }', async () => {
+    const app = appQueLanca(
+      new ReferenciaInvalidaError('categoria', 'nao_encontrada', 'Referência inválida (categoria)'),
+    );
+
+    const res = await app.inject({ method: 'GET', url: '/falha' });
+
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({
+      error: { message: 'Referência inválida (categoria)', code: 'REFERENCIA_INVALIDA' },
+    });
+  });
+
+  it('delega outros erros ao handler padrão do Fastify sem mudar o formato', async () => {
+    const semHandler = Fastify({ logger: false });
+    semHandler.get('/falha', async () => {
+      throw Object.assign(new Error('conflito qualquer'), { statusCode: 409 });
+    });
+    const comHandler = appQueLanca(
+      Object.assign(new Error('conflito qualquer'), { statusCode: 409 }),
+    );
+
+    const esperado = await semHandler.inject({ method: 'GET', url: '/falha' });
+    const res = await comHandler.inject({ method: 'GET', url: '/falha' });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual(esperado.json());
+  });
+
+  it('mantém 500 para erros inesperados', async () => {
+    const res = await appQueLanca(new Error('boom')).inject({ method: 'GET', url: '/falha' });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toMatchObject({ statusCode: 500, message: 'boom' });
+  });
+});

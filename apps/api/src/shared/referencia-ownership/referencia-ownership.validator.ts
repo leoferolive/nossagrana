@@ -16,8 +16,9 @@ const ROTULO: Record<EntidadeReferenciada, string> = {
 
 /**
  * Referência financeira que não pertence à família ativa, está inativa ou tem
- * tipo incompatível. `statusCode` faz o handler padrão do Fastify responder 422
- * sem catch específico em cada rota.
+ * tipo incompatível. Serializado como 422 `{ error: { message, code } }` por
+ * `registrarRespostaReferenciaInvalida`, sem catch específico em cada rota;
+ * `statusCode` mantém o 422 mesmo se o handler não estiver registrado.
  */
 export class ReferenciaInvalidaError extends Error {
   readonly statusCode = 422;

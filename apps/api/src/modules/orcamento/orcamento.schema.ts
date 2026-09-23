@@ -6,6 +6,8 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import { referenciaInvalidaResponseSchema } from '../../shared/referencia-ownership/referencia-ownership.http.js';
+
 const errorSchemas = {
   401: z.object({ message: z.literal('Nao autenticado') }),
   400: z.object({ message: z.string() }),
@@ -30,6 +32,7 @@ export const orcamentoSetSchema = {
     200: orcamentoSetResponseSchema,
     400: errorSchemas[400],
     401: errorSchemas[401],
+    422: referenciaInvalidaResponseSchema,
   },
 };
 

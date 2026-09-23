@@ -10,12 +10,13 @@ import {
   cofrinhoUpdateRequestSchema,
 } from '@nossagrana/types';
 import { and, eq } from 'drizzle-orm';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { categorias, transacoes } from '../../db/schema.js';
-import { DrizzleCofrinhoRepository, InMemoryCofrinhoRepository } from './cofrinho.repository.js';
+import { repositoriosInMemoryDe } from '../../shared/repositorios-in-memory.js';
+import { DrizzleCofrinhoRepository } from './cofrinho.repository.js';
 import {
   cofrinhoAporteRecorrenteDeleteSchema,
   cofrinhoAporteSchema,
@@ -88,10 +89,10 @@ const realGetCategoriaCofrinho = async (familiaId: string) => {
   return cat;
 };
 
-const defaultCofrinhoService = (): CofrinhoService => {
+const defaultCofrinhoService = (fastify: FastifyInstance): CofrinhoService => {
   if (env.NODE_ENV === 'test') {
     return new CofrinhoService(
-      new InMemoryCofrinhoRepository(),
+      repositoriosInMemoryDe(fastify).cofrinhos,
       testTransacaoCreator,
       testGetCategoriaCofrinho,
     );
@@ -127,7 +128,7 @@ function handleCofrinhoError(
 }
 
 export const cofrinhoRoutes: FastifyPluginAsync = async (fastify) => {
-  const cofrinhoService = defaultCofrinhoService();
+  const cofrinhoService = defaultCofrinhoService(fastify);
 
   // POST /cofrinhos — criar cofrinho
   fastify.post(

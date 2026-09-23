@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
 import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
 
 const buildService = () => {
   const repository = new InMemoryTransacaoRepository();
-  const service = new TransacaoService(repository);
+  const service = new TransacaoService(repository, new ReferenciasSempreValidasFake());
   return { repository, service };
 };
 

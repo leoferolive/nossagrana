@@ -20,12 +20,18 @@ import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
 import { metricsPlugin_ } from './plugins/metrics.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
+import { criarRepositoriosInMemoryCompartilhados } from './shared/repositorios-in-memory.js';
 
 export const buildApp = () => {
   const app = Fastify({
     logger: env.NODE_ENV !== 'test',
     trustProxy: true,
   });
+
+  // Em teste, as rotas compartilham os repositórios InMemory desta instância.
+  if (env.NODE_ENV === 'test') {
+    app.decorate('repositoriosInMemory', criarRepositoriosInMemoryCompartilhados());
+  }
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
 import { InMemoryOrcamentoRepository } from './orcamento.repository.js';
 import { OrcamentoService } from './orcamento.service.js';
 
@@ -12,7 +13,7 @@ describe('OrcamentoService', () => {
 
   beforeEach(() => {
     repo = new InMemoryOrcamentoRepository();
-    service = new OrcamentoService(repo);
+    service = new OrcamentoService(repo, new ReferenciasSempreValidasFake());
   });
 
   it('retorna lista vazia quando nao ha orcamentos', async () => {

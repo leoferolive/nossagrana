@@ -17,6 +17,13 @@ recebido não é suficiente por si só — sem essa verificação de posse, um
 usuário autenticado poderia forjar o header e ler/escrever dados de outra
 família.
 
+**Regra #3**: IDs de **outros registros** recebidos numa mutação (categoria,
+método de pagamento, cofrinho) também precisam pertencer à família ativa. O
+service chama `ReferenciaOwnershipValidator.validar(...)`
+(`apps/api/src/shared/referencia-ownership/`) antes de qualquer escrita — o
+filtro por `familia_id` da tabela principal não cobre as referências. Matriz e
+regras de vínculo inativo em `docs/security/OWNERSHIP-REFERENCIAS.md`.
+
 ## Autenticação JWT
 
 - Rotas protegidas via plugin Fastify de JWT

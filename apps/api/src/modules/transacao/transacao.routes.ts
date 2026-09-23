@@ -5,7 +5,7 @@ import {
   transacaoUpdateRequestSchema,
 } from '@nossagrana/types';
 // transacaoAnteciparRequestSchema is imported from schema.ts re-export
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import {
@@ -13,11 +13,14 @@ import {
   InMemoryHistoricoRepository,
 } from '../historico/historico.repository.js';
 import { SnapshotService } from '../historico/snapshot.service.js';
-import {
-  DrizzleMetodoPagamentoRepository,
-  InMemoryMetodoPagamentoRepository,
-} from '../metodo-pagamento/metodo-pagamento.repository.js';
+import { DrizzleMetodoPagamentoRepository } from '../metodo-pagamento/metodo-pagamento.repository.js';
 import type { MetodoPagamentoRepository } from '../metodo-pagamento/metodo-pagamento.types.js';
+import { DrizzleReferenciaOwnershipRepository } from '../../shared/referencia-ownership/referencia-ownership.repository.js';
+import {
+  repositoriosInMemoryDe,
+  validadorReferenciasInMemory,
+} from '../../shared/repositorios-in-memory.js';
+import { ReferenciaOwnershipValidator } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
 import {
   transacaoAnteciparRequestSchema,
   transacaoAnteciparSchema,
@@ -45,20 +48,22 @@ async function resolveMetodoPagamento(
   return { tipo: metodo.tipo, dataFechamento: metodo.dataFechamento };
 }
 
-const defaultServices = () => {
+const defaultServices = (fastify: FastifyInstance) => {
   if (env.NODE_ENV === 'test') {
+    const repositorios = repositoriosInMemoryDe(fastify);
     return {
       transacaoService: new TransacaoService(
         new InMemoryTransacaoRepository(),
+        validadorReferenciasInMemory(repositorios),
         new SnapshotService(new InMemoryHistoricoRepository()),
       ),
-      metodoPagamentoRepository:
-        new InMemoryMetodoPagamentoRepository() as MetodoPagamentoRepository,
+      metodoPagamentoRepository: repositorios.metodosPagamento as MetodoPagamentoRepository,
     };
   }
   return {
     transacaoService: new TransacaoService(
       new DrizzleTransacaoRepository(),
+      new ReferenciaOwnershipValidator(new DrizzleReferenciaOwnershipRepository()),
       new SnapshotService(new DrizzleHistoricoRepository()),
     ),
     metodoPagamentoRepository: new DrizzleMetodoPagamentoRepository() as MetodoPagamentoRepository,
@@ -72,7 +77,7 @@ const mapTransacao = (t: Transacao) => ({
 });
 
 export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
-  const { transacaoService, metodoPagamentoRepository } = defaultServices();
+  const { transacaoService, metodoPagamentoRepository } = defaultServices(fastify);
 
   fastify.post(
     '/transacoes',

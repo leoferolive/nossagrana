@@ -1,5 +1,6 @@
 import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagrana/types';
 
+import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { mesAnterior } from '../../utils/date.js';
 import type { OrcamentoRepository, OrcamentoSetInput } from './orcamento.types.js';
 
@@ -10,7 +11,10 @@ function calcularStatus(percentual: number): 'ok' | 'warning' | 'exceeded' {
 }
 
 export class OrcamentoService {
-  constructor(private readonly repo: OrcamentoRepository) {}
+  constructor(
+    private readonly repo: OrcamentoRepository,
+    private readonly referencias: ReferenciaOwnershipChecker,
+  ) {}
 
   async list(familiaId: string, mesReferencia: string): Promise<OrcamentoListResponse> {
     const [vigentes, gastos] = await Promise.all([
@@ -42,6 +46,11 @@ export class OrcamentoService {
 
   async set(input: OrcamentoSetInput): Promise<void> {
     const aberto = await this.repo.findAberto(input.familiaId, input.categoriaId);
+    // Orçamento novo exige categoria ativa; ajustar um já vigente não.
+    await this.referencias.validar({
+      familiaId: input.familiaId,
+      categoria: { id: input.categoriaId, exigirAtiva: !aberto },
+    });
     if (aberto) {
       const vigFimCandidate = mesAnterior(input.vigenciaInicio);
       // Guard: vigenciaFim must not precede the record's own start (same-month edge case)

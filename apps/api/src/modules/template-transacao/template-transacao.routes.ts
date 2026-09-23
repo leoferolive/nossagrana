@@ -9,16 +9,19 @@ import {
   templateTransacaoUpdateRequestSchema,
 } from '@nossagrana/types';
 import { randomUUID } from 'node:crypto';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { transacoes } from '../../db/schema.js';
-import {
-  DrizzleCofrinhoRepository,
-  InMemoryCofrinhoRepository,
-} from '../cofrinho/cofrinho.repository.js';
+import { DrizzleCofrinhoRepository } from '../cofrinho/cofrinho.repository.js';
 import { CofrinhoService } from '../cofrinho/cofrinho.service.js';
+import { DrizzleReferenciaOwnershipRepository } from '../../shared/referencia-ownership/referencia-ownership.repository.js';
+import {
+  repositoriosInMemoryDe,
+  validadorReferenciasInMemory,
+} from '../../shared/repositorios-in-memory.js';
+import { ReferenciaOwnershipValidator } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
 import {
   DrizzleTemplateTransacaoRepository,
   InMemoryTemplateTransacaoRepository,
@@ -96,20 +99,18 @@ const realGetCategoriaCofrinho = async (familiaId: string) => {
 
 /* v8 ignore stop */
 
-const defaultService = (): TemplateTransacaoService => {
+const defaultService = (fastify: FastifyInstance): TemplateTransacaoService => {
   if (env.NODE_ENV === 'test') {
+    const repositorios = repositoriosInMemoryDe(fastify);
     return new TemplateTransacaoService(
       new InMemoryTemplateTransacaoRepository(),
       testTransacaoCreator,
-      new CofrinhoService(
-        new InMemoryCofrinhoRepository(),
-        testTransacaoCreator,
-        testGetCategoriaCofrinho,
-      ),
+      new CofrinhoService(repositorios.cofrinhos, testTransacaoCreator, testGetCategoriaCofrinho),
+      validadorReferenciasInMemory(repositorios),
     );
   }
 
-  /* v8 ignore next 8 -- production wiring */
+  /* v8 ignore next 9 -- production wiring */
   return new TemplateTransacaoService(
     new DrizzleTemplateTransacaoRepository(),
     realTransacaoCreator,
@@ -118,11 +119,12 @@ const defaultService = (): TemplateTransacaoService => {
       realTransacaoCreator,
       realGetCategoriaCofrinho,
     ),
+    new ReferenciaOwnershipValidator(new DrizzleReferenciaOwnershipRepository()),
   );
 };
 
 export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
-  const service = defaultService();
+  const service = defaultService(fastify);
 
   fastify.get(
     '/templates-transacao',

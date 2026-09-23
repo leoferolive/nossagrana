@@ -1443,7 +1443,8 @@ describe('transacao routes', () => {
     });
     const { familia } = familyRes.json() as { familia: { id: string } };
 
-    // Criar categoria via API (InMemory repo da rota de categorias é instância separada)
+    // Criar categoria via API: o validador de ownership das transações lê os
+    // repositórios InMemory compartilhados desta instância da app.
     const createCatRes = await app.inject({
       method: 'POST',
       url: '/api/categorias',
@@ -1518,12 +1519,13 @@ describe('transacao routes', () => {
       'tx-list-filters@example.com',
     );
 
-    await app.inject({
+    // A categoria do setup é de despesa: uma receita nela seria rejeitada (422).
+    const createRes = await app.inject({
       method: 'POST',
       url: '/api/transacoes',
       headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
       payload: {
-        tipo: 'receita',
+        tipo: 'despesa',
         valor: '5000.00',
         categoriaId,
         data: '2026-03-01',
@@ -1531,10 +1533,11 @@ describe('transacao routes', () => {
         recorrente: false,
       },
     });
+    expect(createRes.statusCode).toBe(201);
 
     const listRes = await app.inject({
       method: 'GET',
-      url: `/api/transacoes?tipo=receita&mesReferencia=2026-03`,
+      url: `/api/transacoes?tipo=despesa&mesReferencia=2026-03`,
       headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
     });
     expect(listRes.statusCode).toBe(200);

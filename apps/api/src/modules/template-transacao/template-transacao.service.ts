@@ -1,4 +1,9 @@
 import type {
+  ReferenciaEsperada,
+  ReferenciaOwnershipChecker,
+} from '../../shared/referencia-ownership/referencia-ownership.types.js';
+import { referenciaEsperada } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
+import type {
   CreateTemplateTransacaoInput,
   ReordenarItem,
   TemplateTransacao,
@@ -57,6 +62,7 @@ export class TemplateTransacaoService {
     private readonly repository: TemplateTransacaoRepository,
     private readonly transacaoCreator: TransacaoCreator,
     private readonly cofrinhoService: CofrinhoAportarService,
+    private readonly referencias: ReferenciaOwnershipChecker,
   ) {}
 
   async listByFamiliaId(input: {
@@ -70,10 +76,25 @@ export class TemplateTransacaoService {
     const existing = await this.repository.listByFamiliaId({ familiaId: input.familiaId });
     const duplicate = existing.find((t) => t.nome === input.nome && t.tipo === input.tipo);
     if (duplicate) throw new TemplateTransacaoDuplicateError();
+    await this.referencias.validar({
+      familiaId: input.familiaId,
+      categoria: comTipo(referenciaEsperada(input.categoriaId), input.tipo),
+      metodoPagamento: referenciaEsperada(input.metodoPagamentoId),
+      cofrinho: referenciaEsperada(input.cofrinhoId),
+    });
     return this.repository.create(input);
   }
 
   async update(input: UpdateTemplateTransacaoInput): Promise<TemplateTransacao> {
+    const atual = await this.repository.findById({ id: input.id, familiaId: input.familiaId });
+    if (!atual) throw new TemplateNotFoundError();
+    // undefined = campo não enviado, null = vínculo removido: nada a validar em ambos.
+    await this.referencias.validar({
+      familiaId: input.familiaId,
+      categoria: comTipo(referenciaEsperada(input.categoriaId, atual.categoriaId), atual.tipo),
+      metodoPagamento: referenciaEsperada(input.metodoPagamentoId, atual.metodoPagamentoId),
+      cofrinho: referenciaEsperada(input.cofrinhoId, atual.cofrinhoId),
+    });
     const updated = await this.repository.update(input);
     if (!updated) throw new TemplateNotFoundError();
     return updated;
@@ -104,6 +125,7 @@ export class TemplateTransacaoService {
       familiaId: input.familiaId,
     });
     if (templates.length !== templateIds.length) throw new TemplateNotFoundError();
+    await this.validarVinculosGravados(templates);
 
     const templateMap = new Map(templates.map((t) => [t.id, t]));
     const data = `${input.mesReferencia}-01`;
@@ -142,4 +164,28 @@ export class TemplateTransacaoService {
 
     return { transacoesCriadas, aportesCriados, total: transacoesCriadas + aportesCriados };
   }
+
+  /**
+   * Antes de gravar qualquer lançamento: um template legado com referência de
+   * outra família aborta a aplicação inteira. Vínculos gravados podem estar
+   * inativos — em produção todos os templates apontam para categorias
+   * desativadas depois (diagnóstico de 2026-09-22, issue #55).
+   */
+  private async validarVinculosGravados(templates: TemplateTransacao[]): Promise<void> {
+    for (const t of templates) {
+      await this.referencias.validar({
+        familiaId: t.familiaId,
+        categoria: referenciaEsperada(t.categoriaId, t.categoriaId),
+        metodoPagamento: referenciaEsperada(t.metodoPagamentoId, t.metodoPagamentoId),
+        cofrinho: referenciaEsperada(t.cofrinhoId, t.cofrinhoId),
+      });
+    }
+  }
+}
+
+function comTipo(
+  referencia: ReferenciaEsperada | undefined,
+  tipo: 'receita' | 'despesa',
+): (ReferenciaEsperada & { tipo: 'receita' | 'despesa' }) | undefined {
+  return referencia && { ...referencia, tipo };
 }

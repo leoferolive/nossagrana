@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
 import { InMemoryTemplateTransacaoRepository } from './template-transacao.repository.js';
 import {
   TemplateTransacaoService,
@@ -20,7 +21,12 @@ describe('TemplateTransacaoService', () => {
 
   beforeEach(() => {
     repo = new InMemoryTemplateTransacaoRepository();
-    service = new TemplateTransacaoService(repo, mockTransacaoCreator, mockCofrinhoService);
+    service = new TemplateTransacaoService(
+      repo,
+      mockTransacaoCreator,
+      mockCofrinhoService,
+      new ReferenciasSempreValidasFake(),
+    );
     vi.clearAllMocks();
   });
 

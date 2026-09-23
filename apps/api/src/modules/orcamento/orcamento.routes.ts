@@ -3,9 +3,15 @@ import {
   orcamentoQuerySchema,
   orcamentoSetRequestSchema,
 } from '@nossagrana/types';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
+import { DrizzleReferenciaOwnershipRepository } from '../../shared/referencia-ownership/referencia-ownership.repository.js';
+import {
+  repositoriosInMemoryDe,
+  validadorReferenciasInMemory,
+} from '../../shared/repositorios-in-memory.js';
+import { ReferenciaOwnershipValidator } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
 import { DrizzleOrcamentoRepository, InMemoryOrcamentoRepository } from './orcamento.repository.js';
 import {
   orcamentoHistoricoSchema,
@@ -26,14 +32,21 @@ function getCurrentMes(): string {
   return `${ano}-${mes}`;
 }
 
-const defaultService = () => {
-  const repo =
-    env.NODE_ENV === 'test' ? new InMemoryOrcamentoRepository() : new DrizzleOrcamentoRepository();
-  return new OrcamentoService(repo);
+const defaultService = (fastify: FastifyInstance) => {
+  if (env.NODE_ENV === 'test') {
+    return new OrcamentoService(
+      new InMemoryOrcamentoRepository(),
+      validadorReferenciasInMemory(repositoriosInMemoryDe(fastify)),
+    );
+  }
+  return new OrcamentoService(
+    new DrizzleOrcamentoRepository(),
+    new ReferenciaOwnershipValidator(new DrizzleReferenciaOwnershipRepository()),
+  );
 };
 
 export const orcamentoRoutes: FastifyPluginAsync = async (fastify) => {
-  const service = defaultService();
+  const service = defaultService(fastify);
 
   fastify.get(
     '/orcamento',

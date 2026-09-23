@@ -1,3 +1,5 @@
+import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
+import { referenciaEsperada } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
 import { adicionarDias, adicionarMeses } from '../../utils/date.js';
 import { calcularMesReferencia } from './mes-referencia.service.js';
 import type {
@@ -60,11 +62,20 @@ function calcularValorParcela(valorTotal: string, numeroParcelas: number): strin
 export class TransacaoService {
   constructor(
     private readonly repository: TransacaoRepository,
+    private readonly referencias: ReferenciaOwnershipChecker,
     private readonly snapshotNotifier?: SnapshotNotifier,
     private readonly cofrinhoHandler?: CofrinhoHandler,
   ) {}
 
   async registrar(input: RegistrarInput) {
+    // Antes de qualquer escrita: parcelas/séries não podem ficar parcialmente gravadas.
+    await this.referencias.validar({
+      familiaId: input.familiaId,
+      categoria: { id: input.categoriaId, exigirAtiva: true, tipo: input.tipo },
+      metodoPagamento: referenciaEsperada(input.metodoPagamentoId),
+      cofrinho: referenciaEsperada(input.cofrinhoId),
+    });
+
     const dataObj = new Date(`${input.data}T12:00:00Z`);
     const mesReferencia = calcularMesReferencia({
       data: dataObj,
@@ -245,6 +256,17 @@ export class TransacaoService {
 
     const existing = await this.repository.findById({ id: input.id, familiaId: input.familiaId });
     if (!existing) throw new TransacaoNotFoundError();
+
+    await this.referencias.validar({
+      familiaId: input.familiaId,
+      // Mesma categoria já gravada pode seguir inativa; troca exige categoria ativa.
+      categoria: {
+        id: input.categoriaId,
+        exigirAtiva: input.categoriaId !== existing.categoriaId,
+        tipo: input.tipo,
+      },
+      metodoPagamento: referenciaEsperada(input.metodoPagamentoId, existing.metodoPagamentoId),
+    });
 
     const updated = await this.repository.update({
       id: input.id,

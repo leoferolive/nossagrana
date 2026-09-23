@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
+import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
 import { InMemoryTransacaoRepository } from '../transacao/transacao.repository.js';
 import { TransacaoService } from '../transacao/transacao.service.js';
 import type { CofrinhoHandler } from '../transacao/transacao.types.js';
@@ -16,7 +17,12 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
   it('ao gerar filhas recorrentes com cofrinhoId, chama handler para cada filha', async () => {
     const repository = new InMemoryTransacaoRepository();
     const cofrinhoHandler = makeMockCofrinhoHandler();
-    const service = new TransacaoService(repository, undefined, cofrinhoHandler);
+    const service = new TransacaoService(
+      repository,
+      new ReferenciasSempreValidasFake(),
+      undefined,
+      cofrinhoHandler,
+    );
 
     const cofrinhoId = 'cofrinho-123';
 
@@ -67,7 +73,12 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
   it('filhas recorrentes com cofrinhoId têm cofrinhoId propagado', async () => {
     const repository = new InMemoryTransacaoRepository();
     const cofrinhoHandler = makeMockCofrinhoHandler();
-    const service = new TransacaoService(repository, undefined, cofrinhoHandler);
+    const service = new TransacaoService(
+      repository,
+      new ReferenciasSempreValidasFake(),
+      undefined,
+      cofrinhoHandler,
+    );
 
     const cofrinhoId = 'cofrinho-456';
 
@@ -102,7 +113,12 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
   it('ao gerar filhas recorrentes sem cofrinhoId, não chama handler', async () => {
     const repository = new InMemoryTransacaoRepository();
     const cofrinhoHandler = makeMockCofrinhoHandler();
-    const service = new TransacaoService(repository, undefined, cofrinhoHandler);
+    const service = new TransacaoService(
+      repository,
+      new ReferenciasSempreValidasFake(),
+      undefined,
+      cofrinhoHandler,
+    );
 
     await service.registrar({
       familiaId: 'f1',
@@ -125,7 +141,7 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
 
   it('sem cofrinhoHandler injetado, não causa erro mesmo com cofrinhoId', async () => {
     const repository = new InMemoryTransacaoRepository();
-    const service = new TransacaoService(repository); // sem cofrinhoHandler
+    const service = new TransacaoService(repository, new ReferenciasSempreValidasFake()); // sem cofrinhoHandler
 
     // Não deve lançar erro
     const pai = await service.registrar({
@@ -150,7 +166,12 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
   it('transação simples com cofrinhoId armazena cofrinhoId mas não chama handler', async () => {
     const repository = new InMemoryTransacaoRepository();
     const cofrinhoHandler = makeMockCofrinhoHandler();
-    const service = new TransacaoService(repository, undefined, cofrinhoHandler);
+    const service = new TransacaoService(
+      repository,
+      new ReferenciasSempreValidasFake(),
+      undefined,
+      cofrinhoHandler,
+    );
 
     const t = await service.registrar({
       familiaId: 'f1',
@@ -172,7 +193,7 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
 
   it('transação simples sem cofrinhoId tem cofrinhoId null', async () => {
     const repository = new InMemoryTransacaoRepository();
-    const service = new TransacaoService(repository);
+    const service = new TransacaoService(repository, new ReferenciasSempreValidasFake());
 
     const t = await service.registrar({
       familiaId: 'f1',

@@ -4,13 +4,11 @@ import {
   metodoPagamentoParamsSchema,
   metodoPagamentoUpdateRequestSchema,
 } from '@nossagrana/types';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import {
-  DrizzleMetodoPagamentoRepository,
-  InMemoryMetodoPagamentoRepository,
-} from './metodo-pagamento.repository.js';
+import { repositoriosInMemoryDe } from '../../shared/repositorios-in-memory.js';
+import { DrizzleMetodoPagamentoRepository } from './metodo-pagamento.repository.js';
 import {
   metodoPagamentoCreateSchema,
   metodoPagamentoDeleteSchema,
@@ -23,15 +21,15 @@ import {
   MetodoPagamentoService,
 } from './metodo-pagamento.service.js';
 
-const defaultService = (): MetodoPagamentoService => {
+const defaultService = (fastify: FastifyInstance): MetodoPagamentoService => {
   if (env.NODE_ENV === 'test') {
-    return new MetodoPagamentoService(new InMemoryMetodoPagamentoRepository());
+    return new MetodoPagamentoService(repositoriosInMemoryDe(fastify).metodosPagamento);
   }
   return new MetodoPagamentoService(new DrizzleMetodoPagamentoRepository());
 };
 
 export const metodoPagamentoRoutes: FastifyPluginAsync = async (fastify) => {
-  const service = defaultService();
+  const service = defaultService(fastify);
 
   fastify.get(
     '/metodos-pagamento',

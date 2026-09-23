@@ -20,6 +20,8 @@ import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
 import { metricsPlugin_ } from './plugins/metrics.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
+import { registrarRespostaReferenciaInvalida } from './shared/referencia-ownership/referencia-ownership.http.js';
+import { decorarRepositoriosInMemoryDeTeste } from './shared/repositorios-in-memory.js';
 
 export const buildApp = () => {
   const app = Fastify({
@@ -27,7 +29,10 @@ export const buildApp = () => {
     trustProxy: true,
   });
 
+  decorarRepositoriosInMemoryDeTeste(app);
+
   app.setValidatorCompiler(validatorCompiler);
+  registrarRespostaReferenciaInvalida(app);
   app.setSerializerCompiler(serializerCompiler);
 
   // Rate limiting global: 100 req/min por IP (desabilitado em testes)

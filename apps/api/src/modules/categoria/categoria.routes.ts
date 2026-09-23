@@ -4,10 +4,11 @@ import {
   categoriaUpdateParamsSchema,
   categoriaUpdateRequestSchema,
 } from '@nossagrana/types';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
-import { DrizzleCategoriaRepository, InMemoryCategoriaRepository } from './categoria.repository.js';
+import { repositoriosInMemoryDe } from '../../shared/repositorios-in-memory.js';
+import { DrizzleCategoriaRepository } from './categoria.repository.js';
 import {
   categoriaCreateSchema,
   categoriaDeleteSchema,
@@ -20,16 +21,16 @@ import {
   CategoriaService,
 } from './categoria.service.js';
 
-const defaultCategoriaService = (): CategoriaService => {
+const defaultCategoriaService = (fastify: FastifyInstance): CategoriaService => {
   if (env.NODE_ENV === 'test') {
-    return new CategoriaService(new InMemoryCategoriaRepository());
+    return new CategoriaService(repositoriosInMemoryDe(fastify).categorias);
   }
 
   return new CategoriaService(new DrizzleCategoriaRepository());
 };
 
 export const categoriaRoutes: FastifyPluginAsync = async (fastify) => {
-  const categoriaService = defaultCategoriaService();
+  const categoriaService = defaultCategoriaService(fastify);
 
   fastify.post(
     '/categorias',

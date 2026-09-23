@@ -10,10 +10,13 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import { referenciaInvalidaResponseSchema } from '../../shared/referencia-ownership/referencia-ownership.http.js';
+
 const errorSchemas = {
   400: z.object({ message: z.string() }),
   401: z.object({ message: z.literal('Nao autenticado') }),
   404: z.object({ message: z.literal('Transacao nao encontrada') }),
+  422: referenciaInvalidaResponseSchema,
 };
 
 export const transacaoCreateSchema = {
@@ -22,6 +25,7 @@ export const transacaoCreateSchema = {
     201: transacaoCreateResponseSchema,
     400: errorSchemas[400],
     401: errorSchemas[401],
+    422: errorSchemas[422],
   },
 };
 
@@ -50,6 +54,7 @@ export const transacaoUpdateSchema = {
     400: errorSchemas[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
+    422: errorSchemas[422],
   },
 };
 

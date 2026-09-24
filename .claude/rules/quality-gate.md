@@ -16,8 +16,8 @@ Os testes Web não rodam no CI, então o Claude precisa rodar a suíte completa 
 
 - O gate captura o índice (`git write-tree`) **antes** da primeira etapa. Se tudo passar fora do CI e o índice continuar igual no fim, grava um marcador em `$(git rev-parse --git-path quality-gate)/<hash>` (por worktree).
 - O marcador **não** é gravado (aviso `⚠`, sem mudar o exit code) se houver mudanças não staged, arquivos não rastreados em `apps/`, `packages/` ou `scripts/`, índice em conflito, ou se o índice mudar durante o gate. Não rastreados em outros caminhos só geram aviso.
-- O `.husky/pre-commit`, quando `CLAUDECODE=1`, roda `scripts/check-quality-marker.mjs` e bloqueia o commit sem marcador para o índice atual (inclusive `git commit -a` com mudança não testada). Commits humanos não são afetados.
-- Fluxo: `git add <arquivos da mudança>` (ou `git add -u` + arquivos novos) → `pnpm quality` → `git commit`. **Não** faça `git add -A`: não stageie `planilha/`, rascunhos nem arquivos alheios à mudança.
+- O `.husky/pre-commit`, quando `CLAUDECODE=1`, roda primeiro o `lint-staged` (prettier, que pode re-stagear arquivos) e **depois** `scripts/check-quality-marker.mjs`, bloqueando o commit sem marcador para o índice resultante (inclusive `git commit -a` com mudança não testada). Se o prettier reformatou algo, o marcador deixa de valer: rode `pnpm quality` de novo e commite. Commits humanos rodam só o lint-staged.
+- Fluxo: `git add <arquivos da mudança>` (ou `git add -u` + arquivos novos) → `pnpm exec prettier --write <arquivos>` + `git add <arquivos>` (formatar **antes** do gate evita um segundo ciclo) → `pnpm quality` → `git commit`. **Não** faça `git add -A`: não stageie `planilha/`, rascunhos nem arquivos alheios à mudança.
 - Testes dos scripts: `pnpm test:scripts` (rodam no job `quality` do CI).
 
 Limitações conhecidas do gate em `docs/quality-gate.md`.

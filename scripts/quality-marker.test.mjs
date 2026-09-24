@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { FakePnpmExecutable } from './test-support/fake-pnpm.mjs';
+
 // Dentro de um hook do git (ex.: pre-commit) essas variáveis apontam para o
 // repositório real; removê-las mantém os repos temporários isolados.
 const INHERITED_GIT_VARS = ['GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE', 'GIT_PREFIX'];
@@ -23,7 +25,7 @@ const {
 } = await import('./quality-marker.mjs');
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
-const huskyDir = resolve(scriptsDir, '..', '.husky');
+const huskyPreCommit = resolve(scriptsDir, '..', '.husky', 'pre-commit');
 const checkScript = join(scriptsDir, 'check-quality-marker.mjs');
 const tempDirs = [];
 
@@ -65,7 +67,7 @@ function stageNewContent(cwd, content) {
 }
 
 function createConflict(cwd) {
-  git(cwd, 'commit', '-q', '--no-verify', '-m', 'base');
+  git(cwd, 'commit', '-q', '--no-verify', '--allow-empty', '-m', 'base');
   git(cwd, 'checkout', '-q', '-b', 'outro');
   stageNewContent(cwd, 'lado outro\n');
   git(cwd, 'commit', '-q', '--no-verify', '-m', 'outro');
@@ -226,12 +228,13 @@ describe('check-quality-marker.mjs', () => {
 });
 
 describe('.husky/pre-commit real (core.hooksPath)', () => {
-  // Stub do pnpm: o lint-staged não existe no repo temporário.
-  function createFakePnpmBin() {
-    const binDir = makeTempDir('fake-pnpm-');
-    write(binDir, 'pnpm', '#!/bin/sh\nexit 0\n');
-    spawnSync('chmod', ['+x', join(binDir, 'pnpm')]);
-    return binDir;
+  // O husky 9 executa o hook com `sh -e "$s"`; o hooksPath aponta para um
+  // wrapper que reproduz isso, em vez de rodar .husky/pre-commit pelo shebang.
+  function createShErrexitHooksDir() {
+    const hooksDir = makeTempDir('husky-sh-e-');
+    write(hooksDir, 'pre-commit', `#!/bin/sh\nexec sh -e "${huskyPreCommit}" "$@"\n`);
+    spawnSync('chmod', ['+x', join(hooksDir, 'pre-commit')]);
+    return hooksDir;
   }
 
   function prepareHookRepo() {
@@ -241,33 +244,85 @@ describe('.husky/pre-commit real (core.hooksPath)', () => {
     }
     git(repo, 'add', 'scripts');
     git(repo, 'commit', '-q', '--no-verify', '-m', 'base');
-    git(repo, 'config', 'core.hooksPath', huskyDir);
+    git(repo, 'config', 'core.hooksPath', createShErrexitHooksDir());
   }
 
-  function claudeCommit(...args) {
-    const env = { CLAUDECODE: '1', PATH: `${createFakePnpmBin()}:${process.env.PATH}` };
-    return spawnIn(repo, 'git', ['commit', '-q', '-m', 'teste', ...args], env);
+  // O lint-staged não existe no repo temporário; com `lintStagedAppend`, o
+  // fake simula o prettier alterando e re-stageando a.txt.
+  function runWithFakePnpm(cmd, args, { claude = true, lintStagedAppend } = {}) {
+    const lintStagedRewrite = lintStagedAppend && { file: 'a.txt', appendLine: lintStagedAppend };
+    const pnpm = new FakePnpmExecutable({ lintStagedRewrite });
+    try {
+      const env = { PATH: pnpm.pathWithFake(), ...(claude && { CLAUDECODE: '1' }) };
+      return { ...spawnIn(repo, cmd, args, env), pnpmCalls: pnpm.calls() };
+    } finally {
+      pnpm.cleanup();
+    }
   }
 
-  test('git commit -a com mudança não testada é bloqueado', () => {
+  function hookCommit({ args = [], ...options } = {}) {
+    return runWithFakePnpm('git', ['commit', '-q', '-m', 'teste', ...args], options);
+  }
+
+  function stageTestedContent() {
     prepareHookRepo();
     stageNewContent(repo, 'versao testada\n');
     assert.equal(recordQualityMarker(repo).recorded, true);
+  }
+
+  test('git commit -a com mudança não testada é bloqueado', () => {
+    stageTestedContent();
     write(repo, 'a.txt', 'versao NAO testada\n');
 
-    const result = claudeCommit('-a');
+    const result = hookCommit({ args: ['-a'] });
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Commit bloqueado/);
   });
 
-  test('git commit do conteúdo testado passa', () => {
-    prepareHookRepo();
-    stageNewContent(repo, 'versao testada\n');
-    assert.equal(recordQualityMarker(repo).recorded, true);
+  test('git commit do conteúdo testado passa quando o lint-staged não muda nada', () => {
+    stageTestedContent();
 
-    const result = claudeCommit();
+    const result = hookCommit();
 
     assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(result.pnpmCalls, ['exec lint-staged']);
+  });
+
+  test('lint-staged que reformata e re-stageia arquivo bloqueia o commit', () => {
+    stageTestedContent();
+    const testedTree = git(repo, 'write-tree');
+    const headBefore = git(repo, 'rev-parse', 'HEAD');
+
+    const result = hookCommit({ lintStagedAppend: 'linha do prettier' });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Commit bloqueado/);
+    assert.match(result.stderr, /formatados e re-stageados/);
+    assert.match(result.stderr, /pnpm quality/);
+    assert.equal(git(repo, 'rev-parse', 'HEAD'), headBefore);
+    assert.notEqual(git(repo, 'write-tree'), testedTree);
+  });
+
+  test('commit humano (sem CLAUDECODE) roda só o lint-staged, sem exigir marcador', () => {
+    prepareHookRepo();
+    stageNewContent(repo, 'versao sem gate\n');
+
+    const result = hookCommit({ claude: false, lintStagedAppend: 'linha do prettier' });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(result.pnpmCalls, ['exec lint-staged']);
+    assert.doesNotMatch(result.stderr, /Commit bloqueado/);
+  });
+
+  test('rodado à mão com `sh -e` e índice em conflito, explica o motivo em vez de abortar mudo', () => {
+    prepareHookRepo();
+    createConflict(repo);
+
+    const result = runWithFakePnpm('sh', ['-e', huskyPreCommit]);
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /conflito/);
+    assert.doesNotMatch(result.stderr, /\n\s+at /);
   });
 });

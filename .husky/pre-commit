@@ -1,11 +1,23 @@
 #!/bin/sh
 # Commits do Claude Code (CLAUDECODE=1) exigem que `pnpm quality` tenha passado
 # para exatamente o conteúdo staged (marcador por `git write-tree`), porque os
-# testes Web não rodam no CI. Commits humanos não são afetados.
-# O lint-staged abaixo pode reformatar arquivos staged (prettier) depois desta
-# checagem; é aceitável, pois o gate e o marcador valem para o conteúdo testado.
-if [ "$CLAUDECODE" = "1" ]; then
-  node scripts/check-quality-marker.mjs || exit 1
+# testes Web não rodam no CI. Commits humanos rodam só o lint-staged.
+# O lint-staged roda ANTES da checagem: ele pode reformatar (prettier) e
+# re-stagear arquivos, e o marcador precisa valer para a árvore que será de
+# fato commitada, não para a de antes da formatação (Codex review do PR #128).
+if [ "$CLAUDECODE" != "1" ]; then
+  exec pnpm exec lint-staged
 fi
 
-pnpm exec lint-staged
+# `|| true`: o husky roda o hook com `sh -e`; com índice em conflito o
+# write-tree falha e a atribuição abortaria o hook sem mensagem (exit 128).
+tree_before_lint_staged=$(git write-tree 2>/dev/null || true)
+pnpm exec lint-staged || exit 1
+
+if ! node scripts/check-quality-marker.mjs; then
+  if [ "$tree_before_lint_staged" != "$(git write-tree 2>/dev/null || true)" ]; then
+    echo '  O lint-staged (prettier) alterou arquivos staged: eles foram formatados e re-stageados.' >&2
+    echo '  Rode `pnpm quality` de novo e commite. Para evitar este ciclo, formate antes do gate.' >&2
+  fi
+  exit 1
+fi

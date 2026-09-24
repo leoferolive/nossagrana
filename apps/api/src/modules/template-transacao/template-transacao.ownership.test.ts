@@ -6,7 +6,10 @@ import {
   ReferenciaOwnershipValidator,
 } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
 import { InMemoryTemplateTransacaoRepository } from './template-transacao.repository.js';
-import { TemplateTransacaoService } from './template-transacao.service.js';
+import {
+  TemplateSemCategoriaError,
+  TemplateTransacaoService,
+} from './template-transacao.service.js';
 
 const FAMILIA_A = 'familia-a';
 const FAMILIA_B = 'familia-b';
@@ -167,6 +170,63 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
           ],
         }),
       ).rejects.toBeInstanceOf(ReferenciaInvalidaError);
+
+      expect(transacaoCreator.criar).not.toHaveBeenCalled();
+      expect(cofrinhoService.aportar).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['cofrinho encerrado', { cofrinhoId: 'cf-a-encerrado' }, 'cofrinho'],
+      ['método de pagamento inativo', { metodoPagamentoId: 'mp-a-inativo' }, 'metodoPagamento'],
+    ])(
+      'não grava nada quando algum template aponta para %s (#57)',
+      async (_caso, override, entidade) => {
+        const { service, repo, referencias, transacaoCreator, cofrinhoService } = setup();
+        referencias.addCofrinho({ id: 'cf-a-encerrado', familiaId: FAMILIA_A, ativo: false });
+        referencias.addMetodoPagamento({ id: 'mp-a-inativo', familiaId: FAMILIA_A, ativo: false });
+        const valido = await service.create(novo({ nome: 'Água' }));
+        // Vínculo gravado quando ainda ativo; desativado/encerrado depois.
+        const inativo = await repo.create(novo({ nome: 'Reserva', ...override }));
+
+        const erro = await service
+          .aplicar({
+            familiaId: FAMILIA_A,
+            usuarioId: 'u1',
+            mesReferencia: '2026-03',
+            itens: [
+              { templateId: valido.id, valor: '50.00' },
+              { templateId: inativo.id, valor: '70.00' },
+            ],
+          })
+          .catch((e: unknown) => e);
+
+        expect(erro).toBeInstanceOf(ReferenciaInvalidaError);
+        expect((erro as ReferenciaInvalidaError).entidade).toBe(entidade);
+        expect((erro as ReferenciaInvalidaError).motivo).toBe('inativa');
+        expect(transacaoCreator.criar).not.toHaveBeenCalled();
+        expect(cofrinhoService.aportar).not.toHaveBeenCalled();
+      },
+    );
+
+    it('não grava nada quando algum template não tem categoria nem cofrinho (#57)', async () => {
+      const { service, repo, transacaoCreator, cofrinhoService } = setup();
+      const valido = await service.create(novo({ nome: 'Água' }));
+      // Estado aceito pelo create/PATCH (categoriaId e cofrinhoId nulos).
+      const semVinculo = await repo.create(
+        novo({ nome: 'Sem vínculo', categoriaId: null, metodoPagamentoId: null }),
+      );
+
+      await expect(
+        service.aplicar({
+          familiaId: FAMILIA_A,
+          usuarioId: 'u1',
+          mesReferencia: '2026-03',
+          itens: [
+            { templateId: valido.id, valor: '50.00' },
+            { templateId: semVinculo.id, valor: '70.00' },
+          ],
+        }),
+      ).rejects.toBeInstanceOf(TemplateSemCategoriaError);
 
       expect(transacaoCreator.criar).not.toHaveBeenCalled();
       expect(cofrinhoService.aportar).not.toHaveBeenCalled();

@@ -23,17 +23,17 @@ gravado e depois exposto por joins (ex.: `categoriaNome` nos templates).
 
 ## Matriz
 
-| Operação                            | Referência                | Regra                                                          |
-| ----------------------------------- | ------------------------- | -------------------------------------------------------------- |
-| `POST /transacoes`                  | `categoriaId`             | da família, ativa, tipo = tipo da transação                    |
-|                                     | `metodoPagamentoId`       | da família, ativo                                              |
-|                                     | `cofrinhoId` (interno)    | da família, ativo                                              |
-| `PATCH /transacoes/:id`             | `categoriaId`             | da família, tipo igual; ativa só se trocou                     |
-|                                     | `metodoPagamentoId`       | da família; ativo só se trocou                                 |
-| `POST /orcamento/:categoriaId`      | `categoriaId`             | da família; ativa se não houver orçamento vigente              |
-| `POST /templates-transacao`         | categoria/método/cofrinho | da família, ativos; categoria com tipo do template             |
-| `PATCH /templates-transacao/:id`    | categoria/método/cofrinho | da família; ativos só se trocaram; `null` remove o vínculo     |
-| `POST /templates-transacao/aplicar` | vínculos gravados         | da família (inativos permitidos); valida todos antes de gravar |
+| Operação                            | Referência                | Regra                                                                                                  |
+| ----------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `POST /transacoes`                  | `categoriaId`             | da família, ativa, tipo = tipo da transação                                                            |
+|                                     | `metodoPagamentoId`       | da família, ativo                                                                                      |
+|                                     | `cofrinhoId` (interno)    | da família, ativo                                                                                      |
+| `PATCH /transacoes/:id`             | `categoriaId`             | da família, tipo igual; ativa só se trocou                                                             |
+|                                     | `metodoPagamentoId`       | da família; ativo só se trocou                                                                         |
+| `POST /orcamento/:categoriaId`      | `categoriaId`             | da família; ativa se não houver orçamento vigente                                                      |
+| `POST /templates-transacao`         | categoria/método/cofrinho | da família, ativos; categoria com tipo do template                                                     |
+| `PATCH /templates-transacao/:id`    | categoria/método/cofrinho | da família; ativos só se trocaram; `null` remove o vínculo                                             |
+| `POST /templates-transacao/aplicar` | vínculos gravados         | da família; categoria pode estar inativa, método e cofrinho ativos (#57); valida todos antes de gravar |
 
 Sem mudança necessária (já restritos à família ou definidos no servidor):
 
@@ -58,7 +58,10 @@ retorna só contagens). Resultado em 2026-09-22:
 
 Os templates com categoria inativa motivaram a regra "vínculo gravado pode ser
 inativo": exigir categoria ativa em `aplicar` quebraria todos os templates da
-família em produção.
+família em produção. A exceção vale só para a categoria: em `aplicar`, método de
+pagamento e cofrinho gravados precisam estar ativos (#57), senão um cofrinho
+encerrado faria o aporte falhar no meio do loop (gravação parcial) e um método
+inativo geraria lançamento num método desativado.
 
 ## Próximos passos (epic #54)
 

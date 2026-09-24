@@ -3,6 +3,9 @@ import type {
   ReferenciaOwnershipChecker,
 } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { referenciaEsperada } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
+import type { UnitOfWork } from '../../shared/unit-of-work/unit-of-work.types.js';
+import { aportarNoEscopo } from '../cofrinho/cofrinho.operacoes.js';
+import type { BuscarCategoriaCofrinho, CofrinhoRepositorios } from '../cofrinho/cofrinho.types.js';
 import type {
   CreateTemplateTransacaoInput,
   ReordenarItem,
@@ -30,38 +33,11 @@ export class TemplateSemCategoriaError extends Error {
   }
 }
 
-interface TransacaoCreator {
-  criar(input: {
-    familiaId: string;
-    tipo: 'receita' | 'despesa';
-    valor: string;
-    categoriaId: string;
-    descricao: string | null;
-    data: string;
-    mesReferencia: string;
-    usuarioRegistrouId: string;
-    metodoPagamentoId?: string | null;
-    cofrinhoId?: string | null;
-  }): Promise<{ id: string }>;
-}
-
-interface CofrinhoAportarService {
-  aportar(input: {
-    cofrinhoId: string;
-    familiaId: string;
-    valor: string;
-    descricao?: string | null;
-    registradoPor: string;
-    mesReferencia?: string;
-    data?: string;
-  }): Promise<unknown>;
-}
-
 export class TemplateTransacaoService {
   constructor(
     private readonly repository: TemplateTransacaoRepository,
-    private readonly transacaoCreator: TransacaoCreator,
-    private readonly cofrinhoService: CofrinhoAportarService,
+    private readonly unitOfWork: UnitOfWork<CofrinhoRepositorios>,
+    private readonly buscarCategoriaCofrinho: BuscarCategoriaCofrinho,
     private readonly referencias: ReferenciaOwnershipChecker,
   ) {}
 
@@ -110,6 +86,12 @@ export class TemplateTransacaoService {
     await this.repository.reordenar(input);
   }
 
+  /**
+   * Lançamentos e aportes de todos os itens numa única Unit of Work (#89):
+   * validação e leituras antes; dentro da unidade só escritas pelos `repos`
+   * do tx — um aporte que falha (ex.: cofrinho encerrado numa corrida)
+   * desfaz também os lançamentos já gravados.
+   */
   async aplicar(input: {
     familiaId: string;
     usuarioId: string;
@@ -122,16 +104,15 @@ export class TemplateTransacaoService {
     // Toda validação acontece aqui, antes da primeira mutação (issue #57).
     const planos = await this.planejarAplicacao(input.familiaId, itensValidos);
     const contexto = { ...input, data: `${input.mesReferencia}-01` };
-    let transacoesCriadas = 0;
-    let aportesCriados = 0;
+    const lancamentos = planos.filter(ehLancamento);
+    const aportes = await this.comCategoriaCofrinho(planos.filter(ehAporte), input.familiaId);
 
-    for (const plano of planos) {
-      const criado = await this.executarItem(plano, contexto);
-      if (criado === 'aporte') aportesCriados++;
-      else transacoesCriadas++;
-    }
-
-    return { transacoesCriadas, aportesCriados, total: transacoesCriadas + aportesCriados };
+    await this.unitOfWork.executar(async ({ repos }) => {
+      for (const item of lancamentos) await criarLancamento(repos, item, contexto);
+      for (const item of aportes) await aportarItem(repos, item, contexto);
+    });
+    const total = lancamentos.length + aportes.length;
+    return { transacoesCriadas: lancamentos.length, aportesCriados: aportes.length, total };
   }
 
   private async planejarAplicacao(
@@ -146,50 +127,20 @@ export class TemplateTransacaoService {
     return itens.map((item) => planejarItem(templateMap.get(item.templateId), item.valor));
   }
 
-  private async executarItem(
-    plano: ItemPlanejado,
-    contexto: ContextoAplicacao,
-  ): Promise<'aporte' | 'transacao'> {
-    if ('cofrinhoId' in plano.destino) {
-      await this.aportarItem(plano, plano.destino.cofrinhoId, contexto);
-      return 'aporte';
-    }
-    await this.criarTransacaoItem(plano, plano.destino.categoriaId, contexto);
-    return 'transacao';
-  }
-
-  private async aportarItem(
-    { template, valor }: ItemPlanejado,
-    cofrinhoId: string,
-    contexto: ContextoAplicacao,
-  ): Promise<void> {
-    await this.cofrinhoService.aportar({
-      cofrinhoId,
-      familiaId: contexto.familiaId,
-      valor,
-      descricao: template.nome,
-      registradoPor: contexto.usuarioId,
-      mesReferencia: contexto.mesReferencia,
-      data: contexto.data,
-    });
-  }
-
-  private async criarTransacaoItem(
-    { template, valor }: ItemPlanejado,
-    categoriaId: string,
-    contexto: ContextoAplicacao,
-  ): Promise<void> {
-    await this.transacaoCreator.criar({
-      familiaId: contexto.familiaId,
-      tipo: template.tipo,
-      valor,
-      categoriaId,
-      descricao: template.nome,
-      data: contexto.data,
-      mesReferencia: contexto.mesReferencia,
-      usuarioRegistrouId: contexto.usuarioId,
-      metodoPagamentoId: template.metodoPagamentoId,
-    });
+  /**
+   * Categoria de sistema "Cofrinho" lida uma vez, fora da unidade, só se houver
+   * aporte; aportes saem ordenados por `cofrinhoId` (os lançamentos mantêm a
+   * ordem dos itens — não travam linha de cofrinho).
+   */
+  private async comCategoriaCofrinho(
+    aportes: AportePlanejado[],
+    familiaId: string,
+  ): Promise<Array<AportePlanejado & { categoriaId: string }>> {
+    if (aportes.length === 0) return [];
+    const { id: categoriaId } = await this.buscarCategoriaCofrinho(familiaId);
+    // Ordem global de locks: duas aplicações concorrentes com os mesmos
+    // cofrinhos em ordens opostas travariam em deadlock (40P01) sem isto.
+    return [...aportes].sort(porCofrinhoId).map((aporte) => ({ ...aporte, categoriaId }));
   }
 
   /**
@@ -214,13 +165,21 @@ export class TemplateTransacaoService {
   }
 }
 
-type DestinoAplicacao = { cofrinhoId: string } | { categoriaId: string };
-
-interface ItemPlanejado {
+interface LancamentoPlanejado {
+  tipo: 'lancamento';
   template: TemplateTransacao;
   valor: string;
-  destino: DestinoAplicacao;
+  categoriaId: string;
 }
+
+interface AportePlanejado {
+  tipo: 'aporte';
+  template: TemplateTransacao;
+  valor: string;
+  cofrinhoId: string;
+}
+
+type ItemPlanejado = LancamentoPlanejado | AportePlanejado;
 
 interface ContextoAplicacao {
   familiaId: string;
@@ -229,15 +188,61 @@ interface ContextoAplicacao {
   data: string;
 }
 
+const ehLancamento = (item: ItemPlanejado): item is LancamentoPlanejado =>
+  item.tipo === 'lancamento';
+
+const ehAporte = (item: ItemPlanejado): item is AportePlanejado => item.tipo === 'aporte';
+
+/** Ordem por unidade de código (não `localeCompare`): igual em qualquer processo/locale. */
+const porCofrinhoId = (a: AportePlanejado, b: AportePlanejado): number =>
+  a.cofrinhoId < b.cofrinhoId ? -1 : Number(a.cofrinhoId > b.cofrinhoId);
+
 /**
  * Template com cofrinho vira aporte; sem cofrinho, vira transação e precisa de
- * categoria. Resolvido antes do loop para não gravar parcialmente (issue #57).
+ * categoria. Resolvido antes da unidade para não gravar parcialmente (issue #57).
  */
 function planejarItem(template: TemplateTransacao | undefined, valor: string): ItemPlanejado {
   if (!template) throw new TemplateNotFoundError();
-  if (template.cofrinhoId) return { template, valor, destino: { cofrinhoId: template.cofrinhoId } };
+  if (template.cofrinhoId)
+    return { tipo: 'aporte', template, valor, cofrinhoId: template.cofrinhoId };
   if (!template.categoriaId) throw new TemplateSemCategoriaError();
-  return { template, valor, destino: { categoriaId: template.categoriaId } };
+  return { tipo: 'lancamento', template, valor, categoriaId: template.categoriaId };
+}
+
+async function criarLancamento(
+  repos: CofrinhoRepositorios,
+  { template, valor, categoriaId }: LancamentoPlanejado,
+  contexto: ContextoAplicacao,
+): Promise<void> {
+  await repos.transacoes.create({
+    familiaId: contexto.familiaId,
+    tipo: template.tipo,
+    valor,
+    categoriaId,
+    descricao: template.nome,
+    data: contexto.data,
+    mesReferencia: contexto.mesReferencia,
+    usuarioRegistrouId: contexto.usuarioId,
+    metodoPagamentoId: template.metodoPagamentoId,
+  });
+}
+
+/** Mesmo fluxo atômico do POST /cofrinhos/:id/aportes, nos `repos` desta unidade. */
+async function aportarItem(
+  repos: CofrinhoRepositorios,
+  { template, valor, cofrinhoId, categoriaId }: AportePlanejado & { categoriaId: string },
+  contexto: ContextoAplicacao,
+): Promise<void> {
+  await aportarNoEscopo(repos, {
+    cofrinhoId,
+    familiaId: contexto.familiaId,
+    valor,
+    descricao: template.nome,
+    registradoPor: contexto.usuarioId,
+    mesReferencia: contexto.mesReferencia,
+    data: contexto.data,
+    categoriaId,
+  });
 }
 
 function comTipo(

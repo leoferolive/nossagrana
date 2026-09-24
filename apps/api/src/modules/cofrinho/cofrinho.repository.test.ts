@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { InMemoryCofrinhoRepository } from './cofrinho.repository.js';
+import { InMemoryCofrinhoRepository } from './cofrinho.in-memory-repository.js';
 
 describe('InMemoryCofrinhoRepository', () => {
   let repo: InMemoryCofrinhoRepository;
@@ -221,56 +221,74 @@ describe('InMemoryCofrinhoRepository', () => {
     });
   });
 
-  describe('updateSaldo', () => {
-    it('deve atualizar saldo com sucesso', async () => {
+  describe('incrementarSaldo', () => {
+    it('soma em centavos exatos e devolve o cofrinho atualizado', async () => {
       const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
 
-      const updated = await repo.updateSaldo({
-        id: created.id,
-        familiaId: f1,
-        novoSaldo: '1500.50',
-      });
+      await repo.incrementarSaldo({ id: created.id, familiaId: f1, valor: '0.10' });
+      const updated = await repo.incrementarSaldo({ id: created.id, familiaId: f1, valor: '0.20' });
 
-      expect(updated).not.toBeNull();
-      expect(updated!.saldoAtual).toBe('1500.50');
+      expect(updated?.saldoAtual).toBe('0.30');
     });
 
-    it('deve retornar null quando cofrinho nao existe', async () => {
-      const updated = await repo.updateSaldo({
-        id: 'inexistente',
-        familiaId: f1,
-        novoSaldo: '100.00',
-      });
-
-      expect(updated).toBeNull();
-    });
-
-    it('nao deve atualizar saldo de cofrinho de outra familia (multi-tenant)', async () => {
+    it.each([
+      ['inexistente', 'inexistente', f1],
+      ['de outra familia (multi-tenant)', 'criado', f2],
+    ])('devolve null para cofrinho %s sem alterar saldo', async (_caso, id, familiaId) => {
       const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
+      const alvo = id === 'criado' ? created.id : id;
 
-      const updated = await repo.updateSaldo({
-        id: created.id,
-        familiaId: f2,
-        novoSaldo: '9999.99',
-      });
-
-      expect(updated).toBeNull();
-
-      const original = await repo.findById({ id: created.id, familiaId: f1 });
-      expect(original!.saldoAtual).toBe('0');
+      expect(await repo.incrementarSaldo({ id: alvo, familiaId, valor: '10.00' })).toBeNull();
+      expect((await repo.findById({ id: created.id, familiaId: f1 }))?.saldoAtual).toBe('0');
     });
 
-    it('nao deve atualizar saldo de cofrinho encerrado', async () => {
+    it('devolve null para cofrinho encerrado', async () => {
       const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
       await repo.encerrar({ id: created.id, familiaId: f1 });
 
-      const updated = await repo.updateSaldo({
-        id: created.id,
-        familiaId: f1,
-        novoSaldo: '100.00',
-      });
+      expect(await repo.incrementarSaldo({ id: created.id, familiaId: f1, valor: '1' })).toBeNull();
+    });
+  });
 
-      expect(updated).toBeNull();
+  describe('decrementarSaldo', () => {
+    async function comSaldo(valor: string) {
+      const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
+      await repo.incrementarSaldo({ id: created.id, familiaId: f1, valor });
+      return created.id;
+    }
+
+    it('retira o saldo exato e chega a zero', async () => {
+      const id = await comSaldo('100.00');
+
+      const updated = await repo.decrementarSaldo({ id, familiaId: f1, valor: '100.00' });
+
+      expect(updated?.saldoAtual).toBe('0.00');
+    });
+
+    it('recusa (null) retirada acima do saldo e mantém o saldo', async () => {
+      const id = await comSaldo('100.00');
+
+      expect(await repo.decrementarSaldo({ id, familiaId: f1, valor: '100.01' })).toBeNull();
+      expect((await repo.findById({ id, familiaId: f1 }))?.saldoAtual).toBe('100.00');
+    });
+
+    it('recusa (null) cofrinho de outra familia e encerrado', async () => {
+      const id = await comSaldo('50.00');
+
+      expect(await repo.decrementarSaldo({ id, familiaId: f2, valor: '1.00' })).toBeNull();
+      await repo.encerrar({ id, familiaId: f1 });
+      expect(await repo.decrementarSaldo({ id, familiaId: f1, valor: '1.00' })).toBeNull();
+    });
+  });
+
+  describe('bloquearParaAtualizacao', () => {
+    it('devolve o cofrinho só na própria familia', async () => {
+      const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
+
+      expect(await repo.bloquearParaAtualizacao({ id: created.id, familiaId: f1 })).toEqual(
+        created,
+      );
+      expect(await repo.bloquearParaAtualizacao({ id: created.id, familiaId: f2 })).toBeNull();
     });
   });
 
@@ -311,202 +329,6 @@ describe('InMemoryCofrinhoRepository', () => {
     });
   });
 
-  describe('createMovimentacao', () => {
-    it('deve criar movimentacao de aporte com todos os campos', async () => {
-      const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
-
-      const mov = await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '500.00',
-        descricao: 'Primeiro aporte',
-        transacaoId: 'transacao-123',
-        registradoPor: user1,
-        mesReferencia: '2026-03',
-      });
-
-      expect(mov.id).toBeDefined();
-      expect(mov.cofrinhoId).toBe(cofrinho.id);
-      expect(mov.familiaId).toBe(f1);
-      expect(mov.tipo).toBe('aporte');
-      expect(mov.valor).toBe('500.00');
-      expect(mov.descricao).toBe('Primeiro aporte');
-      expect(mov.transacaoId).toBe('transacao-123');
-      expect(mov.registradoPor).toBe(user1);
-      expect(mov.registradoEm).toBeInstanceOf(Date);
-      expect(mov.mesReferencia).toBe('2026-03');
-    });
-
-    it('deve criar movimentacao de retirada', async () => {
-      const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
-
-      const mov = await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'retirada',
-        valor: '200.00',
-        registradoPor: user1,
-        mesReferencia: '2026-03',
-      });
-
-      expect(mov.tipo).toBe('retirada');
-      expect(mov.descricao).toBeNull();
-      expect(mov.transacaoId).toBeNull();
-    });
-
-    it('deve gerar ids unicos para movimentacoes', async () => {
-      const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
-
-      const mov1 = await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '100.00',
-        registradoPor: user1,
-        mesReferencia: '2026-03',
-      });
-
-      const mov2 = await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '200.00',
-        registradoPor: user1,
-        mesReferencia: '2026-03',
-      });
-
-      expect(mov1.id).not.toBe(mov2.id);
-    });
-  });
-
-  describe('listMovimentacoes', () => {
-    it('deve listar movimentacoes de um cofrinho', async () => {
-      const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
-
-      await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '100.00',
-        registradoPor: user1,
-        mesReferencia: '2026-01',
-      });
-
-      await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '200.00',
-        registradoPor: user1,
-        mesReferencia: '2026-02',
-      });
-
-      const movs = await repo.listMovimentacoes({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-      });
-
-      expect(movs).toHaveLength(2);
-    });
-
-    it('deve ordenar por registradoEm decrescente (mais recente primeiro)', async () => {
-      vi.useFakeTimers();
-      const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
-
-      vi.setSystemTime(new Date('2026-01-01T10:00:00Z'));
-      const mov1 = await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '100.00',
-        registradoPor: user1,
-        mesReferencia: '2026-01',
-      });
-
-      vi.setSystemTime(new Date('2026-02-01T10:00:00Z'));
-      const mov2 = await repo.createMovimentacao({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '200.00',
-        registradoPor: user1,
-        mesReferencia: '2026-02',
-      });
-
-      const movs = await repo.listMovimentacoes({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-      });
-
-      expect(movs[0].id).toBe(mov2.id);
-      expect(movs[1].id).toBe(mov1.id);
-      vi.useRealTimers();
-    });
-
-    it('deve filtrar por cofrinhoId', async () => {
-      const c1 = await repo.create({ familiaId: f1, nome: 'C1', criadoPor: user1 });
-      const c2 = await repo.create({ familiaId: f1, nome: 'C2', criadoPor: user1 });
-
-      await repo.createMovimentacao({
-        cofrinhoId: c1.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '100.00',
-        registradoPor: user1,
-        mesReferencia: '2026-01',
-      });
-
-      await repo.createMovimentacao({
-        cofrinhoId: c2.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '200.00',
-        registradoPor: user1,
-        mesReferencia: '2026-01',
-      });
-
-      const movsC1 = await repo.listMovimentacoes({ cofrinhoId: c1.id, familiaId: f1 });
-      const movsC2 = await repo.listMovimentacoes({ cofrinhoId: c2.id, familiaId: f1 });
-
-      expect(movsC1).toHaveLength(1);
-      expect(movsC1[0].valor).toBe('100.00');
-      expect(movsC2).toHaveLength(1);
-      expect(movsC2[0].valor).toBe('200.00');
-    });
-
-    it('nao deve retornar movimentacoes de outra familia (multi-tenant)', async () => {
-      const cofrinhoF1 = await repo.create({ familiaId: f1, nome: 'C1', criadoPor: user1 });
-
-      await repo.createMovimentacao({
-        cofrinhoId: cofrinhoF1.id,
-        familiaId: f1,
-        tipo: 'aporte',
-        valor: '100.00',
-        registradoPor: user1,
-        mesReferencia: '2026-01',
-      });
-
-      const movs = await repo.listMovimentacoes({
-        cofrinhoId: cofrinhoF1.id,
-        familiaId: f2,
-      });
-
-      expect(movs).toHaveLength(0);
-    });
-
-    it('deve retornar lista vazia quando nao ha movimentacoes', async () => {
-      const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
-
-      const movs = await repo.listMovimentacoes({
-        cofrinhoId: cofrinho.id,
-        familiaId: f1,
-      });
-
-      expect(movs).toEqual([]);
-    });
-  });
-
   describe('findAporteRecorrenteAtivo', () => {
     it('deve retornar null (InMemory sempre retorna null)', async () => {
       const cofrinho = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
@@ -517,6 +339,33 @@ describe('InMemoryCofrinhoRepository', () => {
       });
 
       expect(result).toBeNull();
+    });
+  });
+  describe('participante da InMemoryUnitOfWork', () => {
+    it('staging não vaza para a base antes de publicar (substitui, não muta)', async () => {
+      const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
+      const staging = repo.abrirStaging();
+
+      await staging.incrementarSaldo({ id: created.id, familiaId: f1, valor: '10.00' });
+
+      expect((await repo.findById({ id: created.id, familiaId: f1 }))?.saldoAtual).toBe('0');
+      repo.publicar(staging);
+      expect((await repo.findById({ id: created.id, familiaId: f1 }))?.saldoAtual).toBe('10.00');
+    });
+
+    it('aporte recorrente ativo definido no teste é visto no staging', async () => {
+      const created = await repo.create({ familiaId: f1, nome: 'Viagem', criadoPor: user1 });
+      const aporte = {
+        transacaoPaiId: 'tx-1',
+        valor: '10.00',
+        frequencia: 'mensal' as const,
+        dataFimRecorrencia: null,
+      };
+      repo.definirAporteRecorrenteAtivo({ cofrinhoId: created.id, familiaId: f1 }, aporte);
+
+      const busca = { cofrinhoId: created.id, familiaId: f1 };
+      expect(await repo.abrirStaging().findAporteRecorrenteAtivo(busca)).toEqual(aporte);
+      expect(await repo.findAporteRecorrenteAtivo({ ...busca, familiaId: f2 })).toBeNull();
     });
   });
 });

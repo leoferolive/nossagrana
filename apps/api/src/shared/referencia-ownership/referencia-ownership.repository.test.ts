@@ -9,7 +9,7 @@ vi.mock('../../db/client.js', () => ({
 }));
 
 import { InMemoryCategoriaRepository } from '../../modules/categoria/categoria.repository.js';
-import { InMemoryCofrinhoRepository } from '../../modules/cofrinho/cofrinho.repository.js';
+import { InMemoryCofrinhoRepository } from '../../modules/cofrinho/cofrinho.in-memory-repository.js';
 import { InMemoryMetodoPagamentoRepository } from '../../modules/metodo-pagamento/metodo-pagamento.repository.js';
 import {
   DrizzleReferenciaOwnershipRepository,

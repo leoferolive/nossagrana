@@ -14,6 +14,7 @@ import {
   aplicarMigrationsAntesDe,
   conectar,
   criarBancoDescartavel,
+  migrationsAPartirDe,
   type BancoDescartavel,
 } from './pg-harness.js';
 
@@ -379,7 +380,10 @@ describe(`migration ${MIGRATION_FK_COMPOSTAS} sobre dados legados`, () => {
     await aplicarMigrations(banco.url);
     await aplicarMigrations(banco.url);
 
-    expect(await contagens()).toEqual({ ...antes, migrations: antes.migrations + 1 });
+    expect(await contagens()).toEqual({
+      ...antes,
+      migrations: antes.migrations + migrationsAPartirDe(MIGRATION_FK_COMPOSTAS),
+    });
     expect(await constraintsCompostas()).toBe(FKS_COMPOSTAS.length);
   });
 
@@ -423,7 +427,10 @@ describe(`migration ${MIGRATION_FK_COMPOSTAS} sobre dados legados`, () => {
     const [filha] = await banco.sql`
       SELECT transacao_pai_id, familia_id FROM transacoes WHERE id = ${filhaId}`;
     expect(filha).toEqual({ transacao_pai_id: null, familia_id: a.familiaId });
-    expect(await contagens()).toEqual({ ...antes, migrations: antes.migrations + 1 });
+    expect(await contagens()).toEqual({
+      ...antes,
+      migrations: antes.migrations + migrationsAPartirDe(MIGRATION_FK_COMPOSTAS),
+    });
     expect(await constraintsCompostas()).toBe(FKS_COMPOSTAS.length);
   });
 

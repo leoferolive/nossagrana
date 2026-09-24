@@ -847,8 +847,22 @@ export const cofrinhoDetalheResponseSchema = z.object({
 });
 export type CofrinhoDetalheResponse = z.infer<typeof cofrinhoDetalheResponseSchema>;
 
+/**
+ * Valor de aporte/retirada de cofrinho: cabe em `numeric(12,2)` (até 10
+ * dígitos inteiros; mais que isso estouraria no banco com 22003/500) e é
+ * estritamente positivo (movimentação de 0 não altera saldo e poluiria o
+ * ledger). Issue #59.
+ */
+const valorMovimentacaoCofrinhoSchema = z
+  .string()
+  .regex(
+    /^\d{1,10}(\.\d{1,2})?$/,
+    'Valor inválido: esperado decimal com até 10 dígitos inteiros e 2 casas',
+  )
+  .refine((valor) => Number(valor) > 0, 'Valor inválido: esperado maior que zero');
+
 export const cofrinhoAporteRequestSchema = z.object({
-  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  valor: valorMovimentacaoCofrinhoSchema,
   descricao: z.string().trim().optional().nullable(),
   recorrente: z.boolean().optional().default(false),
   frequencia: transacaoFrequenciaSchema.optional().nullable(),
@@ -867,7 +881,7 @@ export const cofrinhoAporteResponseSchema = z.object({
 export type CofrinhoAporteResponse = z.infer<typeof cofrinhoAporteResponseSchema>;
 
 export const cofrinhoRetiradaRequestSchema = z.object({
-  valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
+  valor: valorMovimentacaoCofrinhoSchema,
   descricao: z.string().trim().optional().nullable(),
   voltarAoSaldo: z.boolean(),
 });

@@ -3,7 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { env } from '../config/env.js';
 
 import { InMemoryCategoriaRepository } from '../modules/categoria/categoria.repository.js';
-import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.repository.js';
+import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.in-memory-repository.js';
+import { InMemoryMovimentacaoCofrinhoRepository } from '../modules/cofrinho/cofrinho.movimentacao.repository.js';
 import { InMemoryMetodoPagamentoRepository } from '../modules/metodo-pagamento/metodo-pagamento.repository.js';
 import { InMemoryTransacaoRepository } from '../modules/transacao/transacao.repository.js';
 import { ModulosReferenciaOwnershipRepository } from './referencia-ownership/referencia-ownership.repository.js';
@@ -18,6 +19,8 @@ export interface RepositoriosInMemoryCompartilhados {
   categorias: InMemoryCategoriaRepository;
   metodosPagamento: InMemoryMetodoPagamentoRepository;
   cofrinhos: InMemoryCofrinhoRepository;
+  /** Ledger dos cofrinhos, publicado pela `InMemoryUnitOfWork` das rotas de cofrinho/templates (#59). */
+  movimentacoesCofrinho: InMemoryMovimentacaoCofrinhoRepository;
   /** Base publicada pela `InMemoryUnitOfWork` das rotas de transação (#78). */
   transacoes: InMemoryTransacaoRepository;
 }
@@ -33,6 +36,7 @@ export function criarRepositoriosInMemoryCompartilhados(): RepositoriosInMemoryC
     categorias: new InMemoryCategoriaRepository(),
     metodosPagamento: new InMemoryMetodoPagamentoRepository(),
     cofrinhos: new InMemoryCofrinhoRepository(),
+    movimentacoesCofrinho: new InMemoryMovimentacaoCofrinhoRepository(),
     transacoes: new InMemoryTransacaoRepository(),
   };
 }

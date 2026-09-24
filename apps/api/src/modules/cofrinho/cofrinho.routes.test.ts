@@ -202,6 +202,58 @@ describe('Cofrinho Routes', () => {
       expect(body.movimentacao.valor).toBe('100.00');
     });
 
+    it('grava a transação do aporte no mesmo repositório visto por /transacoes', async () => {
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/cofrinhos',
+        headers: authHeaders(),
+        payload: { nome: 'Aporte Visivel' },
+      });
+      const cofrinhoId = createRes.json().cofrinho.id;
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/cofrinhos/${cofrinhoId}/aportes`,
+        headers: authHeaders(),
+        payload: { valor: '12.34' },
+      });
+      const lista = await app.inject({
+        method: 'GET',
+        url: '/api/transacoes',
+        headers: authHeaders(),
+      });
+
+      const transacaoId = res.json().movimentacao.transacaoId;
+      const ids = (lista.json().transacoes as Array<{ id: string }>).map((t) => t.id);
+      expect(ids).toContain(transacaoId);
+    });
+
+    it('retorna 400 para aporte recorrente (porta não configurada) sem alterar o saldo', async () => {
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/cofrinhos',
+        headers: authHeaders(),
+        payload: { nome: 'Recorrente Indisponivel' },
+      });
+      const cofrinhoId = createRes.json().cofrinho.id;
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/cofrinhos/${cofrinhoId}/aportes`,
+        headers: authHeaders(),
+        payload: { valor: '10.00', recorrente: true, frequencia: 'mensal' },
+      });
+      const detalhe = await app.inject({
+        method: 'GET',
+        url: `/api/cofrinhos/${cofrinhoId}`,
+        headers: authHeaders(),
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.json().message).toContain('recorrente');
+      expect(detalhe.json().cofrinho.saldoAtual).toBe('0');
+    });
+
     it('retorna 404 para cofrinho inexistente', async () => {
       const res = await app.inject({
         method: 'POST',
@@ -263,6 +315,65 @@ describe('Cofrinho Routes', () => {
       });
 
       expect(res.statusCode).toBe(400);
+    });
+  });
+
+  describe('validação de valor (aporte e retirada)', () => {
+    async function cofrinhoComSaldo() {
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/cofrinhos',
+        headers: authHeaders(),
+        payload: { nome: 'Validacao Valor' },
+      });
+      const cofrinhoId = createRes.json().cofrinho.id as string;
+      await app.inject({
+        method: 'POST',
+        url: `/api/cofrinhos/${cofrinhoId}/aportes`,
+        headers: authHeaders(),
+        payload: { valor: '10.00' },
+      });
+      return cofrinhoId;
+    }
+
+    it.each([
+      ['aportes', '12345678901', {}],
+      ['aportes', '0', {}],
+      ['aportes', '0.00', {}],
+      ['retiradas', '12345678901', { voltarAoSaldo: false }],
+      ['retiradas', '0', { voltarAoSaldo: false }],
+    ])('POST %s com valor "%s" → 400 sem SQL e sem alterar saldo', async (rota, valor, extra) => {
+      const cofrinhoId = await cofrinhoComSaldo();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/cofrinhos/${cofrinhoId}/${rota}`,
+        headers: authHeaders(),
+        payload: { valor, ...extra },
+      });
+      const detalhe = await app.inject({
+        method: 'GET',
+        url: `/api/cofrinhos/${cofrinhoId}`,
+        headers: authHeaders(),
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).not.toMatch(/insert|update|select|cofrinhos"|numeric/i);
+      expect(detalhe.json().cofrinho.saldoAtual).toBe('10.00');
+    });
+
+    it('aceita o maior valor de numeric(12,2): 10 dígitos inteiros', async () => {
+      const cofrinhoId = await cofrinhoComSaldo();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/cofrinhos/${cofrinhoId}/retiradas`,
+        headers: authHeaders(),
+        payload: { valor: '9999999999.99', voltarAoSaldo: false },
+      });
+
+      expect(res.statusCode).toBe(400); // saldo insuficiente, mas passou da validação de formato
+      expect(res.json().message).toMatch(/Saldo insuficiente/);
     });
   });
 

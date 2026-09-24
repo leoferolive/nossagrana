@@ -5,9 +5,9 @@
 - **Funções**: 4-20 linhas. Se passar disso, extrair sub-função.
 - **Arquivos**: até 500 linhas. Dividir por responsabilidade quando ultrapassar.
   Débito conhecido (sinalização, não gate retroativo): `familia.repository.ts`
-  (551 linhas) e `cofrinho.repository.ts` (489 linhas) — não bloquear PRs que
-  apenas tocam esses arquivos, mas evitar crescê-los; ao mexer neles, avaliar
-  se a mudança pode ser uma oportunidade de split.
+  (551 linhas) — não bloquear PRs que apenas tocam esse arquivo, mas evitar
+  crescê-lo; ao mexer nele, avaliar se a mudança pode ser uma oportunidade de
+  split. (`cofrinho.repository.ts` foi dividido no epic #59.)
 - **SRP**: uma responsabilidade por módulo. Um `service` não deve fazer acesso
   a dados diretamente (isso é papel do `repository`), nem uma `route` deve
   conter lógica de negócio (isso é papel do `service`).

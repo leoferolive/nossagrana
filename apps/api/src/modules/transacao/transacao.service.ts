@@ -66,27 +66,27 @@ export class TransacaoService {
     const filhas = await repos.transacoes.createMany(
       plano.filhas.map((filha) => ({ ...filha, transacaoPaiId: pai.id })),
     );
-    await this.movimentarCofrinho(filhas, plano.cofrinhoDasFilhas);
+    await this.movimentarCofrinho(repos, filhas, plano.cofrinhoDasFilhas);
     return pai;
   }
 
   /**
    * Processar movimentações de cofrinho para filhas recorrentes. Roda dentro
-   * da unidade: se falhar, as transações são desfeitas. As escritas do próprio
-   * handler só entram na mesma transação quando ele for tx-aware (#59).
+   * da unidade: se falhar, as transações são desfeitas. O handler recebe os
+   * `repos` do tx (#59), então o que ele grava entra no mesmo commit/rollback.
    */
-  private async movimentarCofrinho(filhas: Transacao[], cofrinhoId: string | null) {
+  private async movimentarCofrinho(
+    repos: TransacaoRepositorios,
+    filhas: Transacao[],
+    cofrinhoId: string | null,
+  ) {
     if (!cofrinhoId || !this.cofrinhoHandler) return;
     for (const filha of filhas) {
-      await this.cofrinhoHandler.processarTransacaoComCofrinho({
-        id: filha.id,
-        familiaId: filha.familiaId,
-        valor: filha.valor,
-        cofrinhoId,
-        usuarioRegistrouId: filha.usuarioRegistrouId,
-        mesReferencia: filha.mesReferencia,
-        descricao: filha.descricao,
-      });
+      const { id, familiaId, valor, usuarioRegistrouId, mesReferencia, descricao } = filha;
+      await this.cofrinhoHandler.processarTransacaoComCofrinho(
+        { id, familiaId, valor, cofrinhoId, usuarioRegistrouId, mesReferencia, descricao },
+        repos,
+      );
     }
   }
 

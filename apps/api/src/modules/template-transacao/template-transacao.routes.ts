@@ -13,9 +13,14 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
-import { transacoes } from '../../db/schema.js';
-import { DrizzleCofrinhoRepository } from '../cofrinho/cofrinho.repository.js';
-import { CofrinhoService } from '../cofrinho/cofrinho.service.js';
+import { ConflitoDeConcorrenciaError } from '../../shared/unit-of-work/conflito-concorrencia.js';
+import { responderConflitoDeConcorrencia } from '../../shared/unit-of-work/conflito-concorrencia.http.js';
+import { criarBuscaCategoriaCofrinho } from '../cofrinho/cofrinho.categoria.js';
+import { CofrinhoEncerradoError, CofrinhoNotFoundError } from '../cofrinho/cofrinho.errors.js';
+import {
+  criarUnitOfWorkCofrinhoDrizzle,
+  criarUnitOfWorkCofrinhoInMemory,
+} from '../cofrinho/cofrinho.unit-of-work.js';
 import { DrizzleReferenciaOwnershipRepository } from '../../shared/referencia-ownership/referencia-ownership.repository.js';
 import {
   repositoriosInMemoryDe,
@@ -41,84 +46,33 @@ import {
   TemplateTransacaoService,
 } from './template-transacao.service.js';
 
-const testTransacaoCreator = {
-  criar: async () => ({ id: randomUUID() }),
-};
-
-/* v8 ignore start -- production wiring requires real DB */
-const realTransacaoCreator = {
-  criar: async (input: {
-    familiaId: string;
-    tipo: 'receita' | 'despesa';
-    valor: string;
-    categoriaId: string;
-    descricao: string | null;
-    data: string;
-    mesReferencia: string;
-    usuarioRegistrouId: string;
-    metodoPagamentoId?: string | null;
-    cofrinhoId?: string | null;
-  }) => {
-    const [row] = await db
-      .insert(transacoes)
-      .values({
-        familiaId: input.familiaId,
-        tipo: input.tipo,
-        valor: input.valor,
-        categoriaId: input.categoriaId,
-        descricao: input.descricao,
-        data: input.data,
-        mesReferencia: input.mesReferencia,
-        usuarioRegistrouId: input.usuarioRegistrouId,
-        metodoPagamentoId: input.metodoPagamentoId ?? null,
-        cofrinhoId: input.cofrinhoId ?? null,
-      })
-      .returning({ id: transacoes.id });
-    return { id: row.id };
-  },
-};
-
 const testGetCategoriaCofrinho = async () => ({ id: randomUUID() });
 
-const realGetCategoriaCofrinho = async (familiaId: string) => {
-  const { and, eq } = await import('drizzle-orm');
-  const { categorias } = await import('../../db/schema.js');
-  const [cat] = await db
-    .select({ id: categorias.id })
-    .from(categorias)
-    .where(
-      and(
-        eq(categorias.familiaId, familiaId),
-        eq(categorias.nome, 'Cofrinho'),
-        eq(categorias.sistema, true),
-      ),
-    );
-  if (!cat) throw new Error('Categoria Cofrinho não encontrada');
-  return cat;
-};
-
-/* v8 ignore stop */
-
+/**
+ * `aplicar` grava lançamentos e aportes numa única Unit of Work (#89), com os
+ * mesmos repositórios do cofrinho (test: InMemory compartilhado da app).
+ */
 const defaultService = (fastify: FastifyInstance): TemplateTransacaoService => {
   if (env.NODE_ENV === 'test') {
     const repositorios = repositoriosInMemoryDe(fastify);
+    const uow = criarUnitOfWorkCofrinhoInMemory({
+      cofrinhos: repositorios.cofrinhos,
+      movimentacoes: repositorios.movimentacoesCofrinho,
+      transacoes: repositorios.transacoes,
+    });
     return new TemplateTransacaoService(
       new InMemoryTemplateTransacaoRepository(),
-      testTransacaoCreator,
-      new CofrinhoService(repositorios.cofrinhos, testTransacaoCreator, testGetCategoriaCofrinho),
+      uow,
+      testGetCategoriaCofrinho,
       validadorReferenciasInMemory(repositorios),
     );
   }
 
-  /* v8 ignore next 9 -- production wiring */
+  /* v8 ignore next 6 -- production wiring */
   return new TemplateTransacaoService(
     new DrizzleTemplateTransacaoRepository(),
-    realTransacaoCreator,
-    new CofrinhoService(
-      new DrizzleCofrinhoRepository(),
-      realTransacaoCreator,
-      realGetCategoriaCofrinho,
-    ),
+    criarUnitOfWorkCofrinhoDrizzle(db),
+    criarBuscaCategoriaCofrinho(db),
     new ReferenciaOwnershipValidator(new DrizzleReferenciaOwnershipRepository()),
   );
 };
@@ -296,8 +250,15 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
         if (error instanceof TemplateNotFoundError) {
           return reply.code(404).send({ message: error.message });
         }
-        if (error instanceof TemplateSemCategoriaError) {
+        if (error instanceof TemplateSemCategoriaError || error instanceof CofrinhoEncerradoError) {
+          // Encerrado aqui = corrida: validado ativo, encerrado antes do aporte (nada gravado).
           return reply.code(400).send({ message: error.message });
+        }
+        if (error instanceof CofrinhoNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+        if (error instanceof ConflitoDeConcorrenciaError) {
+          return responderConflitoDeConcorrencia(error, request, reply);
         }
         throw error;
       }

@@ -56,16 +56,31 @@ export async function criarBancoDescartavel(): Promise<BancoDescartavel> {
   return { url: url.toString(), sql, descartar };
 }
 
+function lerJournal(pasta: string): { entries: JournalEntry[] } {
+  return JSON.parse(readFileSync(path.join(pasta, 'meta/_journal.json'), 'utf8')) as {
+    entries: JournalEntry[];
+  };
+}
+
+function indiceDa(entries: JournalEntry[], tag: string): number {
+  const indice = entries.findIndex((entry) => entry.tag === tag);
+  if (indice < 0) throw new Error(`Migration "${tag}" não existe no journal`);
+  return indice;
+}
+
+/** Quantas migrations `aplicarMigrations` aplica sobre um banco parado antes de `tag`. */
+export function migrationsAPartirDe(tag: string): number {
+  const { entries } = lerJournal(MIGRATIONS_DIR);
+  return entries.length - indiceDa(entries, tag);
+}
+
 /** Pasta temporária só com as migrations anteriores a `tag` (journal truncado). */
 function pastaAte(tag: string): string {
   const pasta = mkdtempSync(path.join(tmpdir(), 'ng-migrations-'));
   cpSync(MIGRATIONS_DIR, pasta, { recursive: true });
-  const journalPath = path.join(pasta, 'meta/_journal.json');
-  const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as { entries: JournalEntry[] };
-  const indice = journal.entries.findIndex((entry) => entry.tag === tag);
-  if (indice < 0) throw new Error(`Migration "${tag}" não existe no journal`);
-  journal.entries = journal.entries.slice(0, indice);
-  writeFileSync(journalPath, JSON.stringify(journal));
+  const journal = lerJournal(pasta);
+  journal.entries = journal.entries.slice(0, indiceDa(journal.entries, tag));
+  writeFileSync(path.join(pasta, 'meta/_journal.json'), JSON.stringify(journal));
   return pasta;
 }
 

@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 import type { TemplateTransacaoListItem } from '@nossagrana/types';
 
 import { templateTransacaoService } from '@/services/template-transacao.service';
-import { useCategoriaStore } from '@/stores/categoria.store';
+import {
+  categoriaIdCompativel,
+  categoriasParaSelecao,
+  useCategoriaStore,
+} from '@/stores/categoria.store';
 import { useCofrinhoStore } from '@/stores/cofrinho.store';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
 
@@ -133,6 +137,13 @@ export function TemplatesGerenciarModal({
     }
   };
 
+  const trocarTipoCriacao = (tipo: 'receita' | 'despesa') =>
+    criar.setForm((prev) => ({
+      ...prev,
+      tipo,
+      categoriaId: categoriaIdCompativel(categorias, tipo, prev.categoriaId),
+    }));
+
   const iniciarEdicao = (template: TemplateTransacaoListItem) => {
     setEditandoId(template.id);
     editar.setForm({
@@ -166,7 +177,10 @@ export function TemplatesGerenciarModal({
               className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
             >
               <option value="">Sem categoria</option>
-              {categorias.map((c) => (
+              {categoriasParaSelecao(categorias, template.tipo, {
+                id: template.categoriaId,
+                nome: template.categoriaNome,
+              }).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
                 </option>
@@ -370,7 +384,7 @@ export function TemplatesGerenciarModal({
               <select
                 aria-label="Tipo"
                 value={criar.form.tipo}
-                onChange={(e) => criar.setField('tipo', e.target.value as 'receita' | 'despesa')}
+                onChange={(e) => trocarTipoCriacao(e.target.value as 'receita' | 'despesa')}
                 className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
               >
                 <option value="receita">Receita</option>
@@ -383,7 +397,7 @@ export function TemplatesGerenciarModal({
                 className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
               >
                 <option value="">Sem categoria</option>
-                {categorias.map((c) => (
+                {categoriasParaSelecao(categorias, criar.form.tipo).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}
                   </option>

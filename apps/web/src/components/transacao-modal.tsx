@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
-import { useCategoriaStore } from '@/stores/categoria.store';
+import {
+  categoriaIdCompativel,
+  categoriasParaSelecao,
+  useCategoriaStore,
+} from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
+import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
 import { CustomSelect } from './ui/custom-select';
 
 export interface DadosVoz {
@@ -123,13 +128,28 @@ export const TransacaoModal = ({
   }, [open, transacaoParaEditar, dadosVoz]);
 
   const isEditing = !!transacaoParaEditar;
+  // Derivado para cobrir voz/edição preenchidas antes das categorias carregarem.
+  const categoriaIdValido = categoriaIdCompativel(categorias, tipo, categoriaId);
+
+  const tipoOriginal = transacaoParaEditar?.tipo;
+  const categoriaAjudaId = useId();
+
+  // Troca de tipo só preserva categoria ativa do novo tipo: uma inativa (fora
+  // da lista) tem tipo desconhecido e a API rejeitaria a combinação.
+  const trocarTipo = (novoTipo: 'receita' | 'despesa') => {
+    if (novoTipo === tipo) return;
+    setTipo(novoTipo);
+    const serve = categorias.some((c) => c.id === categoriaId && c.tipo === novoTipo);
+    setCategoriaId(serve ? categoriaId : '');
+  };
 
   const handleSubmit = () => {
+    if (!categoriaIdValido) return;
     if (isEditing && onUpdate) {
       const payload: TransacaoUpdateRequest = {
         tipo,
         valor,
-        categoriaId,
+        categoriaId: categoriaIdValido,
         descricao: descricao || null,
         data,
         metodoPagamentoId: metodoPagamentoId || null,
@@ -139,7 +159,7 @@ export const TransacaoModal = ({
       const payload: TransacaoCreateRequest = {
         tipo,
         valor,
-        categoriaId,
+        categoriaId: categoriaIdValido,
         descricao: descricao || null,
         data,
         metodoPagamentoId: metodoPagamentoId || null,
@@ -186,33 +206,7 @@ export const TransacaoModal = ({
           </button>
         </div>
 
-        {/* Toggle Receita / Despesa */}
-        <div className="mb-5 flex gap-2">
-          <button
-            type="button"
-            aria-label="Receita"
-            onClick={() => setTipo('receita')}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
-              tipo === 'receita'
-                ? 'bg-success text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            ↑ Receita
-          </button>
-          <button
-            type="button"
-            aria-label="Despesa"
-            onClick={() => setTipo('despesa')}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
-              tipo === 'despesa'
-                ? 'bg-danger text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            ↓ Despesa
-          </button>
-        </div>
+        <TipoLancamentoToggle tipo={tipo} onChange={trocarTipo} />
 
         {/* Voice input button (only when creating, not editing) */}
         {!isEditing && onVoiceActivate && (
@@ -248,10 +242,21 @@ export const TransacaoModal = ({
             label="Categoria"
             aria-label="Categoria"
             placeholder="Selecione..."
-            options={categorias.map((c) => ({ value: c.id, label: c.nome }))}
-            value={categoriaId}
+            options={categoriasParaSelecao(categorias, tipo, {
+              id: tipo === tipoOriginal ? (transacaoParaEditar?.categoriaId ?? null) : null,
+            }).map((c) => ({
+              value: c.id,
+              label: c.nome,
+            }))}
+            value={categoriaIdValido}
             onChange={setCategoriaId}
+            aria-describedby={categoriaIdValido ? undefined : categoriaAjudaId}
           />
+          {!categoriaIdValido && (
+            <p id={categoriaAjudaId} className="-mt-2 text-xs text-warning">
+              Escolha uma categoria de {tipo}
+            </p>
+          )}
 
           {/* Descrição */}
           <label className="flex flex-col gap-1">
@@ -407,7 +412,8 @@ export const TransacaoModal = ({
             <button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong"
+              disabled={!categoriaIdValido}
+              className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isEditing ? 'Salvar Alterações' : 'Salvar Transação'}
             </button>

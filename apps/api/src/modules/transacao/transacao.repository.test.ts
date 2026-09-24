@@ -1,15 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockDb = vi.hoisted(() => ({
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
+import { DrizzleTransacaoRepository, InMemoryTransacaoRepository } from './transacao.repository.js';
+
+const mockDb = {
   select: vi.fn(),
   insert: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
-}));
-
-vi.mock('../../db/client.js', () => ({ db: mockDb }));
-
-import { DrizzleTransacaoRepository, InMemoryTransacaoRepository } from './transacao.repository.js';
+};
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -71,6 +70,18 @@ describe('InMemoryTransacaoRepository', () => {
   it('createMany com array vazio retorna []', async () => {
     const result = await repo.createMany([]);
     expect(result).toHaveLength(0);
+  });
+
+  it('staging isola escritas até publicar (participante da InMemoryUnitOfWork)', async () => {
+    await repo.create(baseInput);
+    const staging = repo.abrirStaging();
+
+    await staging.create({ ...baseInput, data: '2026-04-10' });
+    expect(await repo.list({ familiaId: 'f1' })).toHaveLength(1);
+    expect(await staging.list({ familiaId: 'f1' })).toHaveLength(2);
+
+    repo.publicar(staging);
+    expect(await repo.list({ familiaId: 'f1' })).toHaveLength(2);
   });
 
   it('findById retorna transação correta', async () => {
@@ -223,7 +234,7 @@ describe('DrizzleTransacaoRepository', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    repo = new DrizzleTransacaoRepository();
+    repo = new DrizzleTransacaoRepository(mockDb as unknown as ExecutorDrizzle);
   });
 
   it('create executa insert e retorna', async () => {

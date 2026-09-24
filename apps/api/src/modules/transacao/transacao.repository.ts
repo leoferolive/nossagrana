@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 
 import { and, eq, gte, sql } from 'drizzle-orm';
 
-import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { transacoes } from '../../db/schema.js';
+import type { ParticipanteInMemory } from '../../shared/unit-of-work/unit-of-work.types.js';
 import type {
   CreateTransacaoInput,
   Transacao,
@@ -67,8 +68,10 @@ const RETURNING_FIELDS = {
 };
 
 export class DrizzleTransacaoRepository implements TransacaoRepository {
+  constructor(private readonly db: ExecutorDrizzle) {}
+
   async create(input: CreateTransacaoInput): Promise<Transacao> {
-    const [created] = await db
+    const [created] = await this.db
       .insert(transacoes)
       .values({
         familiaId: input.familiaId,
@@ -98,7 +101,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
 
   async createMany(inputs: CreateTransacaoInput[]): Promise<Transacao[]> {
     if (inputs.length === 0) return [];
-    const rows = await db
+    const rows = await this.db
       .insert(transacoes)
       .values(
         inputs.map((input) => ({
@@ -129,7 +132,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
   }
 
   async findById(input: { id: string; familiaId: string }): Promise<Transacao | null> {
-    const [row] = await db
+    const [row] = await this.db
       .select(RETURNING_FIELDS)
       .from(transacoes)
       .where(and(eq(transacoes.id, input.id), eq(transacoes.familiaId, input.familiaId)));
@@ -156,7 +159,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
       conditions.push(eq(transacoes.metodoPagamentoId, filtros.metodoPagamentoId));
     }
 
-    const rows = await db
+    const rows = await this.db
       .select(RETURNING_FIELDS)
       .from(transacoes)
       .where(and(...conditions));
@@ -165,7 +168,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
   }
 
   async update(input: UpdateTransacaoInput): Promise<Transacao | null> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(transacoes)
       .set({
         tipo: input.tipo,
@@ -184,7 +187,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
   }
 
   async delete(input: { id: string; familiaId: string }): Promise<boolean> {
-    const deleted = await db
+    const deleted = await this.db
       .delete(transacoes)
       .where(and(eq(transacoes.id, input.id), eq(transacoes.familiaId, input.familiaId)))
       .returning({ id: transacoes.id });
@@ -205,7 +208,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
       conditions.push(gte(transacoes.data, input.dataMinima));
     }
 
-    const deleted = await db
+    const deleted = await this.db
       .delete(transacoes)
       .where(and(...conditions))
       .returning({ id: transacoes.id });
@@ -213,7 +216,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
   }
 
   async listByPaiId(input: { transacaoPaiId: string; familiaId: string }): Promise<Transacao[]> {
-    const rows = await db
+    const rows = await this.db
       .select(RETURNING_FIELDS)
       .from(transacoes)
       .where(
@@ -242,7 +245,7 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
       conditions.push(gte(transacoes.data, input.dataMinima));
     }
 
-    const updated = await db
+    const updated = await this.db
       .update(transacoes)
       .set({ ...input.fields, atualizadoEm: sql`now()` })
       .where(and(...conditions))
@@ -252,8 +255,26 @@ export class DrizzleTransacaoRepository implements TransacaoRepository {
   }
 }
 
-export class InMemoryTransacaoRepository implements TransacaoRepository {
+export class InMemoryTransacaoRepository
+  implements TransacaoRepository, ParticipanteInMemory<InMemoryTransacaoRepository>
+{
   private transacoes: Transacao[] = [];
+
+  /** Cópia isolada para a `InMemoryUnitOfWork`: escritas só aparecem aqui após `publicar`. */
+  abrirStaging(): InMemoryTransacaoRepository {
+    const staging = this.criarVazio();
+    staging.transacoes = [...this.transacoes];
+    return staging;
+  }
+
+  publicar(staging: InMemoryTransacaoRepository): void {
+    this.transacoes = [...staging.transacoes];
+  }
+
+  /** Subclasses (fakes de falha) devolvem a própria classe para o staging herdar o comportamento. */
+  protected criarVazio(): InMemoryTransacaoRepository {
+    return new InMemoryTransacaoRepository();
+  }
 
   async create(input: CreateTransacaoInput): Promise<Transacao> {
     const now = new Date();

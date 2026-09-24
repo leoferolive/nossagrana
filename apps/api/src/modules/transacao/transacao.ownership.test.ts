@@ -5,6 +5,7 @@ import {
   ReferenciaInvalidaError,
   ReferenciaOwnershipValidator,
 } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
+import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
 import { TransacaoService } from './transacao.service.js';
 
@@ -32,7 +33,11 @@ function setup() {
   referencias.addMetodoPagamento({ id: 'mp-b', familiaId: FAMILIA_B, ativo: true });
 
   const repository = new InMemoryTransacaoRepository();
-  const service = new TransacaoService(repository, new ReferenciaOwnershipValidator(referencias));
+  const service = new TransacaoService(
+    repository,
+    new ReferenciaOwnershipValidator(referencias),
+    new InMemoryUnitOfWork({ transacoes: repository }),
+  );
   return { repository, service, referencias };
 }
 

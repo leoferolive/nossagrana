@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
+import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
 import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
 
 const buildService = () => {
   const repository = new InMemoryTransacaoRepository();
-  const service = new TransacaoService(repository, new ReferenciasSempreValidasFake());
+  const service = new TransacaoService(
+    repository,
+    new ReferenciasSempreValidasFake(),
+    new InMemoryUnitOfWork({ transacoes: repository }),
+  );
   return { repository, service };
 };
 

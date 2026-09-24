@@ -8,6 +8,8 @@ import {
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
+import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import {
   DrizzleHistoricoRepository,
   InMemoryHistoricoRepository,
@@ -21,6 +23,8 @@ import {
   validadorReferenciasInMemory,
 } from '../../shared/repositorios-in-memory.js';
 import { ReferenciaOwnershipValidator } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
+import { DrizzleUnitOfWork } from '../../shared/unit-of-work/drizzle-unit-of-work.js';
+import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import {
   transacaoAnteciparRequestSchema,
   transacaoAnteciparSchema,
@@ -30,7 +34,7 @@ import {
   transacaoListSchema,
   transacaoUpdateSchema,
 } from './transacao.schema.js';
-import { DrizzleTransacaoRepository, InMemoryTransacaoRepository } from './transacao.repository.js';
+import { DrizzleTransacaoRepository } from './transacao.repository.js';
 import type { Transacao } from './transacao.types.js';
 import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
 
@@ -51,10 +55,12 @@ async function resolveMetodoPagamento(
 const defaultServices = (fastify: FastifyInstance) => {
   if (env.NODE_ENV === 'test') {
     const repositorios = repositoriosInMemoryDe(fastify);
+    const { transacoes } = repositorios;
     return {
       transacaoService: new TransacaoService(
-        new InMemoryTransacaoRepository(),
+        transacoes,
         validadorReferenciasInMemory(repositorios),
+        new InMemoryUnitOfWork({ transacoes }),
         new SnapshotService(new InMemoryHistoricoRepository()),
       ),
       metodoPagamentoRepository: repositorios.metodosPagamento as MetodoPagamentoRepository,
@@ -62,8 +68,12 @@ const defaultServices = (fastify: FastifyInstance) => {
   }
   return {
     transacaoService: new TransacaoService(
-      new DrizzleTransacaoRepository(),
+      new DrizzleTransacaoRepository(db),
       new ReferenciaOwnershipValidator(new DrizzleReferenciaOwnershipRepository()),
+      // Registro composto (pai + filhas) grava tudo no mesmo `db.transaction` (#78/#85).
+      new DrizzleUnitOfWork(db, (tx: ExecutorDrizzle) => ({
+        transacoes: new DrizzleTransacaoRepository(tx),
+      })),
       new SnapshotService(new DrizzleHistoricoRepository()),
     ),
     metodoPagamentoRepository: new DrizzleMetodoPagamentoRepository() as MetodoPagamentoRepository,

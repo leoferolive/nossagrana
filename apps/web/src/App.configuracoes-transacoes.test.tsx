@@ -5,8 +5,14 @@ import { makeTransacao, resetAppMocks } from '@/test/app-mocks';
 
 import { App } from './App';
 import { useAuth } from './contexts/use-auth';
+import { categoriaService } from './services/core-financeiro.service';
+import { useCategoriaStore } from './stores/categoria.store';
 
-afterEach(resetAppMocks);
+afterEach(() => {
+  resetAppMocks();
+  vi.mocked(categoriaService.listar).mockResolvedValue({ categorias: [] });
+  useCategoriaStore.setState({ categorias: [] });
+});
 
 describe('App > fluxo autenticado com familia > configurações e transações', () => {
   it('navega para AjudaPage a partir das configurações', async () => {
@@ -190,6 +196,20 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
   it('abre e submete nova transação via modal do FAB', async () => {
     const { transacaoService } = await import('./services/core-financeiro.service');
+    // Sem categoria o modal bloqueia o salvar (a API exige categoriaId UUID).
+    vi.mocked(categoriaService.listar).mockResolvedValue({
+      categorias: [
+        {
+          id: 'cat-1',
+          familiaId: 'fam-test',
+          nome: 'Mercado',
+          tipo: 'despesa',
+          ativo: true,
+          criadoPor: 'u1',
+          criadoEm: '2026-01-01',
+        },
+      ],
+    });
 
     render(<App />);
     await waitFor(() =>
@@ -204,6 +224,8 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     // Fill required fields and submit
     const valorInput = screen.getByLabelText(/valor/i);
     fireEvent.change(valorInput, { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     await waitFor(() => {

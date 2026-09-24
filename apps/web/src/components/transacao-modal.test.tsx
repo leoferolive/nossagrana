@@ -212,7 +212,7 @@ describe('TransacaoModal', () => {
 
       expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
       fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoriaId: '' }));
+      expect(onSubmit).not.toHaveBeenCalled();
     });
 
     it('edição mantém a categoria atual da transação', () => {
@@ -292,6 +292,73 @@ describe('TransacaoModal', () => {
       );
     });
 
+    it('trocar o tipo na edição descarta a categoria inativa', () => {
+      const onUpdate = vi.fn();
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onUpdate={onUpdate}
+          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
+      abrirCategorias();
+      expect(opcoes()).toEqual(['Salario']);
+
+      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+      expect(onUpdate).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('option', { name: 'Salario' }));
+      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+      expect(onUpdate).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ tipo: 'receita', categoriaId: 'c2' }),
+      );
+    });
+
+    it('voltar ao tipo original reoferece a categoria inativa, sem selecioná-la', () => {
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onUpdate={vi.fn()}
+          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Despesa' }));
+
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
+      abrirCategorias();
+      expect(opcoes()).toEqual(['Mercado', 'Categoria inativa']);
+    });
+
+    it('clicar no tipo já ativo não descarta a categoria inativa', () => {
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onUpdate={vi.fn()}
+          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Despesa' }));
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent(
+        'Categoria inativa',
+      );
+    });
+
     it('criação não oferece categoria inativa', () => {
       render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
 
@@ -319,9 +386,7 @@ describe('TransacaoModal', () => {
 
       expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
       fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
-      expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ tipo: 'receita', categoriaId: '' }),
-      );
+      expect(onSubmit).not.toHaveBeenCalled();
     });
 
     it('voz com categoria do mesmo tipo mantém a seleção', () => {
@@ -342,6 +407,47 @@ describe('TransacaoModal', () => {
       );
 
       expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Mercado');
+    });
+  });
+
+  describe('categoria obrigatória', () => {
+    beforeEach(() => {
+      useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
+    });
+
+    it('sem categoria desabilita salvar e explica o motivo', () => {
+      const onSubmit = vi.fn();
+      const onClose = vi.fn();
+      render(<TransacaoModal open={true} familiaId="f1" onClose={onClose} onSubmit={onSubmit} />);
+
+      const salvar = screen.getByRole('button', { name: /salvar transação/i });
+      expect(salvar).toBeDisabled();
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveAccessibleDescription(
+        'Escolha uma categoria de despesa',
+      );
+
+      fireEvent.click(salvar);
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('mensagem acompanha o tipo selecionado', () => {
+      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
+      expect(screen.getByText('Escolha uma categoria de receita')).toBeInTheDocument();
+    });
+
+    it('com categoria escolhida habilita salvar e envia o id', () => {
+      const onSubmit = vi.fn();
+      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={onSubmit} />);
+
+      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
+      fireEvent.click(screen.getByRole('option', { name: 'Mercado' }));
+
+      expect(screen.queryByText(/escolha uma categoria/i)).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoriaId: 'c1' }));
     });
   });
 });

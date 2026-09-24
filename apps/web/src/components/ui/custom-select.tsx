@@ -13,6 +13,7 @@ interface CustomSelectProps {
   label?: string;
   placeholder?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
 }
 
 export const CustomSelect = ({
@@ -22,6 +23,7 @@ export const CustomSelect = ({
   label,
   placeholder = 'Selecione...',
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
 }: CustomSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -90,6 +92,7 @@ export const CustomSelect = ({
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-label={ariaLabel ?? label}
+          aria-describedby={ariaDescribedBy}
           onClick={() => {
             setIsOpen(!isOpen);
             if (!isOpen) {

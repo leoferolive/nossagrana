@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
 import {
@@ -131,12 +131,20 @@ export const TransacaoModal = ({
   // Derivado para cobrir voz/edição preenchidas antes das categorias carregarem.
   const categoriaIdValido = categoriaIdCompativel(categorias, tipo, categoriaId);
 
+  const tipoOriginal = transacaoParaEditar?.tipo;
+  const categoriaAjudaId = useId();
+
+  // Troca de tipo só preserva categoria ativa do novo tipo: uma inativa (fora
+  // da lista) tem tipo desconhecido e a API rejeitaria a combinação.
   const trocarTipo = (novoTipo: 'receita' | 'despesa') => {
+    if (novoTipo === tipo) return;
     setTipo(novoTipo);
-    setCategoriaId(categoriaIdCompativel(categorias, novoTipo, categoriaId));
+    const serve = categorias.some((c) => c.id === categoriaId && c.tipo === novoTipo);
+    setCategoriaId(serve ? categoriaId : '');
   };
 
   const handleSubmit = () => {
+    if (!categoriaIdValido) return;
     if (isEditing && onUpdate) {
       const payload: TransacaoUpdateRequest = {
         tipo,
@@ -235,14 +243,20 @@ export const TransacaoModal = ({
             aria-label="Categoria"
             placeholder="Selecione..."
             options={categoriasParaSelecao(categorias, tipo, {
-              id: transacaoParaEditar?.categoriaId ?? null,
+              id: tipo === tipoOriginal ? (transacaoParaEditar?.categoriaId ?? null) : null,
             }).map((c) => ({
               value: c.id,
               label: c.nome,
             }))}
             value={categoriaIdValido}
             onChange={setCategoriaId}
+            aria-describedby={categoriaIdValido ? undefined : categoriaAjudaId}
           />
+          {!categoriaIdValido && (
+            <p id={categoriaAjudaId} className="-mt-2 text-xs text-warning">
+              Escolha uma categoria de {tipo}
+            </p>
+          )}
 
           {/* Descrição */}
           <label className="flex flex-col gap-1">
@@ -398,7 +412,8 @@ export const TransacaoModal = ({
             <button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong"
+              disabled={!categoriaIdValido}
+              className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isEditing ? 'Salvar Alterações' : 'Salvar Transação'}
             </button>

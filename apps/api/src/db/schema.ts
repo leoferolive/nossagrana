@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import {
   boolean,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -11,6 +12,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -95,20 +97,26 @@ export const solicitacoesEntrada = pgTable('solicitacoes_entrada', {
 
 export const categoriaTipo = pgEnum('categoria_tipo', ['receita', 'despesa']);
 
-export const categorias = pgTable('categorias', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  familiaId: uuid('familia_id')
-    .notNull()
-    .references(() => familias.id),
-  nome: text('nome').notNull(),
-  tipo: categoriaTipo('tipo').notNull(),
-  ativo: boolean('ativo').notNull().default(true),
-  sistema: boolean('sistema').notNull().default(false),
-  criadoPor: uuid('criado_por')
-    .notNull()
-    .references(() => users.id),
-  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
-});
+// Unique (id, familia_id): alvo das FKs compostas que impedem referência de
+// outra família direto no banco (issue #58, docs/security/OWNERSHIP-REFERENCIAS.md).
+export const categorias = pgTable(
+  'categorias',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    nome: text('nome').notNull(),
+    tipo: categoriaTipo('tipo').notNull(),
+    ativo: boolean('ativo').notNull().default(true),
+    sistema: boolean('sistema').notNull().default(false),
+    criadoPor: uuid('criado_por')
+      .notNull()
+      .references(() => users.id),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('categorias_id_familia_id_unique').on(table.id, table.familiaId)],
+);
 
 export const metodoPagamentoTipo = pgEnum('metodo_pagamento_tipo', [
   'credito',
@@ -117,21 +125,25 @@ export const metodoPagamentoTipo = pgEnum('metodo_pagamento_tipo', [
   'dinheiro',
 ]);
 
-export const metodosPagamento = pgTable('metodos_pagamento', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  familiaId: uuid('familia_id')
-    .notNull()
-    .references(() => familias.id),
-  nome: text('nome').notNull(),
-  tipo: metodoPagamentoTipo('tipo').notNull(),
-  dataFechamento: integer('data_fechamento'),
-  dataVencimento: integer('data_vencimento'),
-  usuarioDonoId: uuid('usuario_dono_id')
-    .notNull()
-    .references(() => users.id),
-  ativo: boolean('ativo').notNull().default(true),
-  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
-});
+export const metodosPagamento = pgTable(
+  'metodos_pagamento',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id),
+    nome: text('nome').notNull(),
+    tipo: metodoPagamentoTipo('tipo').notNull(),
+    dataFechamento: integer('data_fechamento'),
+    dataVencimento: integer('data_vencimento'),
+    usuarioDonoId: uuid('usuario_dono_id')
+      .notNull()
+      .references(() => users.id),
+    ativo: boolean('ativo').notNull().default(true),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('metodos_pagamento_id_familia_id_unique').on(table.id, table.familiaId)],
+);
 
 export const transacaoTipo = pgEnum('transacao_tipo', ['receita', 'despesa']);
 export const transacaoFrequencia = pgEnum('transacao_frequencia', [
@@ -149,13 +161,11 @@ export const transacoes = pgTable(
       .references(() => familias.id),
     tipo: transacaoTipo('tipo').notNull(),
     valor: numeric('valor', { precision: 14, scale: 2 }).notNull(),
-    categoriaId: uuid('categoria_id')
-      .notNull()
-      .references(() => categorias.id),
+    categoriaId: uuid('categoria_id').notNull(),
     descricao: text('descricao'),
     data: date('data').notNull(),
     mesReferencia: text('mes_referencia').notNull(),
-    metodoPagamentoId: uuid('metodo_pagamento_id').references(() => metodosPagamento.id),
+    metodoPagamentoId: uuid('metodo_pagamento_id'),
     usuarioRegistrouId: uuid('usuario_registrou_id')
       .notNull()
       .references(() => users.id),
@@ -179,6 +189,32 @@ export const transacoes = pgTable(
     index('transacoes_categoria_id_idx').on(table.categoriaId),
     index('transacoes_metodo_pagamento_id_idx').on(table.metodoPagamentoId),
     index('transacoes_transacao_pai_id_idx').on(table.transacaoPaiId),
+    unique('transacoes_id_familia_id_unique').on(table.id, table.familiaId),
+    // FKs compostas (issue #58): a referência precisa ser da mesma família.
+    // MATCH SIMPLE: coluna de referência NULL não é checada.
+    foreignKey({
+      name: 'transacoes_categoria_familia_fk',
+      columns: [table.categoriaId, table.familiaId],
+      foreignColumns: [categorias.id, categorias.familiaId],
+    }),
+    foreignKey({
+      name: 'transacoes_metodo_pagamento_familia_fk',
+      columns: [table.metodoPagamentoId, table.familiaId],
+      foreignColumns: [metodosPagamento.id, metodosPagamento.familiaId],
+    }),
+    foreignKey({
+      name: 'transacoes_cofrinho_familia_fk',
+      columns: [table.cofrinhoId, table.familiaId],
+      foreignColumns: [cofrinhos.id, cofrinhos.familiaId],
+    }),
+    // Excluir a transação pai só desvincula as filhas. Na migration 0009 o
+    // SET NULL é restrito a transacao_pai_id (familia_id é NOT NULL); o
+    // Drizzle não expressa a lista de colunas, por isso o SQL foi ajustado.
+    foreignKey({
+      name: 'transacoes_transacao_pai_familia_fk',
+      columns: [table.transacaoPaiId, table.familiaId],
+      foreignColumns: [table.id, table.familiaId],
+    }).onDelete('set null'),
   ],
 );
 
@@ -189,9 +225,7 @@ export const orcamentoCategoria = pgTable(
     familiaId: uuid('familia_id')
       .notNull()
       .references(() => familias.id),
-    categoriaId: uuid('categoria_id')
-      .notNull()
-      .references(() => categorias.id),
+    categoriaId: uuid('categoria_id').notNull(),
     valorLimite: numeric('valor_limite', { precision: 14, scale: 2 }).notNull(),
     vigenciaInicio: text('vigencia_inicio').notNull(),
     vigenciaFim: text('vigencia_fim'),
@@ -202,6 +236,11 @@ export const orcamentoCategoria = pgTable(
   },
   (table) => [
     index('orcamento_categoria_familia_categoria_idx').on(table.familiaId, table.categoriaId),
+    foreignKey({
+      name: 'orcamento_categoria_categoria_familia_fk',
+      columns: [table.categoriaId, table.familiaId],
+      foreignColumns: [categorias.id, categorias.familiaId],
+    }),
   ],
 );
 
@@ -253,23 +292,24 @@ export const cofrinhos = pgTable(
     criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
     encerradoEm: timestamp('encerrado_em', { withTimezone: true }),
   },
-  (table) => [index('cofrinhos_familia_id_idx').on(table.familiaId)],
+  (table) => [
+    index('cofrinhos_familia_id_idx').on(table.familiaId),
+    unique('cofrinhos_id_familia_id_unique').on(table.id, table.familiaId),
+  ],
 );
 
 export const movimentacoesCofrinhos = pgTable(
   'movimentacoes_cofrinho',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    cofrinhoId: uuid('cofrinho_id')
-      .notNull()
-      .references(() => cofrinhos.id),
+    cofrinhoId: uuid('cofrinho_id').notNull(),
     familiaId: uuid('familia_id')
       .notNull()
       .references(() => familias.id),
     tipo: movimentacaoCofrinhoTipo('tipo').notNull(),
     valor: numeric('valor', { precision: 12, scale: 2 }).notNull(),
     descricao: text('descricao'),
-    transacaoId: uuid('transacao_id').references(() => transacoes.id),
+    transacaoId: uuid('transacao_id'),
     registradoPor: uuid('registrado_por')
       .notNull()
       .references(() => users.id),
@@ -279,6 +319,16 @@ export const movimentacoesCofrinhos = pgTable(
   (table) => [
     index('movimentacoes_cofrinho_cofrinho_id_idx').on(table.cofrinhoId),
     index('movimentacoes_cofrinho_familia_id_idx').on(table.familiaId),
+    foreignKey({
+      name: 'movimentacoes_cofrinho_cofrinho_familia_fk',
+      columns: [table.cofrinhoId, table.familiaId],
+      foreignColumns: [cofrinhos.id, cofrinhos.familiaId],
+    }),
+    foreignKey({
+      name: 'movimentacoes_cofrinho_transacao_familia_fk',
+      columns: [table.transacaoId, table.familiaId],
+      foreignColumns: [transacoes.id, transacoes.familiaId],
+    }),
   ],
 );
 
@@ -326,9 +376,9 @@ export const templatesTransacao = pgTable(
       .references(() => familias.id),
     nome: text('nome').notNull(),
     tipo: transacaoTipo('tipo').notNull(),
-    categoriaId: uuid('categoria_id').references(() => categorias.id),
-    metodoPagamentoId: uuid('metodo_pagamento_id').references(() => metodosPagamento.id),
-    cofrinhoId: uuid('cofrinho_id').references(() => cofrinhos.id),
+    categoriaId: uuid('categoria_id'),
+    metodoPagamentoId: uuid('metodo_pagamento_id'),
+    cofrinhoId: uuid('cofrinho_id'),
     ordem: integer('ordem').notNull().default(0),
     valorPadrao: numeric('valor_padrao', { precision: 14, scale: 2 }),
     ativo: boolean('ativo').notNull().default(true),
@@ -343,5 +393,20 @@ export const templatesTransacao = pgTable(
     uniqueIndex('uq_templates_transacao_familia_nome_tipo')
       .on(table.familiaId, table.nome, table.tipo)
       .where(eq(table.ativo, true)),
+    foreignKey({
+      name: 'templates_transacao_categoria_familia_fk',
+      columns: [table.categoriaId, table.familiaId],
+      foreignColumns: [categorias.id, categorias.familiaId],
+    }),
+    foreignKey({
+      name: 'templates_transacao_metodo_pagamento_familia_fk',
+      columns: [table.metodoPagamentoId, table.familiaId],
+      foreignColumns: [metodosPagamento.id, metodosPagamento.familiaId],
+    }),
+    foreignKey({
+      name: 'templates_transacao_cofrinho_familia_fk',
+      columns: [table.cofrinhoId, table.familiaId],
+      foreignColumns: [cofrinhos.id, cofrinhos.familiaId],
+    }),
   ],
 );

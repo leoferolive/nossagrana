@@ -1,10 +1,12 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts'],
+    // Testes contra PostgreSQL real rodam à parte: `pnpm --filter api test:pg`.
+    exclude: [...configDefaults.exclude, 'src/**/*.pg.test.ts'],
     pool: 'forks',
     poolOptions: {
       forks: {
@@ -20,6 +22,7 @@ export default defineConfig({
         'src/server.ts',
         'src/**/*.test.ts',
         'src/scripts/**',
+        'src/db/tests/**',
         'src/**/*.routes.ts',
         'src/**/*.types.ts',
         'src/modules/email/email.console-sender.ts',

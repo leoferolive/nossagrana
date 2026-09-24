@@ -48,6 +48,10 @@ source_psql() {
   docker exec -i "$SOURCE_CT" psql -q -v ON_ERROR_STOP=1 -U postgres "$@"
 }
 
+migration_count() {
+  find "$MIGRATIONS_DIR" -maxdepth 1 -name '*.sql' | wc -l | tr -d ' '
+}
+
 apply_migrations() {
   local db="$1"
   local file
@@ -58,7 +62,7 @@ apply_migrations() {
 CREATE SCHEMA drizzle;
 CREATE TABLE drizzle.__drizzle_migrations (id serial PRIMARY KEY, hash text NOT NULL, created_at bigint);
 INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
-  SELECT md5(g::text), 0 FROM generate_series(1, $(find "$MIGRATIONS_DIR" -maxdepth 1 -name '*.sql' | wc -l)) g;
+  SELECT md5(g::text), 0 FROM generate_series(1, $(migration_count)) g;
 SQL
 }
 
@@ -168,7 +172,7 @@ test_success_restores_and_reports() {
     echo "$DRILL_OUTPUT" | grep -q '"result":"success"' &&
     echo "$DRILL_OUTPUT" | grep -q '"artifact":"pg-all-2026-09-22.sql.gz"' &&
     echo "$DRILL_OUTPUT" | grep -q '"sha256":"[0-9a-f]\{64\}"' &&
-    echo "$DRILL_OUTPUT" | grep -q '"migrations":9' &&
+    echo "$DRILL_OUTPUT" | grep -q "\"migrations\":$(migration_count)" &&
     echo "$DRILL_OUTPUT" | grep -q '"users":1' &&
     echo "$DRILL_OUTPUT" | grep -q '"familias":2'; then
     pass "restaura o backup mais recente e publica relatório com checksum, migrations e contagens"

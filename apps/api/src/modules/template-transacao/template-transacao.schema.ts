@@ -52,6 +52,7 @@ export const templateTransacaoAplicarSchema = {
     200: templateTransacaoAplicarResponseSchema,
     400: errorSchemas[404],
     404: errorSchemas[404],
+    409: errorSchemas[409],
     422: referenciaInvalidaResponseSchema,
   },
 };

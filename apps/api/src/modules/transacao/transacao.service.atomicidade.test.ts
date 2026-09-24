@@ -9,6 +9,7 @@ import {
 import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import {
   CofrinhoHandlerQueFalhaNaChamada,
+  CofrinhoHandlerQueGravaNoTx,
   InMemoryTransacaoRepositoryFalhaNoEnesimoInsert,
 } from './transacao.fakes.js';
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
@@ -147,6 +148,28 @@ describe('TransacaoService.registrar — atomicidade (#85)', () => {
     // Fora da unidade nada é visível enquanto o handler roda: ainda não houve commit.
     expect(cofrinhoHandler.gravadasVisiveisNaChamada).toEqual([0, 0, 0]);
     expect(await totalGravado(repository)).toBe(4);
+  });
+
+  it('cofrinhoHandler grava pelos repos do tx: efeitos confirmados junto com a série (#59)', async () => {
+    const cofrinhoHandler = new CofrinhoHandlerQueGravaNoTx(Infinity);
+    const { repository, service } = setup({ cofrinhoHandler });
+
+    await service.registrar({ ...recorrenteComFim, cofrinhoId: 'cofrinho-1' });
+
+    // pai + 3 filhas + 1 efeito por filha, todos no mesmo commit
+    expect(await totalGravado(repository)).toBe(7);
+  });
+
+  it('falha do cofrinhoHandler desfaz também o que ele já gravou pelos repos do tx', async () => {
+    const cofrinhoHandler = new CofrinhoHandlerQueGravaNoTx(3);
+    const { repository, service } = setup({ cofrinhoHandler });
+
+    await expect(
+      service.registrar({ ...recorrenteComFim, cofrinhoId: 'cofrinho-1' }),
+    ).rejects.toThrow('chamada nº 3');
+
+    expect(cofrinhoHandler.efeitosGravados).toBe(2);
+    expect(await totalGravado(repository)).toBe(0);
   });
 
   it('transação simples também passa pela unidade (1 commit)', async () => {

@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { montarRepositoriosCofrinhoInMemory } from '../cofrinho/cofrinho.fakes.js';
 
 import { InMemoryReferenciaOwnershipRepository } from '../../shared/referencia-ownership/referencia-ownership.repository.js';
 import {
@@ -37,15 +39,19 @@ function setup() {
   referencias.addCofrinho({ id: 'cf-b', familiaId: FAMILIA_B, ativo: true });
 
   const repo = new InMemoryTemplateTransacaoRepository();
-  const transacaoCreator = { criar: vi.fn().mockResolvedValue({ id: 'tx-1' }) };
-  const cofrinhoService = { aportar: vi.fn().mockResolvedValue({}) };
+  const ctx = montarRepositoriosCofrinhoInMemory();
   const service = new TemplateTransacaoService(
     repo,
-    transacaoCreator,
-    cofrinhoService,
+    ctx.instrumentada,
+    ctx.buscarCategoriaCofrinho,
     new ReferenciaOwnershipValidator(referencias),
   );
-  return { repo, service, referencias, transacaoCreator, cofrinhoService };
+  /** Nada gravado = nenhuma unidade aberta e nenhuma transação na família. */
+  const nadaGravado = async () => ({
+    unidades: ctx.uow.estatisticas().iniciadas,
+    transacoes: (await ctx.transacoes.list({ familiaId: FAMILIA_A })).length,
+  });
+  return { repo, service, referencias, ctx, nadaGravado };
 }
 
 const novo = (override: Record<string, unknown> = {}) => ({
@@ -138,7 +144,7 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
 
   describe('aplicar', () => {
     it('aplica template cuja categoria foi desativada depois (vínculo existente)', async () => {
-      const { service, referencias, transacaoCreator } = setup();
+      const { service, referencias, ctx } = setup();
       const t = await service.create(novo({ categoriaId: 'cat-a2' }));
       referencias.setCategoriaAtiva('cat-a2', false);
 
@@ -150,11 +156,11 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
       });
 
       expect(result.transacoesCriadas).toBe(1);
-      expect(transacaoCreator.criar).toHaveBeenCalledTimes(1);
+      expect(await ctx.transacoes.list({ familiaId: FAMILIA_A })).toHaveLength(1);
     });
 
     it('não grava nada quando algum template tem referência de outra família (legado)', async () => {
-      const { service, repo, transacaoCreator, cofrinhoService } = setup();
+      const { service, repo, nadaGravado } = setup();
       const valido = await service.create(novo({ nome: 'Água' }));
       // Simula dado legado gravado antes desta validação existir.
       const legado = await repo.create(novo({ nome: 'Legado', categoriaId: 'cat-b' }));
@@ -171,8 +177,7 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
         }),
       ).rejects.toBeInstanceOf(ReferenciaInvalidaError);
 
-      expect(transacaoCreator.criar).not.toHaveBeenCalled();
-      expect(cofrinhoService.aportar).not.toHaveBeenCalled();
+      expect(await nadaGravado()).toEqual({ unidades: 0, transacoes: 0 });
     });
 
     it.each([
@@ -181,7 +186,7 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
     ])(
       'não grava nada quando algum template aponta para %s (#57)',
       async (_caso, override, entidade) => {
-        const { service, repo, referencias, transacaoCreator, cofrinhoService } = setup();
+        const { service, repo, referencias, nadaGravado } = setup();
         referencias.addCofrinho({ id: 'cf-a-encerrado', familiaId: FAMILIA_A, ativo: false });
         referencias.addMetodoPagamento({ id: 'mp-a-inativo', familiaId: FAMILIA_A, ativo: false });
         const valido = await service.create(novo({ nome: 'Água' }));
@@ -203,13 +208,12 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
         expect(erro).toBeInstanceOf(ReferenciaInvalidaError);
         expect((erro as ReferenciaInvalidaError).entidade).toBe(entidade);
         expect((erro as ReferenciaInvalidaError).motivo).toBe('inativa');
-        expect(transacaoCreator.criar).not.toHaveBeenCalled();
-        expect(cofrinhoService.aportar).not.toHaveBeenCalled();
+        expect(await nadaGravado()).toEqual({ unidades: 0, transacoes: 0 });
       },
     );
 
     it('não grava nada quando algum template não tem categoria nem cofrinho (#57)', async () => {
-      const { service, repo, transacaoCreator, cofrinhoService } = setup();
+      const { service, repo, nadaGravado } = setup();
       const valido = await service.create(novo({ nome: 'Água' }));
       // Estado aceito pelo create/PATCH (categoriaId e cofrinhoId nulos).
       const semVinculo = await repo.create(
@@ -228,8 +232,7 @@ describe('TemplateTransacaoService — ownership de referências (#55)', () => {
         }),
       ).rejects.toBeInstanceOf(TemplateSemCategoriaError);
 
-      expect(transacaoCreator.criar).not.toHaveBeenCalled();
-      expect(cofrinhoService.aportar).not.toHaveBeenCalled();
+      expect(await nadaGravado()).toEqual({ unidades: 0, transacoes: 0 });
     });
   });
 });

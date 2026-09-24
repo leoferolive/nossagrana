@@ -4,6 +4,7 @@ import type {
   CreateTransacaoInput,
   Transacao,
   TransacaoComCofrinho,
+  TransacaoRepositorios,
   TransacaoRepository,
 } from './transacao.types.js';
 
@@ -65,5 +66,36 @@ export class CofrinhoHandlerQueFalhaNaChamada implements CofrinhoHandler {
     if (!this.observado) return;
     const visiveis = await this.observado.list({ familiaId: transacao.familiaId });
     this.gravadasVisiveisNaChamada.push(visiveis.length);
+  }
+}
+
+/**
+ * Fake nomeada de um handler tx-aware (#59): a cada filha grava um efeito
+ * (uma transação marcadora) pelos `repos` DO TX que recebeu, e lança na
+ * chamada `falharNaChamada`. Prova que o que o handler gravou entra no mesmo
+ * commit/rollback da série.
+ */
+export class CofrinhoHandlerQueGravaNoTx implements CofrinhoHandler {
+  efeitosGravados = 0;
+
+  constructor(private readonly falharNaChamada: number) {}
+
+  async processarTransacaoComCofrinho(
+    transacao: TransacaoComCofrinho,
+    repos: TransacaoRepositorios,
+  ): Promise<void> {
+    if (this.efeitosGravados + 1 === this.falharNaChamada) {
+      throw new Error(`Falha simulada do cofrinho na chamada nº ${this.falharNaChamada}`);
+    }
+    await repos.transacoes.create({
+      familiaId: transacao.familiaId,
+      tipo: 'despesa',
+      valor: transacao.valor,
+      categoriaId: 'efeito-cofrinho',
+      data: '2026-01-01',
+      mesReferencia: transacao.mesReferencia,
+      usuarioRegistrouId: transacao.usuarioRegistrouId,
+    });
+    this.efeitosGravados++;
   }
 }

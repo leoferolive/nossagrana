@@ -1,4 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import {
+  CATEGORIA_COFRINHO_FAKE,
+  montarRepositoriosCofrinhoInMemory,
+  type RepositoriosCofrinhoInMemory,
+} from '../cofrinho/cofrinho.fakes.js';
+import { CofrinhoEncerradoError } from '../cofrinho/cofrinho.errors.js';
 import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
 import { InMemoryTemplateTransacaoRepository } from './template-transacao.repository.js';
 import {
@@ -12,23 +19,23 @@ import type { TemplateTransacaoRepository } from './template-transacao.types.js'
 describe('TemplateTransacaoService', () => {
   let repo: TemplateTransacaoRepository;
   let service: TemplateTransacaoService;
-  const mockTransacaoCreator = { criar: vi.fn().mockResolvedValue({ id: 'tx-1' }) };
-  const mockCofrinhoService = {
-    aportar: vi
-      .fn()
-      .mockResolvedValue({ cofrinho: { id: 'cof-1' }, movimentacao: { id: 'mov-1' } }),
-  };
+  let ctx: RepositoriosCofrinhoInMemory;
 
   beforeEach(() => {
     repo = new InMemoryTemplateTransacaoRepository();
+    ctx = montarRepositoriosCofrinhoInMemory();
     service = new TemplateTransacaoService(
       repo,
-      mockTransacaoCreator,
-      mockCofrinhoService,
+      ctx.instrumentada,
+      ctx.buscarCategoriaCofrinho,
       new ReferenciasSempreValidasFake(),
     );
-    vi.clearAllMocks();
   });
+
+  const transacoesDe = (familiaId = 'f1') => ctx.transacoes.list({ familiaId });
+
+  const cofrinhoAtivo = async (familiaId = 'f1') =>
+    (await ctx.cofrinhos.create({ familiaId, nome: 'Reserva', criadoPor: 'u1' })).id;
 
   describe('create', () => {
     it('cria template com sucesso', async () => {
@@ -114,26 +121,27 @@ describe('TemplateTransacaoService', () => {
       });
       expect(result.transacoesCriadas).toBe(1);
       expect(result.aportesCriados).toBe(0);
-      expect(mockTransacaoCreator.criar).toHaveBeenCalledWith(
-        expect.objectContaining({
-          familiaId: 'f1',
-          tipo: 'despesa',
-          valor: '285.71',
-          categoriaId: 'c1',
-          descricao: 'Luz',
-          data: '2026-03-01',
-          mesReferencia: '2026-03',
-          usuarioRegistrouId: 'u1',
-        }),
-      );
+      const [transacao] = await transacoesDe();
+      expect(transacao).toMatchObject({
+        familiaId: 'f1',
+        tipo: 'despesa',
+        valor: '285.71',
+        categoriaId: 'c1',
+        descricao: 'Luz',
+        data: '2026-03-01',
+        mesReferencia: '2026-03',
+        usuarioRegistrouId: 'u1',
+        cofrinhoId: null,
+      });
     });
 
-    it('chama cofrinhoService.aportar para templates com cofrinhoId', async () => {
+    it('aporta pelo fluxo atômico do cofrinho para templates com cofrinhoId', async () => {
+      const cofrinhoId = await cofrinhoAtivo();
       const t = await service.create({
         familiaId: 'f1',
         nome: 'Fundo Emergência',
         tipo: 'despesa',
-        cofrinhoId: 'cof-1',
+        cofrinhoId,
         criadoPor: 'u1',
       });
       const result = await service.aplicar({
@@ -144,17 +152,150 @@ describe('TemplateTransacaoService', () => {
       });
       expect(result.aportesCriados).toBe(1);
       expect(result.transacoesCriadas).toBe(0);
-      expect(mockCofrinhoService.aportar).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cofrinhoId: 'cof-1',
+      const cofrinho = await ctx.cofrinhos.findById({ id: cofrinhoId, familiaId: 'f1' });
+      expect(cofrinho?.saldoAtual).toBe('200.00');
+      const [movimentacao] = await ctx.movimentacoes.listByCofrinho({
+        cofrinhoId,
+        familiaId: 'f1',
+      });
+      expect(movimentacao).toMatchObject({
+        tipo: 'aporte',
+        valor: '200.00',
+        descricao: 'Fundo Emergência',
+        registradoPor: 'u1',
+        mesReferencia: '2026-03',
+      });
+      const [transacao] = await transacoesDe();
+      expect(transacao).toMatchObject({
+        id: movimentacao?.transacaoId,
+        cofrinhoId,
+        categoriaId: CATEGORIA_COFRINHO_FAKE,
+        data: '2026-03-01',
+      });
+    });
+
+    it('grava lançamentos e aportes numa única unidade de trabalho (#89)', async () => {
+      const cofrinhoId = await cofrinhoAtivo();
+      const luz = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
+      const reserva = await service.create({
+        familiaId: 'f1',
+        nome: 'Reserva',
+        tipo: 'despesa',
+        cofrinhoId,
+        criadoPor: 'u1',
+      });
+
+      const result = await service.aplicar({
+        familiaId: 'f1',
+        usuarioId: 'u1',
+        mesReferencia: '2026-03',
+        itens: [
+          { templateId: luz.id, valor: '100.00' },
+          { templateId: reserva.id, valor: '50.00' },
+        ],
+      });
+
+      expect(result).toEqual({ transacoesCriadas: 1, aportesCriados: 1, total: 2 });
+      expect(ctx.uow.estatisticas()).toEqual({ iniciadas: 1, confirmadas: 1, desfeitas: 0 });
+    });
+
+    it('aporta em ordem de cofrinhoId, qualquer que seja a ordem dos itens (evita deadlock)', async () => {
+      const ids = [await cofrinhoAtivo(), await cofrinhoAtivo(), await cofrinhoAtivo()];
+      const templates = [];
+      for (const cofrinhoId of ids) {
+        templates.push(
+          await service.create({
+            familiaId: 'f1',
+            nome: `R-${cofrinhoId}`,
+            tipo: 'despesa',
+            cofrinhoId,
+            criadoPor: 'u1',
+          }),
+        );
+      }
+      const itens = [...templates]
+        .sort((a, b) => (b.cofrinhoId ?? '').localeCompare(a.cofrinhoId ?? ''))
+        .map((t) => ({ templateId: t.id, valor: '1.00' }));
+
+      await service.aplicar({ familiaId: 'f1', usuarioId: 'u1', mesReferencia: '2026-03', itens });
+
+      const ordemGravada = (await transacoesDe()).map((t) => t.cofrinhoId);
+      expect(ordemGravada).toEqual([...ids].sort());
+    });
+
+    it('falha no aporte desfaz também os lançamentos já gravados na aplicação', async () => {
+      const cofrinhoId = await cofrinhoAtivo();
+      const luz = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
+      const reserva = await service.create({
+        familiaId: 'f1',
+        nome: 'Reserva',
+        tipo: 'despesa',
+        cofrinhoId,
+        criadoPor: 'u1',
+      });
+      ctx.instrumentada.falharApos('movimentacoes.create');
+
+      await expect(
+        service.aplicar({
           familiaId: 'f1',
-          valor: '200.00',
-          descricao: 'Fundo Emergência',
-          registradoPor: 'u1',
+          usuarioId: 'u1',
           mesReferencia: '2026-03',
-          data: '2026-03-01',
+          itens: [
+            { templateId: luz.id, valor: '100.00' },
+            { templateId: reserva.id, valor: '50.00' },
+          ],
         }),
+      ).rejects.toThrow('Falha injetada');
+
+      expect(await transacoesDe()).toEqual([]);
+      expect((await ctx.cofrinhos.findById({ id: cofrinhoId, familiaId: 'f1' }))?.saldoAtual).toBe(
+        '0',
       );
+    });
+
+    it('cofrinho encerrado após a validação (corrida) aborta a aplicação inteira', async () => {
+      const cofrinhoId = await cofrinhoAtivo();
+      const luz = await service.create({
+        familiaId: 'f1',
+        nome: 'Luz',
+        tipo: 'despesa',
+        categoriaId: 'c1',
+        criadoPor: 'u1',
+      });
+      const reserva = await service.create({
+        familiaId: 'f1',
+        nome: 'Reserva',
+        tipo: 'despesa',
+        cofrinhoId,
+        criadoPor: 'u1',
+      });
+      await ctx.cofrinhos.encerrar({ id: cofrinhoId, familiaId: 'f1' });
+
+      await expect(
+        service.aplicar({
+          familiaId: 'f1',
+          usuarioId: 'u1',
+          mesReferencia: '2026-03',
+          itens: [
+            { templateId: luz.id, valor: '100.00' },
+            { templateId: reserva.id, valor: '50.00' },
+          ],
+        }),
+      ).rejects.toThrow(CofrinhoEncerradoError);
+
+      expect(await transacoesDe()).toEqual([]);
     });
 
     it('filtra itens com valor zero', async () => {
@@ -182,7 +323,7 @@ describe('TemplateTransacaoService', () => {
         ],
       });
       expect(result.total).toBe(1);
-      expect(mockTransacaoCreator.criar).toHaveBeenCalledTimes(1);
+      expect(await transacoesDe()).toHaveLength(1);
     });
 
     it('lança erro se template sem cofrinho não tem categoriaId', async () => {

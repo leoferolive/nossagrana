@@ -1,6 +1,7 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   date,
   foreignKey,
   index,
@@ -295,6 +296,8 @@ export const cofrinhos = pgTable(
   (table) => [
     index('cofrinhos_familia_id_idx').on(table.familiaId),
     unique('cofrinhos_id_familia_id_unique').on(table.id, table.familiaId),
+    // Última defesa (#62): mesmo um UPDATE fora do repositório não deixa saldo negativo.
+    check('cofrinhos_saldo_atual_nao_negativo', sql`${table.saldoAtual} >= 0`),
   ],
 );
 

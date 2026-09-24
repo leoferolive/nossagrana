@@ -80,8 +80,17 @@ export interface TransacaoComCofrinho {
   descricao: string | null;
 }
 
+/**
+ * Efeito de cofrinho por filha recorrente, chamado DENTRO da Unit of Work do
+ * registro: grava só pelos `repos` recebidos (os do tx), nunca pelo singleton
+ * `db` nem abrindo outra unidade (aninhamento é proibido). Nenhuma rota de
+ * produção injeta um handler hoje (#59).
+ */
 export interface CofrinhoHandler {
-  processarTransacaoComCofrinho(transacao: TransacaoComCofrinho): Promise<void>;
+  processarTransacaoComCofrinho(
+    transacao: TransacaoComCofrinho,
+    repos: TransacaoRepositorios,
+  ): Promise<void>;
 }
 
 export interface RegistrarTransacaoInput {

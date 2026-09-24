@@ -9,14 +9,23 @@ import {
   cofrinhoRetiradaRequestSchema,
   cofrinhoUpdateRequestSchema,
 } from '@nossagrana/types';
-import { and, eq } from 'drizzle-orm';
-import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
-import { categorias, transacoes } from '../../db/schema.js';
 import { repositoriosInMemoryDe } from '../../shared/repositorios-in-memory.js';
-import { DrizzleCofrinhoRepository } from './cofrinho.repository.js';
+import { ConflitoDeConcorrenciaError } from '../../shared/unit-of-work/conflito-concorrencia.js';
+import { responderConflitoDeConcorrencia } from '../../shared/unit-of-work/conflito-concorrencia.http.js';
+import { criarBuscaCategoriaCofrinho } from './cofrinho.categoria.js';
+import {
+  AporteRecorrenteIndisponivelError,
+  AporteRecorrenteJaAtivoError,
+  AporteRecorrenteNotFoundError,
+  CancelamentoRecorrenteIndisponivelError,
+  CofrinhoEncerradoError,
+  CofrinhoNotFoundError,
+  SaldoInsuficienteError,
+} from './cofrinho.errors.js';
 import {
   cofrinhoAporteRecorrenteDeleteSchema,
   cofrinhoAporteSchema,
@@ -27,15 +36,13 @@ import {
   cofrinhoRetiradaSchema,
   cofrinhoUpdateSchema,
 } from './cofrinho.schema.js';
+import { CofrinhoService } from './cofrinho.service.js';
+import type { Cofrinho, MovimentacaoCofrinho } from './cofrinho.types.js';
 import {
-  AporteRecorrenteJaAtivoError,
-  AporteRecorrenteNotFoundError,
-  CofrinhoEncerradoError,
-  CofrinhoNotFoundError,
-  CofrinhoService,
-  SaldoInsuficienteError,
-} from './cofrinho.service.js';
-import type { Cofrinho, MovimentacaoCofrinho, TransacaoCreator } from './cofrinho.types.js';
+  criarRepositoriosCofrinhoDrizzle,
+  criarUnitOfWorkCofrinhoDrizzle,
+  criarUnitOfWorkCofrinhoInMemory,
+} from './cofrinho.unit-of-work.js';
 
 const serializeCofrinho = (c: Cofrinho) => ({
   ...c,
@@ -48,87 +55,56 @@ const serializeMovimentacao = (m: MovimentacaoCofrinho) => ({
   registradoEm: m.registradoEm.toISOString(),
 });
 
-const testTransacaoCreator: TransacaoCreator = {
-  criar: async () => ({ id: randomUUID() }),
-};
-
 const testGetCategoriaCofrinho = async () => ({ id: randomUUID() });
 
-const realTransacaoCreator: TransacaoCreator = {
-  criar: async (input) => {
-    const [row] = await db
-      .insert(transacoes)
-      .values({
-        familiaId: input.familiaId,
-        tipo: input.tipo,
-        valor: input.valor,
-        categoriaId: input.categoriaId,
-        descricao: input.descricao,
-        data: input.data,
-        mesReferencia: input.mesReferencia,
-        usuarioRegistrouId: input.usuarioRegistrouId,
-        cofrinhoId: input.cofrinhoId,
-      })
-      .returning({ id: transacoes.id });
-    return { id: row.id };
-  },
-};
-
-const realGetCategoriaCofrinho = async (familiaId: string) => {
-  const [cat] = await db
-    .select({ id: categorias.id })
-    .from(categorias)
-    .where(
-      and(
-        eq(categorias.familiaId, familiaId),
-        eq(categorias.nome, 'Cofrinho'),
-        eq(categorias.sistema, true),
-      ),
-    );
-  if (!cat) throw new Error('Categoria Cofrinho não encontrada');
-  return cat;
-};
-
-const defaultCofrinhoService = (fastify: FastifyInstance): CofrinhoService => {
+/**
+ * test: InMemory compartilhado da app (a transação do aporte aparece em
+ * /transacoes). Produção: aporte/retirada/encerramento num `db.transaction`
+ * (#59), com cofrinho, ledger e transação sobre o mesmo `tx`.
+ */
+function criarCofrinhoServicePadrao(fastify: FastifyInstance): CofrinhoService {
   if (env.NODE_ENV === 'test') {
-    return new CofrinhoService(
-      repositoriosInMemoryDe(fastify).cofrinhos,
-      testTransacaoCreator,
-      testGetCategoriaCofrinho,
-    );
+    const repositorios = repositoriosInMemoryDe(fastify);
+    const participantes = {
+      cofrinhos: repositorios.cofrinhos,
+      movimentacoes: repositorios.movimentacoesCofrinho,
+      transacoes: repositorios.transacoes,
+    };
+    const uow = criarUnitOfWorkCofrinhoInMemory(participantes);
+    return new CofrinhoService(participantes, uow, testGetCategoriaCofrinho);
   }
-
+  /* v8 ignore next 5 -- wiring de produção exige banco real (coberto pelos testes *.pg.test.ts) */
   return new CofrinhoService(
-    new DrizzleCofrinhoRepository(),
-    realTransacaoCreator,
-    realGetCategoriaCofrinho,
+    criarRepositoriosCofrinhoDrizzle(db),
+    criarUnitOfWorkCofrinhoDrizzle(db),
+    criarBuscaCategoriaCofrinho(db),
   );
-};
+}
 
-function handleCofrinhoError(
-  error: unknown,
-  reply: import('fastify').FastifyReply,
-): import('fastify').FastifyReply | undefined {
-  if (error instanceof CofrinhoNotFoundError) {
-    return reply.code(404).send({ message: error.message });
+type ErroDeCofrinho = abstract new (...args: never[]) => Error;
+
+/** Erro de domínio → status HTTP (envelope `{ message }` já usado pelo módulo). */
+const STATUS_POR_ERRO: Array<[ErroDeCofrinho, number]> = [
+  [CofrinhoNotFoundError, 404],
+  [CofrinhoEncerradoError, 400],
+  [SaldoInsuficienteError, 400],
+  [AporteRecorrenteIndisponivelError, 400],
+  [CancelamentoRecorrenteIndisponivelError, 400],
+  [AporteRecorrenteJaAtivoError, 409],
+  [AporteRecorrenteNotFoundError, 404],
+];
+
+function handleCofrinhoError(error: unknown, reply: FastifyReply): FastifyReply | undefined {
+  if (error instanceof ConflitoDeConcorrenciaError) {
+    return responderConflitoDeConcorrencia(error, reply.request, reply);
   }
-  if (error instanceof CofrinhoEncerradoError) {
-    return reply.code(400).send({ message: error.message });
-  }
-  if (error instanceof SaldoInsuficienteError) {
-    return reply.code(400).send({ message: error.message });
-  }
-  if (error instanceof AporteRecorrenteJaAtivoError) {
-    return reply.code(409).send({ message: error.message });
-  }
-  if (error instanceof AporteRecorrenteNotFoundError) {
-    return reply.code(404).send({ message: error.message });
-  }
-  return undefined;
+  const par = STATUS_POR_ERRO.find(([Classe]) => error instanceof Classe);
+  if (!par || !(error instanceof Error)) return undefined;
+  return reply.code(par[1]).send({ message: error.message });
 }
 
 export const cofrinhoRoutes: FastifyPluginAsync = async (fastify) => {
-  const cofrinhoService = defaultCofrinhoService(fastify);
+  const cofrinhoService = criarCofrinhoServicePadrao(fastify);
 
   // POST /cofrinhos — criar cofrinho
   fastify.post(

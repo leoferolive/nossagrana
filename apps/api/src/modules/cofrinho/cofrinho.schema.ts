@@ -80,6 +80,7 @@ export const cofrinhoRetiradaSchema = {
     400: errorSchemas[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
+    409: errorSchemas[409],
   },
 };
 
@@ -91,6 +92,7 @@ export const cofrinhoEncerrarSchema = {
     400: errorSchemas[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
+    409: errorSchemas[409],
   },
 };
 
@@ -98,6 +100,7 @@ export const cofrinhoAporteRecorrenteDeleteSchema = {
   params: cofrinhoParamsSchema,
   response: {
     204: z.null(),
+    400: errorSchemas[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
   },

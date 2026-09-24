@@ -3,7 +3,15 @@
 import { after, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +31,7 @@ const {
 } = await import('./quality-marker.mjs');
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
-const huskyDir = resolve(scriptsDir, '..', '.husky');
+const huskyPreCommit = resolve(scriptsDir, '..', '.husky', 'pre-commit');
 const checkScript = join(scriptsDir, 'check-quality-marker.mjs');
 const tempDirs = [];
 
@@ -65,7 +73,7 @@ function stageNewContent(cwd, content) {
 }
 
 function createConflict(cwd) {
-  git(cwd, 'commit', '-q', '--no-verify', '-m', 'base');
+  git(cwd, 'commit', '-q', '--no-verify', '--allow-empty', '-m', 'base');
   git(cwd, 'checkout', '-q', '-b', 'outro');
   stageNewContent(cwd, 'lado outro\n');
   git(cwd, 'commit', '-q', '--no-verify', '-m', 'outro');
@@ -226,12 +234,33 @@ describe('check-quality-marker.mjs', () => {
 });
 
 describe('.husky/pre-commit real (core.hooksPath)', () => {
-  // Stub do pnpm: o lint-staged não existe no repo temporário.
+  // Stub do pnpm: o lint-staged não existe no repo temporário. Registra cada
+  // chamada em FAKE_PNPM_LOG e, se FAKE_LINT_STAGED_APPEND estiver setada,
+  // simula o prettier do lint-staged alterando e re-stageando a.txt.
+  const FAKE_PNPM_SCRIPT = [
+    '#!/bin/sh',
+    'echo "$*" >> "$FAKE_PNPM_LOG"',
+    'if [ "$1 $2" = "exec lint-staged" ] && [ -n "$FAKE_LINT_STAGED_APPEND" ]; then',
+    '  printf \'%s\\n\' "$FAKE_LINT_STAGED_APPEND" >> a.txt && git add a.txt',
+    'fi',
+    'exit 0',
+    '',
+  ].join('\n');
+
   function createFakePnpmBin() {
     const binDir = makeTempDir('fake-pnpm-');
-    write(binDir, 'pnpm', '#!/bin/sh\nexit 0\n');
+    write(binDir, 'pnpm', FAKE_PNPM_SCRIPT);
     spawnSync('chmod', ['+x', join(binDir, 'pnpm')]);
     return binDir;
+  }
+
+  // O husky 9 executa o hook com `sh -e "$s"`; o hooksPath aponta para um
+  // wrapper que reproduz isso, em vez de rodar .husky/pre-commit pelo shebang.
+  function createShErrexitHooksDir() {
+    const hooksDir = makeTempDir('husky-sh-e-');
+    write(hooksDir, 'pre-commit', `#!/bin/sh\nexec sh -e "${huskyPreCommit}" "$@"\n`);
+    spawnSync('chmod', ['+x', join(hooksDir, 'pre-commit')]);
+    return hooksDir;
   }
 
   function prepareHookRepo() {
@@ -241,33 +270,82 @@ describe('.husky/pre-commit real (core.hooksPath)', () => {
     }
     git(repo, 'add', 'scripts');
     git(repo, 'commit', '-q', '--no-verify', '-m', 'base');
-    git(repo, 'config', 'core.hooksPath', huskyDir);
+    git(repo, 'config', 'core.hooksPath', createShErrexitHooksDir());
   }
 
-  function claudeCommit(...args) {
-    const env = { CLAUDECODE: '1', PATH: `${createFakePnpmBin()}:${process.env.PATH}` };
-    return spawnIn(repo, 'git', ['commit', '-q', '-m', 'teste', ...args], env);
+  function runWithFakePnpm(cmd, args, { claude = true, lintStagedAppend } = {}) {
+    const log = join(makeTempDir('fake-pnpm-log-'), 'pnpm.log');
+    const env = { FAKE_PNPM_LOG: log, PATH: `${createFakePnpmBin()}:${process.env.PATH}` };
+    if (claude) env.CLAUDECODE = '1';
+    if (lintStagedAppend) env.FAKE_LINT_STAGED_APPEND = lintStagedAppend;
+    const result = spawnIn(repo, cmd, args, env);
+    const pnpmCalls = existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : [];
+    return { ...result, pnpmCalls };
   }
 
-  test('git commit -a com mudança não testada é bloqueado', () => {
+  function hookCommit({ args = [], ...options } = {}) {
+    return runWithFakePnpm('git', ['commit', '-q', '-m', 'teste', ...args], options);
+  }
+
+  function stageTestedContent() {
     prepareHookRepo();
     stageNewContent(repo, 'versao testada\n');
     assert.equal(recordQualityMarker(repo).recorded, true);
+  }
+
+  test('git commit -a com mudança não testada é bloqueado', () => {
+    stageTestedContent();
     write(repo, 'a.txt', 'versao NAO testada\n');
 
-    const result = claudeCommit('-a');
+    const result = hookCommit({ args: ['-a'] });
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Commit bloqueado/);
   });
 
-  test('git commit do conteúdo testado passa', () => {
-    prepareHookRepo();
-    stageNewContent(repo, 'versao testada\n');
-    assert.equal(recordQualityMarker(repo).recorded, true);
+  test('git commit do conteúdo testado passa quando o lint-staged não muda nada', () => {
+    stageTestedContent();
 
-    const result = claudeCommit();
+    const result = hookCommit();
 
     assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(result.pnpmCalls, ['exec lint-staged']);
+  });
+
+  test('lint-staged que reformata e re-stageia arquivo bloqueia o commit', () => {
+    stageTestedContent();
+    const testedTree = git(repo, 'write-tree');
+    const headBefore = git(repo, 'rev-parse', 'HEAD');
+
+    const result = hookCommit({ lintStagedAppend: 'linha do prettier' });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Commit bloqueado/);
+    assert.match(result.stderr, /formatados e re-stageados/);
+    assert.match(result.stderr, /pnpm quality/);
+    assert.equal(git(repo, 'rev-parse', 'HEAD'), headBefore);
+    assert.notEqual(git(repo, 'write-tree'), testedTree);
+  });
+
+  test('commit humano (sem CLAUDECODE) roda só o lint-staged, sem exigir marcador', () => {
+    prepareHookRepo();
+    stageNewContent(repo, 'versao sem gate\n');
+
+    const result = hookCommit({ claude: false, lintStagedAppend: 'linha do prettier' });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(result.pnpmCalls, ['exec lint-staged']);
+    assert.doesNotMatch(result.stderr, /Commit bloqueado/);
+  });
+
+  test('rodado à mão com `sh -e` e índice em conflito, explica o motivo em vez de abortar mudo', () => {
+    prepareHookRepo();
+    createConflict(repo);
+
+    const result = runWithFakePnpm('sh', ['-e', huskyPreCommit]);
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /conflito/);
+    assert.doesNotMatch(result.stderr, /\n\s+at /);
   });
 });

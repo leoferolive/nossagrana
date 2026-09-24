@@ -22,9 +22,9 @@ Comando único: `pnpm quality`. Output: tabela `✓/✗` no terminal.
 
 ## Marcador para commits do Claude Code
 
-Fora do CI, o gate captura `git write-tree` antes da primeira etapa e, se tudo passar e o índice não tiver mudado, grava `$(git rev-parse --git-path quality-gate)/<hash>`. Não grava (só avisa) com mudanças não staged, não rastreados em `apps/`/`packages/`/`scripts/`, índice em conflito ou índice alterado durante o gate. O `.husky/pre-commit` exige esse marcador quando `CLAUDECODE=1` (via `scripts/check-quality-marker.mjs`), garantindo que os testes Web (que não rodam no CI) passaram para exatamente o conteúdo commitado. O lint-staged roda depois e pode reformatar arquivos com prettier; isso não reabre a checagem. Commits humanos seguem só com lint-staged.
+Fora do CI, o gate captura `git write-tree` antes da primeira etapa e, se tudo passar e o índice não tiver mudado, grava `$(git rev-parse --git-path quality-gate)/<hash>`. Não grava (só avisa) com mudanças não staged, não rastreados em `apps/`/`packages/`/`scripts/`, índice em conflito ou índice alterado durante o gate. O `.husky/pre-commit` exige esse marcador quando `CLAUDECODE=1` (via `scripts/check-quality-marker.mjs`), garantindo que os testes Web (que não rodam no CI) passaram para exatamente o conteúdo commitado. Por isso o lint-staged roda **antes** da checagem: se o prettier reformatar e re-stagear arquivos, a árvore muda, o commit é bloqueado e é preciso rodar `pnpm quality` de novo. Commits humanos seguem só com lint-staged.
 
-Fluxo: `git add <arquivos da mudança>` (ou `git add -u` + arquivos novos) → `pnpm quality` → `git commit`. Evite `git add -A` — não stageie `planilha/` nem rascunhos. Os scripts têm testes próprios (`pnpm test:scripts`), executados no job `quality` do CI.
+Fluxo: `git add <arquivos da mudança>` (ou `git add -u` + arquivos novos) → `pnpm exec prettier --write <arquivos>` + `git add <arquivos>` (formatar antes do gate evita um segundo ciclo) → `pnpm quality` → `git commit`. Evite `git add -A` — não stageie `planilha/` nem rascunhos. Os scripts têm testes próprios (`pnpm test:scripts`), executados no job `quality` do CI.
 
 ## Como funciona o ratchet
 

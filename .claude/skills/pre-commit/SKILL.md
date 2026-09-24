@@ -21,13 +21,14 @@ pnpm --filter @nossagrana/types build
 ## Pipeline
 
 1. Stage apenas os arquivos da mudança — `git add <arquivos>` (ou `git add -u` + arquivos novos). **Não** use `git add -A`: não stageie `planilha/` nem rascunhos.
-2. Rode o gate (Prettier nos arquivos staged é feito pelo Husky no commit):
+2. Formate **antes** do gate: `pnpm exec prettier --write <arquivos>` + `git add <arquivos>`. O Husky roda o lint-staged (prettier) no commit **antes** de checar o marcador; se ele reformatar algo, o commit é bloqueado e o gate precisa rodar de novo.
+3. Rode o gate:
 
 ```bash
 CHANGED_FILES="$(git diff --cached --name-only origin/main)" pnpm quality
 ```
 
-3. Se passou e gravou o marcador, `git commit`. Se alterar/stagear algo depois, rode o gate de novo.
+4. Se passou e gravou o marcador, `git commit`. Se alterar/stagear algo depois, rode o gate de novo.
 
 O script imprime tabela `✓/✗` ao final. Se algo falhar, ele para no primeiro erro e mostra qual etapa quebrou. Etapas (na ordem):
 

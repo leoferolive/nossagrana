@@ -26,7 +26,7 @@ Não use `git add -A`: não stageie `planilha/`, rascunhos nem arquivos alheios 
 pnpm format:check:changed
 ```
 
-Se falhar, formate os arquivos, `git add` neles antes do gate (mudanças depois do gate invalidam o marcador).
+Se falhar, formate com `pnpm exec prettier --write <arquivos>` e dê `git add` neles antes do gate. No commit, o `.husky/pre-commit` roda o lint-staged (prettier) antes de checar o marcador: se ele reformatar algo, o commit é bloqueado e o gate precisa rodar de novo.
 
 ### 3. Quality gate (lint, types, testes API + Web, cobertura, knip, ratchet, build)
 

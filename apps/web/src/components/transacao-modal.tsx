@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 
 import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
-import { useCategoriaStore } from '@/stores/categoria.store';
+import {
+  categoriaIdCompativel,
+  categoriasDoTipo,
+  useCategoriaStore,
+} from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
+import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
 import { CustomSelect } from './ui/custom-select';
 
 export interface DadosVoz {
@@ -123,13 +128,20 @@ export const TransacaoModal = ({
   }, [open, transacaoParaEditar, dadosVoz]);
 
   const isEditing = !!transacaoParaEditar;
+  // Derivado para cobrir voz/edição preenchidas antes das categorias carregarem.
+  const categoriaIdValido = categoriaIdCompativel(categorias, tipo, categoriaId);
+
+  const trocarTipo = (novoTipo: 'receita' | 'despesa') => {
+    setTipo(novoTipo);
+    setCategoriaId(categoriaIdCompativel(categorias, novoTipo, categoriaId));
+  };
 
   const handleSubmit = () => {
     if (isEditing && onUpdate) {
       const payload: TransacaoUpdateRequest = {
         tipo,
         valor,
-        categoriaId,
+        categoriaId: categoriaIdValido,
         descricao: descricao || null,
         data,
         metodoPagamentoId: metodoPagamentoId || null,
@@ -139,7 +151,7 @@ export const TransacaoModal = ({
       const payload: TransacaoCreateRequest = {
         tipo,
         valor,
-        categoriaId,
+        categoriaId: categoriaIdValido,
         descricao: descricao || null,
         data,
         metodoPagamentoId: metodoPagamentoId || null,
@@ -186,33 +198,7 @@ export const TransacaoModal = ({
           </button>
         </div>
 
-        {/* Toggle Receita / Despesa */}
-        <div className="mb-5 flex gap-2">
-          <button
-            type="button"
-            aria-label="Receita"
-            onClick={() => setTipo('receita')}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
-              tipo === 'receita'
-                ? 'bg-success text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            ↑ Receita
-          </button>
-          <button
-            type="button"
-            aria-label="Despesa"
-            onClick={() => setTipo('despesa')}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
-              tipo === 'despesa'
-                ? 'bg-danger text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            ↓ Despesa
-          </button>
-        </div>
+        <TipoLancamentoToggle tipo={tipo} onChange={trocarTipo} />
 
         {/* Voice input button (only when creating, not editing) */}
         {!isEditing && onVoiceActivate && (
@@ -248,8 +234,11 @@ export const TransacaoModal = ({
             label="Categoria"
             aria-label="Categoria"
             placeholder="Selecione..."
-            options={categorias.map((c) => ({ value: c.id, label: c.nome }))}
-            value={categoriaId}
+            options={categoriasDoTipo(categorias, tipo).map((c) => ({
+              value: c.id,
+              label: c.nome,
+            }))}
+            value={categoriaIdValido}
             onChange={setCategoriaId}
           />
 

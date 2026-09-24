@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
@@ -177,6 +177,116 @@ describe('TransacaoModal', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /preencher por voz/i }));
       expect(onVoiceActivate).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('filtro de categorias por tipo', () => {
+    const abrirCategorias = () =>
+      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
+    const opcoes = () => screen.getAllByRole('option').map((o) => o.textContent);
+
+    beforeEach(() => {
+      useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
+    });
+
+    it('lista só categorias do tipo selecionado', () => {
+      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+      abrirCategorias();
+      expect(opcoes()).toEqual(['Mercado']);
+      abrirCategorias(); // fecha o dropdown (fireEvent.click não dispara mousedown externo)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
+      abrirCategorias();
+      expect(opcoes()).toEqual(['Salario']);
+    });
+
+    it('limpa a categoria escolhida ao trocar para um tipo incompatível', () => {
+      const onSubmit = vi.fn();
+      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={onSubmit} />);
+
+      abrirCategorias();
+      fireEvent.click(screen.getByRole('option', { name: 'Mercado' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Despesa' }));
+
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
+      fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoriaId: '' }));
+    });
+
+    it('edição mantém a categoria atual da transação', () => {
+      const onUpdate = vi.fn();
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onUpdate={onUpdate}
+          transacaoParaEditar={{
+            id: 't1',
+            tipo: 'receita',
+            valor: '5000',
+            categoriaId: 'c2',
+            descricao: null,
+            data: '2026-03-05',
+            metodoPagamentoId: null,
+          }}
+        />,
+      );
+
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Salario');
+      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+      expect(onUpdate).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ tipo: 'receita', categoriaId: 'c2' }),
+      );
+    });
+
+    it('voz com categoria de outro tipo não deixa categoria incoerente', () => {
+      const onSubmit = vi.fn();
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+          dadosVoz={{
+            tipo: 'receita',
+            valor: '100',
+            categoriaId: 'c1',
+            descricao: null,
+            data: '2026-03-20',
+          }}
+        />,
+      );
+
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
+      fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ tipo: 'receita', categoriaId: '' }),
+      );
+    });
+
+    it('voz com categoria do mesmo tipo mantém a seleção', () => {
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          dadosVoz={{
+            tipo: 'despesa',
+            valor: '42',
+            categoriaId: 'c1',
+            descricao: null,
+            data: '2026-03-20',
+          }}
+        />,
+      );
+
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Mercado');
     });
   });
 });

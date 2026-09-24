@@ -5,6 +5,7 @@ import { env } from '../config/env.js';
 import { InMemoryCategoriaRepository } from '../modules/categoria/categoria.repository.js';
 import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.repository.js';
 import { InMemoryMetodoPagamentoRepository } from '../modules/metodo-pagamento/metodo-pagamento.repository.js';
+import { InMemoryTransacaoRepository } from '../modules/transacao/transacao.repository.js';
 import { ModulosReferenciaOwnershipRepository } from './referencia-ownership/referencia-ownership.repository.js';
 import { ReferenciaOwnershipValidator } from './referencia-ownership/referencia-ownership.validator.js';
 
@@ -17,6 +18,8 @@ export interface RepositoriosInMemoryCompartilhados {
   categorias: InMemoryCategoriaRepository;
   metodosPagamento: InMemoryMetodoPagamentoRepository;
   cofrinhos: InMemoryCofrinhoRepository;
+  /** Base publicada pela `InMemoryUnitOfWork` das rotas de transação (#78). */
+  transacoes: InMemoryTransacaoRepository;
 }
 
 declare module 'fastify' {
@@ -30,6 +33,7 @@ export function criarRepositoriosInMemoryCompartilhados(): RepositoriosInMemoryC
     categorias: new InMemoryCategoriaRepository(),
     metodosPagamento: new InMemoryMetodoPagamentoRepository(),
     cofrinhos: new InMemoryCofrinhoRepository(),
+    transacoes: new InMemoryTransacaoRepository(),
   };
 }
 

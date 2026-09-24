@@ -1,43 +1,22 @@
 import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { referenciaEsperada } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
-import { adicionarDias, adicionarMeses } from '../../utils/date.js';
+import type { UnitOfWork } from '../../shared/unit-of-work/unit-of-work.types.js';
 import { calcularMesReferencia } from './mes-referencia.service.js';
+import { planejarRegistro, type PlanoRegistro } from './transacao.plano-registro.js';
 import type {
   CofrinhoHandler,
-  CreateTransacaoInput,
+  RegistrarTransacaoInput,
   SnapshotNotifier,
+  Transacao,
   TransacaoFiltros,
+  TransacaoRepositorios,
   TransacaoRepository,
 } from './transacao.types.js';
-
-/** Maximo de recorrencias quando ha data fim definida */
-const MAX_RECORRENCIAS_COM_FIM = 120;
-/** Maximo de recorrencias adicionais quando nao ha data fim */
-const MAX_RECORRENCIAS_SEM_FIM = 24;
 
 export class TransacaoNotFoundError extends Error {
   constructor() {
     super('Transacao nao encontrada');
   }
-}
-
-interface RegistrarInput {
-  familiaId: string;
-  tipo: 'receita' | 'despesa';
-  valor: string;
-  categoriaId: string;
-  descricao?: string | null;
-  data: string;
-  metodoPagamentoId?: string | null;
-  metodoPagamentoTipo?: 'credito' | 'debito' | 'pix' | 'dinheiro' | null;
-  dataFechamento?: number | null;
-  usuarioRegistrouId: string;
-  parcelado?: boolean;
-  numeroParcelas?: number;
-  recorrente?: boolean;
-  frequencia?: 'mensal' | 'semanal' | 'quinzenal' | null;
-  dataFimRecorrencia?: string | null;
-  cofrinhoId?: string | null;
 }
 
 interface EditarInput {
@@ -53,21 +32,21 @@ interface EditarInput {
   dataFechamento?: number | null;
 }
 
-function calcularValorParcela(valorTotal: string, numeroParcelas: number): string {
-  const total = parseFloat(valorTotal);
-  const parcela = Math.round((total / numeroParcelas) * 100) / 100;
-  return parcela.toFixed(2);
-}
-
 export class TransacaoService {
   constructor(
     private readonly repository: TransacaoRepository,
     private readonly referencias: ReferenciaOwnershipChecker,
+    private readonly unitOfWork: UnitOfWork<TransacaoRepositorios>,
     private readonly snapshotNotifier?: SnapshotNotifier,
     private readonly cofrinhoHandler?: CofrinhoHandler,
   ) {}
 
-  async registrar(input: RegistrarInput) {
+  /**
+   * Pai, filhas (parcelas/recorrências) e movimentações de cofrinho são
+   * gravados numa única Unit of Work (#85): falha em qualquer ponto desfaz
+   * tudo, e a promise só resolve depois do commit.
+   */
+  async registrar(input: RegistrarTransacaoInput): Promise<Transacao> {
     // Antes de qualquer escrita: parcelas/séries não podem ficar parcialmente gravadas.
     await this.referencias.validar({
       familiaId: input.familiaId,
@@ -76,164 +55,39 @@ export class TransacaoService {
       cofrinho: referenciaEsperada(input.cofrinhoId),
     });
 
-    const dataObj = new Date(`${input.data}T12:00:00Z`);
-    const mesReferencia = calcularMesReferencia({
-      data: dataObj,
-      tipo: input.metodoPagamentoTipo ?? null,
-      dataFechamento: input.dataFechamento ?? null,
-    });
+    const plano = planejarRegistro(input);
+    return this.unitOfWork.executar(({ repos }) => this.gravarPlano(repos, plano));
+  }
 
-    // Transação parcelada
-    if (input.parcelado && input.numeroParcelas && input.numeroParcelas > 1) {
-      const valorParcela = calcularValorParcela(input.valor, input.numeroParcelas);
+  private async gravarPlano(repos: TransacaoRepositorios, plano: PlanoRegistro) {
+    const pai = await repos.transacoes.create(plano.pai);
+    if (plano.filhas.length === 0) return pai;
 
-      const pai = await this.repository.create({
-        familiaId: input.familiaId,
-        tipo: input.tipo,
-        valor: input.valor,
-        categoriaId: input.categoriaId,
-        descricao: input.descricao ?? null,
-        data: input.data,
-        mesReferencia,
-        metodoPagamentoId: input.metodoPagamentoId ?? null,
-        usuarioRegistrouId: input.usuarioRegistrouId,
-        parcelado: true,
-        numeroParcelas: input.numeroParcelas,
-        parcelaAtual: 1,
-        valorTotal: input.valor,
-        valorParcela,
+    const filhas = await repos.transacoes.createMany(
+      plano.filhas.map((filha) => ({ ...filha, transacaoPaiId: pai.id })),
+    );
+    await this.movimentarCofrinho(filhas, plano.cofrinhoDasFilhas);
+    return pai;
+  }
+
+  /**
+   * Processar movimentações de cofrinho para filhas recorrentes. Roda dentro
+   * da unidade: se falhar, as transações são desfeitas. As escritas do próprio
+   * handler só entram na mesma transação quando ele for tx-aware (#59).
+   */
+  private async movimentarCofrinho(filhas: Transacao[], cofrinhoId: string | null) {
+    if (!cofrinhoId || !this.cofrinhoHandler) return;
+    for (const filha of filhas) {
+      await this.cofrinhoHandler.processarTransacaoComCofrinho({
+        id: filha.id,
+        familiaId: filha.familiaId,
+        valor: filha.valor,
+        cofrinhoId,
+        usuarioRegistrouId: filha.usuarioRegistrouId,
+        mesReferencia: filha.mesReferencia,
+        descricao: filha.descricao,
       });
-
-      // Gerar parcelas 2..N
-      const parcelas: CreateTransacaoInput[] = [];
-      for (let i = 2; i <= input.numeroParcelas; i++) {
-        const dataParc = adicionarMeses(input.data, i - 1);
-        const dataObj2 = new Date(`${dataParc}T12:00:00Z`);
-        const mesRef = calcularMesReferencia({
-          data: dataObj2,
-          tipo: input.metodoPagamentoTipo ?? null,
-          dataFechamento: input.dataFechamento ?? null,
-        });
-
-        parcelas.push({
-          familiaId: input.familiaId,
-          tipo: input.tipo,
-          valor: valorParcela,
-          categoriaId: input.categoriaId,
-          descricao: input.descricao ?? null,
-          data: dataParc,
-          mesReferencia: mesRef,
-          metodoPagamentoId: input.metodoPagamentoId ?? null,
-          usuarioRegistrouId: input.usuarioRegistrouId,
-          parcelado: true,
-          numeroParcelas: input.numeroParcelas,
-          parcelaAtual: i,
-          valorTotal: input.valor,
-          valorParcela,
-          transacaoPaiId: pai.id,
-        });
-      }
-
-      await this.repository.createMany(parcelas);
-      return pai;
     }
-
-    // Transação recorrente
-    if (input.recorrente && input.frequencia) {
-      const pai = await this.repository.create({
-        familiaId: input.familiaId,
-        tipo: input.tipo,
-        valor: input.valor,
-        categoriaId: input.categoriaId,
-        descricao: input.descricao ?? null,
-        data: input.data,
-        mesReferencia,
-        metodoPagamentoId: input.metodoPagamentoId ?? null,
-        usuarioRegistrouId: input.usuarioRegistrouId,
-        recorrente: true,
-        frequencia: input.frequencia,
-        dataFimRecorrencia: input.dataFimRecorrencia ?? null,
-        cofrinhoId: input.cofrinhoId ?? null,
-      });
-
-      const recorrencias: CreateTransacaoInput[] = [];
-      let dataAtual = input.data;
-
-      const incrementar = (d: string): string => {
-        if (input.frequencia === 'mensal') return adicionarMeses(d, 1);
-        if (input.frequencia === 'quinzenal') return adicionarDias(d, 15);
-        return adicionarDias(d, 7); // semanal
-      };
-
-      dataAtual = incrementar(dataAtual);
-
-      let count = 0;
-
-      while (count < MAX_RECORRENCIAS_COM_FIM) {
-        if (input.dataFimRecorrencia && dataAtual > input.dataFimRecorrencia) break;
-        if (!input.dataFimRecorrencia && count >= MAX_RECORRENCIAS_SEM_FIM) break;
-
-        const dataObj2 = new Date(`${dataAtual}T12:00:00Z`);
-        const mesRef = calcularMesReferencia({
-          data: dataObj2,
-          tipo: input.metodoPagamentoTipo ?? null,
-          dataFechamento: input.dataFechamento ?? null,
-        });
-
-        recorrencias.push({
-          familiaId: input.familiaId,
-          tipo: input.tipo,
-          valor: input.valor,
-          categoriaId: input.categoriaId,
-          descricao: input.descricao ?? null,
-          data: dataAtual,
-          mesReferencia: mesRef,
-          metodoPagamentoId: input.metodoPagamentoId ?? null,
-          usuarioRegistrouId: input.usuarioRegistrouId,
-          recorrente: true,
-          frequencia: input.frequencia,
-          dataFimRecorrencia: input.dataFimRecorrencia ?? null,
-          transacaoPaiId: pai.id,
-          cofrinhoId: input.cofrinhoId ?? null,
-        });
-
-        dataAtual = incrementar(dataAtual);
-        count++;
-      }
-
-      const filhas = await this.repository.createMany(recorrencias);
-
-      // Processar movimentações de cofrinho para filhas recorrentes
-      if (input.cofrinhoId && this.cofrinhoHandler) {
-        for (const filha of filhas) {
-          await this.cofrinhoHandler.processarTransacaoComCofrinho({
-            id: filha.id,
-            familiaId: filha.familiaId,
-            valor: filha.valor,
-            cofrinhoId: input.cofrinhoId,
-            usuarioRegistrouId: filha.usuarioRegistrouId,
-            mesReferencia: filha.mesReferencia,
-            descricao: filha.descricao,
-          });
-        }
-      }
-
-      return pai;
-    }
-
-    // Transação simples
-    return this.repository.create({
-      familiaId: input.familiaId,
-      tipo: input.tipo,
-      valor: input.valor,
-      categoriaId: input.categoriaId,
-      descricao: input.descricao ?? null,
-      data: input.data,
-      mesReferencia,
-      metodoPagamentoId: input.metodoPagamentoId ?? null,
-      usuarioRegistrouId: input.usuarioRegistrouId,
-      cofrinhoId: input.cofrinhoId ?? null,
-    });
   }
 
   async listar(filtros: TransacaoFiltros) {

@@ -70,17 +70,41 @@ export interface SnapshotNotifier {
   marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
 }
 
-export interface CofrinhoHandler {
-  processarTransacaoComCofrinho(transacao: {
-    id: string;
-    familiaId: string;
-    valor: string;
-    cofrinhoId: string;
-    usuarioRegistrouId: string;
-    mesReferencia: string;
-    descricao: string | null;
-  }): Promise<void>;
+export interface TransacaoComCofrinho {
+  id: string;
+  familiaId: string;
+  valor: string;
+  cofrinhoId: string;
+  usuarioRegistrouId: string;
+  mesReferencia: string;
+  descricao: string | null;
 }
+
+export interface CofrinhoHandler {
+  processarTransacaoComCofrinho(transacao: TransacaoComCofrinho): Promise<void>;
+}
+
+export interface RegistrarTransacaoInput {
+  familiaId: string;
+  tipo: 'receita' | 'despesa';
+  valor: string;
+  categoriaId: string;
+  descricao?: string | null;
+  data: string;
+  metodoPagamentoId?: string | null;
+  metodoPagamentoTipo?: 'credito' | 'debito' | 'pix' | 'dinheiro' | null;
+  dataFechamento?: number | null;
+  usuarioRegistrouId: string;
+  parcelado?: boolean;
+  numeroParcelas?: number;
+  recorrente?: boolean;
+  frequencia?: 'mensal' | 'semanal' | 'quinzenal' | null;
+  dataFimRecorrencia?: string | null;
+  cofrinhoId?: string | null;
+}
+
+/** Repositórios que o registro usa dentro da Unit of Work (#78). */
+export type TransacaoRepositorios = { transacoes: TransacaoRepository };
 
 export interface TransacaoRepository {
   create(input: CreateTransacaoInput): Promise<Transacao>;

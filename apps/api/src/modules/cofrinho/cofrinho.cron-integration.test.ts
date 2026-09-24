@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
+import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import { InMemoryTransacaoRepository } from '../transacao/transacao.repository.js';
 import { TransacaoService } from '../transacao/transacao.service.js';
 import type { CofrinhoHandler } from '../transacao/transacao.types.js';
@@ -20,6 +21,7 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
+      new InMemoryUnitOfWork({ transacoes: repository }),
       undefined,
       cofrinhoHandler,
     );
@@ -76,6 +78,7 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
+      new InMemoryUnitOfWork({ transacoes: repository }),
       undefined,
       cofrinhoHandler,
     );
@@ -116,6 +119,7 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
+      new InMemoryUnitOfWork({ transacoes: repository }),
       undefined,
       cofrinhoHandler,
     );
@@ -141,7 +145,11 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
 
   it('sem cofrinhoHandler injetado, não causa erro mesmo com cofrinhoId', async () => {
     const repository = new InMemoryTransacaoRepository();
-    const service = new TransacaoService(repository, new ReferenciasSempreValidasFake()); // sem cofrinhoHandler
+    const service = new TransacaoService(
+      repository,
+      new ReferenciasSempreValidasFake(),
+      new InMemoryUnitOfWork({ transacoes: repository }),
+    ); // sem cofrinhoHandler
 
     // Não deve lançar erro
     const pai = await service.registrar({
@@ -169,6 +177,7 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
+      new InMemoryUnitOfWork({ transacoes: repository }),
       undefined,
       cofrinhoHandler,
     );
@@ -193,7 +202,11 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
 
   it('transação simples sem cofrinhoId tem cofrinhoId null', async () => {
     const repository = new InMemoryTransacaoRepository();
-    const service = new TransacaoService(repository, new ReferenciasSempreValidasFake());
+    const service = new TransacaoService(
+      repository,
+      new ReferenciasSempreValidasFake(),
+      new InMemoryUnitOfWork({ transacoes: repository }),
+    );
 
     const t = await service.registrar({
       familiaId: 'f1',

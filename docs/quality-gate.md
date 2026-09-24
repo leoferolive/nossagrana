@@ -20,6 +20,12 @@ Comando único: `pnpm quality`. Output: tabela `✓/✗` no terminal.
 | Profundidade nesting     | ESLint                     | ≤ 4                     | ratchet                |
 | Parâmetros por função    | ESLint                     | ≤ 5                     | ratchet                |
 
+## Marcador para commits do Claude Code
+
+Fora do CI, o gate captura `git write-tree` antes da primeira etapa e, se tudo passar e o índice não tiver mudado, grava `$(git rev-parse --git-path quality-gate)/<hash>`. Não grava (só avisa) com mudanças não staged, não rastreados em `apps/`/`packages/`/`scripts/`, índice em conflito ou índice alterado durante o gate. O `.husky/pre-commit` exige esse marcador quando `CLAUDECODE=1` (via `scripts/check-quality-marker.mjs`), garantindo que os testes Web (que não rodam no CI) passaram para exatamente o conteúdo commitado. O lint-staged roda depois e pode reformatar arquivos com prettier; isso não reabre a checagem. Commits humanos seguem só com lint-staged.
+
+Fluxo: `git add <arquivos da mudança>` (ou `git add -u` + arquivos novos) → `pnpm quality` → `git commit`. Evite `git add -A` — não stageie `planilha/` nem rascunhos. Os scripts têm testes próprios (`pnpm test:scripts`), executados no job `quality` do CI.
+
 ## Como funciona o ratchet
 
 `quality-baseline.json` versionado contém a contagem atual de violações por regra. O CI falha se uma regra passar do valor da baseline. Reduções são aceitas silenciosamente — a baseline só "aperta" via `pnpm ratchet:update` manual em PR dedicado.

@@ -39,17 +39,6 @@
     ]
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "The user's tool call is: $ARGUMENTS. If this is a 'git commit' command, check: have ALL tests (API + Web) been run and passed in this session? If tests have NOT been run yet, respond with JSON {\"decision\": \"block\", \"reason\": \"Rode /run-tests antes de commitar. Web tests não rodam no CI.\"}. If tests passed, allow. If it is NOT a git commit, always allow."
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

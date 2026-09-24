@@ -21,6 +21,7 @@
     "quality": "node scripts/quality-gate.mjs",
     "quality:ci": "node scripts/quality-gate.mjs --ci",
     "ratchet:update": "node scripts/ratchet-check.mjs --update",
+    "test:scripts": "node --test scripts/*.test.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

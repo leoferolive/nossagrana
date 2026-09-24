@@ -6,7 +6,9 @@ autoApply: false
 
 # Pre-Commit Checklist
 
-**OBRIGATÓRIO antes de todo `git commit`.** Rode cada etapa sequencialmente. Pare e corrija ao primeiro erro antes de continuar.
+**OBRIGATÓRIO antes de todo `git commit`.** Fluxo: **stage → `pnpm quality` → commit**.
+
+O `.husky/pre-commit` bloqueia commits do Claude Code (`CLAUDECODE=1`) se o `pnpm quality` não tiver passado para exatamente o conteúdo staged (marcador por `git write-tree`). Detalhes em `.claude/rules/quality-gate.md`.
 
 ## Pré-requisito
 
@@ -18,11 +20,14 @@ pnpm --filter @nossagrana/types build
 
 ## Pipeline
 
-Um único comando roda tudo (Prettier nos arquivos staged é feito pelo Husky):
+1. Stage apenas os arquivos da mudança — `git add <arquivos>` (ou `git add -u` + arquivos novos). **Não** use `git add -A`: não stageie `planilha/` nem rascunhos.
+2. Rode o gate (Prettier nos arquivos staged é feito pelo Husky no commit):
 
 ```bash
-pnpm quality
+CHANGED_FILES="$(git diff --cached --name-only origin/main)" pnpm quality
 ```
+
+3. Se passou e gravou o marcador, `git commit`. Se alterar/stagear algo depois, rode o gate de novo.
 
 O script imprime tabela `✓/✗` ao final. Se algo falhar, ele para no primeiro erro e mostra qual etapa quebrou. Etapas (na ordem):
 
@@ -34,6 +39,7 @@ O script imprime tabela `✓/✗` ao final. Se algo falhar, ele para no primeiro
 6. `coverage:changed-check` (se `CHANGED_FILES` setado)
 7. Knip (dead code)
 8. Ratchet de complexidade (compara com `quality-baseline.json`)
+9. Build
 
 **Se o ratchet falhar:** você introduziu novas violações de complexidade. Refatore ou, se justificável (raro), rode `pnpm ratchet:update` para atualizar a baseline.
 
@@ -49,4 +55,4 @@ O script imprime tabela `✓/✗` ao final. Se algo falhar, ele para no primeiro
 
 ## Se Tudo Passar
 
-A tabela final mostra todos os `✓`. Pode commitar.
+A tabela final mostra todos os `✓` e a linha `Marcador do quality gate gravado para a árvore <hash>`. Pode commitar. Se aparecer `⚠ Marcador ... NÃO gravado`, siga o motivo indicado (ex.: `git add` pendente, não rastreado em `apps/`, índice mudou durante o gate) e rode o gate de novo.

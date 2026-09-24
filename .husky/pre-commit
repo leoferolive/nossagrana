@@ -1,2 +1,11 @@
 #!/bin/sh
+# Commits do Claude Code (CLAUDECODE=1) exigem que `pnpm quality` tenha passado
+# para exatamente o conteúdo staged (marcador por `git write-tree`), porque os
+# testes Web não rodam no CI. Commits humanos não são afetados.
+# O lint-staged abaixo pode reformatar arquivos staged (prettier) depois desta
+# checagem; é aceitável, pois o gate e o marcador valem para o conteúdo testado.
+if [ "$CLAUDECODE" = "1" ]; then
+  node scripts/check-quality-marker.mjs || exit 1
+fi
+
 pnpm exec lint-staged

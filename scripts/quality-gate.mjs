@@ -2,6 +2,8 @@
 import { spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 
+import { captureIndexState, finalizeGateMarker } from './quality-marker.mjs';
+
 const isCI = process.argv.includes('--ci') || process.env.CI === 'true';
 
 const steps = [
@@ -41,33 +43,52 @@ if (!isCI) {
   });
 }
 
-const results = [];
-for (const step of steps) {
-  if (step.optional) {
-    results.push({ ...step, status: 'skip', ms: 0 });
-    continue;
-  }
+function runStep(step) {
+  if (step.optional) return { ...step, status: 'skip', ms: 0 };
   process.stdout.write(`▶ ${step.desc}…\n`);
   const t0 = performance.now();
   const r = spawnSync(step.cmd, step.args, { stdio: 'inherit', shell: false });
   const ms = Math.round(performance.now() - t0);
-  results.push({ ...step, status: r.status === 0 ? 'pass' : 'fail', ms });
-  if (r.status !== 0) break; // fail-fast
+  return { ...step, status: r.status === 0 ? 'pass' : 'fail', ms };
 }
 
-// Tabela final
-const w1 = Math.max(...results.map((r) => r.desc.length), 30);
-console.log('\n' + '─'.repeat(w1 + 18));
-console.log('Quality Gate'.padEnd(w1 + 18));
-console.log('─'.repeat(w1 + 18));
-for (const r of results) {
-  const icon = r.status === 'pass' ? '✓' : r.status === 'fail' ? '✗' : '·';
-  const time = r.status === 'skip' ? '—' : `${r.ms}ms`;
-  console.log(`${icon} ${r.desc.padEnd(w1)}  ${time.padStart(8)}`);
+function runAllSteps() {
+  const results = [];
+  for (const step of steps) {
+    const result = runStep(step);
+    results.push(result);
+    if (result.status === 'fail') break; // fail-fast
+  }
+  return results;
 }
+
+function printTable(results, w1) {
+  console.log('\n' + '─'.repeat(w1 + 18));
+  console.log('Quality Gate'.padEnd(w1 + 18));
+  console.log('─'.repeat(w1 + 18));
+  for (const r of results) {
+    const icon = r.status === 'pass' ? '✓' : r.status === 'fail' ? '✗' : '·';
+    const time = r.status === 'skip' ? '—' : `${r.ms}ms`;
+    console.log(`${icon} ${r.desc.padEnd(w1)}  ${time.padStart(8)}`);
+  }
+}
+
+// Marcador lido pelo .husky/pre-commit em commits do Claude Code (CLAUDECODE=1).
+// O estado do índice é capturado antes da primeira etapa: se mudar durante o
+// gate, o marcador não é gravado. Nunca altera o exit code do gate.
+function writeCommitMarker(initialState) {
+  const { messages } = finalizeGateMarker({ cwd: process.cwd(), isCI, initialState });
+  for (const line of messages) console.log(line);
+}
+
+const initialIndexState = captureIndexState(process.cwd());
+const results = runAllSteps();
+const w1 = Math.max(...results.map((r) => r.desc.length), 30);
+printTable(results, w1);
 // Se houve falha em qualquer step, código != 0
 if (results.some((r) => r.status === 'fail')) process.exit(1);
 // Se algum step não rodou (fail-fast cortou), também falha
 if (results.length < steps.length) process.exit(1);
 console.log('─'.repeat(w1 + 18));
+writeCommitMarker(initialIndexState);
 console.log('Todos os checks passaram. Pode commitar.\n');

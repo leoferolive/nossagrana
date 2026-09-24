@@ -59,6 +59,9 @@ jobs:
       - name: Prettier check (changed files)
         run: pnpm format:check:changed
 
+      - name: Testes dos scripts do quality gate
+        run: pnpm test:scripts
+
       - name: Quality Gate
         run: pnpm quality:ci
 

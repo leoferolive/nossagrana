@@ -10,63 +10,33 @@ Se alterou `packages/types/src/`:
 pnpm --filter @nossagrana/types build
 ```
 
-## Pipeline (mesma ordem da CI)
+## Fluxo: stage → `pnpm quality` → commit
 
-### 1. Prettier
+### 1. Stage apenas os arquivos da mudança
+
+```bash
+git add <arquivos da mudança>   # ou: git add -u && git add <arquivos novos>
+```
+
+Não use `git add -A`: não stageie `planilha/`, rascunhos nem arquivos alheios à mudança.
+
+### 2. Prettier (mesmo check do CI)
 
 ```bash
 pnpm format:check:changed
 ```
 
-Se falhar:
+Se falhar, formate os arquivos, `git add` neles antes do gate (mudanças depois do gate invalidam o marcador).
+
+### 3. Quality gate (lint, types, testes API + Web, cobertura, knip, ratchet, build)
 
 ```bash
-git diff --name-only origin/main...HEAD | xargs pnpm exec prettier --write --ignore-unknown
+CHANGED_FILES="$(git diff --cached --name-only origin/main)" pnpm quality
 ```
 
-### 2. Oxlint
-
-```bash
-pnpm lint:fast
-```
-
-### 3. ESLint
-
-```bash
-pnpm lint
-```
-
-### 4. Type Check
-
-```bash
-pnpm type-check
-```
-
-### 5. Build
-
-```bash
-pnpm build
-```
-
-### 6. Knip (dead code)
-
-```bash
-pnpm knip
-```
-
-### 7. Testes API
-
-```bash
-pnpm --filter api test -- --run
-```
-
-### 8. Testes Web (obrigatório — não roda no CI)
-
-```bash
-pnpm --filter web test -- --run
-```
+Com tudo verde, o gate grava o marcador exigido pelo `.husky/pre-commit` em commits do Claude Code (`CLAUDECODE=1`). Se mudar ou stagear algo depois, rode de novo.
 
 ## Resultado
 
-- Se TUDO passou: "Pre-commit OK - todas as 8 etapas passaram."
-- Se algo falhou: diagnosticar, corrigir, e re-rodar a etapa que falhou antes de continuar.
+- Se TUDO passou e o marcador foi gravado: "Pre-commit OK — pode commitar."
+- Se algo falhou ou apareceu `⚠ Marcador ... NÃO gravado`: diagnosticar, corrigir e rodar o gate de novo.

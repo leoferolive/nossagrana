@@ -3,18 +3,12 @@
 import { after, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { FakePnpmExecutable } from './test-support/fake-pnpm.mjs';
 
 // Dentro de um hook do git (ex.: pre-commit) essas variáveis apontam para o
 // repositório real; removê-las mantém os repos temporários isolados.
@@ -234,26 +228,6 @@ describe('check-quality-marker.mjs', () => {
 });
 
 describe('.husky/pre-commit real (core.hooksPath)', () => {
-  // Stub do pnpm: o lint-staged não existe no repo temporário. Registra cada
-  // chamada em FAKE_PNPM_LOG e, se FAKE_LINT_STAGED_APPEND estiver setada,
-  // simula o prettier do lint-staged alterando e re-stageando a.txt.
-  const FAKE_PNPM_SCRIPT = [
-    '#!/bin/sh',
-    'echo "$*" >> "$FAKE_PNPM_LOG"',
-    'if [ "$1 $2" = "exec lint-staged" ] && [ -n "$FAKE_LINT_STAGED_APPEND" ]; then',
-    '  printf \'%s\\n\' "$FAKE_LINT_STAGED_APPEND" >> a.txt && git add a.txt',
-    'fi',
-    'exit 0',
-    '',
-  ].join('\n');
-
-  function createFakePnpmBin() {
-    const binDir = makeTempDir('fake-pnpm-');
-    write(binDir, 'pnpm', FAKE_PNPM_SCRIPT);
-    spawnSync('chmod', ['+x', join(binDir, 'pnpm')]);
-    return binDir;
-  }
-
   // O husky 9 executa o hook com `sh -e "$s"`; o hooksPath aponta para um
   // wrapper que reproduz isso, em vez de rodar .husky/pre-commit pelo shebang.
   function createShErrexitHooksDir() {
@@ -273,14 +247,17 @@ describe('.husky/pre-commit real (core.hooksPath)', () => {
     git(repo, 'config', 'core.hooksPath', createShErrexitHooksDir());
   }
 
+  // O lint-staged não existe no repo temporário; com `lintStagedAppend`, o
+  // fake simula o prettier alterando e re-stageando a.txt.
   function runWithFakePnpm(cmd, args, { claude = true, lintStagedAppend } = {}) {
-    const log = join(makeTempDir('fake-pnpm-log-'), 'pnpm.log');
-    const env = { FAKE_PNPM_LOG: log, PATH: `${createFakePnpmBin()}:${process.env.PATH}` };
-    if (claude) env.CLAUDECODE = '1';
-    if (lintStagedAppend) env.FAKE_LINT_STAGED_APPEND = lintStagedAppend;
-    const result = spawnIn(repo, cmd, args, env);
-    const pnpmCalls = existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : [];
-    return { ...result, pnpmCalls };
+    const lintStagedRewrite = lintStagedAppend && { file: 'a.txt', appendLine: lintStagedAppend };
+    const pnpm = new FakePnpmExecutable({ lintStagedRewrite });
+    try {
+      const env = { PATH: pnpm.pathWithFake(), ...(claude && { CLAUDECODE: '1' }) };
+      return { ...spawnIn(repo, cmd, args, env), pnpmCalls: pnpm.calls() };
+    } finally {
+      pnpm.cleanup();
+    }
   }
 
   function hookCommit({ args = [], ...options } = {}) {

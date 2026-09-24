@@ -8,10 +8,11 @@ import type {
   TipoLancamento,
 } from './referencia-ownership.types.js';
 
-const ROTULO: Record<EntidadeReferenciada, string> = {
+export const ROTULO_ENTIDADE: Record<EntidadeReferenciada, string> = {
   categoria: 'categoria',
   metodoPagamento: 'método de pagamento',
   cofrinho: 'cofrinho',
+  transacao: 'transação',
 };
 
 /**
@@ -91,7 +92,7 @@ function exigirExistenteEAtiva(
   esperada: ReferenciaEsperada,
   found: { ativo: boolean } | null,
 ): void {
-  const rotulo = ROTULO[entidade];
+  const rotulo = ROTULO_ENTIDADE[entidade];
   if (!found) {
     throw new ReferenciaInvalidaError(
       entidade,

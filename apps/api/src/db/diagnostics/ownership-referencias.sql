@@ -7,6 +7,12 @@
 --     'psql -U "$POSTGRES_USER" -d nossagrana_prod -v ON_ERROR_STOP=1' \
 --     < apps/api/src/db/diagnostics/ownership-referencias.sql
 --
+-- Pré-checagem recomendada antes de aplicar a migration 0009_familia_fk_compostas
+-- (#58) em qualquer ambiente, logo antes do deploy: "outra_familia" e "orfa"
+-- precisam estar zerados (exceto "orfa" em transacoes.transacao_pai_id, que a
+-- migration desvincula sozinha), senão ela aborta sem alterar nada
+-- (docs/security/OWNERSHIP-REFERENCIAS.md).
+--
 -- "outra_familia": a referência aponta para registro de outra família.
 -- "orfa": o registro referenciado não existe (FK ausente, ex.: cofrinho_id).
 -- "tipo_incompativel"/"inativa": mesma família, estado não permitido hoje.

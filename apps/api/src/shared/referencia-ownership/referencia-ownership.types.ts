@@ -1,6 +1,7 @@
 export type TipoLancamento = 'receita' | 'despesa';
 
-export type EntidadeReferenciada = 'categoria' | 'metodoPagamento' | 'cofrinho';
+/** `transacao`: pai de parcela/recorrência ou transação de uma movimentação de cofrinho. */
+export type EntidadeReferenciada = 'categoria' | 'metodoPagamento' | 'cofrinho' | 'transacao';
 
 export type MotivoReferenciaInvalida = 'nao_encontrada' | 'inativa' | 'tipo_incompativel';
 

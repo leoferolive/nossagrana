@@ -244,6 +244,61 @@ describe('TransacaoModal', () => {
       );
     });
 
+    const TRANSACAO_CATEGORIA_INATIVA = {
+      id: 't1',
+      tipo: 'despesa' as const,
+      valor: '80',
+      categoriaId: 'c-inativa',
+      descricao: null,
+      data: '2026-03-05',
+      metodoPagamentoId: null,
+    };
+
+    it('edição com categoria fora da lista (inativa) reenvia o mesmo id', () => {
+      const onUpdate = vi.fn();
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onUpdate={onUpdate}
+          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Ajuste' } });
+      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+      expect(onUpdate).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ categoriaId: 'c-inativa', descricao: 'Ajuste' }),
+      );
+    });
+
+    it('edição exibe a categoria inativa atual no seletor', () => {
+      render(
+        <TransacaoModal
+          open={true}
+          familiaId="f1"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          onUpdate={vi.fn()}
+          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
+        />,
+      );
+
+      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent(
+        'Categoria inativa',
+      );
+    });
+
+    it('criação não oferece categoria inativa', () => {
+      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+      abrirCategorias();
+      expect(opcoes()).not.toContain('Categoria inativa');
+    });
+
     it('voz com categoria de outro tipo não deixa categoria incoerente', () => {
       const onSubmit = vi.fn();
       render(

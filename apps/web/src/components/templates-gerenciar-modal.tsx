@@ -5,7 +5,7 @@ import type { TemplateTransacaoListItem } from '@nossagrana/types';
 import { templateTransacaoService } from '@/services/template-transacao.service';
 import {
   categoriaIdCompativel,
-  categoriasDoTipo,
+  categoriasParaSelecao,
   useCategoriaStore,
 } from '@/stores/categoria.store';
 import { useCofrinhoStore } from '@/stores/cofrinho.store';
@@ -177,7 +177,10 @@ export function TemplatesGerenciarModal({
               className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
             >
               <option value="">Sem categoria</option>
-              {categoriasDoTipo(categorias, template.tipo).map((c) => (
+              {categoriasParaSelecao(categorias, template.tipo, {
+                id: template.categoriaId,
+                nome: template.categoriaNome,
+              }).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
                 </option>
@@ -394,7 +397,7 @@ export function TemplatesGerenciarModal({
                 className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
               >
                 <option value="">Sem categoria</option>
-                {categoriasDoTipo(categorias, criar.form.tipo).map((c) => (
+                {categoriasParaSelecao(categorias, criar.form.tipo).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}
                   </option>

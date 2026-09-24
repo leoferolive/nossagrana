@@ -375,6 +375,59 @@ describe('TemplatesGerenciarModal', () => {
       });
     });
 
+    const TEMPLATE_CATEGORIA_INATIVA = {
+      ...TEMPLATE_SALARIO,
+      categoriaId: 'c-inativa',
+      categoriaNome: 'Trabalho antigo',
+    };
+
+    it('renomear template com categoria inativa reenvia o mesmo categoriaId', async () => {
+      mockEditar.mockResolvedValue({ template: TEMPLATE_CATEGORIA_INATIVA });
+      mockFetchTemplates.mockResolvedValue(undefined);
+      useTemplateTransacaoStore.setState({
+        templates: [TEMPLATE_CATEGORIA_INATIVA],
+        fetchTemplates: mockFetchTemplates,
+      });
+      render(<TemplatesGerenciarModal {...defaultProps} />);
+
+      fireEvent.click(screen.getByLabelText('Editar Salário'));
+      fireEvent.change(screen.getByLabelText('Nome do template'), {
+        target: { value: 'Salário novo' },
+      });
+      fireEvent.click(screen.getByLabelText('Salvar edição'));
+      await waitFor(() => {
+        expect(mockEditar).toHaveBeenCalledWith(
+          'f1',
+          't1',
+          expect.objectContaining({ nome: 'Salário novo', categoriaId: 'c-inativa' }),
+        );
+      });
+    });
+
+    it('edição exibe a categoria inativa atual do template', () => {
+      useTemplateTransacaoStore.setState({
+        templates: [TEMPLATE_CATEGORIA_INATIVA],
+        fetchTemplates: mockFetchTemplates,
+      });
+      render(<TemplatesGerenciarModal {...defaultProps} />);
+
+      fireEvent.click(screen.getByLabelText('Editar Salário'));
+      expect(opcoesCategoria()).toContain('Trabalho antigo (inativa)');
+      expect(screen.getByLabelText('Categoria')).toHaveValue('c-inativa');
+    });
+
+    it('criação não oferece categoria inativa de template existente', () => {
+      useTemplateTransacaoStore.setState({
+        templates: [TEMPLATE_CATEGORIA_INATIVA],
+        fetchTemplates: mockFetchTemplates,
+      });
+      render(<TemplatesGerenciarModal {...defaultProps} />);
+      fireEvent.click(screen.getByLabelText('Adicionar template'));
+      fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'receita' } });
+
+      expect(opcoesCategoria()).toEqual(['Sem categoria', 'Trabalho']);
+    });
+
     it('edição lista só categorias do tipo do template', () => {
       useTemplateTransacaoStore.setState({
         templates: [TEMPLATE_SALARIO],

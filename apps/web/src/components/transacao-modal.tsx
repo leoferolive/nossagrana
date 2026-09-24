@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
 import {
   categoriaIdCompativel,
-  categoriasDoTipo,
+  categoriasParaSelecao,
   useCategoriaStore,
 } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
@@ -234,7 +234,9 @@ export const TransacaoModal = ({
             label="Categoria"
             aria-label="Categoria"
             placeholder="Selecione..."
-            options={categoriasDoTipo(categorias, tipo).map((c) => ({
+            options={categoriasParaSelecao(categorias, tipo, {
+              id: transacaoParaEditar?.categoriaId ?? null,
+            }).map((c) => ({
               value: c.id,
               label: c.nome,
             }))}

@@ -149,7 +149,7 @@ fail() {
 expect_failure_at_stage() {
   local name="$1" stage="$2"
   if [ "$DRILL_EXIT" -ne 0 ] &&
-    echo "$DRILL_OUTPUT" | grep -q "\"result\":\"failure\",\"stage\":\"$stage\""; then
+    grep -q "\"result\":\"failure\",\"stage\":\"$stage\"" <<<"$DRILL_OUTPUT"; then
     pass "$name"
   else
     fail "$name (esperado falha no estágio '$stage')"
@@ -169,12 +169,12 @@ test_success_restores_and_reports() {
   copy_fixture "$dir" "pg-all-2026-09-22.sql.gz"
   run_drill "$dir"
   if [ "$DRILL_EXIT" -eq 0 ] &&
-    echo "$DRILL_OUTPUT" | grep -q '"result":"success"' &&
-    echo "$DRILL_OUTPUT" | grep -q '"artifact":"pg-all-2026-09-22.sql.gz"' &&
-    echo "$DRILL_OUTPUT" | grep -q '"sha256":"[0-9a-f]\{64\}"' &&
-    echo "$DRILL_OUTPUT" | grep -q "\"migrations\":$(migration_count)" &&
-    echo "$DRILL_OUTPUT" | grep -q '"users":1' &&
-    echo "$DRILL_OUTPUT" | grep -q '"familias":2'; then
+    grep -q '"result":"success"' <<<"$DRILL_OUTPUT" &&
+    grep -q '"artifact":"pg-all-2026-09-22.sql.gz"' <<<"$DRILL_OUTPUT" &&
+    grep -q '"sha256":"[0-9a-f]\{64\}"' <<<"$DRILL_OUTPUT" &&
+    grep -q "\"migrations\":$(migration_count)" <<<"$DRILL_OUTPUT" &&
+    grep -q '"users":1' <<<"$DRILL_OUTPUT" &&
+    grep -q '"familias":2' <<<"$DRILL_OUTPUT"; then
     pass "restaura o backup mais recente e publica relatório com checksum, migrations e contagens"
   else
     fail "restaura o backup mais recente e publica relatório com checksum, migrations e contagens"
@@ -200,7 +200,7 @@ test_does_not_leak_secrets() {
   copy_fixture "$dir" "pg-all-2026-09-22.sql.gz"
   run_drill "$dir"
   if [ "$DRILL_EXIT" -eq 0 ] &&
-    ! echo "$DRILL_OUTPUT" | grep -q -e "$ROLE_PASSWORD" -e 'SCRAM-SHA-256' -e 'fulano@example.com'; then
+    ! grep -q -e "$ROLE_PASSWORD" -e 'SCRAM-SHA-256' -e 'fulano@example.com' <<<"$DRILL_OUTPUT"; then
     pass "não expõe senhas, hashes de role nem dados financeiros/pessoais nos logs"
   else
     fail "não expõe senhas, hashes de role nem dados financeiros/pessoais nos logs"
@@ -254,7 +254,7 @@ test_accepts_matching_checksum_sidecar() {
   copy_fixture "$dir" "pg-all-2026-09-22.sql.gz"
   (cd "$dir" && sha256sum pg-all-2026-09-22.sql.gz >pg-all-2026-09-22.sql.gz.sha256)
   run_drill "$dir"
-  if [ "$DRILL_EXIT" -eq 0 ] && echo "$DRILL_OUTPUT" | grep -q '"checksum_verified":true'; then
+  if [ "$DRILL_EXIT" -eq 0 ] && grep -q '"checksum_verified":true' <<<"$DRILL_OUTPUT"; then
     pass "valida checksum .sha256 quando presente"
   else
     fail "valida checksum .sha256 quando presente"
@@ -291,11 +291,11 @@ test_extract_rewrites_ddl_but_never_data() {
     -v "$(dirname "$DRILL_SCRIPT"):/drill:ro" "$DRILL_IMAGE" \
     sh /drill/extract-database.sh /fixture.sql.gz nossagrana_prod banco_destino)"
   DRILL_EXIT=$?
-  DRILL_OUTPUT="$(echo "$sql" | grep -e 'ON DATABASE' -e 'DATABASE nossagrana_prod' || true)"
-  if echo "$sql" | grep -q 'GRANT CONNECT ON DATABASE banco_destino TO grafana_ro;' &&
-    echo "$sql" | grep -q 'Minha DATABASE nossagrana_prod ;' &&
-    ! echo "$sql" | grep -q '^CREATE DATABASE' &&
-    ! echo "$sql" | grep -q '^\\connect'; then
+  DRILL_OUTPUT="$(grep -e 'ON DATABASE' -e 'DATABASE nossagrana_prod' <<<"$sql" || true)"
+  if grep -q 'GRANT CONNECT ON DATABASE banco_destino TO grafana_ro;' <<<"$sql" &&
+    grep -q 'Minha DATABASE nossagrana_prod ;' <<<"$sql" &&
+    ! grep -q '^CREATE DATABASE' <<<"$sql" &&
+    ! grep -q '^\\connect' <<<"$sql"; then
     pass "extract-database.sh redireciona DDL de banco, preserva dados e não vaza bancos vizinhos"
   else
     fail "extract-database.sh redireciona DDL de banco, preserva dados e não vaza bancos vizinhos"

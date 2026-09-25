@@ -15,6 +15,7 @@ import {
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
 import { TransacaoService } from './transacao.service.js';
 import type { CofrinhoHandler } from './transacao.types.js';
+import { InMemoryIdempotenciaRepository } from '../../shared/idempotencia/idempotencia.repository.js';
 
 /**
  * Atomicidade do registro (issues #78/#85): pai, filhas e efeitos de cofrinho
@@ -24,7 +25,10 @@ function setup(opcoes: { falharNoInsert?: number; cofrinhoHandler?: CofrinhoHand
   const repository = opcoes.falharNoInsert
     ? new InMemoryTransacaoRepositoryFalhaNoEnesimoInsert(opcoes.falharNoInsert)
     : new InMemoryTransacaoRepository();
-  const unitOfWork = new InMemoryUnitOfWork({ transacoes: repository });
+  const unitOfWork = new InMemoryUnitOfWork({
+    transacoes: repository,
+    idempotencia: new InMemoryIdempotenciaRepository(),
+  });
   const service = new TransacaoService(
     repository,
     new ReferenciasSempreValidasFake(),
@@ -133,7 +137,10 @@ describe('TransacaoService.registrar — atomicidade (#85)', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
       undefined,
       cofrinhoHandler,
     );
@@ -184,7 +191,10 @@ describe('TransacaoService.registrar — atomicidade (#85)', () => {
     const referencias = new InMemoryReferenciaOwnershipRepository();
     referencias.addCategoria({ id: 'cat-b', familiaId: 'f2', tipo: 'despesa', ativo: true });
     const repository = new InMemoryTransacaoRepository();
-    const unitOfWork = new InMemoryUnitOfWork({ transacoes: repository });
+    const unitOfWork = new InMemoryUnitOfWork({
+      transacoes: repository,
+      idempotencia: new InMemoryIdempotenciaRepository(),
+    });
     const service = new TransacaoService(
       repository,
       new ReferenciaOwnershipValidator(referencias),

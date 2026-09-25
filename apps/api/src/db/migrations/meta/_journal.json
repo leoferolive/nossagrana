@@ -78,6 +78,13 @@
       "when": 1790250300077,
       "tag": "0010_cofrinho_saldo_nao_negativo",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790253195707,
+      "tag": "0011_chaves_idempotencia",
+      "breakpoints": true
     }
   ]
 }

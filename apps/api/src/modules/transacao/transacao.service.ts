@@ -1,3 +1,8 @@
+import { executarComIdempotencia } from '../../shared/idempotencia/idempotencia.executor.js';
+import type {
+  OpcoesIdempotencia,
+  ResultadoIdempotente,
+} from '../../shared/idempotencia/idempotencia.types.js';
 import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { referenciaEsperada } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
 import type { UnitOfWork } from '../../shared/unit-of-work/unit-of-work.types.js';
@@ -47,6 +52,29 @@ export class TransacaoService {
    * tudo, e a promise só resolve depois do commit.
    */
   async registrar(input: RegistrarTransacaoInput): Promise<Transacao> {
+    const plano = await this.planejar(input);
+    return this.unitOfWork.executar(({ repos }) => this.gravarPlano(repos, plano));
+  }
+
+  /**
+   * `registrar` com `Idempotency-Key` (#90): a reserva da chave é a 1ª escrita
+   * da MESMA unidade da série — replay devolve a resposta gravada sem gravar
+   * nada; falha desfaz série e chave. Sem opções (`null`), executa sempre.
+   * As validações de entrada rodam antes, também num replay.
+   */
+  async registrarIdempotente(
+    input: RegistrarTransacaoInput,
+    idempotencia: OpcoesIdempotencia<Transacao> | null,
+  ): Promise<ResultadoIdempotente<Transacao>> {
+    const plano = await this.planejar(input);
+    return this.unitOfWork.executar(({ repos }) =>
+      executarComIdempotencia(repos.idempotencia, idempotencia, () =>
+        this.gravarPlano(repos, plano),
+      ),
+    );
+  }
+
+  private async planejar(input: RegistrarTransacaoInput): Promise<PlanoRegistro> {
     // Antes de qualquer escrita: parcelas/séries não podem ficar parcialmente gravadas.
     await this.referencias.validar({
       familiaId: input.familiaId,
@@ -54,9 +82,7 @@ export class TransacaoService {
       metodoPagamento: referenciaEsperada(input.metodoPagamentoId),
       cofrinho: referenciaEsperada(input.cofrinhoId),
     });
-
-    const plano = planejarRegistro(input);
-    return this.unitOfWork.executar(({ repos }) => this.gravarPlano(repos, plano));
+    return planejarRegistro(input);
   }
 
   private async gravarPlano(repos: TransacaoRepositorios, plano: PlanoRegistro) {

@@ -1,3 +1,5 @@
+import type { IdempotenciaRepository } from '../../shared/idempotencia/idempotencia.types.js';
+
 export interface Transacao {
   id: string;
   familiaId: string;
@@ -112,8 +114,14 @@ export interface RegistrarTransacaoInput {
   cofrinhoId?: string | null;
 }
 
-/** Repositórios que o registro usa dentro da Unit of Work (#78). */
-export type TransacaoRepositorios = { transacoes: TransacaoRepository };
+/**
+ * Repositórios que o registro usa dentro da Unit of Work (#78); `idempotencia`
+ * no mesmo tx para a chave confirmar/desfazer junto com a série (#90).
+ */
+export type TransacaoRepositorios = {
+  transacoes: TransacaoRepository;
+  idempotencia: IdempotenciaRepository;
+};
 
 export interface TransacaoRepository {
   create(input: CreateTransacaoInput): Promise<Transacao>;

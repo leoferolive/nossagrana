@@ -1,3 +1,4 @@
+import { InMemoryIdempotenciaRepository } from '../../shared/idempotencia/idempotencia.repository.js';
 import type {
   ContextoUnidadeDeTrabalho,
   UnitOfWork,
@@ -58,12 +59,19 @@ export class BarreiraDeTeste {
 export class UnitOfWorkInstrumentada implements UnitOfWork<CofrinhoRepositorios> {
   readonly chamadas: string[] = [];
   private ponto: PontoDeFalha | null = null;
+  private falharNaChamada: number | null = null;
   private pausa: { ponto: PontoDeFalha; barreira: BarreiraDeTeste } | null = null;
 
   constructor(private readonly interna: UnitOfWork<CofrinhoRepositorios>) {}
 
   falharApos(ponto: PontoDeFalha): void {
     this.ponto = ponto;
+  }
+
+  /** Falha logo APÓS a N-ésima chamada de repositório (1 = a primeira), contando desde já. */
+  falharAposChamada(n: number): void {
+    this.chamadas.length = 0;
+    this.falharNaChamada = n;
   }
 
   /** Para a unidade logo após `ponto` (ainda dentro da transação) até a barreira ser liberada. */
@@ -84,6 +92,7 @@ export class UnitOfWorkInstrumentada implements UnitOfWork<CofrinhoRepositorios>
       cofrinhos: this.espiar('cofrinhos', repos.cofrinhos),
       movimentacoes: this.espiar('movimentacoes', repos.movimentacoes),
       transacoes: this.espiar('transacoes', repos.transacoes),
+      idempotencia: this.espiar('idempotencia', repos.idempotencia),
     };
   }
 
@@ -102,6 +111,7 @@ export class UnitOfWorkInstrumentada implements UnitOfWork<CofrinhoRepositorios>
     const resultado = await (metodo as Metodo).apply(alvo, args);
     if (chamada === this.pausa?.ponto) await this.pausa.barreira.alcancar();
     if (chamada === this.ponto) throw new FalhaInjetadaError(chamada);
+    if (this.chamadas.length === this.falharNaChamada) throw new FalhaInjetadaError(chamada);
     return resultado;
   }
 }
@@ -131,6 +141,7 @@ export interface RepositoriosCofrinhoInMemory {
   cofrinhos: InMemoryCofrinhoRepository;
   movimentacoes: InMemoryMovimentacaoCofrinhoRepository;
   transacoes: InMemoryTransacaoRepository;
+  idempotencia: InMemoryIdempotenciaRepository;
   uow: ReturnType<typeof criarUnitOfWorkCofrinhoInMemory>;
   instrumentada: UnitOfWorkInstrumentada;
   buscarCategoriaCofrinho: () => Promise<{ id: string }>;
@@ -142,6 +153,7 @@ export function montarRepositoriosCofrinhoInMemory(): RepositoriosCofrinhoInMemo
     cofrinhos: new InMemoryCofrinhoRepository(),
     movimentacoes: new InMemoryMovimentacaoCofrinhoRepository(),
     transacoes: new InMemoryTransacaoRepository(),
+    idempotencia: new InMemoryIdempotenciaRepository(),
   };
   const uow = criarUnitOfWorkCofrinhoInMemory(repos);
   const instrumentada = new UnitOfWorkInstrumentada(uow);

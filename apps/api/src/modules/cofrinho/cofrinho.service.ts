@@ -1,3 +1,8 @@
+import { executarComIdempotencia } from '../../shared/idempotencia/idempotencia.executor.js';
+import type {
+  OpcoesIdempotencia,
+  ResultadoIdempotente,
+} from '../../shared/idempotencia/idempotencia.types.js';
 import type { UnitOfWork } from '../../shared/unit-of-work/unit-of-work.types.js';
 import {
   AporteRecorrenteIndisponivelError,
@@ -94,19 +99,56 @@ export class CofrinhoService {
   }
 
   async aportar(input: AportarInput): Promise<ResultadoMovimentacao> {
-    // Antes da unidade: recorrência sem porta falha sem abrir transação.
-    const registrarTransacao = this.transacaoDoAporte(input);
-    const { id: categoriaId } = await this.buscarCategoriaCofrinho(input.familiaId);
-    const aporte = { ...lancamentoDe(input), categoriaId };
+    const aporte = await this.prepararAporte(input);
     return this.unitOfWork.executar(({ repos }) =>
-      aportarNoEscopo(repos, aporte, registrarTransacao),
+      aportarNoEscopo(repos, aporte.lancamento, aporte.registrarTransacao),
+    );
+  }
+
+  /**
+   * Aporte com `Idempotency-Key` (#90): a reserva da chave é a 1ª escrita da
+   * unidade do saldo; replay não movimenta nada. `null` = sem deduplicação.
+   */
+  async aportarIdempotente(
+    input: AportarInput,
+    idempotencia: OpcoesIdempotencia<ResultadoMovimentacao> | null,
+  ): Promise<ResultadoIdempotente<ResultadoMovimentacao>> {
+    const aporte = await this.prepararAporte(input);
+    return this.unitOfWork.executar(({ repos }) =>
+      executarComIdempotencia(repos.idempotencia, idempotencia, () =>
+        aportarNoEscopo(repos, aporte.lancamento, aporte.registrarTransacao),
+      ),
     );
   }
 
   async retirar(input: RetirarInput): Promise<ResultadoMovimentacao> {
-    const retorno = await this.retornoAoSaldo(input.familiaId, input.voltarAoSaldo);
-    const retirada = { ...lancamentoDe(input), retorno };
+    const retirada = await this.prepararRetirada(input);
     return this.unitOfWork.executar(({ repos }) => retirarNoEscopo(repos, retirada));
+  }
+
+  /** Retirada com `Idempotency-Key` (#90), mesma semântica de `aportarIdempotente`. */
+  async retirarIdempotente(
+    input: RetirarInput,
+    idempotencia: OpcoesIdempotencia<ResultadoMovimentacao> | null,
+  ): Promise<ResultadoIdempotente<ResultadoMovimentacao>> {
+    const retirada = await this.prepararRetirada(input);
+    return this.unitOfWork.executar(({ repos }) =>
+      executarComIdempotencia(repos.idempotencia, idempotencia, () =>
+        retirarNoEscopo(repos, retirada),
+      ),
+    );
+  }
+
+  /** Antes da unidade: recorrência sem porta falha sem abrir transação. */
+  private async prepararAporte(input: AportarInput) {
+    const registrarTransacao = this.transacaoDoAporte(input);
+    const { id: categoriaId } = await this.buscarCategoriaCofrinho(input.familiaId);
+    return { lancamento: { ...lancamentoDe(input), categoriaId }, registrarTransacao };
+  }
+
+  private async prepararRetirada(input: RetirarInput) {
+    const retorno = await this.retornoAoSaldo(input.familiaId, input.voltarAoSaldo);
+    return { ...lancamentoDe(input), retorno };
   }
 
   async encerrar(input: EncerrarInput): Promise<Cofrinho> {

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
+import { responderErroComEnvelope } from '../http/erro-com-envelope.js';
 import { traduzirViolacaoReferencia } from './referencia-ownership.db-error.js';
 import { ReferenciaInvalidaError } from './referencia-ownership.validator.js';
 
@@ -16,6 +17,8 @@ export const referenciaInvalidaResponseSchema = z.object({
  * Serializa `ReferenciaInvalidaError` como `{ error: { message, code } }` em
  * qualquer rota — inclusive a violação de FK composta por família que o banco
  * detecta quando a validação do service é contornada (corrida/bypass, #58).
+ * Também serializa qualquer `ErroComEnvelopeHttp` (ex.: erros de
+ * idempotência, #90) com o próprio status/code.
  * Os demais erros são relançados para o handler padrão do Fastify,
  * preservando o comportamento atual (400 de validação, 500 etc.).
  *
@@ -23,6 +26,8 @@ export const referenciaInvalidaResponseSchema = z.object({
  */
 export function registrarRespostaReferenciaInvalida(app: FastifyInstance): void {
   app.setErrorHandler((error, request, reply) => {
+    const comEnvelope = responderErroComEnvelope(error, reply);
+    if (comEnvelope) return comEnvelope;
     const traduzido = traduzirViolacaoReferencia(error);
     if (!(traduzido instanceof ReferenciaInvalidaError)) throw error;
     if (traduzido !== error) {

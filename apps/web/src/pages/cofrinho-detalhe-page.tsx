@@ -6,6 +6,7 @@ import { CofrinhoEncerrarModal } from '../components/cofrinho-encerrar-modal';
 import { CofrinhoModal } from '../components/cofrinho-modal';
 import { CofrinhoRetiradaModal } from '../components/cofrinho-retirada-modal';
 import { cofrinhoService } from '../services/cofrinho.service';
+import { novaChaveIdempotencia } from '../services/idempotencia';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatBRL } from '../utils/formatting';
 
@@ -46,7 +47,13 @@ export function CofrinhoDetalhePage({
   const isEncerrado = cofrinho.status === 'encerrado';
 
   const handleAporte = async (payload: { valor: string; descricao?: string | null }) => {
-    await cofrinhoService.aportar(familiaId, cofrinhoId, { ...payload, recorrente: false });
+    // Chave nova por envio (#90). Reenvio após falha ainda gera outra: reuso até o sucesso é a #96.
+    await cofrinhoService.aportar(
+      familiaId,
+      cofrinhoId,
+      { ...payload, recorrente: false },
+      novaChaveIdempotencia(),
+    );
     void fetchDetalhe(familiaId, cofrinhoId);
   };
 
@@ -55,7 +62,7 @@ export function CofrinhoDetalhePage({
     descricao?: string | null;
     voltarAoSaldo: boolean;
   }) => {
-    await cofrinhoService.retirar(familiaId, cofrinhoId, payload);
+    await cofrinhoService.retirar(familiaId, cofrinhoId, payload, novaChaveIdempotencia());
     void fetchDetalhe(familiaId, cofrinhoId);
   };
 

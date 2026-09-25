@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CofrinhoDetalheResponse } from '@nossagrana/types';
@@ -471,6 +471,40 @@ describe('CofrinhoDetalhePage', () => {
         familiaId,
         cofrinhoId,
       );
+    });
+  });
+
+  describe('Idempotency-Key por envio (#90)', () => {
+    const enviarPeloModal = async (abrir: RegExp, confirmar: RegExp) => {
+      fireEvent.click(screen.getByRole('button', { name: abrir }));
+      const dialog = await screen.findByRole('dialog');
+      fireEvent.change(within(dialog).getByLabelText('Valor'), { target: { value: '10' } });
+      fireEvent.click(within(dialog).getByRole('button', { name: confirmar }));
+    };
+
+    it.each([
+      ['aporte', /^aportar$/i, mockService.cofrinhoService.aportar],
+      ['retirada', /^retirar$/i, mockService.cofrinhoService.retirar],
+    ])('%s: cada envio do usuário manda uma chave nova', async (_op, botao, chamada) => {
+      setupStore();
+      render(
+        <CofrinhoDetalhePage
+          familiaId={familiaId}
+          cofrinhoId={cofrinhoId}
+          onBack={vi.fn()}
+          onNavigate={vi.fn()}
+        />,
+      );
+
+      await enviarPeloModal(botao, botao);
+      await waitFor(() => expect(chamada).toHaveBeenCalledTimes(1));
+      await enviarPeloModal(botao, botao);
+      await waitFor(() => expect(chamada).toHaveBeenCalledTimes(2));
+
+      const chaves = chamada.mock.calls.map((args: unknown[]) => args[3]);
+      expect(chaves[0]).toMatch(/^[0-9a-f-]{36}$/);
+      expect(chaves[1]).toMatch(/^[0-9a-f-]{36}$/);
+      expect(chaves[0]).not.toBe(chaves[1]);
     });
   });
 });

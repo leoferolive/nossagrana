@@ -9,6 +9,7 @@ import type {
 } from '@nossagrana/types';
 
 import type { ApiClient } from './api-client';
+import { cabecalhoIdempotencia } from './idempotencia';
 import { lazyApiClient } from './core-financeiro.service';
 
 class TemplateTransacaoService {
@@ -54,13 +55,19 @@ class TemplateTransacaoService {
     });
   }
 
+  /** `chaveIdempotencia` externa (#90): reenviar a mesma requisição com ela não grava o lote de novo. */
   async aplicar(
     familiaId: string,
     payload: TemplateTransacaoAplicarRequest,
+    chaveIdempotencia?: string,
   ): Promise<TemplateTransacaoAplicarResponse> {
     return this.api.request<TemplateTransacaoAplicarResponse>('/api/templates-transacao/aplicar', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Familia-Id': familiaId },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Familia-Id': familiaId,
+        ...cabecalhoIdempotencia(chaveIdempotencia),
+      },
       body: JSON.stringify(payload),
     });
   }

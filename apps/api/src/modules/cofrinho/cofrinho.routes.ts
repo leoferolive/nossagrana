@@ -13,6 +13,11 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply } from 'fastify'
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
+import {
+  pedidoIdempotenteDaRequisicao,
+  responderIdempotente,
+} from '../../shared/idempotencia/idempotencia.http.js';
+import type { RespostaGravada } from '../../shared/idempotencia/idempotencia.types.js';
 import { repositoriosInMemoryDe } from '../../shared/repositorios-in-memory.js';
 import { ConflitoDeConcorrenciaError } from '../../shared/unit-of-work/conflito-concorrencia.js';
 import { responderConflitoDeConcorrencia } from '../../shared/unit-of-work/conflito-concorrencia.http.js';
@@ -37,7 +42,7 @@ import {
   cofrinhoUpdateSchema,
 } from './cofrinho.schema.js';
 import { CofrinhoService } from './cofrinho.service.js';
-import type { Cofrinho, MovimentacaoCofrinho } from './cofrinho.types.js';
+import type { Cofrinho, MovimentacaoCofrinho, ResultadoMovimentacao } from './cofrinho.types.js';
 import {
   criarRepositoriosCofrinhoDrizzle,
   criarUnitOfWorkCofrinhoDrizzle,
@@ -55,6 +60,18 @@ const serializeMovimentacao = (m: MovimentacaoCofrinho) => ({
   registradoEm: m.registradoEm.toISOString(),
 });
 
+/** Resposta de aporte/retirada: enviada agora e gravada para replay da `Idempotency-Key` (#90). */
+const respostaDaMovimentacao = ({
+  cofrinho,
+  movimentacao,
+}: ResultadoMovimentacao): RespostaGravada => ({
+  statusCode: 201,
+  corpo: {
+    cofrinho: serializeCofrinho(cofrinho),
+    movimentacao: serializeMovimentacao(movimentacao),
+  },
+});
+
 const testGetCategoriaCofrinho = async () => ({ id: randomUUID() });
 
 /**
@@ -69,6 +86,7 @@ function criarCofrinhoServicePadrao(fastify: FastifyInstance): CofrinhoService {
       cofrinhos: repositorios.cofrinhos,
       movimentacoes: repositorios.movimentacoesCofrinho,
       transacoes: repositorios.transacoes,
+      idempotencia: repositorios.idempotencia,
     };
     const uow = criarUnitOfWorkCofrinhoInMemory(participantes);
     return new CofrinhoService(participantes, uow, testGetCategoriaCofrinho);
@@ -218,23 +236,24 @@ export const cofrinhoRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       try {
+        const pedido = pedidoIdempotenteDaRequisicao(request);
         const params = cofrinhoParamsSchema.parse(request.params);
         const payload = cofrinhoAporteRequestSchema.parse(request.body);
-        const { cofrinho, movimentacao } = await cofrinhoService.aportar({
-          cofrinhoId: params.id,
-          familiaId: request.familiaIdAtiva as string,
-          valor: payload.valor,
-          descricao: payload.descricao ?? null,
-          registradoPor: request.user.sub,
-          recorrente: payload.recorrente,
-          frequencia: payload.frequencia ?? null,
-          dataFimRecorrencia: payload.dataFimRecorrencia ?? null,
-        });
+        const resultado = await cofrinhoService.aportarIdempotente(
+          {
+            cofrinhoId: params.id,
+            familiaId: request.familiaIdAtiva as string,
+            valor: payload.valor,
+            descricao: payload.descricao ?? null,
+            registradoPor: request.user.sub,
+            recorrente: payload.recorrente,
+            frequencia: payload.frequencia ?? null,
+            dataFimRecorrencia: payload.dataFimRecorrencia ?? null,
+          },
+          pedido && { pedido, responder: respostaDaMovimentacao },
+        );
 
-        return reply.code(201).send({
-          cofrinho: serializeCofrinho(cofrinho),
-          movimentacao: serializeMovimentacao(movimentacao),
-        });
+        return responderIdempotente(reply, resultado, respostaDaMovimentacao);
       } catch (error) {
         const handled = handleCofrinhoError(error, reply);
         if (handled) return handled;
@@ -252,21 +271,22 @@ export const cofrinhoRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       try {
+        const pedido = pedidoIdempotenteDaRequisicao(request);
         const params = cofrinhoParamsSchema.parse(request.params);
         const payload = cofrinhoRetiradaRequestSchema.parse(request.body);
-        const { cofrinho, movimentacao } = await cofrinhoService.retirar({
-          cofrinhoId: params.id,
-          familiaId: request.familiaIdAtiva as string,
-          valor: payload.valor,
-          descricao: payload.descricao ?? null,
-          voltarAoSaldo: payload.voltarAoSaldo,
-          registradoPor: request.user.sub,
-        });
+        const resultado = await cofrinhoService.retirarIdempotente(
+          {
+            cofrinhoId: params.id,
+            familiaId: request.familiaIdAtiva as string,
+            valor: payload.valor,
+            descricao: payload.descricao ?? null,
+            voltarAoSaldo: payload.voltarAoSaldo,
+            registradoPor: request.user.sub,
+          },
+          pedido && { pedido, responder: respostaDaMovimentacao },
+        );
 
-        return reply.code(201).send({
-          cofrinho: serializeCofrinho(cofrinho),
-          movimentacao: serializeMovimentacao(movimentacao),
-        });
+        return responderIdempotente(reply, resultado, respostaDaMovimentacao);
       } catch (error) {
         const handled = handleCofrinhoError(error, reply);
         if (handled) return handled;

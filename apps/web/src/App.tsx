@@ -36,6 +36,7 @@ import { RelatoriosPage } from '@/pages/relatorios-page';
 import { SignUpPage } from '@/pages/sign-up-page';
 import { authService, familiaService } from '@/services/auth.service';
 import { transacaoService } from '@/services/core-financeiro.service';
+import { novaChaveIdempotencia } from '@/services/idempotencia';
 
 type Screen =
   | 'login'
@@ -429,7 +430,8 @@ export const App = () => {
         }}
         onSubmit={async (payload) => {
           if (!familiaId) return;
-          await transacaoService.registrar(payload, familiaId);
+          // Chave nova por envio (#90). Reenvio após falha ainda gera outra: reuso até o sucesso é a #96.
+          await transacaoService.registrar(payload, familiaId, novaChaveIdempotencia());
           setNovaTransacaoOpen(false);
           setDadosVoz(null);
         }}

@@ -3,6 +3,11 @@ import type {
   ReferenciaOwnershipChecker,
 } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { referenciaEsperada } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
+import { executarComIdempotencia } from '../../shared/idempotencia/idempotencia.executor.js';
+import type {
+  OpcoesIdempotencia,
+  ResultadoIdempotente,
+} from '../../shared/idempotencia/idempotencia.types.js';
 import type { UnitOfWork } from '../../shared/unit-of-work/unit-of-work.types.js';
 import { aportarNoEscopo } from '../cofrinho/cofrinho.operacoes.js';
 import type { BuscarCategoriaCofrinho, CofrinhoRepositorios } from '../cofrinho/cofrinho.types.js';
@@ -92,27 +97,45 @@ export class TemplateTransacaoService {
    * do tx — um aporte que falha (ex.: cofrinho encerrado numa corrida)
    * desfaz também os lançamentos já gravados.
    */
-  async aplicar(input: {
-    familiaId: string;
-    usuarioId: string;
-    mesReferencia: string;
-    itens: Array<{ templateId: string; valor: string }>;
-  }): Promise<{ transacoesCriadas: number; aportesCriados: number; total: number }> {
+  async aplicar(input: EntradaAplicar): Promise<ResultadoAplicar> {
+    const resultado = await this.aplicarIdempotente(input, null);
+    // Sem opções de idempotência nunca há replay.
+    if (resultado.tipo === 'repetida') throw new Error('Replay inesperado em aplicar sem chave');
+    return resultado.valor;
+  }
+
+  /**
+   * `aplicar` com `Idempotency-Key` (#90): reserva da chave, lançamentos,
+   * aportes e resposta na MESMA unidade. Lote vazio não abre unidade nem
+   * grava chave (nada a executar, nada a duplicar). `null` = sem deduplicação.
+   */
+  async aplicarIdempotente(
+    input: EntradaAplicar,
+    idempotencia: OpcoesIdempotencia<ResultadoAplicar> | null,
+  ): Promise<ResultadoIdempotente<ResultadoAplicar>> {
     const itensValidos = input.itens.filter((i) => parseFloat(i.valor) > 0);
-    if (itensValidos.length === 0) return { transacoesCriadas: 0, aportesCriados: 0, total: 0 };
+    if (itensValidos.length === 0) {
+      return { tipo: 'executada', valor: { transacoesCriadas: 0, aportesCriados: 0, total: 0 } };
+    }
 
     // Toda validação acontece aqui, antes da primeira mutação (issue #57).
     const planos = await this.planejarAplicacao(input.familiaId, itensValidos);
     const contexto = { ...input, data: `${input.mesReferencia}-01` };
     const lancamentos = planos.filter(ehLancamento);
     const aportes = await this.comCategoriaCofrinho(planos.filter(ehAporte), input.familiaId);
+    const valor = {
+      transacoesCriadas: lancamentos.length,
+      aportesCriados: aportes.length,
+      total: lancamentos.length + aportes.length,
+    };
 
-    await this.unitOfWork.executar(async ({ repos }) => {
-      for (const item of lancamentos) await criarLancamento(repos, item, contexto);
-      for (const item of aportes) await aportarItem(repos, item, contexto);
-    });
-    const total = lancamentos.length + aportes.length;
-    return { transacoesCriadas: lancamentos.length, aportesCriados: aportes.length, total };
+    return this.unitOfWork.executar(({ repos }) =>
+      executarComIdempotencia(repos.idempotencia, idempotencia, async () => {
+        for (const item of lancamentos) await criarLancamento(repos, item, contexto);
+        for (const item of aportes) await aportarItem(repos, item, contexto);
+        return valor;
+      }),
+    );
   }
 
   private async planejarAplicacao(
@@ -163,6 +186,19 @@ export class TemplateTransacaoService {
       });
     }
   }
+}
+
+interface EntradaAplicar {
+  familiaId: string;
+  usuarioId: string;
+  mesReferencia: string;
+  itens: Array<{ templateId: string; valor: string }>;
+}
+
+interface ResultadoAplicar {
+  transacoesCriadas: number;
+  aportesCriados: number;
+  total: number;
 }
 
 interface LancamentoPlanejado {

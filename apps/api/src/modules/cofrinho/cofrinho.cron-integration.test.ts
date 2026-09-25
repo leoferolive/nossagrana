@@ -5,6 +5,7 @@ import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-
 import { InMemoryTransacaoRepository } from '../transacao/transacao.repository.js';
 import { TransacaoService } from '../transacao/transacao.service.js';
 import type { CofrinhoHandler } from '../transacao/transacao.types.js';
+import { InMemoryIdempotenciaRepository } from '../../shared/idempotencia/idempotencia.repository.js';
 
 function makeMockCofrinhoHandler(): CofrinhoHandler & {
   processarTransacaoComCofrinho: ReturnType<typeof vi.fn>;
@@ -21,7 +22,10 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
       undefined,
       cofrinhoHandler,
     );
@@ -78,7 +82,10 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
       undefined,
       cofrinhoHandler,
     );
@@ -119,7 +126,10 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
       undefined,
       cofrinhoHandler,
     );
@@ -148,7 +158,10 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
     ); // sem cofrinhoHandler
 
     // Não deve lançar erro
@@ -177,7 +190,10 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
       undefined,
       cofrinhoHandler,
     );
@@ -205,7 +221,10 @@ describe('Integração: transação recorrente com cofrinhoId', () => {
     const service = new TransacaoService(
       repository,
       new ReferenciasSempreValidasFake(),
-      new InMemoryUnitOfWork({ transacoes: repository }),
+      new InMemoryUnitOfWork({
+        transacoes: repository,
+        idempotencia: new InMemoryIdempotenciaRepository(),
+      }),
     );
 
     const t = await service.registrar({

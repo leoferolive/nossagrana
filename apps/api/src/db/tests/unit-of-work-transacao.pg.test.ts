@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { CofrinhoHandlerQueFalhaNaChamada } from '../../modules/transacao/transacao.fakes.js';
 import { DrizzleTransacaoRepository } from '../../modules/transacao/transacao.repository.js';
+import { criarRepositoriosTransacaoDrizzle } from '../../modules/transacao/transacao.unit-of-work.js';
 import { TransacaoService } from '../../modules/transacao/transacao.service.js';
 import type {
   CofrinhoHandler,
@@ -96,7 +97,7 @@ describe('DrizzleUnitOfWork + TransacaoService.registrar no PostgreSQL', () => {
     await banco?.descartar();
   });
 
-  const reposReais: CriarRepos = (tx) => ({ transacoes: new DrizzleTransacaoRepository(tx) });
+  const reposReais: CriarRepos = criarRepositoriosTransacaoDrizzle;
 
   function servico(criarRepos: CriarRepos = reposReais, cofrinhoHandler?: CofrinhoHandler) {
     return new TransacaoService(
@@ -156,6 +157,7 @@ describe('DrizzleUnitOfWork + TransacaoService.registrar no PostgreSQL', () => {
   it('violação real de FK na 4ª parcela desfaz pai e todas as parcelas', async () => {
     const antes = await linhasDeA();
     const sabotado: CriarRepos = (tx) => ({
+      ...criarRepositoriosTransacaoDrizzle(tx),
       transacoes: new DrizzleTransacaoRepositoryComFilhaEstrangeira(tx, 4, b.categoriaId),
     });
 

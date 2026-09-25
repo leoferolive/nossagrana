@@ -1,4 +1,8 @@
 import type { ExecutorDrizzle } from '../../db/executor.types.js';
+import {
+  DrizzleIdempotenciaRepository,
+  type InMemoryIdempotenciaRepository,
+} from '../../shared/idempotencia/idempotencia.repository.js';
 import { UnitOfWorkComConflitoTraduzido } from '../../shared/unit-of-work/conflito-concorrencia.js';
 import { DrizzleUnitOfWork } from '../../shared/unit-of-work/drizzle-unit-of-work.js';
 import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
@@ -16,7 +20,7 @@ import { DrizzleCofrinhoRepository } from './cofrinho.repository.js';
 import type { CofrinhoRepositorios } from './cofrinho.types.js';
 
 /**
- * Cofrinho, ledger e transação sobre o MESMO executor (o `db` ou o `tx` da
+ * Cofrinho, ledger, transação e chave de idempotência sobre o MESMO executor (o `db` ou o `tx` da
  * unidade). `esperaMaximaPorLockMs` omitido = padrão de produção (5s).
  */
 export function criarRepositoriosCofrinhoDrizzle(
@@ -27,6 +31,7 @@ export function criarRepositoriosCofrinhoDrizzle(
     cofrinhos: new DrizzleCofrinhoRepository(executor, esperaMaximaPorLockMs),
     movimentacoes: new DrizzleMovimentacaoCofrinhoRepository(executor),
     transacoes: new DrizzleTransacaoRepository(executor),
+    idempotencia: new DrizzleIdempotenciaRepository(executor),
   };
 }
 
@@ -49,9 +54,10 @@ interface ParticipantesCofrinhoInMemory {
   cofrinhos: InMemoryCofrinhoRepository;
   movimentacoes: InMemoryMovimentacaoCofrinhoRepository;
   transacoes: InMemoryTransacaoRepository;
+  idempotencia: InMemoryIdempotenciaRepository;
 }
 
-/** Testes e NODE_ENV=test: staging dos três repositórios, publicado só no commit. */
+/** Testes e NODE_ENV=test: staging dos quatro repositórios, publicado só no commit. */
 export function criarUnitOfWorkCofrinhoInMemory(
   participantes: ParticipantesCofrinhoInMemory,
 ): InMemoryUnitOfWork<CofrinhoRepositorios> {

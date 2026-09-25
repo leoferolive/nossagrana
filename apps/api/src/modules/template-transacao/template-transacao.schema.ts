@@ -9,6 +9,11 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import {
+  chaveIdempotenciaInvalidaResponseSchema,
+  idempotenciaConflitoResponseSchema,
+  idempotencyKeyHeadersSchema,
+} from '../../shared/idempotencia/idempotencia.http.js';
 import { referenciaInvalidaResponseSchema } from '../../shared/referencia-ownership/referencia-ownership.http.js';
 
 const errorSchemas = {
@@ -46,14 +51,16 @@ export const templateTransacaoDeleteSchema = {
   },
 };
 
+/** `Idempotency-Key` opcional (#90): sem ela, cada envio grava o lote de novo. */
 export const templateTransacaoAplicarSchema = {
+  headers: idempotencyKeyHeadersSchema,
   body: templateTransacaoAplicarRequestSchema,
   response: {
     200: templateTransacaoAplicarResponseSchema,
-    400: errorSchemas[404],
+    400: z.union([chaveIdempotenciaInvalidaResponseSchema, errorSchemas[404]]),
     404: errorSchemas[404],
     409: errorSchemas[409],
-    422: referenciaInvalidaResponseSchema,
+    422: z.union([referenciaInvalidaResponseSchema, idempotenciaConflitoResponseSchema]),
   },
 };
 

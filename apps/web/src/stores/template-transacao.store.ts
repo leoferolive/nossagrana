@@ -4,6 +4,7 @@ import type {
 } from '@nossagrana/types';
 import { create } from 'zustand';
 
+import { novaChaveIdempotencia } from '../services/idempotencia';
 import { templateTransacaoService } from '../services/template-transacao.service';
 
 interface TemplateTransacaoStore {
@@ -77,7 +78,12 @@ export const useTemplateTransacaoStore = create<TemplateTransacaoStore>((set, ge
 
     set({ salvando: true, erro: null });
     try {
-      const result = await templateTransacaoService.aplicar(familiaId, { mesReferencia, itens });
+      // Chave nova por envio (#90). Reenvio após falha ainda gera outra: reuso até o sucesso é a #96.
+      const result = await templateTransacaoService.aplicar(
+        familiaId,
+        { mesReferencia, itens },
+        novaChaveIdempotencia(),
+      );
       set({ salvando: false });
       return result;
     } catch {

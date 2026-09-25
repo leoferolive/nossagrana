@@ -23,6 +23,7 @@
 
 - `Content-Type: application/json`
 - `Authorization: Bearer <token>` para rotas protegidas
+- `Idempotency-Key` (opcional) nas operações financeiras compostas — contrato em `docs/IDEMPOTENCIA.md`
 
 ## Registro de Módulos
 

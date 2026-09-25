@@ -9,7 +9,6 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
-import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import {
   DrizzleHistoricoRepository,
   InMemoryHistoricoRepository,
@@ -23,7 +22,11 @@ import {
   validadorReferenciasInMemory,
 } from '../../shared/repositorios-in-memory.js';
 import { ReferenciaOwnershipValidator } from '../../shared/referencia-ownership/referencia-ownership.validator.js';
-import { DrizzleUnitOfWork } from '../../shared/unit-of-work/drizzle-unit-of-work.js';
+import {
+  pedidoIdempotenteDaRequisicao,
+  responderIdempotente,
+} from '../../shared/idempotencia/idempotencia.http.js';
+import type { RespostaGravada } from '../../shared/idempotencia/idempotencia.types.js';
 import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import {
   transacaoAnteciparRequestSchema,
@@ -37,6 +40,7 @@ import {
 import { DrizzleTransacaoRepository } from './transacao.repository.js';
 import type { Transacao } from './transacao.types.js';
 import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
+import { criarUnitOfWorkTransacaoDrizzle } from './transacao.unit-of-work.js';
 
 async function resolveMetodoPagamento(
   metodoPagamentoId: string | null | undefined,
@@ -60,7 +64,7 @@ const defaultServices = (fastify: FastifyInstance) => {
       transacaoService: new TransacaoService(
         transacoes,
         validadorReferenciasInMemory(repositorios),
-        new InMemoryUnitOfWork({ transacoes }),
+        new InMemoryUnitOfWork({ transacoes, idempotencia: repositorios.idempotencia }),
         new SnapshotService(new InMemoryHistoricoRepository()),
       ),
       metodoPagamentoRepository: repositorios.metodosPagamento as MetodoPagamentoRepository,
@@ -70,10 +74,8 @@ const defaultServices = (fastify: FastifyInstance) => {
     transacaoService: new TransacaoService(
       new DrizzleTransacaoRepository(db),
       new ReferenciaOwnershipValidator(new DrizzleReferenciaOwnershipRepository()),
-      // Registro composto (pai + filhas) grava tudo no mesmo `db.transaction` (#78/#85).
-      new DrizzleUnitOfWork(db, (tx: ExecutorDrizzle) => ({
-        transacoes: new DrizzleTransacaoRepository(tx),
-      })),
+      // Registro composto (pai + filhas + chave) grava tudo no mesmo `db.transaction` (#78/#85/#90).
+      criarUnitOfWorkTransacaoDrizzle(db),
       new SnapshotService(new DrizzleHistoricoRepository()),
     ),
     metodoPagamentoRepository: new DrizzleMetodoPagamentoRepository() as MetodoPagamentoRepository,
@@ -86,6 +88,12 @@ const mapTransacao = (t: Transacao) => ({
   atualizadoEm: t.atualizadoEm.toISOString(),
 });
 
+/** Mesma resposta enviada agora e gravada para replay da `Idempotency-Key` (#90). */
+const respostaDoRegistro = (t: Transacao): RespostaGravada => ({
+  statusCode: 201,
+  corpo: { transacao: mapTransacao(t) },
+});
+
 export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
   const { transacaoService, metodoPagamentoRepository } = defaultServices(fastify);
 
@@ -96,6 +104,7 @@ export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
       schema: transacaoCreateSchema,
     },
     async (request, reply) => {
+      const pedido = pedidoIdempotenteDaRequisicao(request);
       const payload = transacaoCreateRequestSchema.parse(request.body);
       const familiaId = request.familiaIdAtiva as string;
 
@@ -105,26 +114,32 @@ export const transacaoRoutes: FastifyPluginAsync = async (fastify) => {
         familiaId,
       );
 
-      const transacao = await transacaoService.registrar({
-        familiaId,
-        tipo: payload.tipo,
-        valor: payload.valor,
-        categoriaId: payload.categoriaId,
-        descricao: payload.descricao ?? null,
-        data: payload.data,
-        metodoPagamentoId: payload.metodoPagamentoId ?? null,
-        metodoPagamentoTipo: mpTipo,
-        dataFechamento,
-        usuarioRegistrouId: request.user.sub,
-        parcelado: payload.parcelado,
-        numeroParcelas: payload.numeroParcelas ?? undefined,
-        recorrente: payload.recorrente,
-        frequencia: payload.frequencia ?? null,
-        dataFimRecorrencia: payload.dataFimRecorrencia ?? null,
-      });
+      const resultado = await transacaoService.registrarIdempotente(
+        {
+          familiaId,
+          tipo: payload.tipo,
+          valor: payload.valor,
+          categoriaId: payload.categoriaId,
+          descricao: payload.descricao ?? null,
+          data: payload.data,
+          metodoPagamentoId: payload.metodoPagamentoId ?? null,
+          metodoPagamentoTipo: mpTipo,
+          dataFechamento,
+          usuarioRegistrouId: request.user.sub,
+          parcelado: payload.parcelado,
+          numeroParcelas: payload.numeroParcelas ?? undefined,
+          recorrente: payload.recorrente,
+          frequencia: payload.frequencia ?? null,
+          dataFimRecorrencia: payload.dataFimRecorrencia ?? null,
+        },
+        pedido && { pedido, responder: respostaDoRegistro },
+      );
 
-      fastify.eventBus?.emit('transacao:alterada', { familiaId });
-      return reply.code(201).send({ transacao: mapTransacao(transacao) });
+      // Só execução nova (já confirmada) notifica; replay não emite de novo.
+      if (resultado.tipo === 'executada') {
+        fastify.eventBus?.emit('transacao:alterada', { familiaId });
+      }
+      return responderIdempotente(reply, resultado, respostaDoRegistro);
     },
   );
 

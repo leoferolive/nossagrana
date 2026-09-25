@@ -413,3 +413,33 @@ export const templatesTransacao = pgTable(
     }),
   ],
 );
+
+/**
+ * Idempotência das operações financeiras (#90): uma linha por
+ * `Idempotency-Key` por família, gravada na MESMA transação da operação —
+ * rollback apaga a chave junto. `status_code`/`resposta` ficam `null` só
+ * enquanto a transação que reservou a chave ainda está aberta. Chaves
+ * expiram em 24h (limpeza periódica pelo índice de `criado_em`).
+ */
+export const chavesIdempotencia = pgTable(
+  'chaves_idempotencia',
+  {
+    familiaId: uuid('familia_id')
+      .notNull()
+      .references(() => familias.id, { onDelete: 'cascade' }),
+    chave: text('chave').notNull(),
+    operacao: text('operacao').notNull(),
+    hashPayload: text('hash_payload').notNull(),
+    statusCode: integer('status_code'),
+    resposta: jsonb('resposta'),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ name: 'chaves_idempotencia_pk', columns: [table.familiaId, table.chave] }),
+    index('idx_chaves_idempotencia_criado_em').on(table.criadoEm),
+    check(
+      'chaves_idempotencia_resposta_2xx',
+      sql`(${table.statusCode} IS NULL AND ${table.resposta} IS NULL) OR (${table.statusCode} BETWEEN 200 AND 299 AND ${table.resposta} IS NOT NULL)`,
+    ),
+  ],
+);

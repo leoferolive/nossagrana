@@ -4,13 +4,17 @@ import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/
 import { InMemoryUnitOfWork } from '../../shared/unit-of-work/in-memory-unit-of-work.js';
 import { InMemoryTransacaoRepository } from './transacao.repository.js';
 import { TransacaoNotFoundError, TransacaoService } from './transacao.service.js';
+import { InMemoryIdempotenciaRepository } from '../../shared/idempotencia/idempotencia.repository.js';
 
 const buildService = () => {
   const repository = new InMemoryTransacaoRepository();
   const service = new TransacaoService(
     repository,
     new ReferenciasSempreValidasFake(),
-    new InMemoryUnitOfWork({ transacoes: repository }),
+    new InMemoryUnitOfWork({
+      transacoes: repository,
+      idempotencia: new InMemoryIdempotenciaRepository(),
+    }),
   );
   return { repository, service };
 };

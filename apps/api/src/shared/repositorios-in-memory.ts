@@ -7,6 +7,7 @@ import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.in-memo
 import { InMemoryMovimentacaoCofrinhoRepository } from '../modules/cofrinho/cofrinho.movimentacao.repository.js';
 import { InMemoryMetodoPagamentoRepository } from '../modules/metodo-pagamento/metodo-pagamento.repository.js';
 import { InMemoryTransacaoRepository } from '../modules/transacao/transacao.repository.js';
+import { InMemoryIdempotenciaRepository } from './idempotencia/idempotencia.repository.js';
 import { ModulosReferenciaOwnershipRepository } from './referencia-ownership/referencia-ownership.repository.js';
 import { ReferenciaOwnershipValidator } from './referencia-ownership/referencia-ownership.validator.js';
 
@@ -23,6 +24,8 @@ export interface RepositoriosInMemoryCompartilhados {
   movimentacoesCofrinho: InMemoryMovimentacaoCofrinhoRepository;
   /** Base publicada pela `InMemoryUnitOfWork` das rotas de transação (#78). */
   transacoes: InMemoryTransacaoRepository;
+  /** Chaves de `Idempotency-Key` (#90), publicadas pelas mesmas unidades de trabalho. */
+  idempotencia: InMemoryIdempotenciaRepository;
 }
 
 declare module 'fastify' {
@@ -38,6 +41,7 @@ export function criarRepositoriosInMemoryCompartilhados(): RepositoriosInMemoryC
     cofrinhos: new InMemoryCofrinhoRepository(),
     movimentacoesCofrinho: new InMemoryMovimentacaoCofrinhoRepository(),
     transacoes: new InMemoryTransacaoRepository(),
+    idempotencia: new InMemoryIdempotenciaRepository(),
   };
 }
 

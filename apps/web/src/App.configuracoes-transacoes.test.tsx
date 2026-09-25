@@ -231,5 +231,9 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     await waitFor(() => {
       expect(transacaoService.registrar).toHaveBeenCalled();
     });
+    // #90: cada envio do usuário leva uma Idempotency-Key nova (UUID).
+    const [, familia, chave] = vi.mocked(transacaoService.registrar).mock.calls[0] ?? [];
+    expect(familia).toBe('fam-test');
+    expect(chave).toMatch(/^[0-9a-f-]{36}$/);
   });
 });

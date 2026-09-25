@@ -1,3 +1,4 @@
+import type { IdempotenciaRepository } from '../../shared/idempotencia/idempotencia.types.js';
 import type { TransacaoRepository } from '../transacao/transacao.types.js';
 
 export interface Cofrinho {
@@ -111,6 +112,8 @@ export type CofrinhoRepositorios = {
   cofrinhos: CofrinhoRepository;
   movimentacoes: MovimentacaoCofrinhoRepository;
   transacoes: TransacaoRepository;
+  /** `Idempotency-Key` de aporte/retirada/aplicar no mesmo commit (#90). */
+  idempotencia: IdempotenciaRepository;
 };
 
 /** Repositórios para leituras e cadastro fora da Unit of Work. */

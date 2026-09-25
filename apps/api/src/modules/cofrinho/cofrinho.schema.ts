@@ -15,11 +15,25 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import {
+  chaveIdempotenciaInvalidaResponseSchema,
+  idempotenciaConflitoResponseSchema,
+  idempotencyKeyHeadersSchema,
+} from '../../shared/idempotencia/idempotencia.http.js';
+import { referenciaInvalidaResponseSchema } from '../../shared/referencia-ownership/referencia-ownership.http.js';
+
 const errorSchemas = {
   400: z.object({ message: z.string() }),
   401: z.object({ message: z.literal('Nao autenticado') }),
   404: z.object({ message: z.string() }),
   409: z.object({ message: z.string() }),
+};
+
+/** Aporte/retirada aceitam `Idempotency-Key` opcional (#90): sem ela, cada envio movimenta o saldo. */
+const respostasIdempotencia = {
+  400: z.union([chaveIdempotenciaInvalidaResponseSchema, errorSchemas[400]]),
+  // Referência inválida (FK composta, #58) também chega aqui: sem ela no schema viraria 500.
+  422: z.union([referenciaInvalidaResponseSchema, idempotenciaConflitoResponseSchema]),
 };
 
 export const cofrinhoCreateSchema = {
@@ -61,26 +75,30 @@ export const cofrinhoUpdateSchema = {
 };
 
 export const cofrinhoAporteSchema = {
+  headers: idempotencyKeyHeadersSchema,
   params: cofrinhoParamsSchema,
   body: cofrinhoAporteRequestSchema,
   response: {
     201: cofrinhoAporteResponseSchema,
-    400: errorSchemas[400],
+    400: respostasIdempotencia[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
     409: errorSchemas[409],
+    422: respostasIdempotencia[422],
   },
 };
 
 export const cofrinhoRetiradaSchema = {
+  headers: idempotencyKeyHeadersSchema,
   params: cofrinhoParamsSchema,
   body: cofrinhoRetiradaRequestSchema,
   response: {
     201: cofrinhoRetiradaResponseSchema,
-    400: errorSchemas[400],
+    400: respostasIdempotencia[400],
     401: errorSchemas[401],
     404: errorSchemas[404],
     409: errorSchemas[409],
+    422: respostasIdempotencia[422],
   },
 };
 

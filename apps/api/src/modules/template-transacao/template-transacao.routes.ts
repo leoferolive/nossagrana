@@ -13,6 +13,11 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
+import {
+  pedidoIdempotenteDaRequisicao,
+  responderIdempotente,
+} from '../../shared/idempotencia/idempotencia.http.js';
+import type { RespostaGravada } from '../../shared/idempotencia/idempotencia.types.js';
 import { ConflitoDeConcorrenciaError } from '../../shared/unit-of-work/conflito-concorrencia.js';
 import { responderConflitoDeConcorrencia } from '../../shared/unit-of-work/conflito-concorrencia.http.js';
 import { criarBuscaCategoriaCofrinho } from '../cofrinho/cofrinho.categoria.js';
@@ -46,6 +51,12 @@ import {
   TemplateTransacaoService,
 } from './template-transacao.service.js';
 
+/** Resposta do aplicar, gravada para replay da `Idempotency-Key` (#90). */
+const respostaDoAplicar = (resultado: object): RespostaGravada => ({
+  statusCode: 200,
+  corpo: resultado,
+});
+
 const testGetCategoriaCofrinho = async () => ({ id: randomUUID() });
 
 /**
@@ -59,6 +70,7 @@ const defaultService = (fastify: FastifyInstance): TemplateTransacaoService => {
       cofrinhos: repositorios.cofrinhos,
       movimentacoes: repositorios.movimentacoesCofrinho,
       transacoes: repositorios.transacoes,
+      idempotencia: repositorios.idempotencia,
     });
     return new TemplateTransacaoService(
       new InMemoryTemplateTransacaoRepository(),
@@ -237,15 +249,19 @@ export const templateTransacaoRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       try {
+        const pedido = pedidoIdempotenteDaRequisicao(request);
         const payload = templateTransacaoAplicarRequestSchema.parse(request.body);
-        const result = await service.aplicar({
-          familiaId: request.familiaIdAtiva as string,
-          usuarioId: request.user.sub,
-          mesReferencia: payload.mesReferencia,
-          itens: payload.itens,
-        });
+        const resultado = await service.aplicarIdempotente(
+          {
+            familiaId: request.familiaIdAtiva as string,
+            usuarioId: request.user.sub,
+            mesReferencia: payload.mesReferencia,
+            itens: payload.itens,
+          },
+          pedido && { pedido, responder: respostaDoAplicar },
+        );
 
-        return reply.code(200).send(result);
+        return responderIdempotente(reply, resultado, respostaDoAplicar);
       } catch (error) {
         if (error instanceof TemplateNotFoundError) {
           return reply.code(404).send({ message: error.message });

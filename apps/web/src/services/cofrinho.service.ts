@@ -14,6 +14,7 @@ import type {
 } from '@nossagrana/types';
 
 import { ApiClient } from './api-client';
+import { cabecalhoIdempotencia } from './idempotencia';
 import { lazyApiClient } from './core-financeiro.service';
 
 const familiaHeader = (familiaId: string) => ({ 'X-Familia-Id': familiaId });
@@ -55,26 +56,38 @@ class CofrinhoService {
     });
   }
 
+  /** `chaveIdempotencia` externa (#90): reenviar a mesma requisição com ela não movimenta de novo. */
   async aportar(
     familiaId: string,
     id: string,
     payload: CofrinhoAporteRequest,
+    chaveIdempotencia?: string,
   ): Promise<CofrinhoAporteResponse> {
     return this.api.request<CofrinhoAporteResponse>(`/api/cofrinhos/${id}/aportes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...familiaHeader(familiaId),
+        ...cabecalhoIdempotencia(chaveIdempotencia),
+      },
       body: JSON.stringify(payload),
     });
   }
 
+  /** `chaveIdempotencia` externa (#90): reenviar a mesma requisição com ela não movimenta de novo. */
   async retirar(
     familiaId: string,
     id: string,
     payload: CofrinhoRetiradaRequest,
+    chaveIdempotencia?: string,
   ): Promise<CofrinhoRetiradaResponse> {
     return this.api.request<CofrinhoRetiradaResponse>(`/api/cofrinhos/${id}/retiradas`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...familiaHeader(familiaId),
+        ...cabecalhoIdempotencia(chaveIdempotencia),
+      },
       body: JSON.stringify(payload),
     });
   }

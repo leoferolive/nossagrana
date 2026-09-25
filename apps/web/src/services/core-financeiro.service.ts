@@ -34,6 +34,7 @@ import type {
 } from '@nossagrana/types';
 
 import { ApiClient } from './api-client';
+import { cabecalhoIdempotencia } from './idempotencia';
 
 const familiaHeader = (familiaId: string) => ({ 'X-Familia-Id': familiaId });
 
@@ -146,13 +147,19 @@ export class TransacaoService {
     });
   }
 
+  /** `chaveIdempotencia` externa (#90): reenviar a mesma requisição com ela não grava de novo. */
   async registrar(
     payload: TransacaoCreateRequest,
     familiaId: string,
+    chaveIdempotencia?: string,
   ): Promise<TransacaoCreateResponse> {
     return this.api.request<TransacaoCreateResponse>('/api/transacoes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...familiaHeader(familiaId) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...familiaHeader(familiaId),
+        ...cabecalhoIdempotencia(chaveIdempotencia),
+      },
       body: JSON.stringify(payload),
     });
   }

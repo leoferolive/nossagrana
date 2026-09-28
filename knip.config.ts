@@ -13,6 +13,7 @@ const config: KnipConfig = {
     },
     'apps/api': {
       entry: [
+        'src/server.ts',
         'src/db/migrate.ts',
         'src/scripts/**/*.ts',
         'src/modules/auth/revoked-token-cleanup.job.ts',

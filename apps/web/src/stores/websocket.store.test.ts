@@ -89,4 +89,17 @@ describe('useWebSocketStore', () => {
     expect(mockWs.close).toHaveBeenCalled();
     expect(result.current.status).toBe('disconnected');
   });
+
+  it('não tenta reconectar quando a família foi excluída (4004)', () => {
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+    act(() => {
+      result.current.connect({ getAccessToken: () => 'tok', familiaId: 'f1', clearSession });
+      mockWs.onclose?.({ code: 4004 } as CloseEvent);
+      vi.runAllTimers();
+    });
+
+    expect(WebSocket).toHaveBeenCalledTimes(1);
+    expect(clearSession).not.toHaveBeenCalled();
+  });
 });

@@ -1,11 +1,10 @@
-import { and, eq } from 'drizzle-orm';
 import type { FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { z } from 'zod';
 
 import { env } from '../config/env.js';
 import { db } from '../db/client.js';
-import { usuarioFamilia } from '../db/schema.js';
+import { verificarAcessoFamilia } from '../shared/familia-access/familia-access.repository.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -42,14 +41,17 @@ export const familiaScopePlugin = fp(async (fastify) => {
         return;
       }
 
-      const [membership] = await db
-        .select({ usuarioId: usuarioFamilia.usuarioId })
-        .from(usuarioFamilia)
-        .where(and(eq(usuarioFamilia.usuarioId, userId), eq(usuarioFamilia.familiaId, familiaId)))
-        .limit(1);
+      const acesso = await verificarAcessoFamilia(db, userId, familiaId);
 
-      if (!membership) {
+      if (acesso === 'sem_acesso') {
         reply.code(403).send({ message: 'Usuario sem acesso a familia informada' });
+        return;
+      }
+
+      if (acesso === 'excluida') {
+        reply.code(403).send({
+          error: { message: 'Familia excluida', code: 'FAMILIA_EXCLUIDA' },
+        });
         return;
       }
     }

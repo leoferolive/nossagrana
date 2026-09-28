@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockSelect = vi.fn();
 const mockFrom = vi.fn();
+const mockInnerJoin = vi.fn();
 const mockWhere = vi.fn();
 const mockLimit = vi.fn();
 
@@ -25,8 +26,10 @@ describe('familiaScopePlugin', () => {
       from: mockFrom,
     });
     mockFrom.mockReturnValue({
+      innerJoin: mockInnerJoin,
       where: mockWhere,
     });
+    mockInnerJoin.mockReturnValue({ where: mockWhere });
     mockWhere.mockReturnValue({
       limit: mockLimit,
     });
@@ -36,9 +39,7 @@ describe('familiaScopePlugin', () => {
     vi.resetModules();
   });
 
-  it('returns 403 when authenticated user has no membership for family', async () => {
-    mockLimit.mockResolvedValue([]);
-
+  async function requestFamily() {
     const app = Fastify();
     app.decorate('authenticate', async () => undefined);
 
@@ -70,11 +71,37 @@ describe('familiaScopePlugin', () => {
       },
     });
 
+    await app.close();
+    return response;
+  }
+
+  it('allows an active family membership', async () => {
+    mockLimit.mockResolvedValue([{ deletedAt: null }]);
+
+    const response = await requestFamily();
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('returns 403 when family has been soft-deleted', async () => {
+    mockLimit.mockResolvedValue([{ deletedAt: new Date('2026-09-01') }]);
+
+    const response = await requestFamily();
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toEqual({
+      error: { message: 'Familia excluida', code: 'FAMILIA_EXCLUIDA' },
+    });
+  });
+
+  it('returns 403 when authenticated user has no membership for family', async () => {
+    mockLimit.mockResolvedValue([]);
+
+    const response = await requestFamily();
+
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({
       message: 'Usuario sem acesso a familia informada',
     });
-
-    await app.close();
   });
 });

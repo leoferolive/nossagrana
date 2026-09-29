@@ -74,7 +74,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     ws.onclose = (event) => {
       set({ socket: null, status: 'disconnected' });
 
-      if (event.code === 4003) {
+      if (event.code === 4003 || event.code === 4004) {
         // Acesso negado — não reconectar
         return;
       }

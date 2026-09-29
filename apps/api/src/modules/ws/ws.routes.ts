@@ -1,10 +1,9 @@
-import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import type { WebSocket } from 'ws';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
-import { usuarioFamilia } from '../../db/schema.js';
+import { verificarAcessoFamilia } from '../../shared/familia-access/familia-access.repository.js';
 
 export const wsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/ws', { websocket: true }, async (socket: WebSocket, request) => {
@@ -30,16 +29,17 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
       return;
     }
 
-    // Verifica membership (bypass em test)
+    // Verifica acesso à família (bypass em test)
     if (env.NODE_ENV !== 'test') {
-      const [membership] = await db
-        .select({ usuarioId: usuarioFamilia.usuarioId })
-        .from(usuarioFamilia)
-        .where(and(eq(usuarioFamilia.usuarioId, userId), eq(usuarioFamilia.familiaId, familiaId)))
-        .limit(1);
+      const acesso = await verificarAcessoFamilia(db, userId, familiaId);
 
-      if (!membership) {
+      if (acesso === 'sem_acesso') {
         socket.close(4003, 'Usuario sem acesso a familia');
+        return;
+      }
+
+      if (acesso === 'excluida') {
+        socket.close(4004, 'Familia excluida');
         return;
       }
     }

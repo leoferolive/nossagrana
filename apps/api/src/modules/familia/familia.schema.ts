@@ -24,6 +24,8 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import { familiaScope403Schema } from '../../shared/familia-access/familia-access.schema.js';
+
 export const familiaMinhasSchema = {
   response: {
     200: familiaMinhasResponseSchema,
@@ -59,9 +61,10 @@ export const familiaCreateInviteSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
-    403: z.object({
-      message: z.literal('Apenas admin pode gerar convite'),
-    }),
+    403: z.union([
+      z.object({ message: z.literal('Apenas admin pode gerar convite') }),
+      familiaScope403Schema,
+    ]),
   },
 };
 
@@ -98,9 +101,10 @@ export const familiaListJoinRequestsSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
-    403: z.object({
-      message: z.literal('Apenas admin pode listar solicitacoes'),
-    }),
+    403: z.union([
+      z.object({ message: z.literal('Apenas admin pode listar solicitacoes') }),
+      familiaScope403Schema,
+    ]),
   },
 };
 
@@ -115,9 +119,10 @@ export const familiaReviewJoinRequestSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
-    403: z.object({
-      message: z.literal('Apenas admin pode listar solicitacoes'),
-    }),
+    403: z.union([
+      z.object({ message: z.literal('Apenas admin pode listar solicitacoes') }),
+      familiaScope403Schema,
+    ]),
     404: z.object({
       message: z.literal('Solicitacao nao encontrada ou ja processada'),
     }),
@@ -154,6 +159,7 @@ export const familiaRemoveMemberSchema = {
       z.object({
         message: z.literal('Admin nao pode remover a si mesmo'),
       }),
+      familiaScope403Schema,
     ]),
     404: z.object({
       message: z.literal('Membro nao encontrado na familia'),
@@ -184,9 +190,10 @@ export const familiaDeleteSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
-    403: z.object({
-      message: z.literal('Apenas admin pode excluir familia'),
-    }),
+    403: z.union([
+      z.object({ message: z.literal('Apenas admin pode excluir familia') }),
+      familiaScope403Schema,
+    ]),
     404: z.object({
       message: z.literal('Familia nao encontrada'),
     }),

@@ -44,7 +44,12 @@ export const familiaScopePlugin = fp(async (fastify) => {
       const acesso = await verificarAcessoFamilia(db, userId, familiaId);
 
       if (acesso === 'sem_acesso') {
-        reply.code(403).send({ message: 'Usuario sem acesso a familia informada' });
+        reply.code(403).send({
+          error: {
+            message: 'Usuario sem acesso a familia informada',
+            code: 'FAMILIA_SEM_ACESSO',
+          },
+        });
         return;
       }
 

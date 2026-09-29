@@ -14,7 +14,12 @@ import {
   familiaReviewJoinRequestSchema,
 } from '../../modules/familia/familia.schema.js';
 
-const semAcesso = { message: 'Usuario sem acesso a familia informada' };
+const semAcesso = {
+  error: {
+    message: 'Usuario sem acesso a familia informada',
+    code: 'FAMILIA_SEM_ACESSO',
+  },
+};
 const familiaExcluida = {
   error: { message: 'Familia excluida', code: 'FAMILIA_EXCLUIDA' },
 };

@@ -131,7 +131,12 @@ describe('familiaScopePlugin', () => {
     },
     {
       membership: [],
-      expected: { message: 'Usuario sem acesso a familia informada' },
+      expected: {
+        error: {
+          message: 'Usuario sem acesso a familia informada',
+          code: 'FAMILIA_SEM_ACESSO',
+        },
+      },
     },
   ])(
     'serializes family-scope 403 on a protected family route',
@@ -169,8 +174,11 @@ describe('familiaScopePlugin', () => {
     const response = await requestFamily();
 
     expect(response.statusCode).toBe(403);
-    expect(response.json()).toMatchObject({
-      message: 'Usuario sem acesso a familia informada',
+    expect(response.json()).toEqual({
+      error: {
+        message: 'Usuario sem acesso a familia informada',
+        code: 'FAMILIA_SEM_ACESSO',
+      },
     });
   });
 });

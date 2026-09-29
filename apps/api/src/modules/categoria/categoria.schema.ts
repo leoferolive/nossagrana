@@ -10,6 +10,8 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+import { familiaScope403Schema } from '../../shared/familia-access/familia-access.schema.js';
+
 export const categoriaListSchema = {
   response: {
     200: categoriaListResponseSchema,
@@ -46,9 +48,7 @@ export const categoriaUpdateSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
-    403: z.object({
-      message: z.string(),
-    }),
+    403: z.union([z.object({ message: z.string() }), familiaScope403Schema]),
     404: z.object({
       message: z.literal('Categoria nao encontrada'),
     }),
@@ -65,9 +65,7 @@ export const categoriaDeleteSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
-    403: z.object({
-      message: z.string(),
-    }),
+    403: z.union([z.object({ message: z.string() }), familiaScope403Schema]),
     404: z.object({
       message: z.literal('Categoria nao encontrada'),
     }),

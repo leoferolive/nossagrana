@@ -20,6 +20,7 @@ interface SentMail {
 class FakeSmtpTransport {
   static created: TransportOptions[] = [];
   static instances: FakeSmtpTransport[] = [];
+  static failWith: Error | null = null;
   readonly sent: SentMail[] = [];
 
   constructor(options: TransportOptions) {
@@ -28,6 +29,7 @@ class FakeSmtpTransport {
   }
 
   async sendMail(mail: SentMail): Promise<void> {
+    if (FakeSmtpTransport.failWith) throw FakeSmtpTransport.failWith;
     this.sent.push(mail);
   }
 }
@@ -51,6 +53,7 @@ describe('SmtpEmailSender', () => {
   beforeEach(() => {
     FakeSmtpTransport.created = [];
     FakeSmtpTransport.instances = [];
+    FakeSmtpTransport.failWith = null;
   });
 
   it('cria o transport com host, porta e credenciais da config', () => {
@@ -85,5 +88,14 @@ describe('SmtpEmailSender', () => {
         html: '<p>Olá</p>',
       },
     ]);
+  });
+
+  it('repassa a rejeição quando o transport falha ao enviar', async () => {
+    FakeSmtpTransport.failWith = new Error('SMTP indisponível');
+    const sender = new SmtpEmailSender(baseConfig);
+
+    await expect(
+      sender.send({ to: 'user@test.com', subject: 'Assunto', html: '<p>Olá</p>' }),
+    ).rejects.toThrow('SMTP indisponível');
   });
 });

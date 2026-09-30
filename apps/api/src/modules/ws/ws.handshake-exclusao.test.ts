@@ -60,23 +60,24 @@ class AcessoFamiliaSequenciado {
 
 async function createApp() {
   const app = Fastify();
-  await app.register(import('@fastify/jwt'), { secret: 'test-jwt-secret-must-be-32-chars!' });
   const { websocketPlugin } = await import('../../plugins/websocket.plugin.js');
   const { sessaoRevogacaoPlugin } = await import('../../plugins/sessao-revogacao.plugin.js');
   const { InMemoryRevokedTokenRepository } = await import('../auth/revoked-token.repository.js');
+  const { wsTicketPlugin } = await import('../../plugins/ws-ticket.plugin.js');
   const { wsRoutes } = await import('./ws.routes.js');
   await app.register(websocketPlugin);
   await app.register(sessaoRevogacaoPlugin, {
     tokensRevogados: new InMemoryRevokedTokenRepository(),
   });
+  await app.register(wsTicketPlugin);
   await app.register(wsRoutes);
   await app.ready();
   return app;
 }
 
 async function conectar(app: Awaited<ReturnType<typeof createApp>>) {
-  const token = app.jwt.sign({ sub: 'user-1', email: 'user@example.com' });
-  return app.injectWS(`/ws?token=${token}&familiaId=${familiaId}`);
+  const { ticket } = await app.wsTickets.emitir({ userId: 'user-1', familiaId, emitidoEm: 1000 });
+  return app.injectWS(`/ws?ticket=${ticket}&familiaId=${familiaId}`);
 }
 
 function codigoDeFechamento(ws: Awaited<ReturnType<typeof conectar>>) {

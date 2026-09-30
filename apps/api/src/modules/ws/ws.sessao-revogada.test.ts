@@ -2,6 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../../app.js';
 
+import {
+  conectarComAccess,
+  conectarComTicket,
+  emitirTicketPorHttp,
+} from './tests/ws-ticket-helpers.js';
+
 type App = ReturnType<typeof buildApp>;
 type ClienteWs = Awaited<ReturnType<App['injectWS']>>;
 
@@ -42,8 +48,7 @@ const fechamento = (ws: ClienteWs) =>
     });
   });
 
-const conectar = (app: App, token: string, familiaId: string) =>
-  app.injectWS(`/api/ws?token=${token}&familiaId=${familiaId}`);
+const conectar = conectarComAccess;
 
 const trocarSenha = (app: App, usuario: Usuario) =>
   app.inject({
@@ -87,14 +92,29 @@ describe('WebSocket — sessão revogada (#119)', () => {
     brunoF1.close();
   });
 
-  it('o access emitido antes da troca não reconecta: handshake recusado com 4005', async () => {
+  it('o ticket emitido antes da troca não abre socket: handshake recusado com 4005', async () => {
     const ana = await criarUsuario(app);
+    const ticket = await emitirTicketPorHttp(app, ana.accessToken, familiaId);
     await trocarSenha(app, ana);
 
-    const ws = await conectar(app, ana.accessToken, familiaId);
+    const ws = await conectarComTicket(app, ticket, familiaId);
 
     expect(await fechamento(ws)).toBe(4005);
     expect(app.wsManager.roomSize(familiaId)).toBe(0);
+  });
+
+  it('o access emitido antes da troca não obtém ticket novo: 401 SESSION_REVOKED', async () => {
+    const ana = await criarUsuario(app);
+    await trocarSenha(app, ana);
+
+    const resposta = await app.inject({
+      method: 'POST',
+      url: '/api/ws/ticket',
+      headers: { authorization: `Bearer ${ana.accessToken}`, 'x-familia-id': familiaId },
+    });
+
+    expect(resposta.statusCode).toBe(401);
+    expect(resposta.json()).toMatchObject({ code: 'SESSION_REVOKED' });
   });
 
   it('depois de um novo login o usuário volta a conectar', async () => {
@@ -117,12 +137,13 @@ describe('WebSocket — sessão revogada (#119)', () => {
 
   it('revogação gravada entre a 1ª checagem e o join: a 2ª checagem (já no room) fecha com 4005', async () => {
     const ana = await criarUsuario(app);
+    const ticket = await emitirTicketPorHttp(app, ana.accessToken, familiaId);
     const tokens = app.repositoriosInMemory!.tokensRevogados;
     await tokens.revokeAllByUserId(ana.id);
     // A 1ª checagem ainda não vê a revogação (gravada "depois" dela); a 2ª vê.
     vi.spyOn(tokens, 'findRevokedAllAt').mockResolvedValueOnce(null);
 
-    const ws = await conectar(app, ana.accessToken, familiaId);
+    const ws = await conectarComTicket(app, ticket, familiaId);
 
     expect(await fechamento(ws)).toBe(4005);
     expect(app.wsManager.roomSize(familiaId)).toBe(0);
@@ -130,11 +151,12 @@ describe('WebSocket — sessão revogada (#119)', () => {
 
   it('falha ao consultar a revogação: falha fechada (1011), sem ficar no room', async () => {
     const ana = await criarUsuario(app);
+    const ticket = await emitirTicketPorHttp(app, ana.accessToken, familiaId);
     vi.spyOn(app.repositoriosInMemory!.tokensRevogados, 'findRevokedAllAt').mockRejectedValue(
       new Error('armazenamento indisponível'),
     );
 
-    const ws = await conectar(app, ana.accessToken, familiaId);
+    const ws = await conectarComTicket(app, ticket, familiaId);
 
     expect(await fechamento(ws)).toBe(1011);
     expect(app.wsManager.roomSize(familiaId)).toBe(0);

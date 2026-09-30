@@ -16,17 +16,21 @@ import { adminRoutes } from './modules/admin/admin.routes.js';
 import { historicoRoutes } from './modules/historico/historico.routes.js';
 import { templateTransacaoRoutes } from './modules/template-transacao/template-transacao.routes.js';
 import { wsRoutes } from './modules/ws/ws.routes.js';
+import { wsTicketRoutes } from './modules/ws/ws-ticket.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
 import { metricsPlugin_ } from './plugins/metrics.plugin.js';
 import { sessaoRevogacaoPlugin } from './plugins/sessao-revogacao.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
+import { wsTicketPlugin } from './plugins/ws-ticket.plugin.js';
+import { opcoesDoLogger } from './shared/http/log-redaction.js';
 import { registrarRespostaReferenciaInvalida } from './shared/referencia-ownership/referencia-ownership.http.js';
 import { decorarRepositoriosInMemoryDeTeste } from './shared/repositorios-in-memory.js';
 
 export const buildApp = () => {
   const app = Fastify({
-    logger: env.NODE_ENV !== 'test',
+    // Logger JSON com a URL redigida: o ticket do WS (#118) nunca vai para o log.
+    logger: env.NODE_ENV !== 'test' ? opcoesDoLogger() : false,
     trustProxy: true,
   });
 
@@ -67,6 +71,7 @@ export const buildApp = () => {
   app.register(familiaScopePlugin);
   app.register(websocketPlugin);
   app.register(sessaoRevogacaoPlugin);
+  app.register(wsTicketPlugin);
 
   app.register(authRoutes, { prefix: '/api' });
   app.register(categoriaRoutes, { prefix: '/api' });
@@ -82,6 +87,7 @@ export const buildApp = () => {
   app.register(adminRoutes, { prefix: '/api' });
   app.register(templateTransacaoRoutes, { prefix: '/api' });
   app.register(wsRoutes, { prefix: '/api' });
+  app.register(wsTicketRoutes, { prefix: '/api' });
 
   return app;
 };

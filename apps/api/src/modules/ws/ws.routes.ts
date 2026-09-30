@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import type { WebSocket } from 'ws';
+import { z } from 'zod';
 
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
@@ -10,7 +11,9 @@ import {
 import {
   WS_CLOSE_ERRO_INTERNO,
   WS_CLOSE_FAMILIA_EXCLUIDA,
+  WS_CLOSE_NAO_AUTENTICADO,
   WS_CLOSE_SESSAO_REVOGADA,
+  WS_MOTIVO_NAO_AUTENTICADO,
 } from './ws-close-codes.js';
 
 const RECUSAS_DE_ACESSO = {
@@ -149,30 +152,55 @@ async function admitirSocket(
   }
 }
 
+/** Query do handshake: só ticket e família. Qualquer outro parâmetro (inclusive `token`) é ignorado. */
+const handshakeQuerySchema = z.object({
+  ticket: z.string().min(1).max(256),
+  familiaId: z.string().uuid(),
+});
+
+/** Credencial já vinculada a uma família: é a do ticket, não a que o cliente alega na query. */
+type CredencialDoHandshake = CredencialDoSocket & { familiaId: string };
+
+/**
+ * Consome o ticket do handshake (#118). `null` = recusar, sem distinguir o motivo:
+ * parâmetros malformados, ticket inexistente, expirado, já usado ou de outra família.
+ * Lança se o store falhar (o chamador fecha com 1011, falha fechada).
+ */
+async function autenticarPorTicket(
+  fastify: FastifyInstance,
+  query: unknown,
+): Promise<CredencialDoHandshake | null> {
+  const parametros = handshakeQuerySchema.safeParse(query);
+  if (!parametros.success) return null;
+
+  const { ticket, familiaId } = parametros.data;
+  return fastify.wsTickets.consumir(ticket, familiaId);
+}
+
+function recusarNaoAutenticado(socket: WebSocket): void {
+  socket.close(WS_CLOSE_NAO_AUTENTICADO, WS_MOTIVO_NAO_AUTENTICADO);
+}
+
+/**
+ * Handshake sem JWT na URL (#118): o cliente troca o access por um ticket de uso único via
+ * `POST /ws/ticket` e o apresenta aqui. O ticket é consumido antes de qualquer outra checagem.
+ * Depois, sessão e família são revalidadas por `admitirSocket` (#119, #147).
+ */
 export const wsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/ws', { websocket: true }, async (socket: WebSocket, request) => {
-    const query = request.query as Record<string, string>;
-    const token = query.token;
-    const familiaId = query.familiaId;
-
-    // Valida UUID básico
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    if (!token || !familiaId || !uuidRegex.test(familiaId)) {
-      socket.close(4001, 'Parametros invalidos');
-      return;
-    }
-
-    // Valida JWT
-    let credencial: CredencialDoSocket;
+    let credencial: CredencialDoHandshake | null;
     try {
-      const payload = fastify.jwt.verify<{ sub: string; iat?: number }>(token);
-      credencial = { userId: payload.sub, emitidoEm: payload.iat };
-    } catch {
-      socket.close(4001, 'Token invalido ou expirado');
+      credencial = await autenticarPorTicket(fastify, request.query);
+    } catch (err) {
+      fastify.log.error({ err }, 'Falha ao consumir o ticket do WebSocket');
+      socket.close(WS_CLOSE_ERRO_INTERNO, 'Erro ao validar ticket');
+      return;
+    }
+    if (!credencial) {
+      recusarNaoAutenticado(socket);
       return;
     }
 
-    await admitirSocket(fastify, socket, familiaId, credencial);
+    await admitirSocket(fastify, socket, credencial.familiaId, credencial);
   });
 };

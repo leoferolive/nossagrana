@@ -63,6 +63,14 @@ export const authRefreshResponseSchema = z.object({
 
 export type AuthRefreshResponse = z.infer<typeof authRefreshResponseSchema>;
 
+/** Ticket efêmero de uso único para abrir o WebSocket sem JWT na URL (#118). */
+export const wsTicketResponseSchema = z.object({
+  ticket: z.string().min(32),
+  expiraEm: z.string().datetime(),
+});
+
+export type WsTicketResponse = z.infer<typeof wsTicketResponseSchema>;
+
 export const authLogoutRequestSchema = z.object({
   refreshToken: z.string().min(1),
 });

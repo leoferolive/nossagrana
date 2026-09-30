@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import { conectarComAccess } from '../ws/tests/ws-ticket-helpers.js';
 
 type ClienteWs = Awaited<ReturnType<ReturnType<typeof buildApp>['injectWS']>>;
 
@@ -31,7 +32,7 @@ describe('DELETE /familias/:id — convites e sockets (#66)', () => {
     return resposta.json().familia.id as string;
   }
 
-  const conectar = (id: string) => app.injectWS(`/api/ws?token=${token}&familiaId=${id}`);
+  const conectar = (id: string) => conectarComAccess(app, token, id);
 
   beforeAll(async () => {
     await app.ready();

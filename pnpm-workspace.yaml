@@ -6,3 +6,16 @@ packages:
 minimumReleaseAge: 10080 # espera 7 dias antes de instalar versoes recem-publicadas
 blockExoticSubdeps: true # bloqueia subdependencias de fontes nao-registry (git, etc.)
 trustPolicy: no-downgrade # impede que updates rebaixem settings de seguranca
+
+# Excecao restrita e deliberada ao trustPolicy (nao desliga a policy nem mexe no minimumReleaseAge):
+# rollup@2.80.0 (via workbox-build -> vite-plugin-pwa) e a UNICA versao 2.x corrigida do advisory
+# GHSA-mw96-cpmx-2vgc / CVE-2026-27606 (path traversal), mas foi publicada sem trust evidence
+# (versoes 2.x anteriores tinham trusted publisher), o que dispara ERR_PNPM_TRUST_DOWNGRADE.
+# Nao existe alternativa 2.x segura; remover quando workbox-build migrar para rollup >= 3.30/4.59.
+#
+# semver@6.3.1 (via workbox-build -> @babel/preset-env) tambem dispara ERR_PNPM_TRUST_DOWNGRADE
+# na resolucao completa (`pnpm install` sem --frozen-lockfile): versoes 6.x anteriores tinham
+# trusted publisher e a 6.3.1 nao. Mesma justificativa e mesma condicao de remocao do rollup.
+trustPolicyExclude:
+  - rollup@2.80.0
+  - semver@6.3.1

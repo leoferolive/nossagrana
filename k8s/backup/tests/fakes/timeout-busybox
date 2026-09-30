@@ -1,0 +1,11 @@
+#!/bin/sh
+# Fake nomeada de `timeout` com o contrato do BusyBox 1.37 (o `timeout` da
+# imagem alpine de produção): estouro de tempo sai com 143 (128 + SIGTERM), e
+# não com 124 como o GNU coreutils do host. Só vale quando exposta como
+# `timeout` (o teste cria um symlink com esse nome em um diretório à parte).
+# Sem isso, os testes com fakes só exercitam o contrato do GNU e escondem a
+# diferença (revisão do PR #143).
+/usr/bin/timeout "$@"
+rc=$?
+[ "$rc" -ne 124 ] || rc=143
+exit "$rc"

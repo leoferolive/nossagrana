@@ -77,7 +77,7 @@ job_container() {
   docker run --rm --network "$NETWORK" --read-only \
     --tmpfs /work:mode=1777 --tmpfs /tmp:mode=1777 \
     --cap-drop ALL --security-opt no-new-privileges \
-    -v "$JOB_DIR:/job:ro" -v "$REMOTE_DIR:/remote" -v "$KEY_DIR:/keys:ro" \
+    -v "$JOB_DIR/base:/job:ro" -v "$REMOTE_DIR:/remote" -v "$KEY_DIR:/keys:ro" \
     "$@"
 }
 
@@ -170,6 +170,39 @@ test_second_run_never_overwrites_first() {
     in_image sh -c "cd /remote && sha256sum -c 'nossagrana_prod-20260101T000000Z-fixo.dump.age.sha256'" >/dev/null
 }
 
+# O `timeout` da imagem (alpine/BusyBox) sai com 143, não 124: o job real precisa
+# reconhecer isso como timeout, senão o diagnóstico vira "erro de conexão".
+# Determinístico: uma sessão segura ACCESS EXCLUSIVE em `familias`, então o
+# pg_dump fica esperando o lock até o timeout de 2 s do job.
+test_dump_timeout_is_reported_as_timeout() {
+  rm -rf "${REMOTE_DIR:?}"/* 2>/dev/null || true
+  docker exec -d "$PG_CT" psql -q -U postgres -d nossagrana_prod \
+    -c "BEGIN; LOCK TABLE familias IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(60);"
+  wait_table_locked
+  JOB_OUTPUT="$(job_container \
+    -e PGHOST="$PG_CT" -e PGUSER=backup_ro -e PGPASSWORD="$ROLE_PASSWORD" \
+    -e PGDATABASE=nossagrana_prod -e BACKUP_REMOTE=/remote -e AGE_RECIPIENT="$AGE_RECIPIENT" \
+    -e TMPDIR=/work -e HOME=/tmp -e PGCONNECT_TIMEOUT=5 -e DUMP_TIMEOUT_SECONDS=2 \
+    "$JOB_IMAGE" sh /job/pg-dump-external.sh 2>&1)"
+  JOB_EXIT=$?
+  pg_exec -d postgres -c "select pg_terminate_backend(pid) from pg_stat_activity where query like '%pg_sleep(60)%' and pid <> pg_backend_pid()" >/dev/null
+  check "timeout real (BusyBox): job falha no estágio dump com motivo timeout" \
+    bash -c '[ "$1" -ne 0 ] && grep -q "\"stage\":\"dump\"" <<<"$2" && grep -q "timeout após 2s" <<<"$2"' _ "$JOB_EXIT" "$JOB_OUTPUT"
+  check "timeout real (BusyBox): não é reportado como erro de conexão/permissão" \
+    bash -c '! grep -q "conexão/permissão" <<<"$1"' _ "$JOB_OUTPUT"
+  check "timeout real (BusyBox): nada enviado ao remoto" test -z "$(remote_names)"
+}
+
+wait_table_locked() {
+  for _ in $(seq 1 30); do
+    if [ "$(pg_exec -d nossagrana_prod -At -c "select count(*) from pg_locks where mode = 'AccessExclusiveLock' and locktype = 'relation' and relation = 'familias'::regclass" 2>/dev/null)" = "1" ]; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 run_job_with_fixed_name() {
   JOB_OUTPUT="$(job_container \
     -e PGHOST="$PG_CT" -e PGUSER=backup_ro -e PGPASSWORD="$ROLE_PASSWORD" \
@@ -188,6 +221,7 @@ fi
 test_full_cycle_restores_identical_data
 test_wrong_password_fails_without_uploading
 test_second_run_never_overwrites_first
+test_dump_timeout_is_reported_as_timeout
 echo
 echo "$PASSED passaram, $FAILED falharam"
 [ "$FAILED" -eq 0 ]

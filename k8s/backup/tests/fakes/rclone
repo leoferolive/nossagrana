@@ -8,7 +8,9 @@
 # Controles por ambiente: FAKE_RCLONE_FAIL_UPLOADS=<n> (falha os n primeiros
 # uploads), FAKE_RCLONE_FAIL_ALWAYS, FAKE_RCLONE_CORRUPT_UPLOAD,
 # FAKE_RCLONE_LSF_FAIL_FROM_CALL=<n> (lsf falha a partir da n-ésima chamada),
-# FAKE_RCLONE_LSF_HIDE (lsf não lista nada: simula corrida com outro job).
+# FAKE_RCLONE_LSF_HIDE (lsf não lista nada: simula corrida com outro job),
+# FAKE_RCLONE_FAIL_SUFFIX=<sufixo> (falha sempre o upload de objetos cujo nome
+# termina no sufixo, ex.: .meta.json: simula upload parcial).
 echo "rclone $*" >>"$FAKE_STATE/calls.log"
 cmd="$1"
 shift
@@ -43,6 +45,12 @@ case "$cmd" in
         echo "rclone: ERROR: upload failed (fake)" >&2
         exit 1
       fi
+      case "$dst" in
+        *"${FAKE_RCLONE_FAIL_SUFFIX:-@sem-sufixo@}")
+          echo "rclone: ERROR: upload of $(basename "$dst") failed (fake)" >&2
+          exit 1
+          ;;
+      esac
       [ -z "$ignore_existing" ] || [ ! -e "$dst" ] || exit 0
     fi
     cp "$src" "$dst"

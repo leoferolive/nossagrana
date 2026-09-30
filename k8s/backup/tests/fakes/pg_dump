@@ -7,6 +7,14 @@ if [ "${1:-}" = "--version" ]; then
   echo "pg_dump (PostgreSQL) 17.0 (fake)"
   exit 0
 fi
+# FAKE_PG_DUMP_EXIT_ON_TERM: como o pg_dump real, trata o SIGTERM e sai com 1
+# ("terminated by user"), em vez de morrer pelo sinal (exit 143).
+if [ -n "${FAKE_PG_DUMP_EXIT_ON_TERM:-}" ] && [ -n "${FAKE_PG_DUMP_SLEEP:-}" ]; then
+  trap 'echo "pg_dump: terminated by user" >&2; exit 1' TERM
+  sleep "$FAKE_PG_DUMP_SLEEP" &
+  wait $!
+  exit 1
+fi
 # exec: o SIGTERM do `timeout` precisa atingir o sleep, não um shell intermediário.
 [ -z "${FAKE_PG_DUMP_SLEEP:-}" ] || exec sleep "$FAKE_PG_DUMP_SLEEP"
 if [ -n "${FAKE_PG_DUMP_FAIL:-}" ]; then

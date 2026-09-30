@@ -2,7 +2,7 @@
 # shellcheck disable=SC2016 # os `bash -c` dos checks usam aspas simples de propósito (expandem no subshell)
 # Testes do job de dump cifrado para storage externo (issue #47).
 #
-# Executa k8s/backup/pg-dump-external/pg-dump-external.sh com fakes nomeadas
+# Executa k8s/backup/pg-dump-external/base/pg-dump-external.sh com fakes nomeadas
 # (k8s/backup/tests/fakes/) no lugar de pg_dump, pg_restore, age e rclone — sem
 # Docker, sem rede. O smoke com binários reais está em pg-dump-external.smoke.test.sh.
 #
@@ -10,7 +10,7 @@
 set -uo pipefail
 
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-JOB_SCRIPT="$TESTS_DIR/../pg-dump-external/pg-dump-external.sh"
+JOB_SCRIPT="$TESTS_DIR/../pg-dump-external/base/pg-dump-external.sh"
 FAKES_DIR="$TESTS_DIR/fakes"
 # Senha "canário": se aparecer em qualquer saída ou argumento, há vazamento.
 CANARY_PASSWORD="canario-senha-nao-pode-vazar"
@@ -141,6 +141,32 @@ test_dump_timeout_fails_job() {
   check "timeout do pg_dump: temporário removido" leftovers_in_tmp
 }
 
+# A imagem de produção é alpine: o `timeout` do BusyBox sai com 143 (não 124);
+# o reconhecimento pelo tempo decorrido cobre também o pg_dump real (smoke).
+test_dump_timeout_is_recognized_with_busybox_exit_code() {
+  new_case
+  mkdir -p "$CASE_DIR/busybox-bin"
+  ln -s "$FAKES_DIR/timeout-busybox" "$CASE_DIR/busybox-bin/timeout"
+  run_job PATH="$CASE_DIR/busybox-bin:$FAKES_DIR:$PATH" FAKE_PG_DUMP_SLEEP=30 DUMP_TIMEOUT_SECONDS=1
+  check "timeout com exit 143 (BusyBox): falha no estágio dump citando timeout" \
+    bash -c 'jq -e ".stage == \"dump\" and (.reason | test(\"timeout após 1s\"))" <<<"$1" >/dev/null' _ "$(final_json)"
+  check "timeout com exit 143 (BusyBox): não é reportado como erro de conexão/permissão" \
+    bash -c '! grep -q "conexão/permissão" <<<"$1"' _ "$(final_json)"
+}
+
+# O pg_dump real trata o SIGTERM do `timeout` e sai com 1: só o tempo decorrido
+# distingue isso de falha de conexão (smoke real cobre o mesmo com o binário).
+test_dump_timeout_is_recognized_when_pg_dump_exits_one_on_term() {
+  new_case
+  run_job FAKE_PG_DUMP_SLEEP=30 FAKE_PG_DUMP_EXIT_ON_TERM=1 DUMP_TIMEOUT_SECONDS=1
+  check "timeout com pg_dump saindo 1 no SIGTERM: reportado como timeout no estágio dump" \
+    bash -c 'jq -e ".stage == \"dump\" and (.reason | test(\"timeout após 1s\"))" <<<"$1" >/dev/null' _ "$(final_json)"
+  new_case
+  run_job FAKE_PG_DUMP_FAIL=1
+  check "falha imediata do pg_dump continua reportada como conexão/permissão" \
+    bash -c 'jq -e ".stage == \"dump\" and (.reason | test(\"conexão/permissão\"))" <<<"$1" >/dev/null' _ "$(final_json)"
+}
+
 test_tiny_or_corrupt_dump_is_rejected() {
   new_case
   run_job FAKE_DUMP_BYTES=100
@@ -176,6 +202,42 @@ test_corrupted_upload_is_detected() {
   new_case
   run_job FAKE_RCLONE_CORRUPT_UPLOAD=1
   check "upload corrompido: verificação pós-upload falha o job (verify_upload)" failed_at_stage verify_upload
+  check "upload corrompido: sem .meta.json (artefato não verificado nunca parece completo)" \
+    test -z "$(find "$REMOTE" -name '*.meta.json')"
+}
+
+test_partial_upload_leaves_no_meta_and_fails() {
+  new_case
+  run_job FAKE_RCLONE_FAIL_SUFFIX=.meta.json UPLOAD_ATTEMPTS=2
+  check "upload parcial (.meta.json falha): job falha no estágio upload" failed_at_stage upload
+  check "upload parcial: artefato órfão fica sem .meta.json" \
+    test -n "$(remote_artifact)" -a -z "$(find "$REMOTE" -name '*.meta.json')"
+}
+
+test_orphans_do_not_count_toward_retention_minimum() {
+  new_case
+  seed_artifact nossagrana_prod 20200101T000000Z
+  seed_artifact nossagrana_prod 20200102T000000Z
+  seed_artifact nossagrana_prod 20200103T000000Z
+  # Órfão (sem .meta.json) mais novo que os completos: não pode formar o mínimo.
+  echo "cifrado" >"$REMOTE/nossagrana_prod-20200104T000000Z-old.dump.age"
+  run_job RETENTION_DAYS=30 RETENTION_MIN_KEEP=3
+  check "órfãos na retenção: sucesso" test "$EXIT_CODE" -eq 0
+  check "órfãos na retenção: mínimo de 3 completos preservado (2 antigos + o novo)" \
+    test -e "$REMOTE/nossagrana_prod-20200102T000000Z-old.dump.age" -a -e "$REMOTE/nossagrana_prod-20200103T000000Z-old.dump.age" -a "$(find "$REMOTE" -name '*.meta.json' | wc -l)" -eq 3
+  check "órfãos na retenção: o mais antigo completo excedente é removido" \
+    test ! -e "$REMOTE/nossagrana_prod-20200101T000000Z-old.dump.age"
+  check "órfãos na retenção: órfão expirado é removido" \
+    test ! -e "$REMOTE/nossagrana_prod-20200104T000000Z-old.dump.age"
+}
+
+test_recent_orphan_is_kept() {
+  new_case
+  # Órfão recente pode ser upload em andamento de outra execução: não apagar.
+  echo "cifrado" >"$REMOTE/nossagrana_prod-$(date -u +%Y%m%dT%H%M%SZ)-outro.dump.age"
+  run_job
+  check "órfão recente: sucesso e órfão preservado" \
+    test "$EXIT_CODE" -eq 0 -a "$(find "$REMOTE" -name '*-outro.dump.age' | wc -l)" -eq 1
 }
 
 test_never_overwrites_existing_artifact() {
@@ -279,10 +341,15 @@ echo "pg-dump-external (fakes)"
 test_success_uploads_encrypted_artifact_with_checksum_and_metadata
 test_dump_failure_fails_job_and_cleans_up
 test_dump_timeout_fails_job
+test_dump_timeout_is_recognized_with_busybox_exit_code
+test_dump_timeout_is_recognized_when_pg_dump_exits_one_on_term
 test_tiny_or_corrupt_dump_is_rejected
 test_encryption_failure_never_uploads_plaintext
 test_upload_retries_are_limited
 test_corrupted_upload_is_detected
+test_partial_upload_leaves_no_meta_and_fails
+test_orphans_do_not_count_toward_retention_minimum
+test_recent_orphan_is_kept
 test_never_overwrites_existing_artifact
 test_concurrent_runs_use_distinct_names
 test_retention_prunes_old_but_keeps_minimum

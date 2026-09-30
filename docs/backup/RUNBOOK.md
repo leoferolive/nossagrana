@@ -18,11 +18,22 @@ No Loki/Grafana: `{namespace="database", container="restore-drill"} |= "restore_
 ## Aplicar / atualizar os manifests
 
 ```bash
-kubectl apply -k k8s/backup                    # restore drill + alertas
-kubectl apply -k k8s/backup/pg-dump-external   # dump cifrado externo (nasce suspenso)
+kubectl apply -k k8s/backup                            # restore drill + alertas
+kubectl apply -k k8s/backup/pg-dump-external/enabled   # dump cifrado externo (em produção)
 # Os ConfigMaps dos scripts têm hash no nome; remover versões antigas sem uso:
 kubectl get cm -n database -o name | grep -E 'nossagrana-restore-drill-script|pg-dump-external-script'
 ```
+
+> **Overlays do `pg-dump-external`.** O estado do agendamento vive no repo, não no
+> cluster: `.../pg-dump-external/enabled` declara `suspend: false` (uso normal, inclusive
+> para atualizar o script) e `.../pg-dump-external/suspended` é o rollout/rollback.
+> Reaplicar `enabled` nunca suspende o backup; aplicar `suspended` suspende **de propósito**.
+> A raiz `k8s/backup/pg-dump-external` não tem `kustomization.yaml` (o `apply -k` nela falha
+> em vez de mudar o `suspend` em silêncio). Conferir:
+>
+> ```bash
+> kubectl get cronjob -n database pg-dump-external -o jsonpath='{.spec.suspend}'   # produção: false
+> ```
 
 Ordem no primeiro rollout: aplicar `pg-dump-external` **antes** de `k8s/backup`, senão
 `NossaGranaBackupCronJobMissing` dispara 1 h depois de as regras entrarem.
@@ -54,13 +65,30 @@ no label indica qual etapa).
    - `restic-backup`: lock preso (o script já roda `restic unlock`), falha de
      rede/cota do Google Drive, `rclone` indisponível. O script tenta os dois
      destinos e o log diz qual falhou (`FALHA em: LocalUSB GoogleDrive`).
-   - CronJob suspenso: `kubectl get cronjob -n database <cronjob> -o jsonpath='{.spec.suspend}'`.
+   - CronJob suspenso (não dispara `Stale`; ver [CronJob suspenso](#cronjob-suspenso)): `kubectl get cronjob -n database <cronjob> -o jsonpath='{.spec.suspend}'`.
 3. Corrigir a causa e rodar manualmente:
    ```bash
    kubectl create job -n database --from=cronjob/<cronjob> <cronjob>-manual-$(date +%s)
    ```
 4. O alerta resolve sozinho no próximo sucesso. Se o RPO foi violado, registrar
    abaixo.
+
+## CronJob suspenso
+
+Alerta `NossaGranaBackupCronJobSuspended` (warning): um CronJob de backup está com
+`spec.suspend=true` há mais de 24 h. `NossaGranaBackupStale` **ignora** CronJobs
+suspensos (um Job manual criado com `--from=cronjob/...` preenche o
+`last_successful_time` do CronJob e o rollout/rollback do `pg-dump-external`
+fica suspenso por horas), então este alerta é a garantia de que uma suspensão
+esquecida não deixa o backup parado em silêncio.
+
+1. Confirmar: `kubectl get cronjob -n database -o custom-columns=NOME:.metadata.name,SUSPENSO:.spec.suspend`.
+2. Se a suspensão é intencional (rollout do `pg-dump-external` ainda sem restore
+   exercitado), concluir o rollout ([passos](#rollout-cronjob-nasce-suspenso)) ou
+   registrar por que continua suspenso.
+3. Se não é: `kubectl patch cronjob -n database <cronjob> -p '{"spec":{"suspend":false}}'`
+   (no `pg-dump-external`, prefira `kubectl apply -k k8s/backup/pg-dump-external/enabled`,
+   que deixa `suspend: false` versionado) e rodar um Job manual ([Backup atrasado ou falhando](#backup-atrasado-ou-falhando), passo 3).
 
 ## Restore drill falhando
 
@@ -101,9 +129,9 @@ Alertas `NossaGranaRestoreDrillStale` / `NossaGranaBackupJobNotSucceeded{cronjob
 Alerta `NossaGranaBackupCronJobMissing`.
 
 - `nossagrana-restore-drill`: `kubectl apply -k k8s/backup` (este repo).
-- `pg-dump-external`: `kubectl apply -k k8s/backup/pg-dump-external` (este repo;
+- `pg-dump-external`: `kubectl apply -k k8s/backup/pg-dump-external/enabled` (este repo;
   os Secrets não estão no repo — ver [Dump cifrado externo](#dump-cifrado-externo-pg-dump-external)).
-  Depois de reaplicar, conferir `spec.suspend` (`false` se já estava habilitado).
+  Antes do primeiro rollout concluído, use o overlay `suspended`.
 - `pg-backup`: `kubectl apply -f cluster/backup/cronjob-pg-backup-database.yaml`
   (repo `self-workflows`, branch `feat/cluster-ops`).
 - `restic-backup`: manifest mantido fora deste repo; recriar a partir do backup
@@ -196,7 +224,7 @@ todos os bancos do servidor compartilhado).
 Issue #47. `pg_dump -Fc` de `nossagrana_prod` → valida (tamanho e
 `pg_restore --list`) → cifra com **age** para uma chave pública → SHA-256 →
 upload por rclone (artefato, `.sha256`, `.meta.json`) → baixa de volta e compara →
-retenção. Código em `k8s/backup/pg-dump-external/pg-dump-external.sh`; manifests
+retenção. Código em `k8s/backup/pg-dump-external/base/pg-dump-external.sh`; manifests
 e imagem na mesma pasta. Política em [POLICY.md](./POLICY.md).
 
 Artefatos no destino (`<banco>` = `nossagrana_prod`):
@@ -213,19 +241,23 @@ Artefatos no destino (`<banco>` = `nossagrana_prod`):
    ```bash
    age-keygen -o nossagrana-backup.key   # imprime "Public key: age1..."
    ```
-2. **Role de leitura** no PostgreSQL compartilhado (não usar o superusuário). Defina a
-   senha fora do histórico do shell (ex.: `read -rs BACKUP_RO_PASSWORD`):
+2. **Role de leitura** no PostgreSQL compartilhado (não usar o superusuário). Leia a
+   senha para uma variável, fora do histórico do shell, e reaproveite-a no passo 3
+   (o Secret é criado a partir da mesma variável, não de um arquivo):
    ```bash
+   read -rs BACKUP_RO_PASSWORD
    kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1' <<SQL
    CREATE ROLE backup_ro LOGIN PASSWORD '$BACKUP_RO_PASSWORD';
    GRANT CONNECT ON DATABASE nossagrana_prod TO backup_ro;
    GRANT pg_read_all_data TO backup_ro;
    SQL
    ```
-3. **Secrets** (valores só na sua máquina; nada disso vai para o repositório):
+3. **Secrets** (valores só na sua máquina; nada disso vai para o repositório). Use
+   `--from-literal` com a variável do passo 2: gerar um arquivo com `echo` deixaria
+   um `\n` no fim da senha e a autenticação falharia.
    ```bash
    kubectl create secret generic pg-dump-external-db -n database \
-     --from-literal=user=backup_ro --from-file=password=./backup_ro.password
+     --from-literal=user=backup_ro --from-literal=password="$BACKUP_RO_PASSWORD"
    kubectl create secret generic pg-dump-external-storage -n database \
      --from-file=rclone.conf=./rclone.conf \
      --from-literal=remote='<remoto-rclone>:<pasta>' \
@@ -239,12 +271,12 @@ Artefatos no destino (`<banco>` = `nossagrana_prod`):
    docker buildx build --platform linux/arm64 \
      -t ghcr.io/leoferolive/nossagrana-pg-dump-external:1.0.0 --push k8s/backup/pg-dump-external
    ```
-   Ao mudar a versão, atualizar a tag em `cronjob.yaml`.
+   Ao mudar a versão, atualizar a tag em `base/cronjob.yaml`.
 
 ### Rollout (CronJob nasce suspenso)
 
 ```bash
-kubectl apply -k k8s/backup/pg-dump-external
+kubectl apply -k k8s/backup/pg-dump-external/suspended
 kubectl create job -n database --from=cronjob/pg-dump-external pg-dump-external-manual-$(date +%s)
 kubectl logs -n database -l app=pg-dump-external --tail=20     # última linha: result=success
 ```
@@ -253,26 +285,44 @@ kubectl logs -n database -l app=pg-dump-external --tail=20     # última linha: 
 2. Exercitar um restore completo a partir do artefato
    ([Restaurar](#restaurar-a-partir-do-dump-externo)) e registrar na tabela de exercícios.
 3. Só então habilitar o agendamento:
-   `kubectl patch cronjob -n database pg-dump-external -p '{"spec":{"suspend":false}}'`.
-4. **Rollback**: mesmo comando com `"suspend":true`. Nenhuma cópia anterior é apagada
-   (a retenção só roda depois de um upload verificado).
+   `kubectl apply -k k8s/backup/pg-dump-external/enabled`. Desse ponto em diante, use
+   sempre `enabled` (reaplicar mantém `suspend: false`).
+4. **Rollback**: `kubectl apply -k k8s/backup/pg-dump-external/suspended`. Nenhuma cópia
+   anterior é apagada (a retenção só roda depois de um upload verificado).
+
+Enquanto o CronJob está suspenso (rollout e rollback), `NossaGranaBackupStale` não
+dispara; só o aviso `NossaGranaBackupCronJobSuspended` após 24 h
+([CronJob suspenso](#cronjob-suspenso)). Não deixe o rollout parado além disso.
+
+Limite de tamanho: o `emptyDir` `/work` tem `sizeLimit: 1Gi` e o pico de uso é
+cerca de **duas vezes o tamanho do dump** (dump em claro + artefato cifrado e,
+depois, artefato + cópia baixada para verificação). Na prática o dump comprimido
+pode ir até ~500 MB; acima disso o pod é despejado (evict) **sem** o JSON de falha
+no log. O dump atual tem poucos MB; ao se aproximar do limite, aumentar o
+`sizeLimit` em `base/cronjob.yaml`.
 
 ### Falhas (`stage` no JSON final)
 
 `kubectl logs -n database job/<job>`; a última linha é
 `{"event":"pg_dump_external","result":"failure","stage":...,"reason":...}`.
 
-| `stage`         | Significado                                            | Ação                                                                      |
-| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `config`        | variável ausente/inválida ou `AGE_RECIPIENT` errado    | corrigir Secret/env; chave `AGE-SECRET-KEY-` no recipient = **trocar**    |
-| `dump`          | conexão, permissão ou timeout do `pg_dump`             | Postgres no ar? senha do `backup_ro`? `DUMP_TIMEOUT_SECONDS`              |
-| `verify_dump`   | dump < 10 KB ou TOC ilegível                           | dump truncado; ver logs do Postgres, rodar de novo                        |
-| `encrypt`       | `age` falhou                                           | recipient válido? memória do pod                                          |
-| `upload`        | rclone falhou após as tentativas, ou objeto já existia | credencial/cota/rede do destino; objeto existente **nunca** é sobrescrito |
-| `verify_upload` | objeto no destino difere do enviado                    | corrupção ou outro job no mesmo nome; investigar o destino                |
+| `stage`         | Significado                                            | Ação                                                                                          |
+| --------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `config`        | variável ausente/inválida ou `AGE_RECIPIENT` errado    | corrigir Secret/env; chave `AGE-SECRET-KEY-` no recipient = **trocar**                        |
+| `dump`          | conexão, permissão ou timeout do `pg_dump`             | Postgres no ar? senha do `backup_ro`? `DUMP_TIMEOUT_SECONDS` (`reason` diz "timeout após Ns") |
+| `verify_dump`   | dump < 10 KB ou TOC ilegível                           | dump truncado; ver logs do Postgres, rodar de novo                                            |
+| `encrypt`       | `age` falhou                                           | recipient válido? memória do pod                                                              |
+| `upload`        | rclone falhou após as tentativas, ou objeto já existia | credencial/cota/rede do destino; objeto existente **nunca** é sobrescrito                     |
+| `verify_upload` | objeto no destino difere do enviado                    | corrupção ou outro job no mesmo nome; investigar o destino                                    |
 
 `retention_ok=false` no relatório de sucesso = a limpeza falhou, o backup está
 íntegro; ver o aviso no log e o espaço do destino.
+
+Falhas em `upload`/`verify_upload` podem deixar objetos no destino. O `.meta.json`
+só sobe depois de artefato e `.sha256` estarem enviados **e conferidos**, então um
+artefato **sem `.meta.json` é órfão** (upload parcial ou verificação falha): não é
+um backup válido, não conta para o mínimo de 7 da retenção e é removido pela
+retenção depois de 30 dias. Para restaurar, use só artefatos com `.meta.json`.
 
 ### Verificar um artefato
 

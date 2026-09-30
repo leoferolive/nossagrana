@@ -1,0 +1,23 @@
+# Base do dump cifrado para storage externo (issue #47). NÃO se aplica direto:
+# use um overlay (a raiz k8s/backup/pg-dump-external não tem kustomization, então
+# `kubectl apply -k` nela falha em vez de mudar `spec.suspend` sem aviso):
+#
+#   kubectl apply -k k8s/backup/pg-dump-external/suspended   # rollout/rollback
+#   kubectl apply -k k8s/backup/pg-dump-external/enabled     # em produção (reaplicar é seguro)
+#
+# Aplicação manual, separada de k8s/backup (o restore drill não pode conhecer
+# Secrets — ver manifests.test.sh). O CronJob da base é suspenso por segurança;
+# quem o habilita é o overlay `enabled`. Ver o runbook.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: database
+resources:
+  - serviceaccount.yaml
+  - cronjob.yaml
+configMapGenerator:
+  - name: pg-dump-external-script
+    files:
+      - pg-dump-external.sh
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: nossagrana-backup

@@ -2,16 +2,26 @@
 # Invariantes de segurança do CronJob pg-dump-external (issue #47).
 #
 # Critério de aceite: sem credencial em YAML, argumentos ou logs; execuções
-# concorrentes não sobrescrevem backup válido; nasce suspenso para o rollout.
+# concorrentes não sobrescrevem backup válido; rollout nasce suspenso e o estado
+# habilitado é um overlay próprio (reaplicar nunca suspende um backup ativo).
 #
 # Uso: bash k8s/backup/tests/pg-dump-external-manifests.test.sh (requer kubectl, jq e docker)
 set -euo pipefail
 
 JOB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../pg-dump-external" && pwd)"
-RENDERED_YAML="$(kubectl kustomize "$JOB_DIR")"
 YQ_IMAGE="mikefarah/yq:4.47.1"
-# yq converte cada documento YAML em JSON; jq -s junta num array.
-RENDERED_JSON="$(docker run --rm -i "$YQ_IMAGE" -o=json -I=0 "." <<<"$RENDERED_YAML" | jq -s ".")"
+
+# Renderiza um overlay; yq converte cada documento YAML em JSON, jq -s junta num array.
+render_overlay_json() {
+  kubectl kustomize "$JOB_DIR/$1" |
+    docker run --rm -i "$YQ_IMAGE" -o=json -I=0 "." |
+    jq -s "."
+}
+
+SUSPENDED_JSON="$(render_overlay_json suspended)"
+# Estado estacionário (o que se reaplica no dia a dia): os checks gerais valem
+# para ele; "overlays_differ_only_in_suspend" estende a cobertura ao suspenso.
+RENDERED_JSON="$(render_overlay_json enabled)"
 PASSED=0
 FAILED=0
 
@@ -35,7 +45,21 @@ cronjob_is() {
 POD='.spec.jobTemplate.spec.template.spec'
 CONTAINER="$POD.containers[0]"
 
-starts_suspended() { cronjob_is '.spec.suspend == true'; }
+suspend_of() { jq -r '.[] | select(.kind == "CronJob") | .spec.suspend' <<<"$1"; }
+rollout_overlay_is_suspended() { [ "$(suspend_of "$SUSPENDED_JSON")" = "true" ]; }
+enabled_overlay_is_not_suspended() { [ "$(suspend_of "$RENDERED_JSON")" = "false" ]; }
+# Garante que habilitar não muda mais nada além de spec.suspend.
+overlays_differ_only_in_suspend() {
+  local suspended enabled
+  suspended="$(jq -S 'map(del(.spec.suspend))' <<<"$SUSPENDED_JSON")"
+  enabled="$(jq -S 'map(del(.spec.suspend))' <<<"$RENDERED_JSON")"
+  [ "$suspended" = "$enabled" ]
+}
+# `kubectl apply -k k8s/backup/pg-dump-external` (sem overlay) tem de falhar em
+# vez de suspender/habilitar silenciosamente (Codex P1 no PR #143).
+root_is_not_applicable() {
+  [ ! -e "$JOB_DIR/kustomization.yaml" ] && [ -f "$JOB_DIR/base/kustomization.yaml" ]
+}
 forbids_concurrency() { cronjob_is '.spec.concurrencyPolicy == "Forbid"'; }
 has_explicit_timezone() { cronjob_is '.spec.timeZone == "America/Sao_Paulo"'; }
 has_deadline_and_backoff() {
@@ -88,7 +112,10 @@ dockerfile_is_pinned_and_non_root() {
 }
 
 echo "manifests k8s/backup/pg-dump-external"
-check "nasce suspenso (rollout: habilitar só após inspeção do artefato)" starts_suspended
+check "overlay suspended (rollout) nasce suspenso: habilitar só após inspeção do artefato" rollout_overlay_is_suspended
+check "overlay enabled define spec.suspend=false explícito (reaplicar não suspende)" enabled_overlay_is_not_suspended
+check "overlays diferem apenas em spec.suspend" overlays_differ_only_in_suspend
+check "raiz sem kustomization.yaml (apply -k sem overlay falha)" root_is_not_applicable
 check "concurrencyPolicy Forbid (sem execuções concorrentes)" forbids_concurrency
 check "timeZone explícito" has_explicit_timezone
 check "activeDeadlineSeconds e backoffLimit definidos" has_deadline_and_backoff

@@ -3,7 +3,8 @@
 #
 # Fluxo: pg_dump (formato custom) -> valida tamanho e TOC (pg_restore --list)
 # -> cifra com age para um recipient PÚBLICO -> sha256 -> upload imutável
-# (artefato, .sha256, .meta.json) -> baixa de volta e compara -> retenção.
+# (artefato + .sha256, conferidos; só então o .meta.json, marcador de backup
+# completo) -> baixa de volta e compara -> retenção.
 #
 # A chave privada age NUNCA entra no cluster: só o recipient público. Quem
 # consegue ler o storage ou o Job não consegue decifrar os dumps. Guarde a
@@ -18,7 +19,7 @@
 # cifragem, upload ou verificação -> Job falha -> alertas do PrometheusRule.
 # O temporário (com o dump em claro) é removido em sucesso, falha e SIGTERM.
 #
-# Variáveis: ver k8s/backup/pg-dump-external/cronjob.yaml e o runbook.
+# Variáveis: ver k8s/backup/pg-dump-external/base/cronjob.yaml e o runbook.
 # BACKUP_TIMESTAMP e BACKUP_RUN_ID existem para reexecução determinística
 # (testes); em produção o padrão (UTC agora + nome do pod) evita colisões.
 set -eu
@@ -42,6 +43,7 @@ export PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-15}"
 export RCLONE_LOG_LEVEL="${RCLONE_LOG_LEVEL:-ERROR}"
 
 STARTED_AT="$(date +%s)"
+BOUNDED_TIMED_OUT="false"
 STAGE="config"
 REASON=""
 WORK_DIR=""
@@ -101,20 +103,33 @@ fail_stage() {
 }
 
 # Executa em background + wait para o trap de sinal agir na hora (um filho em
-# foreground adiaria o trap até terminar). Exit 124/137 = estourou o timeout.
+# foreground adiaria o trap até terminar). Marca BOUNDED_TIMED_OUT (ver
+# is_timeout_exit).
 run_bounded() {
   limit="$1"
   shift
+  bounded_start="$(date +%s)"
   timeout -k 10 "$limit" "$@" &
   CHILD_PID=$!
   bounded_rc=0
   wait "$CHILD_PID" || bounded_rc=$?
   CHILD_PID=""
+  BOUNDED_TIMED_OUT="false"
+  if [ "$bounded_rc" -ne 0 ] && [ $(($(date +%s) - bounded_start)) -ge "$limit" ]; then
+    BOUNDED_TIMED_OUT="true"
+  fi
   return "$bounded_rc"
 }
 
+# O exit code do `timeout` não basta para reconhecer o estouro: o do GNU sai com
+# 124, o do BusyBox (imagem alpine de produção, 1.37) com 143 (128 + SIGTERM) e,
+# pior, o pg_dump trata o SIGTERM e sai com 1 ("terminated by user"), o que
+# parece erro de conexão. Por isso também vale o tempo decorrido: falha depois de
+# >= limite segundos é timeout (o piso em segundos inteiros nunca dá falso
+# negativo). 137 = precisou de SIGKILL (-k). O SIGTERM do próprio job cai no
+# trap e nunca passa por esta checagem.
 is_timeout_exit() {
-  [ "$1" -eq 124 ] || [ "$1" -eq 137 ]
+  [ "$BOUNDED_TIMED_OUT" = "true" ] || [ "$1" -eq 124 ] || [ "$1" -eq 137 ]
 }
 
 require_value() {
@@ -235,29 +250,42 @@ ensure_artifact_absent() {
     fail_stage upload "${ARTIFACT} já existe no storage; backups nunca são sobrescritos"
 }
 
-# O .meta.json vai por último: só existe metadata para artefato completo.
-upload_artifact() {
+# Sobe os objetos na ordem recebida; cada um com tentativas limitadas.
+upload_objects() {
   STAGE="upload"
-  ensure_artifact_absent
-  for name in "$ARTIFACT" "$ARTIFACT.sha256" "$ARTIFACT.meta.json"; do
+  for name in "$@"; do
     copy_with_retry "$WORK_DIR/$name" "$REMOTE/$name" ||
       fail_stage upload "upload de ${name} falhou após ${UPLOAD_ATTEMPTS} tentativa(s) (ou objeto existente diferente)"
   done
-  log_step "upload concluído: ${ARTIFACT}"
 }
 
-# Só marca sucesso depois de baixar de volta os três objetos e comparar byte a byte.
-verify_upload() {
+# Baixa de volta cada objeto e compara byte a byte com o enviado.
+verify_objects() {
   STAGE="verify_upload"
-  mkdir "$WORK_DIR/verify"
-  for name in "$ARTIFACT" "$ARTIFACT.sha256" "$ARTIFACT.meta.json"; do
+  mkdir -p "$WORK_DIR/verify"
+  for name in "$@"; do
     copy_with_retry "$REMOTE/$name" "$WORK_DIR/verify/$name" ||
       fail_stage verify_upload "não foi possível baixar ${name} para verificação"
     cmp -s "$WORK_DIR/$name" "$WORK_DIR/verify/$name" ||
       fail_stage verify_upload "${name} no storage difere do enviado (corrupção no upload)"
   done
+}
+
+# O .meta.json é o marcador de artefato COMPLETO E VERIFICADO: só sobe depois de
+# artefato + .sha256 estarem no storage e conferidos. Falha em qualquer etapa
+# anterior deixa um órfão sem .meta.json, que a retenção não conta como backup
+# (prune_remote) e remove depois de RETENTION_DAYS. Não apagamos o que acabou de
+# subir na falha: numa colisão de nome o objeto pode ser o backup válido de
+# outra execução.
+publish_artifact() {
+  STAGE="upload"
+  ensure_artifact_absent
+  upload_objects "$ARTIFACT" "$ARTIFACT.sha256"
+  verify_objects "$ARTIFACT" "$ARTIFACT.sha256"
   (cd "$WORK_DIR/verify" && sha256sum -c "$ARTIFACT.sha256" >/dev/null 2>&1) ||
     fail_stage verify_upload "sha256 do artefato baixado não confere com ${ARTIFACT}.sha256"
+  upload_objects "$ARTIFACT.meta.json"
+  verify_objects "$ARTIFACT.meta.json"
   log_step "upload verificado: ${ARTIFACT}"
 }
 
@@ -278,14 +306,39 @@ delete_remote_artifact() {
 
 # Por nome (timestamp UTC no nome), não por mtime: independe do backend.
 # Remove só artefatos deste banco, mais antigos que RETENTION_DAYS, e nunca
-# deixa menos que RETENTION_MIN_KEEP (o artefato recém-enviado conta).
+# deixa menos que RETENTION_MIN_KEEP artefatos COMPLETOS (com .meta.json, que
+# só sobe depois da verificação; o recém-enviado conta). Órfãos (upload parcial
+# ou artefato que falhou na verificação) não contam para o mínimo e são
+# removidos quando passam de RETENTION_DAYS, para que falhas em sequência
+# nunca formem o "mínimo" com artefatos inválidos.
 prune_remote() {
   cutoff=$(($(date +%s) - RETENTION_DAYS * 86400))
   run_bounded "$UPLOAD_TIMEOUT_SECONDS" rclone lsf --files-only "$REMOTE" >"$WORK_DIR/remote.list" 2>/dev/null || return 1
-  grep -E "^${PGDATABASE}-[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9.-]+\.dump\.age$" "$WORK_DIR/remote.list" | sort >"$WORK_DIR/remote.matched" || true
-  prunable=$(($(wc -l <"$WORK_DIR/remote.matched") - RETENTION_MIN_KEEP))
+  split_remote_artifacts
+  delete_expired "$WORK_DIR/remote.orphans" || return 1
+  prunable=$(($(wc -l <"$WORK_DIR/remote.complete") - RETENTION_MIN_KEEP))
   [ "$prunable" -gt 0 ] || return 0
-  head -n "$prunable" "$WORK_DIR/remote.matched" >"$WORK_DIR/remote.candidates"
+  head -n "$prunable" "$WORK_DIR/remote.complete" >"$WORK_DIR/remote.candidates"
+  delete_expired "$WORK_DIR/remote.candidates"
+}
+
+# Separa os artefatos deste banco em completos (com .meta.json) e órfãos,
+# ambos ordenados por nome (= por timestamp).
+split_remote_artifacts() {
+  grep -E "^${PGDATABASE}-[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9.-]+\.dump\.age$" "$WORK_DIR/remote.list" | sort >"$WORK_DIR/remote.matched" || true
+  : >"$WORK_DIR/remote.complete"
+  : >"$WORK_DIR/remote.orphans"
+  while IFS= read -r name; do
+    if grep -qxF "$name.meta.json" "$WORK_DIR/remote.list"; then
+      echo "$name" >>"$WORK_DIR/remote.complete"
+    else
+      echo "$name" >>"$WORK_DIR/remote.orphans"
+    fi
+  done <"$WORK_DIR/remote.matched"
+}
+
+# Apaga os artefatos listados em $1 (um por linha) mais antigos que o cutoff.
+delete_expired() {
   while IFS= read -r name; do
     [ "$name" != "$ARTIFACT" ] || continue
     stamp="${name#"${PGDATABASE}"-}"
@@ -294,7 +347,7 @@ prune_remote() {
     [ "$epoch" -lt "$cutoff" ] || continue
     delete_remote_artifact "$name" || return 1
     RETENTION_DELETED=$((RETENTION_DELETED + 1))
-  done <"$WORK_DIR/remote.candidates"
+  done <"$1"
 }
 
 # Retenção é higiene, não backup: falhar aqui não invalida um backup já
@@ -314,8 +367,7 @@ main() {
   verify_dump
   encrypt_dump
   write_checksum_and_metadata
-  upload_artifact
-  verify_upload
+  publish_artifact
   apply_retention
   STAGE="done"
   emit_success

@@ -169,7 +169,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Shellcheck
-        run: shellcheck k8s/backup/*.sh k8s/backup/pg-dump-external/*.sh k8s/backup/tests/*.sh k8s/backup/tests/fakes/*
+        run: shellcheck k8s/backup/*.sh k8s/backup/pg-dump-external/base/*.sh k8s/backup/tests/*.sh k8s/backup/tests/fakes/*
 
       - name: Manifest invariants
         run: bash k8s/backup/tests/manifests.test.sh

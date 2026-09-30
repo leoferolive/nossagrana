@@ -6,10 +6,12 @@
 # cifrado com age (chave pública; a privada fica FORA do cluster) e enviado por
 # rclone a um destino configurável, com .sha256 e .meta.json.
 #
-# NASCE SUSPENSO (rollout da issue #47): criar os Secrets, rodar manualmente
-# (`kubectl create job --from=cronjob/pg-dump-external ...`), inspecionar o
-# artefato e só então `kubectl patch cronjob pg-dump-external -p '{"spec":{"suspend":false}}'`.
-# Rollback: suspender de novo — nenhuma cópia anterior é apagada.
+# A BASE É SUSPENSA (rollout da issue #47): criar os Secrets, aplicar o overlay
+# `suspended`, rodar manualmente (`kubectl create job --from=cronjob/pg-dump-external ...`),
+# inspecionar o artefato e só então aplicar o overlay `enabled`, que declara
+# `suspend: false`. Não editar `suspend` aqui: o estado habilitado vive no overlay,
+# para que reaplicar nunca suspenda o backup em silêncio.
+# Rollback: aplicar `suspended` — nenhuma cópia anterior é apagada.
 #
 # Nenhum valor sensível neste arquivo. Secrets esperados (namespace database),
 # criação em docs/backup/RUNBOOK.md:
@@ -140,6 +142,9 @@ spec:
                 defaultMode: 0440
             - name: work
               emptyDir:
+                # Pico ~2x o dump (claro + cifrado; depois cifrado + cópia baixada
+                # para verificação): limita o dump a ~500 MB. Estourar despeja o
+                # pod sem o JSON de falha (RUNBOOK, "Rollout").
                 sizeLimit: 1Gi
             - name: tmp
               emptyDir:

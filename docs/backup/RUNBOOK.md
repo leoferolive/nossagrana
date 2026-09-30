@@ -355,6 +355,26 @@ kubectl exec -i -n database deploy/postgres -- sh -c \
   'pg_restore -U "$POSTGRES_USER" --no-owner --role=nossagrana_prod --exit-on-error -d nossagrana_prod_restore' < restore.dump
 ```
 
+**Configuração de nível de banco não vem no dump.** O `pg_dump -Fc` do job não usa
+`--create` (o banco é recriado por nome original, o que não combina com restaurar em
+paralelo e trocar por rename), então ficam de fora: ACL do banco (ex.: `GRANT CONNECT
+ON DATABASE nossagrana_prod TO grafana_ro`), `ALTER DATABASE ... SET`, comentário do
+banco e os roles. Antes da troca, reaplique-os ao banco restaurado. Consulte-os no
+banco atual (ou nas anotações de quando foram criados):
+
+```bash
+kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres' <<'SQL'
+\l+ nossagrana_prod
+SELECT r.rolname, s.setconfig FROM pg_db_role_setting s
+  JOIN pg_database d ON d.oid = s.setdatabase
+  LEFT JOIN pg_roles r ON r.oid = s.setrole
+  WHERE d.datname = 'nossagrana_prod';
+SQL
+# reaplicar no banco restaurado, por exemplo:
+#   GRANT CONNECT ON DATABASE nossagrana_prod_restore TO grafana_ro;
+#   ALTER DATABASE nossagrana_prod_restore SET <parametro> = <valor>;
+```
+
 Depois seguir os passos 4 a 8 de "Restaurar em produção" (validar, trocar com a API
 parada, rollback, apagar `restore.dump` e o artefato locais, registrar). O dump
 custom não precisa do `extract-database.sh` (que é só para o `pg_dumpall`).

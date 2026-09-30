@@ -123,6 +123,10 @@ causa e duração na seção "Registro de exercícios e incidentes" do runbook.
   artefato do `pg-dump-external` é verificado no upload (integridade e TOC), mas
   o restore completo a partir dele é manual (runbook) até um drill dedicado —
   próximo passo natural, exige a chave privada fora do cluster.
+- O dump do `pg-dump-external` não inclui configuração de nível de banco (ACL do
+  banco, `ALTER DATABASE ... SET`) nem roles: ao restaurar, reaplicá-los (passo no
+  [RUNBOOK](./RUNBOOK.md#restaurar-a-partir-do-dump-externo)). O `pg_dumpall` local
+  os inclui.
 - Os dumps no PVC `postgres-backup` não são cifrados em repouso; estão no mesmo
   disco e sob o mesmo controle de acesso do próprio banco.
 - A NetworkPolicy do drill não é aplicada no cluster atual (controller de

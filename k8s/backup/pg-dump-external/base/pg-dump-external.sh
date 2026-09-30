@@ -294,12 +294,19 @@ timestamp_to_epoch() {
   date -u -d "$(printf '%s' "$stamp" | cut -c1-4)-$(printf '%s' "$stamp" | cut -c5-6)-$(printf '%s' "$stamp" | cut -c7-8) $(printf '%s' "$stamp" | cut -c10-11):$(printf '%s' "$stamp" | cut -c12-13):$(printf '%s' "$stamp" | cut -c14-15)" +%s
 }
 
+# rclone deletefile sai com 4 quando o objeto não existe.
+RCLONE_EXIT_OBJECT_NOT_FOUND=4
+
+# Apaga o .meta.json primeiro: sem ele o artefato deixa de contar como backup
+# completo. Só "não encontrado" é tolerado (órfãos nunca tiveram .meta.json e o
+# .sha256 pode faltar); qualquer outra falha (rede, permissão) aborta ANTES de
+# apagar o payload, senão sobraria um marcador sem artefato que nenhuma execução
+# futura limparia (a descoberta parte dos .dump.age). Codex P2, PR #143.
 delete_remote_artifact() {
   for name in "$1.meta.json" "$1" "$1.sha256"; do
-    if ! run_bounded "$UPLOAD_TIMEOUT_SECONDS" rclone deletefile "$REMOTE/$name" >/dev/null 2>&1; then
-      # Sidecar ausente é tolerado; falha no artefato em si não.
-      [ "$name" != "$1" ] || return 1
-    fi
+    rc=0
+    run_bounded "$UPLOAD_TIMEOUT_SECONDS" rclone deletefile "$REMOTE/$name" >/dev/null 2>&1 || rc=$?
+    [ "$rc" -eq 0 ] || [ "$rc" -eq "$RCLONE_EXIT_OBJECT_NOT_FOUND" ] || return 1
   done
   return 0
 }

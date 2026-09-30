@@ -350,15 +350,16 @@ rename, como em [Restaurar em produção](#restaurar-em-produção):
 ```bash
 age -d -i nossagrana-backup.key -o restore.dump "$ARTEFATO"    # $ARTEFATO: ver acima
 pg_restore --list restore.dump | head            # confere o TOC
-# Roles são do cluster, não vêm no dump. O dump tem GRANTs a backup_ro (e grafana_ro,
-# se existir) e o pg_restore --exit-on-error aborta no primeiro role ausente
-# (--no-owner não suprime ACLs). Em cluster reconstruído, recrie-os ANTES do restore;
-# em cluster que já os tem, o bloco é inofensivo (idempotente).
+# Roles são do cluster, não vêm no dump. O `createdb -O nossagrana_prod` exige o
+# dono; o dump tem GRANTs a backup_ro (e grafana_ro, se existir) e o pg_restore
+# --exit-on-error aborta no primeiro role ausente (--no-owner não suprime ACLs).
+# Em cluster reconstruído, recrie-os ANTES do restore; em cluster que já os tem,
+# o bloco é inofensivo (idempotente).
 kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1' <<'SQL'
 DO $$
 DECLARE r text;
 BEGIN
-  FOREACH r IN ARRAY ARRAY['backup_ro', 'grafana_ro'] LOOP
+  FOREACH r IN ARRAY ARRAY['nossagrana_prod', 'backup_ro', 'grafana_ro'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN
       EXECUTE format('CREATE ROLE %I NOLOGIN', r);
     END IF;
@@ -390,10 +391,11 @@ SQL
 #   ALTER DATABASE nossagrana_prod_restore SET <parametro> = <valor>;
 ```
 
-Os roles recriados acima são `NOLOGIN` (só existem para os GRANTs do dump). Em cluster
-reconstruído, habilite o `backup_ro` para o job com
-`ALTER ROLE backup_ro LOGIN PASSWORD '...'` (a senha do Secret `pg-dump-external-db`)
-e reaplique o `grafana_ro` conforme sua configuração original.
+Os roles recriados acima são `NOLOGIN` (só existem para o dono/GRANTs do dump). Em
+cluster reconstruído, antes de trocar por rename, restaure o login de cada um:
+`ALTER ROLE nossagrana_prod LOGIN PASSWORD '...'` (a senha que a API usa, do Secret
+da aplicação), `ALTER ROLE backup_ro LOGIN PASSWORD '...'` (Secret
+`pg-dump-external-db`) e o `grafana_ro` conforme sua configuração original.
 
 Depois seguir os passos 4 a 8 de "Restaurar em produção" (validar, trocar com a API
 parada, rollback, apagar `restore.dump` e o artefato locais, registrar). O dump

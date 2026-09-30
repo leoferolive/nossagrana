@@ -285,6 +285,17 @@ test_retention_prunes_old_but_keeps_minimum() {
     bash -c 'jq -e ".retention_deleted == 1" <<<"$1" >/dev/null' _ "$(final_json)"
 }
 
+test_retention_keeps_payload_when_marker_delete_fails() {
+  new_case
+  seed_artifact nossagrana_prod 20200101T000000Z
+  run_job RETENTION_DAYS=30 RETENTION_MIN_KEEP=1 FAKE_RCLONE_FAIL_DELETE_SUFFIX=.meta.json
+  check "marcador não apagado: backup atual continua sucesso" test "$EXIT_CODE" -eq 0
+  check "marcador não apagado: artefato NÃO é removido (evita .meta.json sem payload)" \
+    test -e "$REMOTE/nossagrana_prod-20200101T000000Z-old.dump.age" -a -e "$REMOTE/nossagrana_prod-20200101T000000Z-old.dump.age.meta.json"
+  check "marcador não apagado: relatório sinaliza retention_ok=false" \
+    bash -c 'jq -e ".retention_ok == false" <<<"$1" >/dev/null' _ "$(final_json)"
+}
+
 test_retention_failure_does_not_fail_backup() {
   new_case
   seed_artifact nossagrana_prod 20200101T000000Z
@@ -354,6 +365,7 @@ test_never_overwrites_existing_artifact
 test_concurrent_runs_use_distinct_names
 test_retention_prunes_old_but_keeps_minimum
 test_retention_failure_does_not_fail_backup
+test_retention_keeps_payload_when_marker_delete_fails
 test_config_is_validated_without_echoing_secrets
 test_sigterm_cleans_up_and_exits_fast
 echo

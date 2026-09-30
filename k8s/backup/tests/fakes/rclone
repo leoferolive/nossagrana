@@ -4,13 +4,16 @@
 #
 # Contrato replicado do rclone real: com `--ignore-existing`, copyto sobre um
 # destino existente não faz nada (exit 0) e não altera o destino; lsf de
-# diretório inexistente sai com 3. Flags com valor devem vir como --flag=valor.
+# diretório inexistente sai com 3. deletefile de objeto inexistente sai com 4
+# (object not found). Flags com valor devem vir como --flag=valor.
 # Controles por ambiente: FAKE_RCLONE_FAIL_UPLOADS=<n> (falha os n primeiros
 # uploads), FAKE_RCLONE_FAIL_ALWAYS, FAKE_RCLONE_CORRUPT_UPLOAD,
 # FAKE_RCLONE_LSF_FAIL_FROM_CALL=<n> (lsf falha a partir da n-ésima chamada),
 # FAKE_RCLONE_LSF_HIDE (lsf não lista nada: simula corrida com outro job),
 # FAKE_RCLONE_FAIL_SUFFIX=<sufixo> (falha sempre o upload de objetos cujo nome
-# termina no sufixo, ex.: .meta.json: simula upload parcial).
+# termina no sufixo, ex.: .meta.json: simula upload parcial),
+# FAKE_RCLONE_FAIL_DELETE_SUFFIX=<sufixo> (deletefile de objeto com esse sufixo
+# falha com exit 1: erro transitório/permissão, diferente de "não encontrado").
 echo "rclone $*" >>"$FAKE_STATE/calls.log"
 cmd="$1"
 shift
@@ -70,7 +73,16 @@ case "$cmd" in
     [ -d "$1" ] || exit 3
     [ -n "${FAKE_RCLONE_LSF_HIDE:-}" ] || ls -1 "$1"
     ;;
-  deletefile) rm -f "$1" ;;
+  deletefile)
+    case "$1" in
+      *"${FAKE_RCLONE_FAIL_DELETE_SUFFIX:-@sem-sufixo@}")
+        echo "rclone: ERROR: delete of $(basename "$1") failed (fake)" >&2
+        exit 1
+        ;;
+    esac
+    [ -e "$1" ] || exit 4
+    rm -f "$1"
+    ;;
   *)
     echo "fake rclone: subcomando não suportado: $cmd" >&2
     exit 64

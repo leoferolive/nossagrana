@@ -1,7 +1,13 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { DrizzleRevokedTokenRepository } from './revoked-token.repository.js';
 import { DrizzleDatabaseFake } from './tests/drizzle-database-fake.js';
+
+function sqlDoConflito(expressao: unknown): string {
+  return new PgDialect().sqlToQuery(expressao as SQL).sql;
+}
 
 describe('DrizzleRevokedTokenRepository (cliente fake)', () => {
   let database: DrizzleDatabaseFake;
@@ -32,13 +38,21 @@ describe('DrizzleRevokedTokenRepository (cliente fake)', () => {
     await repo.revokeAllByUserId('u1');
 
     const [escrita] = database.escritas;
+    expect(escrita).toBeDefined();
     expect(escrita?.conflito).toBe('update');
-    expect(escrita?.valores?.tokenHash).toBe('__compromised__u1');
-    expect(escrita?.valores?.userId).toBe('u1');
-    const revokedAt = escrita?.valores?.revokedAt as Date;
+    const valores = escrita?.valores ?? {};
+    const atualizacao = escrita?.atualizacao ?? {};
+    expect(valores.tokenHash).toBe('__compromised__u1');
+    expect(valores.userId).toBe('u1');
+    const revokedAt = valores.revokedAt as Date;
     expect(revokedAt.getTime()).toBeGreaterThanOrEqual(antes);
-    expect(escrita?.atualizacao?.revokedAt).toBe(revokedAt);
-    const validadeMs = (escrita?.valores?.expiresAt as Date).getTime() - revokedAt.getTime();
+    // O UPDATE do conflito é decidido pelo banco (GREATEST), não pelo instante da app:
+    // nunca um Date cru, senão uma revogação antiga tardia sobrescreveria a mais nova.
+    expect(atualizacao.revokedAt).not.toBeInstanceOf(Date);
+    expect(atualizacao.expiresAt).not.toBeInstanceOf(Date);
+    expect(sqlDoConflito(atualizacao.revokedAt)).toMatch(/greatest\(.*excluded\.revoked_at\)/i);
+    expect(sqlDoConflito(atualizacao.expiresAt)).toMatch(/greatest\(.*excluded\.expires_at\)/i);
+    const validadeMs = (valores.expiresAt as Date).getTime() - revokedAt.getTime();
     expect(validadeMs).toBe(365 * 24 * 60 * 60 * 1000);
   });
 

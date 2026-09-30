@@ -4,7 +4,8 @@
 
 - **Revogação global** = um marcador por usuário em `revoked_refresh_tokens`
   (`token_hash = '__compromised__<userId>'`) com `revoked_at` = instante da
-  revogação. Cada revogação nova **avança** `revoked_at` (upsert).
+  revogação. Cada revogação nova **avança** `revoked_at` (upsert), e o marcador
+  é **monotônico**: nunca retrocede (ver "Monotonicidade do marcador").
 - Um token (access ou refresh) é da sessão revogada quando seu `iat` (segundos)
   é **menor ou igual ao segundo da revogação**. Token sem `iat` com revogação
   registrada também é tratado como revogado (falha fechada). Um novo login
@@ -48,6 +49,31 @@ o erro é logado (`error`, `userId`) e a resposta segue `TOKEN_REUSE_DETECTED`.
   (também abriria a porta para devolver um par novo no `PATCH /auth/senha`).
 - **`renovarSessao(fastify, …)`** depende dos decorators do Fastify em vez de
   service injetado; refator adiado.
+
+## Monotonicidade do marcador (follow-up do #150, P1 do review)
+
+Duas revogações globais sobrepostas (ex.: troca de senha + reset, ou reuso de
+refresh) carimbam `agora` na app **antes** de esperar o banco; a mais antiga
+pode commitar por último. Com `SET revoked_at = <agora da requisição>` ela
+sobrescreveria o instante mais novo e um refresh emitido entre os dois
+instantes (já invalidado pela revogação mais nova) voltaria a valer.
+
+- `DrizzleRevokedTokenRepository.revokeAllByUserId` resolve o conflito no banco:
+  `revoked_at = GREATEST(existente, novo)` e `expires_at = GREATEST(existente, novo)`
+  (`ON CONFLICT (token_hash) DO UPDATE`). Sob lock de linha, a escrita que
+  espera lê o valor já commitado, então a ordem de commit não importa.
+- **Semântica do expiry:** `expires_at = revoked_at + 365 dias`, função crescente
+  do `revoked_at`; portanto `GREATEST` nos dois mantém os dois da **mesma**
+  revogação (a mais recente). O expiry nunca fica abaixo da validade máxima dos
+  tokens invalidados (refresh de 7 dias) e o cleanup não remove o marcador antes.
+- O carimbo continua no **relógio da app**, o mesmo do `iat` dos tokens (por isso
+  não se usa `now()` do banco: clocks distintos app x banco poderiam deslocar a
+  comparação `iat <= revoked_at`). Contrato público (`revokeAllByUserId(userId)`,
+  `findRevokedAllAt`) inalterado; o relógio é injetável só nos testes.
+- `InMemoryRevokedTokenRepository` aplica o mesmo máximo.
+- Testes: InMemory (`revoked-token.repository.test.ts`), SQL do upsert
+  (`revoked-token.drizzle.test.ts`) e PostgreSQL real com ordem invertida e
+  rodadas concorrentes com carimbos embaralhados (`sessao-revogada.pg.test.ts`).
 
 ## Janela do access token
 

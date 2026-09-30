@@ -1,4 +1,4 @@
-# Revogação de sessões e encerramento de WebSocket (#119, epic #115)
+# Sessões, revogação e WebSocket (#118 e #119, epic #115)
 
 ## Modelo
 
@@ -97,6 +97,7 @@ durante um refresh, pode deixar o par novo sobreviver. O relógio é o mesmo do
 
 | Código | Constante                   | Quando                                                         | Cliente             |
 | ------ | --------------------------- | -------------------------------------------------------------- | ------------------- |
+| 4001   | `WS_CLOSE_NAO_AUTENTICADO`  | ticket ausente/inválido/expirado/usado/de outra família (#118) | reconecta c/ ticket |
 | 4003   | (handshake)                 | usuário sem vínculo com a família                              | não reconecta       |
 | 4004   | `WS_CLOSE_FAMILIA_EXCLUIDA` | família excluída                                               | não reconecta       |
 | 4005   | `WS_CLOSE_SESSAO_REVOGADA`  | sessões revogadas (senha) ou handshake com token pré-revogação | limpa sessão, login |
@@ -104,20 +105,86 @@ durante um refresh, pode deixar o par novo sobreviver. O relógio é o mesmo do
 
 - `WebSocketManager` guarda o dono de cada socket (`join(familiaId, ws, userId)`)
   e expõe `closeUser` (todas as famílias) e `closeUserInFamily` (uma família).
-- Handshake: checa a sessão, entra no room, checa **de novo** (evento publicado
+- Handshake: consome o ticket (ver seção abaixo), checa a sessão, entra no room, checa **de novo** (evento publicado
   após commit não se perde entre a 1ª checagem e o `join`; raciocínio do #147).
   O vínculo com a família já era revalidado duas vezes (#147), o que cobre a
   remoção de membro concorrente ao handshake.
 - Mensagens de fechamento são genéricas: nunca incluem ids, e-mail ou tokens.
 
+## Ticket efêmero de WebSocket (#118)
+
+O JWT deixou de ir na URL do WebSocket. Decisão e alternativas em `docs/DECISIONS.md`
+("Ticket efêmero de WebSocket").
+
+**Fluxo**
+
+1. Cliente: `POST /api/ws/ticket` com `Authorization: Bearer <access>` e `X-Familia-Id`
+   (passa por `authenticate` + `requireFamiliaScope`: membership validada **antes** de emitir).
+   Resposta: `{ data: { ticket, expiraEm } }`.
+2. Cliente: `new WebSocket(".../api/ws?ticket=<ticket>&familiaId=<id>")`. Nenhum JWT na URL.
+3. Servidor: consome o ticket, confere que a família da query é a do ticket, e segue para
+   `admitirSocket` (sessão → família → `join` → sessão/família de novo; #119/#147).
+4. Reconexão: **sempre** um ticket novo (o anterior já foi gasto). O store web faz isso a cada
+   tentativa. Falhas na emissão: `401` encerra a sessão local (o `ApiClient` já tentou o
+   refresh), `403` para sem reconectar, `429` espera o `Retry-After` (padrão 60 s, mínimo 1 s) e
+   tenta de novo sem gastar tentativas nem deslogar; demais erros (rede, 5xx) entram no backoff
+   existente e, esgotadas as tentativas, deixam `status: 'error'` **sem** logout e seguem tentando a cada 30 s até a API voltar (ou `disconnect`). Só o socket que
+   cai repetidamente depois de um ticket válido encerra a sessão ao esgotar as tentativas.
+
+**Propriedades**
+
+| Propriedade        | Como                                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Alta entropia      | 32 bytes de `crypto.randomBytes`, base64url (43 caracteres)                                                                                                                |
+| Curto              | TTL de 30 s (`WS_TICKET_TTL_MS`); expirado é recusado no consumo                                                                                                           |
+| Uso único          | `consumir` lê e apaga sem `await` no meio (atômico); teste com consumos simultâneos                                                                                        |
+| Vinculado          | usuário + família + `iat` do access (sessão); família divergente na query é recusada                                                                                       |
+| Só hash persistido | o store guarda SHA-256; o valor bruto não é guardado nem logado                                                                                                            |
+| Sem JWT no ticket  | o ticket é opaco; a sessão é representada só pelo `iat`                                                                                                                    |
+| Sessão revogada    | não obtém ticket (`401 { error: { code: 'SESSION_REVOKED' } }`, envelope de api-design.md); ticket já emitido é recusado no handshake                                      |
+| Sem detalhe        | todas as recusas de autenticação: close `4001`, motivo `Autenticacao invalida`                                                                                             |
+| Rate limit         | 20 emissões/min por usuário (`sub`) no endpoint, contado em `preHandler`, depois do `authenticate`; o limite global por IP (100/min) continua valendo para as demais rotas |
+
+- Um ticket de outra família, ao ser tentado, é **queimado** (não serve nem para a família certa).
+- `?token=` na URL é **ignorado** pelo servidor (não é lido nem validado): access válido sem
+  ticket fecha com `4001`. Não há janela de compatibilidade com o formato antigo.
+- Falha do store ao consumir fecha com `1011` (falha fechada).
+- Armazenamento em memória (Map + TTL), válido enquanto o API for réplica única; o que muda se
+  isso deixar de valer está em DECISIONS.md. Um reinício perde tickets em voo (≤ 30 s): o cliente
+  reconecta com ticket novo. Os Deployments do API usam `strategy: Recreate` para que o pod velho
+  e o novo nunca recebam tráfego ao mesmo tempo (um ticket emitido num seria recusado no outro).
+
+**Logs:** o serializer `req` do logger do Fastify (`opcoesDoLogger`) redige `ticket`, `token`,
+`accessToken` e `refreshToken` na query (`[REDACTED]`), comparando a chave já decodificada
+(`?%74icket=` também é redigido). As mensagens de fechamento e de erro
+nunca incluem ticket, id ou e-mail. Infra à frente do API (proxy/Cloudflare) ainda enxerga a
+URL do handshake; o ticket vale uma vez e ~30 s.
+
+**Testes:** `ws-ticket.service.test.ts` (TTL, uso único, outra família, concorrência, limpeza),
+`ws-ticket.routes.test.ts` e `ws-ticket.scope.test.ts` (emissão, 401/400, sessão revogada,
+membership real e rate limit), `ws.routes.test.ts` (handshake: reuso, simultâneo, expirado,
+família trocada, `?token=` ignorado, motivo único), `log-redaction.test.ts` e
+`websocket.store.test.ts` (ticket novo por reconexão, sem token na URL).
+
 ## Fora do escopo (outras issues do epic #115)
 
-Cookie HttpOnly para refresh (#116), access em memória (#117) e ticket efêmero
-de WebSocket (#118). Hoje o access ainda vai na query string do WS; a checagem
-de revogação do handshake independe de como o token chega.
+Cookie HttpOnly para refresh (#116) e access em memória (#117): o access ainda é guardado no
+`localStorage`, mas agora só trafega em `Authorization`, nunca na URL do WebSocket. E2E de
+sessão (#120).
 
 ## Rollout / rollback
 
-Sem migration (usa `revoked_refresh_tokens`). Em falha, preservar a revogação do
+Sem migration (usa `revoked_refresh_tokens`; os tickets do #118 ficam em memória). Em falha, preservar a revogação do
 reset e corrigir só o gatilho da troca normal; não revalidar sessões
 potencialmente comprometidas.
+
+Rollback do #118: reverter o deploy restaura o handshake por `?token=`, que é o fluxo anterior;
+como a API e o web sobem juntos, não há cliente novo falando com servidor antigo.
+
+**Custo aceito no deploy do #118:** o servidor novo ignora `?token=`. Uma aba aberta (ou bundle
+PWA em cache) de antes do deploy ainda conecta com `?token=`; quando o socket cai no deploy, ele
+recebe `4001` a cada tentativa e, ao esgotar as 5 tentativas (~3 s de backoff), o código antigo
+chama `clearSession`: **todo usuário com aba antiga aberta é deslogado uma vez** e precisa entrar
+de novo (o bundle novo é carregado no login). Não há janela de compatibilidade com `?token=` por
+decisão de segurança (o ponto do #118 é tirar o JWT da URL). O impacto é um novo login, sem perda
+de dados.

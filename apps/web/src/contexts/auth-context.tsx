@@ -124,7 +124,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     if (session && session.familiaIdAtiva) {
       wsConnect({
-        getAccessToken: () => session.accessToken,
         familiaId: session.familiaIdAtiva,
         clearSession: logout,
       });

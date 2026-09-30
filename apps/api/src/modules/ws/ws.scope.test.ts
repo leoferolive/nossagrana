@@ -14,18 +14,24 @@ const familiaId = '11111111-1111-1111-1111-111111111111';
 
 async function createApp() {
   const app = Fastify();
-  await app.register(import('@fastify/jwt'), { secret: 'test-jwt-secret-must-be-32-chars!' });
   const { websocketPlugin } = await import('../../plugins/websocket.plugin.js');
   const { sessaoRevogacaoPlugin } = await import('../../plugins/sessao-revogacao.plugin.js');
   const { InMemoryRevokedTokenRepository } = await import('../auth/revoked-token.repository.js');
+  const { wsTicketPlugin } = await import('../../plugins/ws-ticket.plugin.js');
   const { wsRoutes } = await import('./ws.routes.js');
   await app.register(websocketPlugin);
   await app.register(sessaoRevogacaoPlugin, {
     tokensRevogados: new InMemoryRevokedTokenRepository(),
   });
+  await app.register(wsTicketPlugin);
   await app.register(wsRoutes);
   await app.ready();
   return app;
+}
+
+async function conectar(app: Awaited<ReturnType<typeof createApp>>) {
+  const { ticket } = await app.wsTickets.emitir({ userId: 'user-1', familiaId, emitidoEm: 1000 });
+  return app.injectWS(`/ws?ticket=${ticket}&familiaId=${familiaId}`);
 }
 
 async function closeCode(
@@ -53,8 +59,7 @@ describe('WebSocket family scope', () => {
     mockLimit.mockResolvedValue([{ deletedAt: null }]);
     const app = await createApp();
     try {
-      const token = app.jwt.sign({ sub: 'user-1', email: 'user@example.com' });
-      const ws = await app.injectWS(`/ws?token=${token}&familiaId=${familiaId}`);
+      const ws = await conectar(app);
       await vi.waitFor(() => expect([...app.wsManager.entries()]).toHaveLength(1));
       expect(ws.readyState).toBe(1);
       const closed = new Promise<void>((resolve) => ws.once('close', () => resolve()));
@@ -69,8 +74,7 @@ describe('WebSocket family scope', () => {
     mockLimit.mockResolvedValue([{ deletedAt: new Date('2026-09-01') }]);
     const app = await createApp();
     try {
-      const token = app.jwt.sign({ sub: 'user-1', email: 'user@example.com' });
-      const ws = await app.injectWS(`/ws?token=${token}&familiaId=${familiaId}`);
+      const ws = await conectar(app);
       expect(await closeCode(ws)).toBe(4004);
       expect([...app.wsManager.entries()]).toHaveLength(0);
     } finally {
@@ -82,8 +86,7 @@ describe('WebSocket family scope', () => {
     mockLimit.mockResolvedValue([]);
     const app = await createApp();
     try {
-      const token = app.jwt.sign({ sub: 'user-1', email: 'user@example.com' });
-      const ws = await app.injectWS(`/ws?token=${token}&familiaId=${familiaId}`);
+      const ws = await conectar(app);
       expect(await closeCode(ws)).toBe(4003);
     } finally {
       await app.close();

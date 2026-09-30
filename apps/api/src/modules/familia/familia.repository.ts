@@ -1,10 +1,13 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 
-import { and, eq, gt, ilike, isNull } from 'drizzle-orm';
+import { and, eq, ilike, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { convites, familias, solicitacoesEntrada, usuarioFamilia, users } from '../../db/schema.js';
+import { consumirConviteEmMemoria, type ConviteEmMemoria } from './familia-convite.js';
+import { DrizzleConviteConsumer } from './familia-convite.repository.js';
 import type {
+  ConsumoConviteResultado,
   CreatedFamilia,
   CreatedFamiliaInvite,
   CreatedFamiliaJoinRequest,
@@ -110,55 +113,8 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     return createdInvite;
   }
 
-  async joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null> {
-    const now = new Date();
-
-    return db.transaction(async (tx) => {
-      const [invite] = await tx
-        .select({
-          id: convites.id,
-          familiaId: convites.familiaId,
-          familiaNome: familias.nome,
-          familiaDataCriacao: familias.dataCriacao,
-        })
-        .from(convites)
-        .innerJoin(familias, eq(familias.id, convites.familiaId))
-        .where(
-          and(
-            eq(convites.codigo, input.codigo),
-            isNull(convites.usadoPor),
-            gt(convites.expiraEm, now),
-          ),
-        )
-        .limit(1);
-
-      if (!invite) {
-        return null;
-      }
-
-      await tx
-        .insert(usuarioFamilia)
-        .values({
-          usuarioId: input.usuarioId,
-          familiaId: invite.familiaId,
-          role: 'membro',
-        })
-        .onConflictDoNothing();
-
-      await tx
-        .update(convites)
-        .set({
-          usadoPor: input.usuarioId,
-          usadoEm: now,
-        })
-        .where(eq(convites.id, invite.id));
-
-      return {
-        id: invite.familiaId,
-        nome: invite.familiaNome,
-        dataCriacao: invite.familiaDataCriacao,
-      };
-    });
+  async joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado> {
+    return new DrizzleConviteConsumer(db).consumir(input);
   }
 
   async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest> {
@@ -332,7 +288,7 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     string,
     Map<string, { role: 'admin' | 'membro'; dataEntrada: Date }>
   >();
-  private invitesById = new Map<string, CreatedFamiliaInvite>();
+  private invitesById = new Map<string, ConviteEmMemoria>();
   private joinRequestsById = new Map<string, CreatedFamiliaJoinRequest>();
   private userNamesById = new Map<string, string>();
 
@@ -410,29 +366,16 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     return invite;
   }
 
-  async joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null> {
-    const now = new Date();
-    const invite = Array.from(this.invitesById.values()).find(
-      (entry) => entry.codigo === input.codigo && entry.expiraEm > now,
+  async joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado> {
+    return consumirConviteEmMemoria(
+      {
+        convites: this.invitesById,
+        familias: this.familiasById,
+        vinculos: this.membershipsByFamiliaId,
+      },
+      input,
+      new Date(),
     );
-
-    if (!invite) {
-      return null;
-    }
-
-    const memberships = this.membershipsByFamiliaId.get(invite.familiaId);
-    if (!memberships) {
-      return null;
-    }
-
-    const existingMembership = memberships.get(input.usuarioId);
-    memberships.set(input.usuarioId, {
-      role: 'membro',
-      dataEntrada: existingMembership?.dataEntrada ?? now,
-    });
-    this.invitesById.delete(invite.id);
-
-    return this.familiasById.get(invite.familiaId) ?? null;
   }
 
   async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest> {

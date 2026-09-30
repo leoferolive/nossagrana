@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useAuth } from '@/contexts/use-auth';
+import { ApiError } from '@/services/api-client';
 import { familiaService } from '@/services/auth.service';
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
@@ -19,6 +20,12 @@ interface OnboardingPageProps {
 
 const submitButtonClass =
   'w-full rounded-lg bg-success px-4 py-2.5 font-semibold text-white transition hover:bg-success-strong focus:outline-none focus:ring-2 focus:ring-success/40 disabled:cursor-not-allowed disabled:opacity-60';
+
+/** 409 = convite já consumido por outra pessoa (#67); qualquer outro erro é código inválido/expirado. */
+const mensagemErroConvite = (error: unknown): string =>
+  error instanceof ApiError && error.status === 409
+    ? 'Este convite já foi utilizado. Peça um novo código ao administrador da família.'
+    : 'Código inválido ou expirado.';
 
 export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: OnboardingPageProps) => {
   const { updateFamiliaIdAtiva } = useAuth();
@@ -57,8 +64,8 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
       await familiaService.alternar(res.familia.id);
       updateFamiliaIdAtiva(res.familia.id);
       onOpenFamilySettings();
-    } catch {
-      setErro('Código inválido ou expirado.');
+    } catch (error) {
+      setErro(mensagemErroConvite(error));
     } finally {
       setCarregando(false);
     }

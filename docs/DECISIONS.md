@@ -182,6 +182,13 @@ else:
 - PostgreSQL acessível somente via localhost / rede interna do K3s
 - HTTPS garantido via Cloudflare Tunnel
 
+### Convite de família: uso único e códigos de status (#67)
+
+- `POST /familias/entrar/:codigo` consome o convite de forma atômica (UPDATE condicional + membership na mesma transação); convite vale para **um** usuário.
+- A API distingue **409** (código existe e já foi consumido) de **404** (inexistente, expirado ou de família excluída). A distinção existe para o cliente poder orientar o usuário ("peça um novo código") e para a repetição segura (quem já entrou recebe 200).
+- Risco de enumeração aceito: o código tem 48 bits aleatórios (12 hex) e a rota tem rate limit, então confirmar que um código existiu não é explorável na prática. Se o rate limit for afrouxado, reavaliar e colapsar 409 em 404.
+- Repetição pelo mesmo usuário que consumiu o convite e ainda é membro devolve 200 (`ja_membro`); se ele foi removido depois, volta a ser 409.
+
 ---
 
 ## Performance (considerações para o Raspberry Pi)

@@ -13,6 +13,15 @@ export interface JoinFamiliaByInviteInput {
   usuarioId: string;
 }
 
+/**
+ * Resultado determinístico do consumo de convite (#67). `entrou` e `ja_membro`
+ * carregam a família; `usado`/`expirado`/`invalido` são o motivo da recusa
+ * (família excluída conta como `invalido`).
+ */
+export type ConsumoConviteResultado =
+  | { status: 'entrou' | 'ja_membro'; familia: CreatedFamilia }
+  | { status: 'usado' | 'expirado' | 'invalido' };
+
 export interface RequestFamiliaJoinInput {
   familiaId: string;
   usuarioId: string;
@@ -74,7 +83,7 @@ export interface FamiliaRepository {
   isUserAdmin(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   hasMembership(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite>;
-  joinByInvite(input: JoinFamiliaByInviteInput): Promise<CreatedFamilia | null>;
+  joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado>;
   requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest>;
   listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]>;
   reviewJoinRequest(input: {

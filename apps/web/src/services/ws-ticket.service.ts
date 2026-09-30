@@ -11,10 +11,11 @@ export class WsTicketService {
   constructor(private readonly api: ApiClient) {}
 
   async emitir(familiaId: string): Promise<WsTicketResponse> {
-    return this.api.request<WsTicketResponse>('/api/ws/ticket', {
+    const { data } = await this.api.request<{ data: WsTicketResponse }>('/api/ws/ticket', {
       method: 'POST',
       headers: { 'X-Familia-Id': familiaId },
     });
+    return data;
   }
 }
 

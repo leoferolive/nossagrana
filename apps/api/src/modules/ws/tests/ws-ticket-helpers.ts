@@ -34,7 +34,7 @@ export async function emitirTicketPorHttp(
     url: '/api/ws/ticket',
     headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
   });
-  return (resposta.json() as { ticket: string }).ticket;
+  return (resposta.json() as { data: { ticket: string } }).data.ticket;
 }
 
 /** Abre o socket com o ticket na query, que é o único segredo aceito na URL do WS. */

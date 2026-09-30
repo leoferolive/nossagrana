@@ -16,8 +16,7 @@ describe('WsTicketService', () => {
 
   it('emitir faz POST /api/ws/ticket com o header da família e devolve o ticket', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce({
-      ticket: 't'.repeat(43),
-      expiraEm: '2026-09-30T12:00:30.000Z',
+      data: { ticket: 't'.repeat(43), expiraEm: '2026-09-30T12:00:30.000Z' },
     });
 
     const resposta = await service.emitir('fam-1');

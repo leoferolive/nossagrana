@@ -120,7 +120,7 @@ O JWT deixou de ir na URL do WebSocket. Decisão e alternativas em `docs/DECISIO
 
 1. Cliente: `POST /api/ws/ticket` com `Authorization: Bearer <access>` e `X-Familia-Id`
    (passa por `authenticate` + `requireFamiliaScope`: membership validada **antes** de emitir).
-   Resposta: `{ ticket, expiraEm }`.
+   Resposta: `{ data: { ticket, expiraEm } }`.
 2. Cliente: `new WebSocket(".../api/ws?ticket=<ticket>&familiaId=<id>")`. Nenhum JWT na URL.
 3. Servidor: consome o ticket, confere que a família da query é a do ticket, e segue para
    `admitirSocket` (sessão → família → `join` → sessão/família de novo; #119/#147).

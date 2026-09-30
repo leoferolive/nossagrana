@@ -66,7 +66,7 @@ describe('POST /ws/ticket — membership e rate limit (#118)', () => {
       const resposta = await pedirTicket(app);
 
       expect(resposta.statusCode).toBe(200);
-      expect(await app.wsTickets.consumir(resposta.json().ticket, FAMILIA)).toMatchObject({
+      expect(await app.wsTickets.consumir(resposta.json().data.ticket, FAMILIA)).toMatchObject({
         userId: 'user-1',
         familiaId: FAMILIA,
       });

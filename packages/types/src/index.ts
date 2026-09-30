@@ -69,6 +69,9 @@ export const wsTicketResponseSchema = z.object({
   expiraEm: z.string().datetime(),
 });
 
+/** Envelope de item de api-design.md: `{ data: T }`. */
+export const wsTicketEnvelopeSchema = z.object({ data: wsTicketResponseSchema });
+
 export type WsTicketResponse = z.infer<typeof wsTicketResponseSchema>;
 
 export const authLogoutRequestSchema = z.object({

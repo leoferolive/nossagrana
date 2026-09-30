@@ -33,7 +33,7 @@ export const wsTicketRoutes: FastifyPluginAsync = async (fastify) => {
           familiaId: request.familiaIdAtiva as string,
           emitidoEm: request.user.iat,
         });
-        return { ticket, expiraEm: expiraEm.toISOString() };
+        return { data: { ticket, expiraEm: expiraEm.toISOString() } };
       } catch (err) {
         if (!(err instanceof WsTicketSessaoRevogadaError)) throw err;
         return reply

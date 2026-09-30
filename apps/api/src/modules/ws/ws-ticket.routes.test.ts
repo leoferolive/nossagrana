@@ -53,7 +53,8 @@ describe('POST /api/ws/ticket (#118)', () => {
     const resposta = await pedirTicket(app, ana.accessToken);
 
     expect(resposta.statusCode).toBe(200);
-    const { ticket, expiraEm } = resposta.json() as { ticket: string; expiraEm: string };
+    const { ticket, expiraEm } = (resposta.json() as { data: { ticket: string; expiraEm: string } })
+      .data;
     expect(ticket).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(new Date(expiraEm).getTime()).toBeGreaterThan(Date.now());
     const dados = await app.wsTickets.consumir(ticket, FAMILIA);
@@ -67,12 +68,12 @@ describe('POST /api/ws/ticket (#118)', () => {
     const primeiro = await pedirTicket(app, ana.accessToken);
     const segundo = await pedirTicket(app, ana.accessToken);
 
-    expect(primeiro.json().ticket).not.toBe(segundo.json().ticket);
+    expect(primeiro.json().data.ticket).not.toBe(segundo.json().data.ticket);
   });
 
   it('o ticket de uma família não vale para outra', async () => {
     const ana = await criarUsuario(app);
-    const { ticket } = (await pedirTicket(app, ana.accessToken, FAMILIA)).json();
+    const { ticket } = (await pedirTicket(app, ana.accessToken, FAMILIA)).json().data;
 
     expect(await app.wsTickets.consumir(ticket, OUTRA_FAMILIA)).toBeNull();
   });

@@ -241,11 +241,12 @@ Artefatos no destino (`<banco>` = `nossagrana_prod`):
    ```bash
    age-keygen -o nossagrana-backup.key   # imprime "Public key: age1..."
    ```
-2. **Role de leitura** no PostgreSQL compartilhado (não usar o superusuário). Leia a
-   senha para uma variável, fora do histórico do shell, e reaproveite-a no passo 3
-   (o Secret é criado a partir da mesma variável, não de um arquivo):
+2. **Role de leitura** no PostgreSQL compartilhado (não usar o superusuário). Gere
+   a senha numa variável (hexadecimal: sem aspas nem caracteres que quebrem o literal
+   SQL abaixo), fora do histórico do shell, e reaproveite-a no passo 3 (o Secret é
+   criado a partir da mesma variável, não de um arquivo):
    ```bash
-   read -rs BACKUP_RO_PASSWORD
+   BACKUP_RO_PASSWORD="$(openssl rand -hex 24)"
    kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1' <<SQL
    CREATE ROLE backup_ro LOGIN PASSWORD '$BACKUP_RO_PASSWORD';
    SQL

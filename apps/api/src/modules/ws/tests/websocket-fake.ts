@@ -14,6 +14,8 @@ export class WebSocketFake {
   readonly enviadas: string[] = [];
   fechamento: { codigo: number; motivo: string } | null = null;
   encerradoPorTerminate = false;
+  pings = 0;
+  private readonly ouvintesPong: Array<() => void> = [];
 
   constructor(private readonly falharAoFechar = false) {}
 
@@ -30,6 +32,20 @@ export class WebSocketFake {
   terminate(): void {
     this.encerradoPorTerminate = true;
     this.readyState = CLOSED;
+  }
+
+  /** Registra ouvinte único de pong, como `ws.once('pong', ...)`. */
+  once(evento: 'pong', ouvinte: () => void): void {
+    if (evento === 'pong') this.ouvintesPong.push(ouvinte);
+  }
+
+  ping(): void {
+    this.pings += 1;
+  }
+
+  /** Simula o cliente respondendo ao ping. */
+  responderPong(): void {
+    for (const ouvinte of this.ouvintesPong.splice(0)) ouvinte();
   }
 
   comoWebSocket(): WebSocket {

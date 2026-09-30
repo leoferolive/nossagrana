@@ -84,6 +84,9 @@ spec:
         #   agendamento. Numa execução normal em andamento isso vale por minutos, por
         #   isso a idade do agendamento (`time() - last_schedule_time > 3600`) é
         #   quem dá a folga; sem ela o alerta pagaria 15min após o disparo.
+        # - `unless ... spec_suspend == 1`: rollback intencional (overlay `suspended`)
+        #   depois de uma falha não pode manter o critical aceso; a suspensão
+        #   prolongada tem alerta próprio (NossaGranaBackupCronJobSuspended).
         # - `unless ... last_successful_time`: CronJob que nunca teve sucesso (ex.:
         #   toda execução agendada falhou após o rollout). Sem `last_successful_time`
         #   a subtração acima não produz série e o alerta ficaria mudo.
@@ -104,6 +107,8 @@ spec:
             )
             and on (namespace, cronjob)
             (time() - kube_cronjob_status_last_schedule_time{namespace="database"} > 3600)
+            unless on (namespace, cronjob)
+            (kube_cronjob_spec_suspend{namespace="database"} == 1)
           for: 15m
           labels:
             namespace: database

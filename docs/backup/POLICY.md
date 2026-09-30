@@ -105,7 +105,7 @@ Alertmanager → Telegram):
 | Alerta                             | Condição                                                                                                           | Severidade |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
 | `NossaGranaBackupStale`            | `pg-backup`, `restic-backup` ou `pg-dump-external` sem sucesso há > 26 h (RPO), ou nunca agendado 26 h após criado | critical   |
-| `NossaGranaBackupJobNotSucceeded`  | último agendamento sem sucesso 1 h depois, ou CronJob que nunca teve sucesso                                       | critical   |
+| `NossaGranaBackupJobNotSucceeded`  | último agendamento sem sucesso 1 h depois, ou nunca teve sucesso (ignora suspensos)                                | critical   |
 | `NossaGranaRestoreDrillStale`      | nenhum restore comprovado há > 26 h                                                                                | critical   |
 | `NossaGranaBackupCronJobMissing`   | algum dos quatro CronJobs deixou de existir                                                                        | critical   |
 | `NossaGranaBackupCronJobSuspended` | algum dos quatro CronJobs com `spec.suspend=true` há > 24 h (o `Stale` ignora suspensos)                           | warning    |

@@ -1,7 +1,13 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { DrizzleRevokedTokenRepository } from './revoked-token.repository.js';
 import { DrizzleDatabaseFake } from './tests/drizzle-database-fake.js';
+
+function sqlDoConflito(expressao: unknown): string {
+  return new PgDialect().sqlToQuery(expressao as SQL).sql;
+}
 
 describe('DrizzleRevokedTokenRepository (cliente fake)', () => {
   let database: DrizzleDatabaseFake;
@@ -37,7 +43,16 @@ describe('DrizzleRevokedTokenRepository (cliente fake)', () => {
     expect(escrita?.valores?.userId).toBe('u1');
     const revokedAt = escrita?.valores?.revokedAt as Date;
     expect(revokedAt.getTime()).toBeGreaterThanOrEqual(antes);
-    expect(escrita?.atualizacao?.revokedAt).toBe(revokedAt);
+    // O UPDATE do conflito é decidido pelo banco (GREATEST), não pelo instante da app:
+    // nunca um Date cru, senão uma revogação antiga tardia sobrescreveria a mais nova.
+    expect(escrita?.atualizacao?.revokedAt).not.toBeInstanceOf(Date);
+    expect(escrita?.atualizacao?.expiresAt).not.toBeInstanceOf(Date);
+    expect(sqlDoConflito(escrita?.atualizacao?.revokedAt)).toMatch(
+      /greatest\(.*excluded\.revoked_at\)/i,
+    );
+    expect(sqlDoConflito(escrita?.atualizacao?.expiresAt)).toMatch(
+      /greatest\(.*excluded\.expires_at\)/i,
+    );
     const validadeMs = (escrita?.valores?.expiresAt as Date).getTime() - revokedAt.getTime();
     expect(validadeMs).toBe(365 * 24 * 60 * 60 * 1000);
   });

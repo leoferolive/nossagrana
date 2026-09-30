@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { eq, lte } from 'drizzle-orm';
+import { eq, lte, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 import { revokedRefreshTokens } from '../../db/schema.js';
@@ -18,13 +18,25 @@ export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
+/**
+ * Validade do marcador global = `revoked_at` + 1 ano. Precisa cobrir a vida máxima dos
+ * tokens que ele invalida (refresh de 7 dias) com folga; o cleanup só o remove depois.
+ */
+const VALIDADE_MARCADOR_GLOBAL_MS = 365 * 24 * 60 * 60 * 1000;
+
 function marcadorDeRevogacaoGlobal(userId: string): string {
   return `__compromised__${userId}`;
 }
 
 export class DrizzleRevokedTokenRepository implements RevokedTokenRepository {
-  /** Recebe o cliente Drizzle (`db` em produção; conexão própria nos testes contra PostgreSQL real). */
-  constructor(private readonly database: PostgresJsDatabase) {}
+  /**
+   * Recebe o cliente Drizzle (`db` em produção; conexão própria nos testes contra PostgreSQL real)
+   * e o relógio (injetável para simular requisições cujo carimbo chega fora de ordem).
+   */
+  constructor(
+    private readonly database: PostgresJsDatabase,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
   async revokeToken(tokenHash: string, expiresAt: Date, userId: string): Promise<void> {
     await this.database
@@ -33,18 +45,25 @@ export class DrizzleRevokedTokenRepository implements RevokedTokenRepository {
       .onConflictDoNothing({ target: revokedRefreshTokens.tokenHash });
   }
 
+  /**
+   * Upsert MONOTÔNICO do instante de revogação global. A requisição carimba `agora` antes de
+   * esperar o banco, então uma mais antiga pode commitar depois de uma mais nova (P1 do #150).
+   * Por isso o conflito resolve com GREATEST(existente, novo) em `revoked_at` e `expires_at`:
+   * o marcador nunca retrocede e o expiry (= `revoked_at` + 1 ano, crescente com ele) sempre
+   * acompanha o maior `revoked_at`. SQL raw necessário: o Drizzle não expõe GREATEST.
+   */
   async revokeAllByUserId(userId: string): Promise<void> {
-    const agora = new Date();
-    const expiresAt = new Date(agora.getTime() + 365 * 24 * 60 * 60 * 1000);
-    // Upsert: cada revogação avança `revokedAt`. Com DoNothing, uma 2ª revogação (ex.:
-    // reset depois de troca de senha) manteria o instante antigo e deixaria de matar
-    // sessões criadas entre as duas.
+    const agora = this.now();
+    const expiresAt = new Date(agora.getTime() + VALIDADE_MARCADOR_GLOBAL_MS);
     await this.database
       .insert(revokedRefreshTokens)
       .values({ tokenHash: marcadorDeRevogacaoGlobal(userId), expiresAt, userId, revokedAt: agora })
       .onConflictDoUpdate({
         target: revokedRefreshTokens.tokenHash,
-        set: { revokedAt: agora, expiresAt },
+        set: {
+          revokedAt: sql`greatest(${revokedRefreshTokens.revokedAt}, excluded.revoked_at)`,
+          expiresAt: sql`greatest(${revokedRefreshTokens.expiresAt}, excluded.expires_at)`,
+        },
       });
   }
 
@@ -91,7 +110,11 @@ export class InMemoryRevokedTokenRepository implements RevokedTokenRepository {
   }
 
   async revokeAllByUserId(userId: string): Promise<void> {
-    this.revokedAllAt.set(userId, this.now());
+    const agora = this.now();
+    const atual = this.revokedAllAt.get(userId);
+    // Monotônico como o GREATEST do adapter Drizzle: revogação atrasada nunca retrocede o marcador.
+    if (atual && atual >= agora) return;
+    this.revokedAllAt.set(userId, agora);
   }
 
   async isRevoked(tokenHash: string): Promise<boolean> {

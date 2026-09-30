@@ -113,6 +113,44 @@ describe('InMemoryRevokedTokenRepository', () => {
     });
   });
 
+  describe('revokeAllByUserId com revogações fora de ordem (P1 do #150)', () => {
+    const MAIS_NOVO = new Date('2026-09-30T11:00:00Z');
+    const MAIS_ANTIGO = new Date('2026-09-30T10:00:00Z');
+
+    function repoComRelogio(...instantes: Date[]): InMemoryRevokedTokenRepository {
+      const fila = [...instantes];
+      return new InMemoryRevokedTokenRepository(() => fila.shift() as Date);
+    }
+
+    it('a revogação mais antiga que chega por último não faz o marcador retroceder', async () => {
+      const fora = repoComRelogio(MAIS_NOVO, MAIS_ANTIGO);
+
+      await fora.revokeAllByUserId('user-1');
+      await fora.revokeAllByUserId('user-1');
+
+      expect(await fora.findRevokedAllAt('user-1')).toEqual(MAIS_NOVO);
+    });
+
+    it('na ordem natural continua avançando para o instante mais novo', async () => {
+      const natural = repoComRelogio(MAIS_ANTIGO, MAIS_NOVO);
+
+      await natural.revokeAllByUserId('user-1');
+      await natural.revokeAllByUserId('user-1');
+
+      expect(await natural.findRevokedAllAt('user-1')).toEqual(MAIS_NOVO);
+    });
+
+    it('o retrocesso de um usuário não afeta outro', async () => {
+      const dois = repoComRelogio(MAIS_NOVO, MAIS_ANTIGO);
+
+      await dois.revokeAllByUserId('user-1');
+      await dois.revokeAllByUserId('user-2');
+
+      expect(await dois.findRevokedAllAt('user-1')).toEqual(MAIS_NOVO);
+      expect(await dois.findRevokedAllAt('user-2')).toEqual(MAIS_ANTIGO);
+    });
+  });
+
   describe('findRevokedAllAt', () => {
     it('retorna null para usuario sem revogacao global', async () => {
       expect(await repo.findRevokedAllAt('safe-user')).toBeNull();

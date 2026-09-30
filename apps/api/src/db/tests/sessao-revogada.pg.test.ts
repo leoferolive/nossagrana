@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import type postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   DrizzleRevokedTokenRepository,
@@ -33,8 +33,18 @@ describe('Revogação global de sessões no PostgreSQL', () => {
     await aplicarMigrations(banco.url);
   });
 
+  // Encerra as conexões de cada teste: as revogações simultâneas abrem dezenas delas e o
+  // total da suíte passaria de max_connections (100) do PostgreSQL descartável.
+  afterEach(async () => {
+    await Promise.all(conexoes.splice(0).map((c) => c.end()));
+  });
+
+  // Fecha as conexões de cada teste: dezenas de "requisições" por teste estourariam max_connections.
+  afterEach(async () => {
+    await Promise.all(conexoes.splice(0).map((c) => c.end()));
+  });
+
   afterAll(async () => {
-    await Promise.all(conexoes.map((c) => c.end()));
     await banco?.descartar();
   });
 
@@ -84,6 +94,76 @@ describe('Revogação global de sessões no PostgreSQL', () => {
     const [{ total }] = await banco.sql`SELECT count(*)::int AS total
       FROM revoked_refresh_tokens WHERE user_id = ${userId} AND token_hash LIKE '__compromised__%'`;
     expect(total).toBe(1);
+  });
+
+  /** Repositório de produção com relógio fixo: simula a requisição que carimbou `agora` antes de esperar o banco. */
+  function novaSessaoCarimbadaEm(carimbo: Date): DrizzleRevokedTokenRepository {
+    const conexao = conectar(banco.url);
+    conexoes.push(conexao);
+    return new DrizzleRevokedTokenRepository(drizzle(conexao), () => carimbo);
+  }
+
+  async function lerMarcador(userId: string): Promise<{ revokedAt: Date; expiresAt: Date }> {
+    const [linha] = await banco.sql`SELECT revoked_at, expires_at
+      FROM revoked_refresh_tokens WHERE user_id = ${userId}`;
+    return { revokedAt: linha.revoked_at as Date, expiresAt: linha.expires_at as Date };
+  }
+
+  describe('marcador monotônico (P1 do #150)', () => {
+    const CARIMBO_ANTIGO = new Date('2026-09-30T10:00:00.000Z');
+    const CARIMBO_NOVO = new Date('2026-09-30T10:00:05.000Z');
+    const ANO_MS = 365 * DIA_MS;
+
+    it('a revogação mais antiga que commita por último não faz revoked_at nem expires_at retrocederem', async () => {
+      const userId = await criarUsuario();
+
+      await novaSessaoCarimbadaEm(CARIMBO_NOVO).revokeAllByUserId(userId);
+      await novaSessaoCarimbadaEm(CARIMBO_ANTIGO).revokeAllByUserId(userId);
+
+      const marcador = await lerMarcador(userId);
+      expect(marcador.revokedAt).toEqual(CARIMBO_NOVO);
+      expect(marcador.expiresAt.getTime()).toBe(CARIMBO_NOVO.getTime() + ANO_MS);
+    });
+
+    it('na ordem natural o marcador avança e o expiry acompanha o revoked_at mais novo', async () => {
+      const userId = await criarUsuario();
+
+      await novaSessaoCarimbadaEm(CARIMBO_ANTIGO).revokeAllByUserId(userId);
+      await novaSessaoCarimbadaEm(CARIMBO_NOVO).revokeAllByUserId(userId);
+
+      const marcador = await lerMarcador(userId);
+      expect(marcador.revokedAt).toEqual(CARIMBO_NOVO);
+      expect(marcador.expiresAt.getTime()).toBe(CARIMBO_NOVO.getTime() + ANO_MS);
+    });
+
+    it('token emitido entre os dois carimbos continua revogado após a escrita atrasada', async () => {
+      const userId = await criarUsuario();
+      const emitidoEntre = Math.floor(CARIMBO_ANTIGO.getTime() / 1000) + 2;
+      const servico = new SessaoRevogacaoService(novaSessao(), new NoopSessaoLifecyclePublisher());
+
+      await novaSessaoCarimbadaEm(CARIMBO_NOVO).revokeAllByUserId(userId);
+      await novaSessaoCarimbadaEm(CARIMBO_ANTIGO).revokeAllByUserId(userId);
+
+      expect(await servico.estaRevogada(userId, emitidoEntre)).toBe(true);
+    });
+
+    it.each(RODADAS)(
+      'rodada %i: revogações simultâneas com carimbos embaralhados terminam no maior carimbo',
+      async () => {
+        const userId = await criarUsuario();
+        const carimbos = Array.from(
+          { length: REVOGACOES_SIMULTANEAS },
+          (_, i) => new Date(CARIMBO_ANTIGO.getTime() + ((i * 7) % REVOGACOES_SIMULTANEAS) * 1000),
+        );
+        const maior = new Date(Math.max(...carimbos.map((c) => c.getTime())));
+
+        await Promise.all(carimbos.map((c) => novaSessaoCarimbadaEm(c).revokeAllByUserId(userId)));
+
+        const marcador = await lerMarcador(userId);
+        expect(marcador.revokedAt).toEqual(maior);
+        expect(marcador.expiresAt.getTime()).toBe(maior.getTime() + ANO_MS);
+      },
+    );
   });
 
   it('o marcador global vence em ~1 ano (cobre a vida do refresh) e o cleanup não o remove antes', async () => {

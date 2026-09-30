@@ -7,6 +7,8 @@ import {
   verifyPassword,
 } from './auth.service.js';
 import type { AuthRepository } from './auth.types.js';
+import { SessoesNaoRevogadasError } from './sessoes-nao-revogadas.error.js';
+import { SessaoRevogadorFake } from './tests/sessao-revogador-fake.js';
 
 const defaultUser = {
   id: 'u1',
@@ -36,7 +38,7 @@ describe('AuthService', () => {
         dataCriacao: new Date(),
       }),
     });
-    const service = new AuthService(repository);
+    const service = new AuthService(repository, new SessaoRevogadorFake());
 
     await expect(
       service.register({
@@ -52,7 +54,7 @@ describe('AuthService', () => {
       findByEmail: vi.fn().mockResolvedValue(null),
       createUser: vi.fn().mockRejectedValue({ code: '23505' }),
     });
-    const service = new AuthService(repository);
+    const service = new AuthService(repository, new SessaoRevogadorFake());
 
     await expect(
       service.register({
@@ -75,6 +77,7 @@ describe('AuthService', () => {
     });
     const service = new AuthService(
       repository,
+      new SessaoRevogadorFake(),
       async () => 'salt:hash',
       async () => false,
     );
@@ -89,5 +92,47 @@ describe('AuthService', () => {
 
   it('returns false when verifying malformed password hash', async () => {
     await expect(verifyPassword('password123', 'invalid')).resolves.toBe(false);
+  });
+
+  describe('updateSenha (#119)', () => {
+    const verificaSempre = async () => true;
+    const hashFixo = async () => 'novo:hash';
+
+    it('revoga todas as sessões do usuário depois de gravar a nova senha', async () => {
+      const ordem: string[] = [];
+      const repository = buildRepository({
+        updateSenhaHash: vi.fn().mockImplementation(async () => void ordem.push('senha')),
+      });
+      const sessoes = new SessaoRevogadorFake(false, () => ordem.push('revogacao'));
+      const service = new AuthService(repository, sessoes, hashFixo, verificaSempre);
+
+      await service.updateSenha('u1', 'atual', 'nova');
+
+      expect(sessoes.usuariosRevogados).toEqual(['u1']);
+      // Revogar só depois do update: login com a senha antiga após a revogação criaria sessão nova.
+      expect(ordem).toEqual(['senha', 'revogacao']);
+    });
+
+    it('não revoga sessões quando a senha atual está incorreta', async () => {
+      const sessoes = new SessaoRevogadorFake();
+      const service = new AuthService(buildRepository(), sessoes, hashFixo, async () => false);
+
+      await expect(service.updateSenha('u1', 'errada', 'nova')).rejects.toBeInstanceOf(
+        InvalidCredentialsError,
+      );
+      expect(sessoes.usuariosRevogados).toEqual([]);
+    });
+
+    it('propaga a falha da revogação sem mascarar como credencial inválida', async () => {
+      const sessoes = new SessaoRevogadorFake(true);
+      const service = new AuthService(buildRepository(), sessoes, hashFixo, verificaSempre);
+
+      const erro = await service.updateSenha('u1', 'atual', 'nova').catch((e: unknown) => e);
+
+      expect(erro).not.toBeInstanceOf(InvalidCredentialsError);
+      // Tipado e com o userId: a rota loga o estado "senha trocada, sessões vivas".
+      expect(erro).toBeInstanceOf(SessoesNaoRevogadasError);
+      expect((erro as SessoesNaoRevogadasError).userId).toBe('u1');
+    });
   });
 });

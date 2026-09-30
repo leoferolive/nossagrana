@@ -6,14 +6,15 @@ import { EmailService } from '../email/email.service.js';
 import { InMemoryAuthRepository } from './auth.repository.js';
 import { InMemoryPasswordResetRepository } from './password-reset.repository.js';
 import { InvalidResetTokenError, PasswordResetService } from './password-reset.service.js';
-import { hashToken, InMemoryRevokedTokenRepository } from './revoked-token.repository.js';
+import { hashToken } from './revoked-token.repository.js';
+import { SessaoRevogadorFake } from './tests/sessao-revogador-fake.js';
 
 const mockHash = async (password: string): Promise<string> => `hashed:${password}`;
 
 describe('PasswordResetService', () => {
   let authRepo: InMemoryAuthRepository;
   let resetRepo: InMemoryPasswordResetRepository;
-  let revokedTokenRepo: InMemoryRevokedTokenRepository;
+  let sessoes: SessaoRevogadorFake;
   let emailSender: InMemoryEmailSender;
   let emailService: EmailService;
   let service: PasswordResetService;
@@ -21,13 +22,13 @@ describe('PasswordResetService', () => {
   beforeEach(() => {
     authRepo = new InMemoryAuthRepository();
     resetRepo = new InMemoryPasswordResetRepository();
-    revokedTokenRepo = new InMemoryRevokedTokenRepository();
+    sessoes = new SessaoRevogadorFake();
     emailSender = new InMemoryEmailSender();
     emailService = new EmailService(emailSender);
     service = new PasswordResetService(
       authRepo,
       resetRepo,
-      revokedTokenRepo,
+      sessoes,
       emailService,
       'http://localhost:5173',
       mockHash,
@@ -94,8 +95,7 @@ describe('PasswordResetService', () => {
 
       await service.resetPassword(token, 'novaSenha123');
 
-      const isCompromised = await revokedTokenRepo.isUserCompromised(user.id);
-      expect(isCompromised).toBe(true);
+      expect(sessoes.usuariosRevogados).toEqual([user.id]);
     });
 
     it('throws for invalid token', async () => {

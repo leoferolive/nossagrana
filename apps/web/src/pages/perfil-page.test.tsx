@@ -5,13 +5,15 @@ vi.mock('../components/first-time-tour', () => ({
   FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
 }));
 
+const mockLogout = vi.hoisted(() => vi.fn());
+
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
     accessToken: 'tok',
     refreshToken: 'ref',
     login: vi.fn(),
-    logout: vi.fn(),
+    logout: mockLogout,
     setAccessToken: vi.fn(),
     setRefreshToken: vi.fn(),
   }),
@@ -27,6 +29,7 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
+import { ApiError } from '../services/api-client';
 import { PerfilPage } from './perfil-page';
 
 afterEach(() => {
@@ -98,5 +101,45 @@ describe('PerfilPage', () => {
     await waitFor(() => screen.getByDisplayValue('Maria'));
     fireEvent.click(screen.getByRole('button', { name: /salvar perfil/i }));
     await waitFor(() => expect(screen.getByText(/salvo/i)).toBeInTheDocument());
+  });
+
+  async function submeterTrocaDeSenha() {
+    render(<PerfilPage onBack={vi.fn()} />);
+    await waitFor(() => screen.getByLabelText(/senha atual/i));
+    fireEvent.change(screen.getByLabelText(/senha atual/i), { target: { value: 'old123' } });
+    fireEvent.change(screen.getByLabelText(/nova senha/i), { target: { value: 'new456' } });
+    fireEvent.click(screen.getByRole('button', { name: /alterar senha/i }));
+  }
+
+  it('avisa que é preciso entrar novamente e desloga após trocar a senha (#119)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mockService.updateSenha.mockResolvedValue(undefined);
+      await submeterTrocaDeSenha();
+      await waitFor(() =>
+        expect(screen.getByText(/senha alterada\. entre novamente/i)).toBeInTheDocument(),
+      );
+      expect(mockLogout).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(mockLogout).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('mostra "senha atual incorreta" apenas para 401', async () => {
+    mockService.updateSenha.mockRejectedValue(new ApiError(401, 'Não autorizado'));
+    await submeterTrocaDeSenha();
+    await waitFor(() => expect(screen.getByText('Senha atual incorreta.')).toBeInTheDocument());
+    expect(mockLogout).not.toHaveBeenCalled();
+  });
+
+  it('mostra erro genérico em falha 5xx, sem acusar senha incorreta', async () => {
+    mockService.updateSenha.mockRejectedValue(new ApiError(500, 'Erro ao processar requisição'));
+    await submeterTrocaDeSenha();
+    await waitFor(() =>
+      expect(screen.getByText(/não foi possível alterar a senha/i)).toBeInTheDocument(),
+    );
+    expect(screen.queryByText('Senha atual incorreta.')).not.toBeInTheDocument();
   });
 });

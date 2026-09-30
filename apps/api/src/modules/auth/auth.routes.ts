@@ -11,6 +11,7 @@ import { ConsoleEmailSender } from '../email/email.console-sender.js';
 import { EmailService } from '../email/email.service.js';
 import { SmtpEmailSender } from '../email/email.smtp-sender.js';
 
+import { renovarSessao } from './auth.refresh.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
 import {
   authFamiliaContextSchema,
@@ -31,32 +32,22 @@ import {
   hashPassword,
   InvalidCredentialsError,
 } from './auth.service.js';
+import { emitirParDeTokens, verificarRefreshToken } from './auth.tokens.js';
+import type { SessaoRevogador } from './auth.types.js';
 import {
   DrizzlePasswordResetRepository,
   InMemoryPasswordResetRepository,
 } from './password-reset.repository.js';
 import { InvalidResetTokenError, PasswordResetService } from './password-reset.service.js';
-import {
-  DrizzleRevokedTokenRepository,
-  hashToken,
-  InMemoryRevokedTokenRepository,
-} from './revoked-token.repository.js';
-import type { RevokedTokenRepository } from './revoked-token.repository.js';
+import { hashToken } from './revoked-token.repository.js';
+import { logarSessoesNaoRevogadas } from './sessoes-nao-revogadas.error.js';
 
-const defaultAuthService = (): AuthService => {
+const defaultAuthService = (sessoes: SessaoRevogador): AuthService => {
   if (env.NODE_ENV === 'test') {
-    return new AuthService(new InMemoryAuthRepository());
+    return new AuthService(new InMemoryAuthRepository(), sessoes);
   }
 
-  return new AuthService(new DrizzleAuthRepository());
-};
-
-const defaultRevokedTokenRepository = (): RevokedTokenRepository => {
-  if (env.NODE_ENV === 'test') {
-    return new InMemoryRevokedTokenRepository();
-  }
-
-  return new DrizzleRevokedTokenRepository();
+  return new AuthService(new DrizzleAuthRepository(), sessoes);
 };
 
 const defaultEmailService = (): EmailService => {
@@ -77,13 +68,13 @@ const defaultEmailService = (): EmailService => {
 
 const defaultPasswordResetService = (
   emailService: EmailService,
-  revokedTokenRepo: RevokedTokenRepository,
+  sessoes: SessaoRevogador,
 ): PasswordResetService => {
   if (env.NODE_ENV === 'test') {
     return new PasswordResetService(
       new InMemoryAuthRepository(),
       new InMemoryPasswordResetRepository(),
-      revokedTokenRepo,
+      sessoes,
       emailService,
       env.CORS_ORIGIN,
       hashPassword,
@@ -93,7 +84,7 @@ const defaultPasswordResetService = (
   return new PasswordResetService(
     new DrizzleAuthRepository(),
     new DrizzlePasswordResetRepository(),
-    revokedTokenRepo,
+    sessoes,
     emailService,
     env.CORS_ORIGIN,
     hashPassword,
@@ -101,10 +92,9 @@ const defaultPasswordResetService = (
 };
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
-  const authService = defaultAuthService();
-  const revokedTokenRepo = defaultRevokedTokenRepository();
+  const authService = defaultAuthService(fastify.sessoes);
   const emailService = defaultEmailService();
-  const passwordResetService = defaultPasswordResetService(emailService, revokedTokenRepo);
+  const passwordResetService = defaultPasswordResetService(emailService, fastify.sessoes);
 
   fastify.post(
     '/auth/register',
@@ -132,22 +122,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         const payload = authLoginRequestSchema.parse(request.body);
         const authenticatedUser = await authService.login(payload);
 
-        const accessToken = fastify.jwt.sign({
+        const { accessToken, refreshToken } = emitirParDeTokens(fastify, {
           sub: authenticatedUser.id,
           email: authenticatedUser.email,
         });
-
-        const refreshToken = fastify.jwt.sign(
-          {
-            sub: authenticatedUser.id,
-            email: authenticatedUser.email,
-            tokenType: 'refresh',
-          },
-          {
-            expiresIn: env.REFRESH_TOKEN_EXPIRES_IN,
-            key: env.REFRESH_TOKEN_SECRET,
-          },
-        );
 
         return reply.code(200).send({
           accessToken,
@@ -169,68 +147,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       try {
         const payload = authRefreshRequestSchema.parse(request.body);
-        const tokenHash = hashToken(payload.refreshToken);
+        const resultado = await renovarSessao(fastify, payload.refreshToken);
+        if (!resultado.ok) return reply.code(401).send(resultado.corpo);
 
-        // Verificar se token específico foi revogado (reuso = roubo)
-        const isTokenRevoked = await revokedTokenRepo.isRevoked(tokenHash);
-        if (isTokenRevoked) {
-          try {
-            const decoded = fastify.jwt.verify<{ sub: string }>(payload.refreshToken, {
-              key: env.REFRESH_TOKEN_SECRET,
-            });
-            await revokedTokenRepo.revokeAllByUserId(decoded.sub);
-          } catch {
-            // Token expirado/inválido — não conseguimos decodificar userId
-          }
-          return reply
-            .code(401)
-            .send({ message: 'Token reuse detected', code: 'TOKEN_REUSE_DETECTED' });
-        }
-
-        const decodedToken = fastify.jwt.verify<{
-          sub: string;
-          email: string;
-          tokenType?: string;
-          exp?: number;
-        }>(payload.refreshToken, {
-          key: env.REFRESH_TOKEN_SECRET,
-        });
-
-        if (decodedToken.tokenType !== 'refresh') {
-          return reply.code(401).send({ message: 'Refresh token invalido' });
-        }
-
-        // Verificar se o userId foi marcado como comprometido
-        const isCompromised = await revokedTokenRepo.isUserCompromised(decodedToken.sub);
-        if (isCompromised) {
-          return reply
-            .code(401)
-            .send({ message: 'Token reuse detected', code: 'TOKEN_REUSE_DETECTED' });
-        }
-
-        // Revogar o token atual ANTES de gerar o novo
-        const expiresAtSeconds = decodedToken.exp ?? Math.floor(Date.now() / 1000);
-        const expiresAt = new Date(expiresAtSeconds * 1000);
-        await revokedTokenRepo.revokeToken(tokenHash, expiresAt, decodedToken.sub);
-
-        // Gerar novo par
-        const accessToken = fastify.jwt.sign({
-          sub: decodedToken.sub,
-          email: decodedToken.email,
-        });
-
-        const refreshToken = fastify.jwt.sign(
-          {
-            sub: decodedToken.sub,
-            email: decodedToken.email,
-            tokenType: 'refresh',
-          },
-          {
-            expiresIn: env.REFRESH_TOKEN_EXPIRES_IN,
-            key: env.REFRESH_TOKEN_SECRET,
-          },
-        );
-
+        const { accessToken, refreshToken } = resultado;
         return reply.code(200).send({ accessToken, refreshToken });
       } catch {
         return reply.code(401).send({ message: 'Refresh token invalido' });
@@ -242,13 +162,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const payload = authLogoutRequestSchema.parse(request.body);
 
-      const decodedToken = fastify.jwt.verify<{
-        sub: string;
-        tokenType?: string;
-        exp?: number;
-      }>(payload.refreshToken, {
-        key: env.REFRESH_TOKEN_SECRET,
-      });
+      const decodedToken = verificarRefreshToken(fastify, payload.refreshToken);
 
       if (decodedToken.tokenType !== 'refresh') {
         return reply.code(401).send({ message: 'Refresh token invalido' });
@@ -257,7 +171,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const tokenHash = hashToken(payload.refreshToken);
       const expiresAtSeconds = decodedToken.exp ?? Math.floor(Date.now() / 1000);
       const expiresAt = new Date(expiresAtSeconds * 1000);
-      await revokedTokenRepo.revokeToken(tokenHash, expiresAt, decodedToken.sub);
+      await fastify.tokensRevogados.revokeToken(tokenHash, expiresAt, decodedToken.sub);
 
       return reply.code(204).send();
     } catch {
@@ -303,8 +217,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         await authService.updateSenha(request.user.sub, senhaAtual, novaSenha);
         return reply.code(204).send();
-      } catch {
-        return reply.code(401).send({ message: 'Senha atual incorreta' });
+      } catch (error) {
+        // Só credencial errada vira 401; falha de infraestrutura (ex.: gravar a revogação)
+        // não pode ser mascarada como "senha incorreta" (#119).
+        if (error instanceof InvalidCredentialsError) {
+          return reply.code(401).send({ message: 'Senha atual incorreta' });
+        }
+        logarSessoesNaoRevogadas(request.log, error);
+        throw error;
       }
     },
   );
@@ -331,6 +251,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         if (error instanceof InvalidResetTokenError) {
           return reply.code(400).send({ message: error.message });
         }
+        logarSessoesNaoRevogadas(request.log, error);
         throw error;
       }
     },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FamiliaLifecyclePublisher } from '../../shared/familia-lifecycle/familia-lifecycle.events.js';
+import { FamiliaLifecyclePublisherFake } from '../../shared/familia-lifecycle/tests/familia-lifecycle-publisher-fake.js';
 import { InMemoryFamiliaRepository } from './familia.repository.js';
 import {
   FamiliaNotFoundError,
@@ -9,15 +9,6 @@ import {
   ForbiddenFamiliaInviteError,
   InvalidFamiliaInviteCodeError,
 } from './familia.service.js';
-
-/** Fake nomeada do barramento: registra as famílias excluídas. */
-class FamiliaLifecyclePublisherFake implements FamiliaLifecyclePublisher {
-  readonly excluidas: string[] = [];
-
-  familiaExcluida(familiaId: string): void {
-    this.excluidas.push(familiaId);
-  }
-}
 
 async function cenario(publisher = new FamiliaLifecyclePublisherFake()) {
   const repo = new InMemoryFamiliaRepository();

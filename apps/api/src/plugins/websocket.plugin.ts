@@ -4,6 +4,7 @@ import fp from 'fastify-plugin';
 
 import { WebSocketManager } from '../modules/ws/websocket-manager.js';
 import { WS_CLOSE_FAMILIA_EXCLUIDA } from '../modules/ws/ws-close-codes.js';
+import { registrarOuvintesDeSessaoEMembro } from '../modules/ws/ws-sessao-listeners.js';
 import {
   ehFamiliaExcluidaEvento,
   FAMILIA_EXCLUIDA_EVENTO,
@@ -41,6 +42,9 @@ export const websocketPlugin = fp(async (fastify) => {
     }
     wsManager.closeFamily(evento.familiaId, WS_CLOSE_FAMILIA_EXCLUIDA, 'Familia excluida');
   });
+
+  // Revogação de sessão e remoção de membro (#119): fecha só os sockets afetados.
+  registrarOuvintesDeSessaoEMembro(eventBus, wsManager, fastify.log);
 
   // Heartbeat a cada 30s
   const HEARTBEAT_INTERVAL = 30_000;

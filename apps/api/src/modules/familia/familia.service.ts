@@ -281,6 +281,9 @@ export class FamiliaService {
     if (!removed) {
       throw new FamiliaMemberNotFoundError();
     }
+
+    // Só depois do commit: falha antes dele nunca fecha sockets (#119).
+    this.lifecycle.membroRemovido(input.familiaId, input.usuarioId);
   }
 
   async switchActiveFamily(input: { familiaId: string; usuarioId: string }) {

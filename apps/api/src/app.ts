@@ -19,6 +19,7 @@ import { wsRoutes } from './modules/ws/ws.routes.js';
 import { authPlugin } from './plugins/auth.plugin.js';
 import { familiaScopePlugin } from './plugins/familia-scope.plugin.js';
 import { metricsPlugin_ } from './plugins/metrics.plugin.js';
+import { sessaoRevogacaoPlugin } from './plugins/sessao-revogacao.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
 import { registrarRespostaReferenciaInvalida } from './shared/referencia-ownership/referencia-ownership.http.js';
 import { decorarRepositoriosInMemoryDeTeste } from './shared/repositorios-in-memory.js';
@@ -65,6 +66,7 @@ export const buildApp = () => {
   app.register(authPlugin);
   app.register(familiaScopePlugin);
   app.register(websocketPlugin);
+  app.register(sessaoRevogacaoPlugin);
 
   app.register(authRoutes, { prefix: '/api' });
   app.register(categoriaRoutes, { prefix: '/api' });

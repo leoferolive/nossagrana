@@ -16,8 +16,13 @@ async function createApp() {
   const app = Fastify();
   await app.register(import('@fastify/jwt'), { secret: 'test-jwt-secret-must-be-32-chars!' });
   const { websocketPlugin } = await import('../../plugins/websocket.plugin.js');
+  const { sessaoRevogacaoPlugin } = await import('../../plugins/sessao-revogacao.plugin.js');
+  const { InMemoryRevokedTokenRepository } = await import('../auth/revoked-token.repository.js');
   const { wsRoutes } = await import('./ws.routes.js');
   await app.register(websocketPlugin);
+  await app.register(sessaoRevogacaoPlugin, {
+    tokensRevogados: new InMemoryRevokedTokenRepository(),
+  });
   await app.register(wsRoutes);
   await app.ready();
   return app;

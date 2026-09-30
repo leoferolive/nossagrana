@@ -7,15 +7,30 @@ import {
   type AcessoFamilia,
   verificarAcessoFamilia,
 } from '../../shared/familia-access/familia-access.repository.js';
-import { WS_CLOSE_ERRO_INTERNO, WS_CLOSE_FAMILIA_EXCLUIDA } from './ws-close-codes.js';
+import {
+  WS_CLOSE_ERRO_INTERNO,
+  WS_CLOSE_FAMILIA_EXCLUIDA,
+  WS_CLOSE_SESSAO_REVOGADA,
+} from './ws-close-codes.js';
 
 const RECUSAS_DE_ACESSO = {
   sem_acesso: { codigo: 4003, motivo: 'Usuario sem acesso a familia' },
   excluida: { codigo: WS_CLOSE_FAMILIA_EXCLUIDA, motivo: 'Familia excluida' },
 } as const;
 
-function entrarNoRoom(fastify: FastifyInstance, socket: WebSocket, familiaId: string): void {
-  fastify.wsManager.join(familiaId, socket);
+/** Quem abriu o socket: `iat` (segundos) é o que permite comparar com a revogação global (#119). */
+interface CredencialDoSocket {
+  userId: string;
+  emitidoEm: number | undefined;
+}
+
+function entrarNoRoom(
+  fastify: FastifyInstance,
+  socket: WebSocket,
+  familiaId: string,
+  userId: string,
+): void {
+  fastify.wsManager.join(familiaId, socket, userId);
   socket.on('close', () => {
     fastify.wsManager.leave(familiaId, socket);
   });
@@ -60,7 +75,7 @@ async function admitirComRevalidacao(
     // o socket no room para sempre (o listener de `close` só nasce no `join`).
     if (socket.readyState !== socket.OPEN) return;
 
-    entrarNoRoom(fastify, socket, familiaId);
+    entrarNoRoom(fastify, socket, familiaId, userId);
     const segunda = await verificarAcessoFamilia(db, userId, familiaId);
     recusarSeSemAcesso(fastify, socket, familiaId, segunda);
   } catch (err) {
@@ -70,6 +85,67 @@ async function admitirComRevalidacao(
     );
     fastify.wsManager.leave(familiaId, socket);
     socket.close(WS_CLOSE_ERRO_INTERNO, 'Erro ao validar acesso');
+  }
+}
+
+/**
+ * Recusa o socket se a sessão dele foi revogada (#119); devolve `true` quando recusou.
+ * O `iat` do access comparado com o instante da revogação impede que o token emitido
+ * antes da troca de senha reconecte durante a janela de vida dele.
+ */
+async function recusarSeSessaoRevogada(
+  fastify: FastifyInstance,
+  socket: WebSocket,
+  familiaId: string,
+  credencial: CredencialDoSocket,
+): Promise<boolean> {
+  const revogada = await fastify.sessoes.estaRevogada(credencial.userId, credencial.emitidoEm);
+  if (!revogada) return false;
+  fastify.wsManager.leave(familiaId, socket);
+  socket.close(WS_CLOSE_SESSAO_REVOGADA, 'Sessao revogada');
+  return true;
+}
+
+/** Em NODE_ENV=test o vínculo com a família não é checado (repositórios InMemory separados). */
+async function entrarValidandoFamilia(
+  fastify: FastifyInstance,
+  socket: WebSocket,
+  familiaId: string,
+  userId: string,
+): Promise<void> {
+  if (env.NODE_ENV === 'test') {
+    entrarNoRoom(fastify, socket, familiaId, userId);
+    return;
+  }
+  await admitirComRevalidacao(fastify, socket, userId, familiaId);
+}
+
+/**
+ * Sessão, depois família, depois sessão de novo (#119). A revogação publica
+ * `sessao:revogadas` só depois do commit; um handshake que passou da 1ª checagem
+ * mas ainda não deu `join` perderia o evento. A 2ª checagem roda com o socket já
+ * no room: se a revogação commitou depois dela, o evento chega depois do `join` e
+ * `closeUser` fecha o socket; se commitou antes, a 2ª checagem a vê. Mesmo
+ * raciocínio do #147. Falha em qualquer checagem fecha o socket (1011).
+ */
+async function admitirSocket(
+  fastify: FastifyInstance,
+  socket: WebSocket,
+  familiaId: string,
+  credencial: CredencialDoSocket,
+): Promise<void> {
+  try {
+    if (await recusarSeSessaoRevogada(fastify, socket, familiaId, credencial)) return;
+    if (socket.readyState !== socket.OPEN) return;
+
+    await entrarValidandoFamilia(fastify, socket, familiaId, credencial.userId);
+    if (socket.readyState !== socket.OPEN) return;
+
+    await recusarSeSessaoRevogada(fastify, socket, familiaId, credencial);
+  } catch (err) {
+    fastify.log.error({ err, familiaId }, 'Falha ao validar a sessão do socket');
+    fastify.wsManager.leave(familiaId, socket);
+    socket.close(WS_CLOSE_ERRO_INTERNO, 'Erro ao validar sessao');
   }
 }
 
@@ -88,21 +164,15 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Valida JWT
-    let userId: string;
+    let credencial: CredencialDoSocket;
     try {
-      const payload = fastify.jwt.verify<{ sub: string }>(token);
-      userId = payload.sub;
+      const payload = fastify.jwt.verify<{ sub: string; iat?: number }>(token);
+      credencial = { userId: payload.sub, emitidoEm: payload.iat };
     } catch {
       socket.close(4001, 'Token invalido ou expirado');
       return;
     }
 
-    // Verifica acesso à família (bypass em test)
-    if (env.NODE_ENV !== 'test') {
-      await admitirComRevalidacao(fastify, socket, userId, familiaId);
-      return;
-    }
-
-    entrarNoRoom(fastify, socket, familiaId);
+    await admitirSocket(fastify, socket, familiaId, credencial);
   });
 };

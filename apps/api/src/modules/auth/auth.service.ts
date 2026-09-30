@@ -5,7 +5,9 @@ import type {
   LoginInput,
   RegisterUserInput,
   RegisteredUser,
+  SessaoRevogador,
 } from './auth.types.js';
+import { revogarSessoesAposTrocaDeSenha } from './sessoes-nao-revogadas.error.js';
 
 export class EmailAlreadyExistsError extends Error {
   constructor() {
@@ -54,6 +56,7 @@ export const verifyPassword = async (password: string, passwordHash: string): Pr
 export class AuthService {
   constructor(
     private readonly repository: AuthRepository,
+    private readonly sessoes: SessaoRevogador,
     private readonly hashFn: (password: string) => Promise<string> = hashPassword,
     private readonly verifyFn: (
       password: string,
@@ -110,6 +113,9 @@ export class AuthService {
     if (!ok) throw new InvalidCredentialsError();
     const novoHash = await this.hashFn(novaSenha);
     await this.repository.updateSenhaHash(userId, novoHash);
+    // Depois do update: um login com a senha antiga entre a revogação e o update
+    // criaria uma sessão que sobreviveria à troca (#119).
+    await revogarSessoesAposTrocaDeSenha(this.sessoes, userId);
   }
 
   async login(input: LoginInput): Promise<{ id: string; email: string }> {

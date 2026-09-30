@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hashToken, InMemoryRevokedTokenRepository } from './revoked-token.repository.js';
 
@@ -87,21 +87,35 @@ describe('InMemoryRevokedTokenRepository', () => {
   });
 
   describe('revokeAllByUserId', () => {
-    it('deve marcar userId como comprometido', async () => {
+    it('registra o instante da revogação global só para o usuário revogado', async () => {
+      const antes = Date.now();
       await repo.revokeAllByUserId('compromised-user');
-      expect(await repo.isUserCompromised('compromised-user')).toBe(true);
-      expect(await repo.isUserCompromised('safe-user')).toBe(false);
+
+      const revogadoEm = await repo.findRevokedAllAt('compromised-user');
+      expect(revogadoEm?.getTime()).toBeGreaterThanOrEqual(antes);
+      expect(await repo.findRevokedAllAt('safe-user')).toBeNull();
+    });
+
+    it('uma nova revogação avança o instante registrado (troca de senha após reset)', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-09-30T10:00:00Z'));
+        await repo.revokeAllByUserId('user-1');
+        vi.setSystemTime(new Date('2026-09-30T11:00:00Z'));
+        await repo.revokeAllByUserId('user-1');
+
+        expect((await repo.findRevokedAllAt('user-1'))?.toISOString()).toBe(
+          '2026-09-30T11:00:00.000Z',
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
-  describe('isUserCompromised', () => {
-    it('deve retornar false para usuario nao comprometido', async () => {
-      expect(await repo.isUserCompromised('safe-user')).toBe(false);
-    });
-
-    it('deve retornar true para usuario comprometido', async () => {
-      await repo.revokeAllByUserId('compromised-user');
-      expect(await repo.isUserCompromised('compromised-user')).toBe(true);
+  describe('findRevokedAllAt', () => {
+    it('retorna null para usuario sem revogacao global', async () => {
+      expect(await repo.findRevokedAllAt('safe-user')).toBeNull();
     });
   });
 

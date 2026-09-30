@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { env } from '../config/env.js';
 
+import { InMemoryRevokedTokenRepository } from '../modules/auth/revoked-token.repository.js';
 import { InMemoryCategoriaRepository } from '../modules/categoria/categoria.repository.js';
 import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.in-memory-repository.js';
 import { InMemoryMovimentacaoCofrinhoRepository } from '../modules/cofrinho/cofrinho.movimentacao.repository.js';
@@ -26,6 +27,8 @@ export interface RepositoriosInMemoryCompartilhados {
   transacoes: InMemoryTransacaoRepository;
   /** Chaves de `Idempotency-Key` (#90), publicadas pelas mesmas unidades de trabalho. */
   idempotencia: InMemoryIdempotenciaRepository;
+  /** Refresh tokens revogados e revogação global de sessões (#119), vistos por auth e WebSocket. */
+  tokensRevogados: InMemoryRevokedTokenRepository;
 }
 
 declare module 'fastify' {
@@ -42,6 +45,7 @@ export function criarRepositoriosInMemoryCompartilhados(): RepositoriosInMemoryC
     movimentacoesCofrinho: new InMemoryMovimentacaoCofrinhoRepository(),
     transacoes: new InMemoryTransacaoRepository(),
     idempotencia: new InMemoryIdempotenciaRepository(),
+    tokensRevogados: new InMemoryRevokedTokenRepository(),
   };
 }
 

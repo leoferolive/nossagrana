@@ -231,6 +231,73 @@ describe('useWebSocketStore', () => {
     expect(clearSession).not.toHaveBeenCalled();
   });
 
+  it('orçamento de socket esgotado de verdade (ticket sempre ok) encerra a sessão', async () => {
+    const { result } = renderHook(() => useWebSocketStore());
+    const clearSession = await conectar(result);
+
+    for (let falha = 1; falha <= 5; falha++) await fecharComCodigo(1006);
+    expect(clearSession).not.toHaveBeenCalled();
+
+    await fecharComCodigo(1006);
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe('error');
+  });
+
+  it('ticket emitido após a cadência lenta: socket que fecha antes do onopen não derruba a sessão (P2 do Codex no acff0d8)', async () => {
+    mockEmitirTicket.mockRejectedValue(new ApiError(503, 'Erro'));
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession });
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    mockEmitirTicket.mockImplementation(async () => proximoTicket());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(WebSocket).toHaveBeenCalledTimes(1);
+
+    await fecharComCodigo(1006);
+
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(WebSocket).toHaveBeenCalledTimes(2);
+  });
+
+  it('ticket emitido após a cadência lenta começa com orçamento de socket fresco', async () => {
+    mockEmitirTicket.mockRejectedValue(new ApiError(503, 'Erro'));
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession });
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    mockEmitirTicket.mockImplementation(async () => proximoTicket());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+
+    for (let falha = 1; falha <= 5; falha++) await fecharComCodigo(1006);
+    expect(clearSession).not.toHaveBeenCalled();
+
+    await fecharComCodigo(1006);
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('onopen zera o orçamento de socket: falhas antes e depois de conectar não se acumulam', async () => {
+    const { result } = renderHook(() => useWebSocketStore());
+    const clearSession = await conectar(result);
+    for (let falha = 1; falha <= 4; falha++) await fecharComCodigo(1006);
+
+    act(() => {
+      mockWs.onopen?.(new Event('open'));
+    });
+    for (let falha = 1; falha <= 5; falha++) await fecharComCodigo(1006);
+
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
   it('disconnect interrompe a cadência lenta', async () => {
     mockEmitirTicket.mockRejectedValue(new ApiError(503, 'Erro'));
     const { result } = renderHook(() => useWebSocketStore());

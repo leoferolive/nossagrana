@@ -66,6 +66,9 @@ async function emitirTicket(familiaId: string): Promise<ResultadoDoTicket> {
 }
 
 export const useWebSocketStore = create<WebSocketStore>((set, get) => {
+  // Orçamentos separados: falha ao emitir o ticket (API fora) x socket que cai antes do `onopen`.
+  // Misturá-los deslogava uma sessão válida na 1ª falha de socket após a recuperação da API (#118, P2 do Codex no acff0d8).
+  let falhasDeTicket = 0;
   let retryCount = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   // Invalida conexões em andamento: connect/disconnect durante o `await` do ticket descartam o resultado.
@@ -78,21 +81,31 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     }
   };
 
+  const agendarBackoff = (opts: ConnectOpts, tentativa: number) => {
+    retryTimer = setTimeout(() => void doConnect(opts), BASE_DELAY_MS * Math.pow(2, tentativa));
+  };
+
   /**
-   * `encerrarSessaoAoEsgotar`: só o socket que cai repetidamente (mesmo com ticket válido) indica
-   * sessão inutilizável. Falha ao emitir o ticket (rede, 5xx) não é motivo de logout: esgotado o
-   * backoff rápido, segue em cadência lenta até a API voltar ou o `disconnect`/`connect` seguinte.
+   * Falha ao emitir o ticket (rede, 5xx) não é motivo de logout: esgotado o backoff rápido,
+   * segue em cadência lenta até a API voltar ou o `disconnect`/`connect` seguinte.
    */
-  const agendarReconexao = (opts: ConnectOpts, encerrarSessaoAoEsgotar: boolean) => {
-    if (retryCount >= MAX_RETRIES) {
+  const agendarReemissaoDoTicket = (opts: ConnectOpts) => {
+    if (falhasDeTicket >= MAX_RETRIES) {
       set({ status: 'error' });
-      if (encerrarSessaoAoEsgotar) opts.clearSession();
-      else retryTimer = setTimeout(() => void doConnect(opts), EMISSAO_FALHA_ESPERA_LENTA_MS);
+      retryTimer = setTimeout(() => void doConnect(opts), EMISSAO_FALHA_ESPERA_LENTA_MS);
       return;
     }
-    const delay = BASE_DELAY_MS * Math.pow(2, retryCount);
-    retryCount++;
-    retryTimer = setTimeout(() => void doConnect(opts), delay);
+    agendarBackoff(opts, falhasDeTicket++);
+  };
+
+  /** Só o socket que cai repetidamente (mesmo com ticket válido) indica sessão inutilizável. */
+  const agendarReconexaoDoSocket = (opts: ConnectOpts) => {
+    if (retryCount >= MAX_RETRIES) {
+      set({ status: 'error' });
+      opts.clearSession();
+      return;
+    }
+    agendarBackoff(opts, retryCount++);
   };
 
   const onSocketClose = (opts: ConnectOpts, event: CloseEvent) => {
@@ -104,7 +117,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
       return;
     }
     if (CLOSE_SEM_RECONEXAO.includes(event.code)) return;
-    agendarReconexao(opts, true);
+    agendarReconexaoDoSocket(opts);
   };
 
   const abrirSocket = (opts: ConnectOpts, ticket: string) => {
@@ -155,7 +168,14 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
       set({ status: 'disconnected' });
       return;
     }
-    agendarReconexao(opts, false);
+    agendarReemissaoDoTicket(opts);
+  };
+
+  /** Ticket emitido após falhas: a API voltou, então o socket começa com orçamento de falhas fresco. */
+  const reiniciarOrcamentosAposTicket = () => {
+    if (falhasDeTicket === 0) return;
+    falhasDeTicket = 0;
+    retryCount = 0;
   };
 
   const doConnect = async (opts: ConnectOpts) => {
@@ -169,8 +189,10 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     const resultado = await emitirTicket(opts.familiaId);
     if (minhaGeracao !== geracao) return;
 
-    if ('ticket' in resultado) abrirSocket(opts, resultado.ticket);
-    else tratarFalhaDoTicket(opts, resultado);
+    if ('ticket' in resultado) {
+      reiniciarOrcamentosAposTicket();
+      abrirSocket(opts, resultado.ticket);
+    } else tratarFalhaDoTicket(opts, resultado);
   };
 
   return {
@@ -180,6 +202,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     connect(opts) {
       geracao++;
       retryCount = 0;
+      falhasDeTicket = 0;
       clearRetry();
       const existing = get().socket;
       if (existing) existing.close();
@@ -190,6 +213,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
       geracao++;
       clearRetry();
       retryCount = MAX_RETRIES; // evita reconexão após close manual
+      falhasDeTicket = MAX_RETRIES;
       const { socket } = get();
       if (socket) socket.close();
       set({ socket: null, status: 'disconnected' });

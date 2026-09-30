@@ -361,9 +361,15 @@ custom não precisa do `extract-database.sh` (que é só para o `pg_dumpall`).
 ### Rotação da chave age
 
 1. `age-keygen` novo; atualizar `age-recipient` no Secret `pg-dump-external-storage`.
-2. **Manter a chave privada antiga** até expirar a retenção (30 dias): os artefatos
-   antigos só abrem com ela.
-3. Rodar um Job manual e restaurar dele com a chave nova antes de descartar a antiga.
+2. Anotar a data/hora da rotação e **manter a chave privada antiga**: os artefatos
+   anteriores só abrem com ela.
+3. Rodar um Job manual e restaurar dele com a chave nova.
+4. **Só descartar a chave antiga quando nenhum artefato retido depender dela.** Não
+   basta esperar 30 dias: a retenção preserva no mínimo 7 artefatos mesmo mais velhos
+   (`RETENTION_MIN_KEEP`), então, com o CronJob suspenso ou falhando após a rotação,
+   artefatos da chave antiga continuam no destino. Confira que todo `.meta.json` tem
+   `created_at` posterior à rotação (`rclone cat <remoto>:<pasta>/<artefato>.meta.json`),
+   ou remova/recifre os artefatos antigos antes de apagar a chave.
 
 ## Registro de exercícios e incidentes
 

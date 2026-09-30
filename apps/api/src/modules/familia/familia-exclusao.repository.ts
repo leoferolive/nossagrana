@@ -1,9 +1,7 @@
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
-import type { ExecutorDrizzle } from '../../db/executor.types.js';
+import type { ExecutorDrizzle, TransacaoDrizzle } from '../../db/executor.types.js';
 import { convites, familias } from '../../db/schema.js';
-
-type Transacao = Parameters<Parameters<ExecutorDrizzle['transaction']>[0]>[0];
 
 /**
  * Exclusão lógica de família como operação de ciclo de vida (#66): marca
@@ -31,7 +29,7 @@ export class DrizzleFamiliaExclusao {
     });
   }
 
-  private async marcarComoExcluida(tx: Transacao, familiaId: string, agora: Date) {
+  private async marcarComoExcluida(tx: TransacaoDrizzle, familiaId: string, agora: Date) {
     const linhas = await tx
       .update(familias)
       .set({ deletedAt: agora })
@@ -40,7 +38,7 @@ export class DrizzleFamiliaExclusao {
     return linhas.length > 0;
   }
 
-  private async invalidarConvitesPendentes(tx: Transacao, familiaId: string, agora: Date) {
+  private async invalidarConvitesPendentes(tx: TransacaoDrizzle, familiaId: string, agora: Date) {
     await tx
       .update(convites)
       .set({ expiraEm: agora })

@@ -12,7 +12,7 @@ import {
   familiaReviewJoinRequestRequestSchema,
   familiaRequestJoinRequestSchema,
 } from '@nossagrana/types';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import {
@@ -76,12 +76,18 @@ const defaultFamiliaService = (lifecycle: FamiliaLifecyclePublisher): FamiliaSer
   );
 };
 
-export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
-  const familiaService = defaultFamiliaService(
-    fastify.eventBus
-      ? new EventBusFamiliaLifecyclePublisher(fastify.eventBus)
-      : new NoopFamiliaLifecyclePublisher(),
+const lifecyclePublisherDe = (fastify: FastifyInstance): FamiliaLifecyclePublisher => {
+  if (fastify.eventBus) return new EventBusFamiliaLifecyclePublisher(fastify.eventBus, fastify.log);
+  // Sem `eventBus` os sockets da família excluída não são fechados; acontece se o
+  // `websocketPlugin` for registrado depois das rotas em `app.ts` (#66).
+  fastify.log.warn(
+    'eventBus ausente ao registrar familiaRoutes: exclusão de família não fechará sockets; registre websocketPlugin antes das rotas',
   );
+  return new NoopFamiliaLifecyclePublisher();
+};
+
+export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
+  const familiaService = defaultFamiliaService(lifecyclePublisherDe(fastify));
 
   fastify.get(
     '/familias/minhas',

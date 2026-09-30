@@ -20,13 +20,34 @@ export class NoopFamiliaLifecyclePublisher implements FamiliaLifecyclePublisher 
   familiaExcluida(): void {}
 }
 
-/** Publica no `eventBus` do Fastify. Ex.: `new EventBusFamiliaLifecyclePublisher(app.eventBus)`. */
+/** Subconjunto do logger do Fastify usado pelo publisher (`app.log` satisfaz a interface). */
+export interface FamiliaLifecycleLogger {
+  error(contexto: object, mensagem: string): void;
+}
+
+/**
+ * Publica no `eventBus` do Fastify. Ex.: `new EventBusFamiliaLifecyclePublisher(app.eventBus, app.log)`.
+ *
+ * O efeito colateral é best-effort: `emit` é síncrono e um listener que lança
+ * (hoje ou no futuro) não pode transformar uma exclusão já commitada em 500.
+ * A falha é logada e engolida.
+ */
 export class EventBusFamiliaLifecyclePublisher implements FamiliaLifecyclePublisher {
-  constructor(private readonly eventBus: EventEmitter) {}
+  constructor(
+    private readonly eventBus: EventEmitter,
+    private readonly log: FamiliaLifecycleLogger,
+  ) {}
 
   familiaExcluida(familiaId: string): void {
     const evento: FamiliaExcluidaEvento = { familiaId };
-    this.eventBus.emit(FAMILIA_EXCLUIDA_EVENTO, evento);
+    try {
+      this.eventBus.emit(FAMILIA_EXCLUIDA_EVENTO, evento);
+    } catch (err) {
+      this.log.error(
+        { err, familiaId },
+        `Falha ao publicar ${FAMILIA_EXCLUIDA_EVENTO}: a exclusão da família ${familiaId} já foi gravada e segue válida`,
+      );
+    }
   }
 }
 

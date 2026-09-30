@@ -9,14 +9,11 @@ import {
   InvalidFamiliaInviteCodeError,
 } from './familia.service.js';
 
-/** Fake nomeada do barramento: registra as famílias excluídas; pode simular falha ao publicar. */
+/** Fake nomeada do barramento: registra as famílias excluídas. */
 class FamiliaLifecyclePublisherFake implements FamiliaLifecyclePublisher {
   readonly excluidas: string[] = [];
 
-  constructor(private readonly falha?: Error) {}
-
   familiaExcluida(familiaId: string): void {
-    if (this.falha) throw this.falha;
     this.excluidas.push(familiaId);
   }
 }
@@ -74,19 +71,8 @@ describe('FamiliaService.deleteFamily — ciclo de vida (#66)', () => {
     expect(publisher.excluidas).toEqual([]);
   });
 
-  it('falha ao publicar depois do commit não desfaz a exclusão e a falha é propagada', async () => {
-    const falhaAoPublicar = new Error('barramento indisponível');
-    const { repo, service, familia } = await cenario(
-      new FamiliaLifecyclePublisherFake(falhaAoPublicar),
-    );
-
-    await expect(service.deleteFamily({ familiaId: familia.id, usuarioId: 'admin' })).rejects.toBe(
-      falhaAoPublicar,
-    );
-
-    expect(await repo.listFamiliasByUsuarioId({ usuarioId: 'admin' })).toEqual([]);
-  });
-
+  // Não discrimina a invalidação: o InMemory apaga os convites fisicamente. A cobertura
+  // real (expira_em na mesma transação, com rollback) está em db/tests/exclusao-familia.pg.test.ts.
   it('convite pendente da família excluída não pode mais ser usado nem cria membership', async () => {
     const { repo, service, familia, codigo } = await cenario();
 

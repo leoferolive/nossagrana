@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { WS_CLOSE_FAMILIA_EXCLUIDA } from '../modules/ws/ws-close-codes.js';
 import { WebSocketFake } from '../modules/ws/tests/websocket-fake.js';
-import { EventBusFamiliaLifecyclePublisher } from '../shared/familia-lifecycle/familia-lifecycle.events.js';
+import {
+  EventBusFamiliaLifecyclePublisher,
+  type FamiliaLifecycleLogger,
+} from '../shared/familia-lifecycle/familia-lifecycle.events.js';
 import { websocketPlugin } from './websocket.plugin.js';
 
 async function criarApp() {
@@ -33,7 +36,7 @@ describe('websocketPlugin — ciclo de vida da família', () => {
   it('fecha os sockets da família excluída com o código 4004 e preserva os de outra família', async () => {
     const { app, daFamiliaA, daFamiliaB } = await appComSockets();
 
-    new EventBusFamiliaLifecyclePublisher(app.eventBus!).familiaExcluida('fA');
+    new EventBusFamiliaLifecyclePublisher(app.eventBus!, app.log).familiaExcluida('fA');
 
     for (const ws of daFamiliaA) {
       expect(ws.fechamento).toEqual({
@@ -49,7 +52,7 @@ describe('websocketPlugin — ciclo de vida da família', () => {
   it('não envia nenhum dado da família aos sockets ao encerrar (só código e motivo genérico)', async () => {
     const { app, daFamiliaA } = await appComSockets();
 
-    new EventBusFamiliaLifecyclePublisher(app.eventBus!).familiaExcluida('fA');
+    new EventBusFamiliaLifecyclePublisher(app.eventBus!, app.log).familiaExcluida('fA');
 
     for (const ws of daFamiliaA) {
       expect(ws.enviadas).toEqual([]);
@@ -65,23 +68,53 @@ describe('websocketPlugin — ciclo de vida da família', () => {
 
     for (const ws of daFamiliaA) expect(ws.fechamento).toBeNull();
   });
+
+  it('loga e engole a falha de um listener em vez de propagá-la a quem publica', async () => {
+    const app = await criarApp();
+    apps.push(app);
+    const erros: Array<{ contexto: object; mensagem: string }> = [];
+    const logFake: FamiliaLifecycleLogger = {
+      error: (contexto, mensagem) => erros.push({ contexto, mensagem }),
+    };
+    app.eventBus!.on('familia:excluida', () => {
+      throw new Error('listener quebrado');
+    });
+
+    expect(() =>
+      new EventBusFamiliaLifecyclePublisher(app.eventBus!, logFake).familiaExcluida('fA'),
+    ).not.toThrow();
+
+    expect(erros).toHaveLength(1);
+    expect(erros[0]!.contexto).toMatchObject({ familiaId: 'fA' });
+    expect(erros[0]!.mensagem).toContain('fA');
+  });
 });
 
 describe('websocketPlugin — heartbeat e broadcast', () => {
   const HEARTBEAT_MS = 30_000;
   const PONG_TIMEOUT_MS = 10_000;
 
-  afterEach(() => {
+  const apps: Array<Awaited<ReturnType<typeof criarApp>>> = [];
+
+  afterEach(async () => {
+    // Fecha os apps mesmo se uma asserção falhar antes, para não vazar o setInterval do heartbeat.
+    await Promise.all(apps.splice(0).map((app) => app.close()));
     vi.useRealTimers();
   });
 
+  async function appRastreado() {
+    const app = await criarApp();
+    apps.push(app);
+    return app;
+  }
+
   async function appComTimersFalsos() {
     vi.useFakeTimers({ toFake: ['setInterval', 'setTimeout', 'clearInterval'] });
-    return criarApp();
+    return appRastreado();
   }
 
   it('repassa transacao:alterada apenas aos sockets da própria família', async () => {
-    const app = await criarApp();
+    const app = await appRastreado();
     const daFamiliaA = new WebSocketFake();
     const daFamiliaB = new WebSocketFake();
     app.wsManager.join('fA', daFamiliaA.comoWebSocket());
@@ -95,7 +128,6 @@ describe('websocketPlugin — heartbeat e broadcast', () => {
       familiaId: 'fA',
     });
     expect(daFamiliaB.enviadas).toEqual([]);
-    await app.close();
   });
 
   it('envia ping a cada 30s e mantém o socket que responde pong', async () => {
@@ -110,7 +142,6 @@ describe('websocketPlugin — heartbeat e broadcast', () => {
 
     expect(vivo.encerradoPorTerminate).toBe(false);
     expect(app.wsManager.roomSize('fA')).toBe(1);
-    await app.close();
   });
 
   it('termina e remove o socket que não responde pong dentro do timeout', async () => {
@@ -122,7 +153,6 @@ describe('websocketPlugin — heartbeat e broadcast', () => {
 
     expect(morto.encerradoPorTerminate).toBe(true);
     expect(app.wsManager.roomSize('fA')).toBe(0);
-    await app.close();
   });
 
   it('remove sem ping o socket que já não está aberto', async () => {
@@ -135,7 +165,6 @@ describe('websocketPlugin — heartbeat e broadcast', () => {
 
     expect(fechado.pings).toBe(0);
     expect(app.wsManager.roomSize('fA')).toBe(0);
-    await app.close();
   });
 
   it('para o heartbeat ao fechar o app', async () => {

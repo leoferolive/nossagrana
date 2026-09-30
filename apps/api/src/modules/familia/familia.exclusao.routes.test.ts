@@ -9,7 +9,6 @@ describe('DELETE /familias/:id — convites e sockets (#66)', () => {
   let token: string;
   let familiaId: string;
   let outraFamiliaId: string;
-  let codigo: string;
 
   const autenticado = () => ({ authorization: `Bearer ${token}`, 'x-familia-id': familiaId });
 
@@ -50,13 +49,6 @@ describe('DELETE /familias/:id — convites e sockets (#66)', () => {
     token = login.json().accessToken as string;
     familiaId = await criarFamilia('Familia Excluida');
     outraFamiliaId = await criarFamilia('Familia Mantida');
-    const convite = await app.inject({
-      method: 'POST',
-      url: '/api/familias/convites',
-      headers: autenticado(),
-      payload: {},
-    });
-    codigo = convite.json().convite.codigo;
   });
 
   afterAll(() => app.close());
@@ -78,14 +70,51 @@ describe('DELETE /familias/:id — convites e sockets (#66)', () => {
     outra.close();
   });
 
+  // Não discrimina a invalidação: o repositório InMemory apaga os convites fisicamente. A
+  // cobertura real (expira_em gravado na mesma transação) está em db/tests/exclusao-familia.pg.test.ts.
   it('convite pendente da família excluída deixa de ser aceito e não cria membership', async () => {
+    const propria = await criarFamilia('Familia Com Convite');
+    const propriosHeaders = { authorization: `Bearer ${token}`, 'x-familia-id': propria };
+    const convite = await app.inject({
+      method: 'POST',
+      url: '/api/familias/convites',
+      headers: propriosHeaders,
+      payload: {},
+    });
+    const codigoProprio = convite.json().convite.codigo as string;
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/familias/${propria}`,
+      headers: propriosHeaders,
+    });
+
     const resposta = await app.inject({
       method: 'POST',
-      url: `/api/familias/entrar/${codigo}`,
+      url: `/api/familias/entrar/${codigoProprio}`,
       headers: { authorization: `Bearer ${token}` },
       payload: {},
     });
 
     expect(resposta.statusCode).toBe(404);
+  });
+
+  it('listener do evento que lança não transforma a exclusão gravada em 500', async () => {
+    const propria = await criarFamilia('Familia Listener Falho');
+    const listenerFalho = () => {
+      throw new Error('listener quebrado');
+    };
+    app.eventBus!.on('familia:excluida', listenerFalho);
+
+    try {
+      const exclusao = await app.inject({
+        method: 'DELETE',
+        url: `/api/familias/${propria}`,
+        headers: { authorization: `Bearer ${token}`, 'x-familia-id': propria },
+      });
+
+      expect(exclusao.statusCode).toBe(204);
+    } finally {
+      app.eventBus!.off('familia:excluida', listenerFalho);
+    }
   });
 });

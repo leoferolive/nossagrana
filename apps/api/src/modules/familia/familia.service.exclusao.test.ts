@@ -85,7 +85,7 @@ describe('FamiliaService.deleteFamily — ciclo de vida (#66)', () => {
     expect(await repo.hasMembership({ familiaId: familia.id, usuarioId: 'u9' })).toBe(false);
   });
 
-  it('não gera convite para família excluída (corrida convite x exclusão, review do PR #146)', async () => {
+  it('admin de família excluída não gera convite (403)', async () => {
     const { service, familia } = await cenario();
     await service.deleteFamily({ familiaId: familia.id, usuarioId: 'admin' });
 

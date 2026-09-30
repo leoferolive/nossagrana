@@ -45,7 +45,7 @@ function recusarSeSemAcesso(
  * vê a família ativa, a exclusão commita depois dela — logo o evento chega
  * depois do `join` e `closeFamily` fecha o socket. Sem memória de famílias
  * fechadas, uma família restaurada por admin reabre sockets normalmente.
- * Falha ao revalidar fecha o socket (1011): nunca fica conectado sem checagem.
+ * Falha em qualquer checagem fecha o socket (1011): nunca fica conectado sem checagem.
  */
 async function admitirComRevalidacao(
   fastify: FastifyInstance,
@@ -53,17 +53,20 @@ async function admitirComRevalidacao(
   userId: string,
   familiaId: string,
 ): Promise<void> {
-  const primeira = await verificarAcessoFamilia(db, userId, familiaId);
-  if (recusarSeSemAcesso(fastify, socket, familiaId, primeira)) return;
-
-  entrarNoRoom(fastify, socket, familiaId);
   try {
+    const primeira = await verificarAcessoFamilia(db, userId, familiaId);
+    if (recusarSeSemAcesso(fastify, socket, familiaId, primeira)) return;
+    // O `close` do cliente durante o `await` acima já passou: entrar agora deixaria
+    // o socket no room para sempre (o listener de `close` só nasce no `join`).
+    if (socket.readyState !== socket.OPEN) return;
+
+    entrarNoRoom(fastify, socket, familiaId);
     const segunda = await verificarAcessoFamilia(db, userId, familiaId);
     recusarSeSemAcesso(fastify, socket, familiaId, segunda);
   } catch (err) {
     fastify.log.error(
       { err, familiaId },
-      `Falha ao revalidar acesso do socket à família ${familiaId}`,
+      `Falha ao validar acesso do socket à família ${familiaId}`,
     );
     fastify.wsManager.leave(familiaId, socket);
     socket.close(WS_CLOSE_ERRO_INTERNO, 'Erro ao validar acesso');

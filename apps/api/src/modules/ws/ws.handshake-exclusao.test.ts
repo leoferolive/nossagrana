@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import type { WebSocket } from 'ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLimit = vi.hoisted(() => vi.fn());
@@ -16,6 +17,9 @@ const familiaId = '11111111-1111-1111-1111-111111111111';
 const ATIVA = [{ deletedAt: null }];
 const EXCLUIDA = [{ deletedAt: new Date('2026-09-30') }];
 const SEM_VINCULO: never[] = [];
+const SOCKET_FECHANDO = 2; // readyState CLOSING do ws (>= 2: já não está OPEN)
+// Teste negativo: dá tempo ao handler de (indevidamente) entrar no room após a liberação.
+const ESPERA_DO_HANDSHAKE_MS = 50;
 
 /**
  * Fake nomeada de `verificarAcessoFamilia`: responde as consultas na ordem em
@@ -181,6 +185,42 @@ describe('WebSocket — handshake concorrente à exclusão da família (#147)', 
 
       expect(await codigoDeFechamento(ws)).toBe(1011);
       expect(app.wsManager.roomSize(familiaId)).toBe(0);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('falha na 1ª checagem: também falha fechada (1011), sem terminate, e fora do room', async () => {
+    acesso.falhar(new Error('conexão com o banco perdida'));
+    const app = await createApp();
+    try {
+      const ws = await conectar(app);
+
+      expect(await codigoDeFechamento(ws)).toBe(1011);
+      expect(app.wsManager.roomSize(familiaId)).toBe(0);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('cliente desconecta durante a 1ª checagem: o socket não entra no room', async () => {
+    const primeira = acesso.adiar(ATIVA);
+    const app = await createApp();
+    try {
+      let ladoServidor: WebSocket | undefined;
+      app.websocketServer.on('connection', (socket: WebSocket) => (ladoServidor = socket));
+      const ws = await conectar(app);
+      await vi.waitFor(() => expect(acesso.consultas).toBe(1));
+      ws.close();
+      await vi.waitFor(() =>
+        expect(ladoServidor?.readyState).toBeGreaterThanOrEqual(SOCKET_FECHANDO),
+      );
+
+      primeira.liberar();
+      await new Promise((resolve) => setTimeout(resolve, ESPERA_DO_HANDSHAKE_MS));
+
+      expect(app.wsManager.roomSize(familiaId)).toBe(0);
+      expect(acesso.consultas).toBe(1);
     } finally {
       await app.close();
     }

@@ -24,7 +24,6 @@ import {
  * do convite num advisory lock (trigger) para forçar o intercalamento.
  */
 const RODADAS = [1, 2, 3, 4, 5];
-const ESPERA_PARA_EXCLUSAO_TENTAR_MS = 300;
 
 interface Cenario {
   familiaId: string;
@@ -122,7 +121,8 @@ describe('Criação de convite x exclusão de família no PostgreSQL', () => {
     const criacao = criador.criar({ familiaId: cenario.familiaId, criadoPor: cenario.adminId });
     await expect.poll(() => esperandoLock(observador), { timeout: 5_000 }).toBe(1);
     const exclusaoEmCurso = exclusao.excluir({ familiaId: cenario.familiaId });
-    await new Promise((resolve) => setTimeout(resolve, ESPERA_PARA_EXCLUSAO_TENTAR_MS));
+    // 2 esperas: a criação presa no advisory lock e a exclusão presa no FOR SHARE da família.
+    await expect.poll(() => esperandoLock(observador), { timeout: 5_000 }).toBe(2);
     await observador`SELECT pg_advisory_unlock(hashtext(${cenario.familiaId}))`;
 
     expect(await criacao).not.toBeNull();

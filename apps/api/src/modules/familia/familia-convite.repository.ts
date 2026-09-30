@@ -2,7 +2,7 @@ import { and, eq, exists, gt, isNull, sql } from 'drizzle-orm';
 
 import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { convites, familias, usuarioFamilia } from '../../db/schema.js';
-import { classificarConvite } from './familia-convite.js';
+import { classificarConvite, ehRepeticaoDoConsumidor } from './familia-convite.js';
 import type {
   ConsumoConviteResultado,
   CreatedFamilia,
@@ -55,6 +55,17 @@ export class DrizzleConviteConsumer {
     input: JoinFamiliaByInviteInput,
     agora: Date,
   ): Promise<ConsumoConviteResultado> {
+    const consumido = await this.marcarComoUsado(tx, input, agora);
+    if (!consumido) return this.explicarRecusa(tx, input, agora);
+
+    const vinculou = await this.vincularMembro(tx, input.usuarioId, consumido.familiaId);
+    const familia = await this.buscarFamilia(tx, consumido.familiaId);
+    if (!vinculou) throw new UsuarioJaMembroSinal(familia);
+    return { status: 'entrou', familia };
+  }
+
+  /** UPDATE condicional: o único ponto de decisão do uso único. */
+  private async marcarComoUsado(tx: Transacao, input: JoinFamiliaByInviteInput, agora: Date) {
     const [consumido] = await tx
       .update(convites)
       .set({ usadoPor: input.usuarioId, usadoEm: agora })
@@ -67,16 +78,17 @@ export class DrizzleConviteConsumer {
         ),
       )
       .returning({ familiaId: convites.familiaId });
-    if (!consumido) return this.explicarRecusa(tx, input.codigo, agora);
+    return consumido;
+  }
 
+  /** `false` quando o vínculo já existia (ON CONFLICT DO NOTHING não retorna linha). */
+  private async vincularMembro(tx: Transacao, usuarioId: string, familiaId: string) {
     const [vinculo] = await tx
       .insert(usuarioFamilia)
-      .values({ usuarioId: input.usuarioId, familiaId: consumido.familiaId, role: 'membro' })
+      .values({ usuarioId, familiaId, role: 'membro' })
       .onConflictDoNothing()
       .returning({ usuarioId: usuarioFamilia.usuarioId });
-    const familia = await this.buscarFamilia(tx, consumido.familiaId);
-    if (!vinculo) throw new UsuarioJaMembroSinal(familia);
-    return { status: 'entrou', familia };
+    return Boolean(vinculo);
   }
 
   private familiaAtivaDoConvite(tx: Transacao) {
@@ -100,11 +112,24 @@ export class DrizzleConviteConsumer {
   /** Só roda quando o UPDATE não casou: descobre o motivo, sem alterar nada. */
   private async explicarRecusa(
     tx: Transacao,
-    codigo: string,
+    input: JoinFamiliaByInviteInput,
     agora: Date,
   ): Promise<ConsumoConviteResultado> {
+    const convite = await this.buscarConvite(tx, input.codigo);
+    const estado = convite?.familiaExcluidaEm
+      ? 'invalido'
+      : classificarConvite(convite ?? null, agora);
+    if (convite && ehRepeticaoDoConsumidor(estado, convite.usadoPor, input.usuarioId)) {
+      const familia = await this.familiaSeAindaMembro(tx, input.usuarioId, convite.familiaId);
+      if (familia) return { status: 'ja_membro', familia };
+    }
+    return { status: estado === 'elegivel' ? 'invalido' : estado };
+  }
+
+  private async buscarConvite(tx: Transacao, codigo: string) {
     const [convite] = await tx
       .select({
+        familiaId: convites.familiaId,
         usadoPor: convites.usadoPor,
         expiraEm: convites.expiraEm,
         familiaExcluidaEm: familias.deletedAt,
@@ -113,10 +138,15 @@ export class DrizzleConviteConsumer {
       .innerJoin(familias, eq(familias.id, convites.familiaId))
       .where(eq(convites.codigo, codigo))
       .limit(1);
+    return convite;
+  }
 
-    const estado = convite?.familiaExcluidaEm
-      ? 'invalido'
-      : classificarConvite(convite ?? null, agora);
-    return { status: estado === 'elegivel' ? 'invalido' : estado };
+  private async familiaSeAindaMembro(tx: Transacao, usuarioId: string, familiaId: string) {
+    const [vinculo] = await tx
+      .select({ usuarioId: usuarioFamilia.usuarioId })
+      .from(usuarioFamilia)
+      .where(and(eq(usuarioFamilia.usuarioId, usuarioId), eq(usuarioFamilia.familiaId, familiaId)))
+      .limit(1);
+    return vinculo ? this.buscarFamilia(tx, familiaId) : null;
   }
 }

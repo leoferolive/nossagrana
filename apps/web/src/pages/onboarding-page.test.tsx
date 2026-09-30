@@ -17,6 +17,7 @@ vi.mock('@/contexts/use-auth', () => ({
 
 import { familiaService } from '@/services/auth.service';
 import { useAuth } from '@/contexts/use-auth';
+import { ApiError } from '@/services/api-client';
 import { OnboardingPage } from './onboarding-page';
 
 const mockUpdateFamiliaIdAtiva = vi.fn();
@@ -169,6 +170,23 @@ describe('OnboardingPage', () => {
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toHaveTextContent(/código inválido ou expirado/i);
+      });
+    });
+    it('exibe mensagem específica quando o convite já foi utilizado (409)', async () => {
+      vi.mocked(familiaService.entrarPorConvite).mockRejectedValueOnce(
+        new ApiError(409, 'Erro ao processar requisição'),
+      );
+
+      renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: /tenho um código de convite/i }));
+      fireEvent.change(screen.getByLabelText(/c.digo de convite/i), {
+        target: { value: 'USADO123' },
+      });
+      fireEvent.submit(screen.getByRole('form', { name: /entrar com convite/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent(/convite já foi utilizado/i);
       });
     });
   });

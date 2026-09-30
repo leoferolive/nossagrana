@@ -155,7 +155,7 @@ describe('Consumo de convite no PostgreSQL', () => {
     expect(await membros(cenario.familiaId)).toBe(0);
   });
 
-  it('repetição pelo mesmo usuário não cria novo vínculo: 2ª chamada é "usado"', async () => {
+  it('repetição pelo mesmo usuário não cria novo vínculo: 2ª chamada é "ja_membro"', async () => {
     const cenario = await semearFamilia('Repeticao');
     const codigo = await semearConvite(cenario);
     const usuarioId = await semearUsuario('repete');
@@ -163,8 +163,23 @@ describe('Consumo de convite no PostgreSQL', () => {
     const primeira = await novaSessao().consumir({ codigo, usuarioId });
     const segunda = await novaSessao().consumir({ codigo, usuarioId });
 
-    expect([primeira.status, segunda.status]).toEqual(['entrou', 'usado']);
+    expect([primeira.status, segunda.status]).toEqual(['entrou', 'ja_membro']);
     expect(await membros(cenario.familiaId)).toBe(1);
+    expect(await consumidoPor(codigo)).toBe(usuarioId);
+  });
+
+  it('repetição depois de o consumidor ser removido da família volta a ser "usado"', async () => {
+    const cenario = await semearFamilia('RepeticaoRemovido');
+    const codigo = await semearConvite(cenario);
+    const usuarioId = await semearUsuario('removido');
+    await novaSessao().consumir({ codigo, usuarioId });
+    await banco.sql`DELETE FROM usuario_familia
+      WHERE usuario_id = ${usuarioId} AND familia_id = ${cenario.familiaId}`;
+
+    const resultado = await novaSessao().consumir({ codigo, usuarioId });
+
+    expect(resultado).toEqual({ status: 'usado' });
+    expect(await membros(cenario.familiaId)).toBe(0);
   });
 
   it('quem já é membro recebe "ja_membro" e o convite segue livre', async () => {

@@ -60,10 +60,20 @@ describe('POST /familias/entrar/:codigo (uso único)', () => {
     expect(perdedora.json()).toEqual({ message: 'Convite ja utilizado' });
   });
 
-  it('nova tentativa com o mesmo código continua 409 e não cria membership', async () => {
-    const respostas = await Promise.all([entrar('ana'), entrar('bia')]);
+  it('nova tentativa: quem entrou recebe 200 sem duplicar vínculo; o perdedor segue 409', async () => {
+    const primeira = await Promise.all([entrar('ana'), entrar('bia')]);
+    const [vencedor, perdedor] = primeira[0]!.statusCode === 200 ? ['ana', 'bia'] : ['bia', 'ana'];
 
-    expect(respostas.map((r) => r.statusCode)).toEqual([409, 409]);
+    const repeticao = await Promise.all([entrar(vencedor!), entrar(perdedor!)]);
+
+    expect(repeticao.map((r) => r.statusCode)).toEqual([200, 409]);
+    const lista = await app.inject({
+      method: 'GET',
+      url: `/api/familias/${familiaId}/membros`,
+      headers: { authorization: `Bearer ${tokens.admin}`, 'x-familia-id': familiaId },
+    });
+    const papeis = (lista.json().membros as Array<{ role: string }>).map((m) => m.role).sort();
+    expect(papeis).toEqual(['admin', 'membro']);
   });
 
   it('código inexistente continua 404 "invalido ou expirado"', async () => {

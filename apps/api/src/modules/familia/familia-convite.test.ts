@@ -66,12 +66,20 @@ describe('consumo de convite no InMemoryFamiliaRepository', () => {
     expect(await tem('u2')).toBe(false);
   });
 
-  it('repetição pelo mesmo usuário é "usado" e não altera a membership existente', async () => {
+  it('repetição pelo mesmo usuário é "ja_membro" e não altera a membership existente', async () => {
     await entrar('u1');
     const antes = await repo.listMembers({ familiaId });
 
-    expect(await entrar('u1')).toEqual({ status: 'usado' });
+    expect(await entrar('u1')).toMatchObject({ status: 'ja_membro', familia: { id: familiaId } });
     expect(await repo.listMembers({ familiaId })).toEqual(antes);
+  });
+
+  it('repetição pelo mesmo usuário depois de removido da família volta a ser "usado"', async () => {
+    await entrar('u1');
+    await repo.removeMember({ familiaId, usuarioId: 'u1' });
+
+    expect(await entrar('u1')).toEqual({ status: 'usado' });
+    expect(await tem('u1')).toBe(false);
   });
 
   it('código desconhecido é "invalido"', async () => {

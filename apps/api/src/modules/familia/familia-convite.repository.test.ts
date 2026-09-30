@@ -90,30 +90,66 @@ describe('DrizzleConviteConsumer (SQL gerado)', () => {
 
   it('UPDATE sem linhas: convite já consumido vira "usado"', async () => {
     const expiraEm = new Date(AGORA.getTime() + 1000);
-    cliente.responderCom().responderCom({ usadoPor: 'u9', expiraEm, familiaExcluidaEm: null });
+    cliente
+      .responderCom()
+      .responderCom({ familiaId: 'fA', usadoPor: 'u9', expiraEm, familiaExcluidaEm: null });
+
+    expect(await consumidor.consumir(entrada, AGORA)).toEqual({ status: 'usado' });
+  });
+
+  it('UPDATE sem linhas: repetição pelo próprio consumidor que ainda é membro vira "ja_membro"', async () => {
+    const expiraEm = new Date(AGORA.getTime() + 1000);
+    cliente
+      .responderCom()
+      .responderCom({ familiaId: 'fA', usadoPor: 'u1', expiraEm, familiaExcluidaEm: null })
+      .responderCom({ usuarioId: 'u1' })
+      .responderCom(FAMILIA);
+
+    expect(await consumidor.consumir(entrada, AGORA)).toEqual({
+      status: 'ja_membro',
+      familia: FAMILIA,
+    });
+    const vinculo = cliente.consultas[2]!;
+    expect(vinculo.sql).toMatch(/^select .* from "usuario_familia"/);
+    expect(vinculo.params).toEqual(expect.arrayContaining(['u1', 'fA']));
+  });
+
+  it('UPDATE sem linhas: consumidor que foi removido da família continua "usado"', async () => {
+    const expiraEm = new Date(AGORA.getTime() + 1000);
+    cliente
+      .responderCom()
+      .responderCom({ familiaId: 'fA', usadoPor: 'u1', expiraEm, familiaExcluidaEm: null })
+      .responderCom();
 
     expect(await consumidor.consumir(entrada, AGORA)).toEqual({ status: 'usado' });
   });
 
   it('UPDATE sem linhas: convite vencido vira "expirado"', async () => {
     const expiraEm = new Date(AGORA.getTime() - 1000);
-    cliente.responderCom().responderCom({ usadoPor: null, expiraEm, familiaExcluidaEm: null });
+    cliente
+      .responderCom()
+      .responderCom({ familiaId: 'fA', usadoPor: null, expiraEm, familiaExcluidaEm: null });
 
     expect(await consumidor.consumir(entrada, AGORA)).toEqual({ status: 'expirado' });
   });
 
   it('UPDATE sem linhas: família excluída vira "invalido" mesmo com convite livre', async () => {
     const expiraEm = new Date(AGORA.getTime() + 1000);
-    cliente
-      .responderCom()
-      .responderCom({ usadoPor: null, expiraEm, familiaExcluidaEm: new Date('2026-09-01') });
+    cliente.responderCom().responderCom({
+      familiaId: 'fA',
+      usadoPor: null,
+      expiraEm,
+      familiaExcluidaEm: new Date('2026-09-01'),
+    });
 
     expect(await consumidor.consumir(entrada, AGORA)).toEqual({ status: 'invalido' });
   });
 
   it('UPDATE sem linhas mas convite parece elegível (corrida com restauração): "invalido" determinístico', async () => {
     const expiraEm = new Date(AGORA.getTime() + 1000);
-    cliente.responderCom().responderCom({ usadoPor: null, expiraEm, familiaExcluidaEm: null });
+    cliente
+      .responderCom()
+      .responderCom({ familiaId: 'fA', usadoPor: null, expiraEm, familiaExcluidaEm: null });
 
     expect(await consumidor.consumir(entrada, AGORA)).toEqual({ status: 'invalido' });
   });

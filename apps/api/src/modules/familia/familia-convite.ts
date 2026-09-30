@@ -4,7 +4,7 @@ import type {
   CreatedFamiliaInvite,
 } from './familia.types.js';
 
-export type EstadoConvite = 'elegivel' | 'usado' | 'expirado' | 'invalido';
+type EstadoConvite = 'elegivel' | 'usado' | 'expirado' | 'invalido';
 
 interface ConviteClassificavel {
   usadoPor: string | null;
@@ -32,16 +32,30 @@ export interface ConviteEmMemoria extends CreatedFamiliaInvite {
   usadoEm?: Date;
 }
 
-export interface VinculoEmMemoria {
+interface VinculoEmMemoria {
   role: 'admin' | 'membro';
   dataEntrada: Date;
 }
 
 /** Estado do InMemoryFamiliaRepository que o consumo de convite lê e altera. */
-export interface BaseConvitesEmMemoria {
+interface BaseConvitesEmMemoria {
   convites: Map<string, ConviteEmMemoria>;
   familias: Map<string, CreatedFamilia>;
   vinculos: Map<string, Map<string, VinculoEmMemoria>>;
+}
+
+/**
+ * Repetição segura: o convite já foi consumido por ESTE usuário. Se ele ainda
+ * é membro, o pedido repetido (resposta perdida, falha no `alternar`) vira
+ * `ja_membro`; se foi removido depois, o convite continua "usado". Fonte única
+ * da regra para o adapter Drizzle e o InMemory.
+ */
+export function ehRepeticaoDoConsumidor(
+  estado: EstadoConvite,
+  usadoPor: string | null | undefined,
+  usuarioId: string,
+): boolean {
+  return estado === 'usado' && usadoPor === usuarioId;
 }
 
 /**
@@ -58,14 +72,13 @@ export function consumirConviteEmMemoria(
   const familia = convite ? base.familias.get(convite.familiaId) : undefined;
   if (!convite || !familia) return { status: 'invalido' };
 
-  const estado = classificarConvite(
-    { usadoPor: convite.usadoPor ?? null, expiraEm: convite.expiraEm },
-    agora,
-  );
-  if (estado !== 'elegivel') return { status: estado };
-
+  const usadoPor = convite.usadoPor ?? null;
+  const estado = classificarConvite({ usadoPor, expiraEm: convite.expiraEm }, agora);
   const vinculos = base.vinculos.get(familia.id) ?? new Map<string, VinculoEmMemoria>();
-  if (vinculos.has(input.usuarioId)) return { status: 'ja_membro', familia };
+  const jaMembro = vinculos.has(input.usuarioId);
+  const repeticao = ehRepeticaoDoConsumidor(estado, usadoPor, input.usuarioId);
+  if (jaMembro && (estado === 'elegivel' || repeticao)) return { status: 'ja_membro', familia };
+  if (estado !== 'elegivel') return { status: estado };
 
   vinculos.set(input.usuarioId, { role: 'membro', dataEntrada: agora });
   base.vinculos.set(familia.id, vinculos);

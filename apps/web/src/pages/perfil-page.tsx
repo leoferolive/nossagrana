@@ -2,13 +2,25 @@ import { useEffect, useState } from 'react';
 
 import { FirstTimeTour } from '../components/first-time-tour';
 import { IconVoltar } from '../components/icons';
+import { useAuth } from '@/contexts/use-auth';
+
+import { ApiError } from '../services/api-client';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 
 interface PerfilPageProps {
   onBack: () => void;
 }
 
+// Tempo para o usuário ler o aviso antes do logout forçado.
+const LOGOUT_APOS_TROCA_DE_SENHA_MS = 2500;
+
+const mensagemErroTrocaDeSenha = (error: unknown): string =>
+  error instanceof ApiError && error.status === 401
+    ? 'Senha atual incorreta.'
+    : 'Não foi possível alterar a senha. Tente novamente.';
+
 export const PerfilPage = ({ onBack }: PerfilPageProps) => {
+  const { logout } = useAuth();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
@@ -18,6 +30,14 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
   const [novaSenha, setNovaSenha] = useState('');
   const [erroSenha, setErroSenha] = useState<string | null>(null);
   const [senhaSalva, setSenhaSalva] = useState(false);
+
+  // A troca de senha revoga todas as sessões, inclusive esta (#119): o logout é explícito
+  // para não depender de o WebSocket estar conectado (4005) nem de o refresh falhar depois.
+  useEffect(() => {
+    if (!senhaSalva) return;
+    const timer = setTimeout(logout, LOGOUT_APOS_TROCA_DE_SENHA_MS);
+    return () => clearTimeout(timer);
+  }, [senhaSalva, logout]);
 
   useEffect(() => {
     const load = async () => {
@@ -46,9 +66,8 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
       setSenhaAtual('');
       setNovaSenha('');
       setSenhaSalva(true);
-      setTimeout(() => setSenhaSalva(false), 2500);
-    } catch {
-      setErroSenha('Senha atual incorreta.');
+    } catch (error) {
+      setErroSenha(mensagemErroTrocaDeSenha(error));
     }
   };
 
@@ -173,7 +192,9 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
           </button>
 
           {senhaSalva && (
-            <p className="mt-2 text-center text-xs text-success">Senha alterada com sucesso!</p>
+            <p className="mt-2 text-center text-xs text-success">
+              Senha alterada. Entre novamente.
+            </p>
           )}
         </section>
       </div>

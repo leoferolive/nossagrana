@@ -40,6 +40,7 @@ import {
 } from './password-reset.repository.js';
 import { InvalidResetTokenError, PasswordResetService } from './password-reset.service.js';
 import { hashToken } from './revoked-token.repository.js';
+import { logarSessoesNaoRevogadas } from './sessoes-nao-revogadas.error.js';
 
 const defaultAuthService = (sessoes: SessaoRevogador): AuthService => {
   if (env.NODE_ENV === 'test') {
@@ -222,6 +223,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         if (error instanceof InvalidCredentialsError) {
           return reply.code(401).send({ message: 'Senha atual incorreta' });
         }
+        logarSessoesNaoRevogadas(request.log, error);
         throw error;
       }
     },
@@ -249,6 +251,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         if (error instanceof InvalidResetTokenError) {
           return reply.code(400).send({ message: error.message });
         }
+        logarSessoesNaoRevogadas(request.log, error);
         throw error;
       }
     },

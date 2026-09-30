@@ -22,12 +22,27 @@ const RECUSA_TOKEN_INVALIDO: ResultadoRefresh = {
 
 /** Reuso de refresh já rotacionado = possível roubo: revoga todas as sessões do dono. */
 async function tratarReuso(fastify: FastifyInstance, refreshToken: string) {
+  const userId = extrairUserId(fastify, refreshToken);
+  if (userId) await revogarPorReuso(fastify, userId);
+  return RECUSA_REUSO;
+}
+
+function extrairUserId(fastify: FastifyInstance, refreshToken: string): string | null {
   try {
-    await fastify.sessoes.revogarTodas(verificarRefreshToken(fastify, refreshToken).sub);
+    return verificarRefreshToken(fastify, refreshToken).sub;
   } catch {
     // Token expirado/inválido — não conseguimos decodificar userId
+    return null;
   }
-  return RECUSA_REUSO;
+}
+
+/** Falha aqui deixa sessões vivas após um possível roubo de token: não pode sumir em silêncio. */
+async function revogarPorReuso(fastify: FastifyInstance, userId: string): Promise<void> {
+  try {
+    await fastify.sessoes.revogarTodas(userId);
+  } catch (error) {
+    fastify.log.error({ userId, err: error }, 'Reuso de refresh detectado mas revogação falhou');
+  }
 }
 
 /**

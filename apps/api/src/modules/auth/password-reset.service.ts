@@ -5,6 +5,7 @@ import type { EmailService } from '../email/email.service.js';
 import type { AuthRepository, SessaoRevogador } from './auth.types.js';
 import type { PasswordResetRepository } from './password-reset.types.js';
 import { hashToken } from './revoked-token.repository.js';
+import { revogarSessoesAposTrocaDeSenha } from './sessoes-nao-revogadas.error.js';
 
 export class PasswordResetService {
   constructor(
@@ -50,7 +51,7 @@ export class PasswordResetService {
     const novoHash = await this.hashFn(novaSenha);
     await this.authRepo.updateSenhaHash(resetToken.userId, novoHash);
 
-    await this.sessoes.revogarTodas(resetToken.userId);
+    await revogarSessoesAposTrocaDeSenha(this.sessoes, resetToken.userId);
   }
 }
 

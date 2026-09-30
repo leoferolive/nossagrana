@@ -7,6 +7,7 @@ import {
   verifyPassword,
 } from './auth.service.js';
 import type { AuthRepository } from './auth.types.js';
+import { SessoesNaoRevogadasError } from './sessoes-nao-revogadas.error.js';
 import { SessaoRevogadorFake } from './tests/sessao-revogador-fake.js';
 
 const defaultUser = {
@@ -128,8 +129,10 @@ describe('AuthService', () => {
 
       const erro = await service.updateSenha('u1', 'atual', 'nova').catch((e: unknown) => e);
 
-      expect(erro).toBeInstanceOf(Error);
       expect(erro).not.toBeInstanceOf(InvalidCredentialsError);
+      // Tipado e com o userId: a rota loga o estado "senha trocada, sessões vivas".
+      expect(erro).toBeInstanceOf(SessoesNaoRevogadasError);
+      expect((erro as SessoesNaoRevogadasError).userId).toBe('u1');
     });
   });
 });

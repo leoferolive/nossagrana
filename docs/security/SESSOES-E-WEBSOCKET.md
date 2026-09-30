@@ -26,6 +26,28 @@
 4. Handshake com access emitido antes da troca → close `4005` (não reconecta).
 5. Falha ao gravar a revogação → 500 (não é mascarada como "senha incorreta").
    A senha já foi trocada nesse caso; repetir a operação exige a senha nova.
+   Senha e revogação **não** compartilham transação (repositórios distintos);
+   o estado é logado (`error`, com `userId`) via `SessoesNaoRevogadasError` e as
+   sessões antigas valem até o refresh/access expirar. Risco residual aceito
+   (mesma janela do access; a remediação manual é nova troca de senha com a senha
+   nova). Vale também para `reset-password`. Transação única fica como melhoria
+   futura.
+6. Web (`perfil-page`): após o 204 a tela avisa "Senha alterada. Entre
+   novamente." e faz logout explícito (~2,5 s), independente de o WS estar
+   conectado. Erros: 401 → "Senha atual incorreta."; demais → mensagem genérica.
+
+Reuso de refresh já rotacionado (`tratarReuso`): se a revogação global falhar,
+o erro é logado (`error`, `userId`) e a resposta segue `TOKEN_REUSE_DETECTED`.
+
+## Decisões de design registradas (review do #150)
+
+- **Granularidade do `iat` (segundos):** token emitido no mesmo segundo da
+  revogação é tratado como revogado. Um login imediatamente após a troca pode
+  nascer revogado; na prática o usuário leva >1 s para digitar. Claim com
+  precisão de ms / contador de versão de sessão fica como melhoria futura
+  (também abriria a porta para devolver um par novo no `PATCH /auth/senha`).
+- **`renovarSessao(fastify, …)`** depende dos decorators do Fastify em vez de
+  service injetado; refator adiado.
 
 ## Janela do access token
 

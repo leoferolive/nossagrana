@@ -7,6 +7,7 @@ import type {
   RegisteredUser,
   SessaoRevogador,
 } from './auth.types.js';
+import { revogarSessoesAposTrocaDeSenha } from './sessoes-nao-revogadas.error.js';
 
 export class EmailAlreadyExistsError extends Error {
   constructor() {
@@ -114,7 +115,7 @@ export class AuthService {
     await this.repository.updateSenhaHash(userId, novoHash);
     // Depois do update: um login com a senha antiga entre a revogação e o update
     // criaria uma sessão que sobreviveria à troca (#119).
-    await this.sessoes.revogarTodas(userId);
+    await revogarSessoesAposTrocaDeSenha(this.sessoes, userId);
   }
 
   async login(input: LoginInput): Promise<{ id: string; email: string }> {

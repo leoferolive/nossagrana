@@ -138,6 +138,24 @@ describe('sessões revogadas na troca de senha (#119)', () => {
     expect(troca.statusCode).toBe(500);
   });
 
+  it('reuso de refresh rotacionado: se a revogação falhar, loga o erro e segue recusando', async () => {
+    const { sessao } = await registrarELogar(app);
+    await refresh(app, sessao.refreshToken);
+    const erro = vi.spyOn(app.log, 'error');
+    vi.spyOn(app.repositoriosInMemory!.tokensRevogados, 'revokeAllByUserId').mockRejectedValue(
+      new Error('armazenamento indisponível'),
+    );
+
+    const reuso = await refresh(app, sessao.refreshToken);
+
+    expect(reuso.statusCode).toBe(401);
+    expect(reuso.json()).toMatchObject({ code: 'TOKEN_REUSE_DETECTED' });
+    expect(erro).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: expect.any(String) }),
+      expect.stringContaining('revogação falhou'),
+    );
+  });
+
   it('refresh concorrente à revogação: se a revogação chega no meio da rotação, nenhum token novo sobrevive', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-30T10:00:00Z'));

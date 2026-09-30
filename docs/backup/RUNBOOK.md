@@ -350,6 +350,21 @@ rename, como em [Restaurar em produção](#restaurar-em-produção):
 ```bash
 age -d -i nossagrana-backup.key -o restore.dump "$ARTEFATO"    # $ARTEFATO: ver acima
 pg_restore --list restore.dump | head            # confere o TOC
+# Roles são do cluster, não vêm no dump. O dump tem GRANTs a backup_ro (e grafana_ro,
+# se existir) e o pg_restore --exit-on-error aborta no primeiro role ausente
+# (--no-owner não suprime ACLs). Em cluster reconstruído, recrie-os ANTES do restore;
+# em cluster que já os tem, o bloco é inofensivo (idempotente).
+kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1' <<'SQL'
+DO $$
+DECLARE r text;
+BEGIN
+  FOREACH r IN ARRAY ARRAY['backup_ro', 'grafana_ro'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN
+      EXECUTE format('CREATE ROLE %I NOLOGIN', r);
+    END IF;
+  END LOOP;
+END $$;
+SQL
 kubectl exec -n database deploy/postgres -- sh -c 'createdb -U "$POSTGRES_USER" -O nossagrana_prod nossagrana_prod_restore'
 kubectl exec -i -n database deploy/postgres -- sh -c \
   'pg_restore -U "$POSTGRES_USER" --no-owner --role=nossagrana_prod --exit-on-error -d nossagrana_prod_restore' < restore.dump
@@ -374,6 +389,11 @@ SQL
 #   GRANT CONNECT ON DATABASE nossagrana_prod_restore TO grafana_ro;
 #   ALTER DATABASE nossagrana_prod_restore SET <parametro> = <valor>;
 ```
+
+Os roles recriados acima são `NOLOGIN` (só existem para os GRANTs do dump). Em cluster
+reconstruído, habilite o `backup_ro` para o job com
+`ALTER ROLE backup_ro LOGIN PASSWORD '...'` (a senha do Secret `pg-dump-external-db`)
+e reaplique o `grafana_ro` conforme sua configuração original.
 
 Depois seguir os passos 4 a 8 de "Restaurar em produção" (validar, trocar com a API
 parada, rollback, apagar `restore.dump` e o artefato locais, registrar). O dump

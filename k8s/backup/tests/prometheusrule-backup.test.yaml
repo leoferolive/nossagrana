@@ -74,11 +74,12 @@ tests:
               description: 'Último sucesso de pg-backup há 1d 3h 0m 0s.'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
 
-  # restic-backup (cópia off-site) agendado há 2h sem sucesso desde a véspera.
+  # restic-backup (cópia off-site) agendado há 2h (t=3600 -> avaliação em 3h) sem
+  # sucesso novo: o último sucesso (t=0) é anterior ao agendamento.
   - interval: 1m
     input_series:
       - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="restic-backup"}'
-        values: '86400x240'
+        values: '3600x240'
       - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="restic-backup"}'
         values: '0x240'
     alert_rule_test:
@@ -94,17 +95,49 @@ tests:
               description: 'O agendamento mais recente de restic-backup não concluiu com sucesso. Ver logs do último Job.'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
 
-  # Job em andamento (agendado há 10min, ainda sem sucesso novo) não alerta.
+  # Execução normal em andamento (Codex P2, PR #143): o agendamento de hoje
+  # (t=86400) já é mais novo que o sucesso de ontem (t=0), mas o Job tem até 30min
+  # (activeDeadlineSeconds do pg-dump-external). Nem o `for: 15m` pode paginar antes
+  # de o Job acabar: a idade do agendamento precisa passar de 1h primeiro.
   - interval: 1m
     input_series:
-      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-backup"}'
-        values: '86400x60'
-      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-backup"}'
-        values: '85800x60'
+      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-dump-external"}'
+        values: '86400x1600'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-dump-external"}'
+        values: '0x1600'
     alert_rule_test:
-      - eval_time: 30m
+      - eval_time: 24h25m
         alertname: NossaGranaBackupJobNotSucceeded
         exp_alerts: []
+      - eval_time: 24h59m
+        alertname: NossaGranaBackupJobNotSucceeded
+        exp_alerts: []
+
+  # CronJob que nunca teve sucesso (Codex P1, PR #143): o Job manual do rollout
+  # (`create job --from=cronjob`) não tem ownerRef e não preenche
+  # last_successful_time. Habilitado, se toda execução agendada falha, só existe a
+  # série last_schedule_time. Sem sucesso 1h+ após o agendamento, alerta.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-dump-external"}'
+        values: '86400x1600'
+      - series: 'kube_cronjob_spec_suspend{namespace="database",cronjob="pg-dump-external"}'
+        values: '0x1600'
+    alert_rule_test:
+      - eval_time: 24h20m
+        alertname: NossaGranaBackupJobNotSucceeded
+        exp_alerts: []
+      - eval_time: 26h
+        alertname: NossaGranaBackupJobNotSucceeded
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: pg-dump-external
+            exp_annotations:
+              summary: 'nossagrana: última execução de pg-dump-external não teve sucesso'
+              description: 'O agendamento mais recente de pg-dump-external não concluiu com sucesso. Ver logs do último Job.'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
 
   # Restore drill sem sucesso há 27h.
   - interval: 1m
@@ -168,7 +201,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-dump-external"}'
-        values: '86400x240'
+        values: '3600x240'
       - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-dump-external"}'
         values: '0x240'
     alert_rule_test:

@@ -5,7 +5,8 @@
 #   pg-backup                → pg_dumpall diário no PVC `postgres-backup` (03:20)
 #   restic-backup            → cópia cifrada para HD USB + Google Drive (04:00)
 #   pg-dump-external         → pg_dump cifrado (age) para storage externo (03:35);
-#                              nasce suspenso — sem série de sucesso não alerta
+#                              rollout suspenso — sem série de sucesso não há Stale; o
+#                              JobNotSucceeded cobre "nunca teve sucesso"
 #                              (issue #47; k8s/backup/pg-dump-external)
 #   nossagrana-restore-drill → restore em banco descartável (03:50)
 # Roteamento: Alertmanager do kps → Telegram (severity critical/warning).
@@ -58,16 +59,35 @@ spec:
             description: '{{ $labels.cronjob }} está com spec.suspend=true; sem agendamento não há backup novo nem alerta de atraso. Reativar ou concluir o rollout.'
             runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#cronjob-suspenso
 
-        # O último agendamento não virou sucesso em 1h (deadline dos jobs ≤ 15min):
-        # falha de dump, tamanho mínimo, upload/restic ou restore. Resolve sozinho
-        # no próximo sucesso, ao contrário do KubeJobFailed.
+        # O último agendamento não virou sucesso 1h depois de disparar (o Job mais
+        # longo, pg-dump-external, tem activeDeadlineSeconds de 30min): falha de dump,
+        # tamanho mínimo, upload/restic ou restore. Resolve sozinho no próximo
+        # sucesso, ao contrário do KubeJobFailed.
+        # - `last_schedule_time > last_successful_time`: o sucesso é anterior ao
+        #   agendamento. Numa execução normal em andamento isso vale por minutos, por
+        #   isso a idade do agendamento (`time() - last_schedule_time > 3600`) é
+        #   quem dá a folga; sem ela o alerta pagaria 15min após o disparo.
+        # - `unless ... last_successful_time`: CronJob que nunca teve sucesso. Job
+        #   manual (`create job --from=cronjob`) não tem ownerRef e não preenche
+        #   `last_successful_time`, então sem este ramo o alerta ficaria mudo se todas
+        #   as execuções agendadas falhassem após o rollout.
         - alert: NossaGranaBackupJobNotSucceeded
           expr: |
             (
-              kube_cronjob_status_last_schedule_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
-              - on (namespace, cronjob)
-              kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
-            ) > 3600
+              (
+                kube_cronjob_status_last_schedule_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
+                  > on (namespace, cronjob)
+                kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
+              )
+              or
+              (
+                kube_cronjob_status_last_schedule_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
+                  unless on (namespace, cronjob)
+                kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
+              )
+            )
+            and on (namespace, cronjob)
+            (time() - kube_cronjob_status_last_schedule_time{namespace="database"} > 3600)
           for: 15m
           labels:
             namespace: database

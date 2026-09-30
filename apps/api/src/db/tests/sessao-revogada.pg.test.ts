@@ -39,11 +39,6 @@ describe('Revogação global de sessões no PostgreSQL', () => {
     await Promise.all(conexoes.splice(0).map((c) => c.end()));
   });
 
-  // Fecha as conexões de cada teste: dezenas de "requisições" por teste estourariam max_connections.
-  afterEach(async () => {
-    await Promise.all(conexoes.splice(0).map((c) => c.end()));
-  });
-
   afterAll(async () => {
     await banco?.descartar();
   });

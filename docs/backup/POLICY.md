@@ -102,14 +102,14 @@ restore a partir dele ser exercitado e registrado.
 Alertas em `k8s/backup/prometheusrule-backup.yaml` (Prometheus do kps →
 Alertmanager → Telegram):
 
-| Alerta                             | Condição                                                                                 | Severidade |
-| ---------------------------------- | ---------------------------------------------------------------------------------------- | ---------- |
-| `NossaGranaBackupStale`            | `pg-backup`, `restic-backup` ou `pg-dump-external` sem sucesso há > 26 h (RPO)           | critical   |
-| `NossaGranaBackupJobNotSucceeded`  | último agendamento sem sucesso 1 h depois, ou CronJob que nunca teve sucesso             | critical   |
-| `NossaGranaRestoreDrillStale`      | nenhum restore comprovado há > 26 h                                                      | critical   |
-| `NossaGranaBackupCronJobMissing`   | algum dos quatro CronJobs deixou de existir                                              | critical   |
-| `NossaGranaBackupCronJobSuspended` | algum dos quatro CronJobs com `spec.suspend=true` há > 24 h (o `Stale` ignora suspensos) | warning    |
-| `NossaGranaBackupDiskLow`          | < 10 % livre em `/` (PVCs) ou `/srv/backups` (restic local)                              | warning    |
+| Alerta                             | Condição                                                                                                           | Severidade |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
+| `NossaGranaBackupStale`            | `pg-backup`, `restic-backup` ou `pg-dump-external` sem sucesso há > 26 h (RPO), ou nunca agendado 26 h após criado | critical   |
+| `NossaGranaBackupJobNotSucceeded`  | último agendamento sem sucesso 1 h depois, ou CronJob que nunca teve sucesso                                       | critical   |
+| `NossaGranaRestoreDrillStale`      | nenhum restore comprovado há > 26 h                                                                                | critical   |
+| `NossaGranaBackupCronJobMissing`   | algum dos quatro CronJobs deixou de existir                                                                        | critical   |
+| `NossaGranaBackupCronJobSuspended` | algum dos quatro CronJobs com `spec.suspend=true` há > 24 h (o `Stale` ignora suspensos)                           | warning    |
+| `NossaGranaBackupDiskLow`          | < 10 % livre em `/` (PVCs) ou `/srv/backups` (restic local)                                                        | warning    |
 
 Violação de RPO/RTO: tratar como incidente — seguir o runbook, registrar data,
 causa e duração na seção "Registro de exercícios e incidentes" do runbook.

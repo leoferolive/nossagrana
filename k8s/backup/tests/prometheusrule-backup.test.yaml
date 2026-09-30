@@ -71,7 +71,7 @@ tests:
               cronjob: pg-backup
             exp_annotations:
               summary: 'nossagrana: backup pg-backup sem sucesso há mais de 26h (RPO violado)'
-              description: 'Último sucesso de pg-backup há 1d 3h 0m 0s.'
+              description: 'pg-backup sem sucesso há 1d 3h 0m 0s (desde o último sucesso ou, se nunca houve, desde a criação do CronJob).'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
 
   # restic-backup (cópia off-site) agendado há 2h (t=3600 -> avaliação em 3h) sem
@@ -113,10 +113,9 @@ tests:
         alertname: NossaGranaBackupJobNotSucceeded
         exp_alerts: []
 
-  # CronJob que nunca teve sucesso (Codex P1, PR #143): o Job manual do rollout
-  # (`create job --from=cronjob`) não tem ownerRef e não preenche
-  # last_successful_time. Habilitado, se toda execução agendada falha, só existe a
-  # série last_schedule_time. Sem sucesso 1h+ após o agendamento, alerta.
+  # CronJob que nunca teve sucesso (Codex P1, PR #143): habilitado, se toda
+  # execução agendada falha, só existe a série last_schedule_time (nenhuma de
+  # last_successful_time). Sem sucesso 1h+ após o agendamento, alerta.
   - interval: 1m
     input_series:
       - series: 'kube_cronjob_status_last_schedule_time{namespace="database",cronjob="pg-dump-external"}'
@@ -194,7 +193,7 @@ tests:
               cronjob: pg-dump-external
             exp_annotations:
               summary: 'nossagrana: backup pg-dump-external sem sucesso há mais de 26h (RPO violado)'
-              description: 'Último sucesso de pg-dump-external há 1d 3h 0m 0s.'
+              description: 'pg-dump-external sem sucesso há 1d 3h 0m 0s (desde o último sucesso ou, se nunca houve, desde a criação do CronJob).'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
 
   # pg-dump-external agendado, mas o último agendamento falhou (upload, cifragem...).
@@ -285,7 +284,7 @@ tests:
               cronjob: pg-dump-external
             exp_annotations:
               summary: 'nossagrana: backup pg-dump-external sem sucesso há mais de 26h (RPO violado)'
-              description: 'Último sucesso de pg-dump-external há 1d 3h 0m 0s.'
+              description: 'pg-dump-external sem sucesso há 1d 3h 0m 0s (desde o último sucesso ou, se nunca houve, desde a criação do CronJob).'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
       - eval_time: 27h
         alertname: NossaGranaBackupCronJobSuspended
@@ -333,3 +332,43 @@ tests:
               summary: 'nossagrana: menos de 10% livre em /srv/backups (destino de backup)'
               description: '5% livre em /srv/backups; próximos backups podem falhar.'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#espaço-em-disco
+
+  # CronJob habilitado que nunca foi agendado (Codex P2, PR #143): não há
+  # last_schedule_time nem last_successful_time. Criado em t=0, some a carência de
+  # 26h do primeiro agendamento e o Stale dispara pela idade do CronJob.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_created{namespace="database",cronjob="pg-dump-external"}'
+        values: '0x1700'
+      - series: 'kube_cronjob_info{namespace="database",cronjob="pg-dump-external"}'
+        values: '1x1700'
+      - series: 'kube_cronjob_spec_suspend{namespace="database",cronjob="pg-dump-external"}'
+        values: '0x1700'
+    alert_rule_test:
+      - eval_time: 20h
+        alertname: NossaGranaBackupStale
+        exp_alerts: []
+      - eval_time: 27h
+        alertname: NossaGranaBackupStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: pg-dump-external
+            exp_annotations:
+              summary: 'nossagrana: backup pg-dump-external sem sucesso há mais de 26h (RPO violado)'
+              description: 'pg-dump-external sem sucesso há 1d 3h 0m 0s (desde o último sucesso ou, se nunca houve, desde a criação do CronJob).'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
+
+  # Mesmo CronJob nunca agendado, mas suspenso (rollout inicial): sem Stale; quem
+  # avisa é o NossaGranaBackupCronJobSuspended.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_created{namespace="database",cronjob="pg-dump-external"}'
+        values: '0x1700'
+      - series: 'kube_cronjob_spec_suspend{namespace="database",cronjob="pg-dump-external"}'
+        values: '1x1700'
+    alert_rule_test:
+      - eval_time: 27h
+        alertname: NossaGranaBackupStale
+        exp_alerts: []

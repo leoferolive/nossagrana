@@ -267,6 +267,29 @@ tests:
               description: 'pg-dump-external está com spec.suspend=true; sem agendamento não há backup novo nem alerta de atraso. Reativar ou concluir o rollout.'
               runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#cronjob-suspenso
 
+  # A isenção de CronJob suspenso vale só para o pg-dump-external (rollout/rollback,
+  # Codex P1, PR #143). pg-backup/restic-backup suspensos com último sucesso já
+  # vencido são backup parado de verdade: o Stale critical continua valendo, sem
+  # esperar as 24h do aviso de suspensão.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="database",cronjob="pg-backup"}'
+        values: '0x1700'
+      - series: 'kube_cronjob_spec_suspend{namespace="database",cronjob="pg-backup"}'
+        values: '1x1700'
+    alert_rule_test:
+      - eval_time: 27h
+        alertname: NossaGranaBackupStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: database
+              cronjob: pg-backup
+            exp_annotations:
+              summary: 'nossagrana: backup pg-backup sem sucesso há mais de 26h (RPO violado)'
+              description: 'pg-backup sem sucesso há 1d 3h 0m 0s (desde o último sucesso ou, se nunca houve, desde a criação do CronJob).'
+              runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
+
   # Reativado (suspend=0) com o último sucesso antigo: Stale volta a valer.
   - interval: 1m
     input_series:

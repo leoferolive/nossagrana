@@ -108,7 +108,7 @@ Alertmanager → Telegram):
 | `NossaGranaBackupJobNotSucceeded`  | último agendamento sem sucesso 1 h depois, ou nunca teve sucesso (ignora suspensos)                                | critical   |
 | `NossaGranaRestoreDrillStale`      | nenhum restore comprovado há > 26 h                                                                                | critical   |
 | `NossaGranaBackupCronJobMissing`   | algum dos quatro CronJobs deixou de existir                                                                        | critical   |
-| `NossaGranaBackupCronJobSuspended` | algum dos quatro CronJobs com `spec.suspend=true` há > 24 h (o `Stale` ignora suspensos)                           | warning    |
+| `NossaGranaBackupCronJobSuspended` | algum dos quatro CronJobs com `spec.suspend=true` há > 24 h (o `Stale` ignora só o `pg-dump-external` suspenso)    | warning    |
 | `NossaGranaBackupDiskLow`          | < 10 % livre em `/` (PVCs) ou `/srv/backups` (restic local)                                                        | warning    |
 
 Violação de RPO/RTO: tratar como incidente — seguir o runbook, registrar data,

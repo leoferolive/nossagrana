@@ -24,10 +24,13 @@ spec:
       interval: 1m
       rules:
         # RPO = 24h; 26h dá margem para duração do job e atraso do scheduler.
-        # CronJob suspenso fica fora: um Job manual (`create job --from=cronjob`)
-        # preenche `last_successful_time` do CronJob mesmo suspenso, e o rollout/
-        # rollback do pg-dump-external (RUNBOOK) fica suspenso por horas. A
-        # suspensão prolongada tem alerta próprio (NossaGranaBackupCronJobSuspended).
+        # Só o pg-dump-external suspenso fica fora: um Job manual (`create job
+        # --from=cronjob`) preenche `last_successful_time` do CronJob mesmo suspenso,
+        # e o rollout/rollback dele (RUNBOOK) fica suspenso por horas. A suspensão
+        # prolongada tem alerta próprio (NossaGranaBackupCronJobSuspended, 24h).
+        # pg-backup/restic-backup suspensos NÃO são isentos: suspender um backup em
+        # produção com o último sucesso já vencido é RPO violado e não pode ficar mudo
+        # por mais 24h à espera do aviso de suspensão (Codex P1, PR #143).
         # O 2º ramo cobre CronJob habilitado que nunca chegou a ser agendado (sem
         # last_schedule_time nem last_successful_time, ex.: controller falhando antes
         # do primeiro horário): a idade desde a criação (`kube_cronjob_created`) faz o
@@ -52,7 +55,7 @@ spec:
               )
             )
             unless on (namespace, cronjob)
-            (kube_cronjob_spec_suspend{namespace="database"} == 1)
+            (kube_cronjob_spec_suspend{namespace="database",cronjob="pg-dump-external"} == 1)
           for: 15m
           labels:
             namespace: database
@@ -63,7 +66,7 @@ spec:
             runbook_url: https://github.com/leoferolive/nossagrana/blob/main/docs/backup/RUNBOOK.md#backup-atrasado-ou-falhando
 
         # Suspender é legítimo no rollout/rollback, mas esquecido vira backup parado
-        # em silêncio (o Stale acima ignora CronJobs suspensos).
+        # em silêncio (o Stale acima ignora o pg-dump-external suspenso).
         - alert: NossaGranaBackupCronJobSuspended
           expr: |
             kube_cronjob_spec_suspend{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"} == 1

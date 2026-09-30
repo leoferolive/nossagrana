@@ -65,7 +65,7 @@ no label indica qual etapa).
    - `restic-backup`: lock preso (o script já roda `restic unlock`), falha de
      rede/cota do Google Drive, `rclone` indisponível. O script tenta os dois
      destinos e o log diz qual falhou (`FALHA em: LocalUSB GoogleDrive`).
-   - CronJob suspenso (não dispara `Stale`; ver [CronJob suspenso](#cronjob-suspenso)): `kubectl get cronjob -n database <cronjob> -o jsonpath='{.spec.suspend}'`.
+   - CronJob suspenso (`pg-dump-external` suspenso não dispara `Stale`; `pg-backup`/`restic-backup` suspensos disparam; ver [CronJob suspenso](#cronjob-suspenso)): `kubectl get cronjob -n database <cronjob> -o jsonpath='{.spec.suspend}'`.
 3. Corrigir a causa e rodar manualmente:
    ```bash
    kubectl create job -n database --from=cronjob/<cronjob> <cronjob>-manual-$(date +%s)

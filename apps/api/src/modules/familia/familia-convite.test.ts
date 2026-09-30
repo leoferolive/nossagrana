@@ -41,7 +41,7 @@ describe('consumo de convite no InMemoryFamiliaRepository', () => {
     repo = new InMemoryFamiliaRepository();
     const familia = await repo.createWithAdminMembership({ nome: 'Silva', usuarioId: 'admin' });
     familiaId = familia.id;
-    codigo = (await repo.createInvite({ familiaId, criadoPor: 'admin' })).codigo;
+    codigo = (await repo.createInvite({ familiaId, criadoPor: 'admin' }))!.codigo;
   });
 
   afterEach(() => {

@@ -1,10 +1,15 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { and, eq, ilike, isNull } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
-import { convites, familias, solicitacoesEntrada, usuarioFamilia, users } from '../../db/schema.js';
-import { consumirConviteEmMemoria, type ConviteEmMemoria } from './familia-convite.js';
+import { familias, solicitacoesEntrada, usuarioFamilia, users } from '../../db/schema.js';
+import {
+  consumirConviteEmMemoria,
+  montarNovoConvite,
+  type ConviteEmMemoria,
+} from './familia-convite.js';
+import { DrizzleConviteCriador } from './familia-convite-criacao.repository.js';
 import { DrizzleConviteConsumer } from './familia-convite.repository.js';
 import { DrizzleFamiliaExclusao } from './familia-exclusao.repository.js';
 import type {
@@ -89,29 +94,8 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     return Boolean(membership);
   }
 
-  async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite> {
-    const code = randomBytes(6).toString('hex').toUpperCase();
-    const now = new Date();
-    const expiraEm = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const [createdInvite] = await db
-      .insert(convites)
-      .values({
-        familiaId: input.familiaId,
-        criadoPor: input.criadoPor,
-        codigo: code,
-        expiraEm,
-      })
-      .returning({
-        id: convites.id,
-        familiaId: convites.familiaId,
-        codigo: convites.codigo,
-        expiraEm: convites.expiraEm,
-        criadoPor: convites.criadoPor,
-        dataCriacao: convites.dataCriacao,
-      });
-
-    return createdInvite;
+  async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite | null> {
+    return new DrizzleConviteCriador(db).criar(input);
   }
 
   async joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado> {
@@ -346,16 +330,16 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     return memberships.has(input.usuarioId);
   }
 
-  async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite> {
+  async createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite | null> {
+    if (!this.familiasById.has(input.familiaId)) return null;
     const id = randomUUID();
     const now = new Date();
     const invite: CreatedFamiliaInvite = {
       id,
       familiaId: input.familiaId,
       criadoPor: input.criadoPor,
-      codigo: randomBytes(6).toString('hex').toUpperCase(),
-      expiraEm: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
       dataCriacao: now,
+      ...montarNovoConvite(now),
     };
 
     this.invitesById.set(id, invite);

@@ -189,6 +189,14 @@ else:
 - Risco de enumeração aceito: o código tem 48 bits aleatórios (12 hex) e a rota tem rate limit, então confirmar que um código existiu não é explorável na prática. Se o rate limit for afrouxado, reavaliar e colapsar 409 em 404.
 - Repetição pelo mesmo usuário que consumiu o convite e ainda é membro devolve 200 (`ja_membro`); se ele foi removido depois, volta a ser 409.
 
+### Exclusão de família: convites e sockets (#66, #147)
+
+- **Exclusão** = `deleted_at` + invalidação dos convites pendentes (`expira_em = agora`) na mesma transação; depois do commit o service publica `familia:excluida` e o `WebSocketManager` fecha os sockets do room com o código `4004`.
+- **Criação de convite x exclusão:** o INSERT em `convites` só toma lock de _chave_ na linha da família (FK), que não conflita com o `UPDATE familias`. `DrizzleConviteCriador` primeiro trava a linha com `SELECT ... FOR SHARE` exigindo `deleted_at IS NULL`, na mesma transação do INSERT. Exclusão em curso → o `FOR SHARE` espera, reavalia e não cria convite (404 `Familia nao encontrada`); criação em curso → a exclusão espera o commit e o seu `UPDATE convites` já enxerga (e expira) o convite. Assim nenhum convite pendente sobrevive a uma exclusão, nem "ressuscita" numa restauração feita por admin.
+- **Handshake WebSocket x exclusão:** o evento é publicado depois do commit, então um handshake que já passou da checagem de acesso mas ainda não deu `join` perderia o evento. O handshake agora checa o acesso, entra no room e **checa de novo**; se a 2ª checagem ainda vê a família ativa, a exclusão commita depois dela, ou seja, o evento chega depois do `join` e `closeFamily` fecha o socket. Família excluída/sem vínculo na 2ª checagem fecha com `4004`/`4003`; erro ao revalidar fecha com `1011` (falha fechada).
+- **Política de restauração:** o manager NÃO guarda "famílias fechadas" (sem tombstone/TTL). A fonte da verdade é o banco: enquanto `deleted_at` estiver preenchido o handshake é recusado, e ao restaurar a família novos sockets entram normalmente, sem evento nem limpeza de marca.
+- Escopo: o barramento de eventos é em processo (réplica única do API no K3s). Com mais de uma réplica, `familia:excluida` precisaria de um canal compartilhado (ex.: LISTEN/NOTIFY); a revalidação pós-`join` continua cobrindo o handshake, mas sockets já abertos em outra réplica não seriam fechados.
+
 ---
 
 ## Performance (considerações para o Raspberry Pi)

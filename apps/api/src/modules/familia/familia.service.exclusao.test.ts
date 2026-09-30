@@ -6,6 +6,7 @@ import {
   FamiliaNotFoundError,
   FamiliaService,
   ForbiddenFamiliaDeletionError,
+  ForbiddenFamiliaInviteError,
   InvalidFamiliaInviteCodeError,
 } from './familia.service.js';
 
@@ -82,5 +83,23 @@ describe('FamiliaService.deleteFamily — ciclo de vida (#66)', () => {
       InvalidFamiliaInviteCodeError,
     );
     expect(await repo.hasMembership({ familiaId: familia.id, usuarioId: 'u9' })).toBe(false);
+  });
+
+  it('não gera convite para família excluída (corrida convite x exclusão, review do PR #146)', async () => {
+    const { service, familia } = await cenario();
+    await service.deleteFamily({ familiaId: familia.id, usuarioId: 'admin' });
+
+    await expect(
+      service.createInvite({ familiaId: familia.id, usuarioId: 'admin' }),
+    ).rejects.toBeInstanceOf(ForbiddenFamiliaInviteError);
+  });
+
+  it('repositório que recusa o convite (família excluída no meio) vira FamiliaNotFoundError', async () => {
+    const { repo, service, familia } = await cenario();
+    repo.createInvite = async () => null;
+
+    await expect(
+      service.createInvite({ familiaId: familia.id, usuarioId: 'admin' }),
+    ).rejects.toBeInstanceOf(FamiliaNotFoundError);
   });
 });

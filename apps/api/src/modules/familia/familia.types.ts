@@ -82,7 +82,8 @@ export interface FamiliaRepository {
   createWithAdminMembership(input: CreateFamiliaInput): Promise<CreatedFamilia>;
   isUserAdmin(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   hasMembership(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
-  createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite>;
+  /** `null` quando a família não existe ou foi excluída (nenhum convite é gravado). */
+  createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite | null>;
   joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado>;
   requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest>;
   listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]>;

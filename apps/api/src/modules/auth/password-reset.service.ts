@@ -2,16 +2,15 @@ import { randomUUID } from 'node:crypto';
 
 import type { EmailService } from '../email/email.service.js';
 
-import type { AuthRepository } from './auth.types.js';
+import type { AuthRepository, SessaoRevogador } from './auth.types.js';
 import type { PasswordResetRepository } from './password-reset.types.js';
-import type { RevokedTokenRepository } from './revoked-token.repository.js';
 import { hashToken } from './revoked-token.repository.js';
 
 export class PasswordResetService {
   constructor(
     private readonly authRepo: AuthRepository,
     private readonly resetRepo: PasswordResetRepository,
-    private readonly revokedTokenRepo: RevokedTokenRepository,
+    private readonly sessoes: SessaoRevogador,
     private readonly emailService: EmailService,
     private readonly frontendUrl: string,
     private readonly hashFn: (password: string) => Promise<string>,
@@ -51,7 +50,7 @@ export class PasswordResetService {
     const novoHash = await this.hashFn(novaSenha);
     await this.authRepo.updateSenhaHash(resetToken.userId, novoHash);
 
-    await this.revokedTokenRepo.revokeAllByUserId(resetToken.userId);
+    await this.sessoes.revogarTodas(resetToken.userId);
   }
 }
 

@@ -12,6 +12,9 @@ const getWsUrl = (): string => {
   }
   return 'ws://localhost:3000';
 };
+// Espelham `apps/api/src/modules/ws/ws-close-codes.ts` (#119).
+const WS_CLOSE_SESSAO_REVOGADA = 4005;
+const WS_CLOSE_MEMBRO_REMOVIDO = 4006;
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 100;
 
@@ -74,7 +77,13 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     ws.onclose = (event) => {
       set({ socket: null, status: 'disconnected' });
 
-      if (event.code === 4003 || event.code === 4004) {
+      if (event.code === WS_CLOSE_SESSAO_REVOGADA) {
+        // Sessão revogada no servidor (troca/reset de senha, #119): só um novo login destrava.
+        opts.clearSession();
+        return;
+      }
+
+      if (event.code === 4003 || event.code === 4004 || event.code === WS_CLOSE_MEMBRO_REMOVIDO) {
         // Acesso negado — não reconectar
         return;
       }

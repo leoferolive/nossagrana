@@ -102,4 +102,30 @@ describe('useWebSocketStore', () => {
     expect(WebSocket).toHaveBeenCalledTimes(1);
     expect(clearSession).not.toHaveBeenCalled();
   });
+
+  it('sessão revogada (4005): encerra a sessão local e não reconecta', () => {
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+    act(() => {
+      result.current.connect({ getAccessToken: () => 'tok', familiaId: 'f1', clearSession });
+      mockWs.onclose?.({ code: 4005 } as CloseEvent);
+      vi.runAllTimers();
+    });
+
+    expect(WebSocket).toHaveBeenCalledTimes(1);
+    expect(clearSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('membro removido da família (4006): não reconecta e mantém a sessão', () => {
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+    act(() => {
+      result.current.connect({ getAccessToken: () => 'tok', familiaId: 'f1', clearSession });
+      mockWs.onclose?.({ code: 4006 } as CloseEvent);
+      vi.runAllTimers();
+    });
+
+    expect(WebSocket).toHaveBeenCalledTimes(1);
+    expect(clearSession).not.toHaveBeenCalled();
+  });
 });

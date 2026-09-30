@@ -27,7 +27,8 @@ async function createApp() {
   // Limite global frouxo: prova que o limite da própria rota (20/min) é o que vale.
   await app.register(import('@fastify/rate-limit'), { max: 1000, timeWindow: '1 minute' });
   app.decorate('authenticate', async (request) => {
-    Object.assign(request, { user: { sub: 'user-1', email: 'user@example.com', iat: 1000 } });
+    const sub = String(request.headers['x-test-user'] ?? 'user-1');
+    Object.assign(request, { user: { sub, email: 'user@example.com', iat: 1000 } });
   });
   const { familiaScopePlugin } = await import('../../plugins/familia-scope.plugin.js');
   const { websocketPlugin } = await import('../../plugins/websocket.plugin.js');
@@ -46,8 +47,12 @@ async function createApp() {
   return app;
 }
 
-const pedirTicket = (app: Awaited<ReturnType<typeof createApp>>) =>
-  app.inject({ method: 'POST', url: '/ws/ticket', headers: { 'x-familia-id': FAMILIA } });
+const pedirTicket = (app: Awaited<ReturnType<typeof createApp>>, usuario = 'user-1') =>
+  app.inject({
+    method: 'POST',
+    url: '/ws/ticket',
+    headers: { 'x-familia-id': FAMILIA, 'x-test-user': usuario },
+  });
 
 describe('POST /ws/ticket — membership e rate limit (#118)', () => {
   beforeEach(() => {
@@ -110,6 +115,19 @@ describe('POST /ws/ticket — membership e rate limit (#118)', () => {
       }
 
       expect((await pedirTicket(app)).statusCode).toBe(429);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('rate limit é por usuário autenticado, não por IP: outro usuário no mesmo IP não é afetado', async () => {
+    mockLimit.mockResolvedValue(ATIVA);
+    const app = await createApp();
+    try {
+      for (let i = 0; i < LIMITE_POR_MINUTO; i += 1) await pedirTicket(app, 'ana');
+      expect((await pedirTicket(app, 'ana')).statusCode).toBe(429);
+
+      expect((await pedirTicket(app, 'bruno')).statusCode).toBe(200);
     } finally {
       await app.close();
     }

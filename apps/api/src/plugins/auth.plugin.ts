@@ -16,6 +16,8 @@ declare module '@fastify/jwt' {
       email: string;
       tokenType?: string;
       impersonated?: boolean;
+      /** Emitido em (segundos), adicionado pelo `@fastify/jwt` ao assinar; base da revogação de sessões (#119). */
+      iat?: number;
     };
   }
 }

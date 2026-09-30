@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 /** A quem o ticket pertence: usuário, família e a sessão (`iat` do access que o pediu, em segundos). */
 export interface WsTicketDados {
   userId: string;
@@ -25,7 +23,7 @@ export interface WsTicketStore {
   limparExpirados(agora: Date): Promise<number>;
 }
 
-/** SHA-256 em hex do ticket; é a única forma em que ele é persistido. */
-export function hashWsTicket(ticket: string): string {
-  return createHash('sha256').update(ticket).digest('hex');
+/** O que o emissor precisa saber de revogação de sessões (#119); `SessaoRevogacaoService` já cumpre. */
+export interface ConsultaDeSessaoRevogada {
+  estaRevogada(userId: string, emitidoEmSegundos: number | undefined): Promise<boolean>;
 }

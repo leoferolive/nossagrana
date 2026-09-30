@@ -196,7 +196,7 @@ describe('useWebSocketStore', () => {
     expect(WebSocket).toHaveBeenCalledTimes(1);
   });
 
-  it('falhas repetidas ao emitir o ticket esgotam as tentativas e encerram a sessão', async () => {
+  it('falhas repetidas ao emitir o ticket esgotam as tentativas sem derrubar a sessão', async () => {
     mockEmitirTicket.mockRejectedValue(new ApiError(500, 'Erro'));
     const clearSession = vi.fn();
     const { result } = renderHook(() => useWebSocketStore());
@@ -207,8 +207,57 @@ describe('useWebSocketStore', () => {
     });
 
     expect(WebSocket).not.toHaveBeenCalled();
-    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(clearSession).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
+  });
+
+  it('429 ao emitir o ticket: espera o Retry-After, tenta de novo e nunca encerra a sessão', async () => {
+    mockEmitirTicket
+      .mockRejectedValueOnce(new ApiError(429, 'Erro', 30_000))
+      .mockImplementation(async () => proximoTicket());
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession });
+      await vi.advanceTimersByTimeAsync(29_999);
+    });
+    expect(mockEmitirTicket).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+
+    expect(mockEmitirTicket).toHaveBeenCalledTimes(2);
+    expect(WebSocket).toHaveBeenCalledTimes(1);
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  it('429 repetido (mais vezes que o limite de tentativas): segue esperando, sem logout', async () => {
+    mockEmitirTicket.mockRejectedValue(new ApiError(429, 'Erro', 1_000));
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession });
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+
+    expect(mockEmitirTicket.mock.calls.length).toBeGreaterThan(6);
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('connecting');
+  });
+
+  it('429 sem Retry-After usa uma espera padrão longa (não o backoff curto)', async () => {
+    mockEmitirTicket.mockRejectedValue(new ApiError(429, 'Erro'));
+    const { result } = renderHook(() => useWebSocketStore());
+
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession: vi.fn() });
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+
+    expect(mockEmitirTicket).toHaveBeenCalledTimes(1);
   });
 
   it('401 ao emitir o ticket (sessão inválida): encerra a sessão local e não reconecta', async () => {

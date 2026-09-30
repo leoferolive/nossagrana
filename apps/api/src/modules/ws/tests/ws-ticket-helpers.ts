@@ -1,5 +1,28 @@
 import type { FastifyInstance } from 'fastify';
 
+import { InMemoryWsTicketStore } from '../ws-ticket.store.js';
+import type { ConsultaDeSessaoRevogada } from '../ws-ticket.types.js';
+
+/** Fake nomeada da consulta de revogação: `revogar()` faz toda sessão passar a ser recusada. */
+export class SessoesFake implements ConsultaDeSessaoRevogada {
+  private revogada = false;
+
+  revogar(): void {
+    this.revogada = true;
+  }
+
+  async estaRevogada(): Promise<boolean> {
+    return this.revogada;
+  }
+}
+
+/** Store em memória que expõe as chaves guardadas, para provar que só o hash é persistido. */
+export class StoreDeTicketsInspecionavel extends InMemoryWsTicketStore {
+  chavesArmazenadas(): string[] {
+    return [...this.tickets.keys()];
+  }
+}
+
 /** Pede o ticket pelo endpoint HTTP real, como o cliente web faz a cada (re)conexão. */
 export async function emitirTicketPorHttp(
   app: FastifyInstance,

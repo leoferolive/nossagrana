@@ -4,10 +4,18 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    /** Espera pedida pelo servidor (`Retry-After`, em ms), p.ex. no 429 do rate limit. */
+    public readonly retryAfterMs?: number,
   ) {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+/** `Retry-After` em segundos inteiros (o formato que o rate limit da API envia); outro formato vira `undefined`. */
+function lerRetryAfterMs(response: Response): number | undefined {
+  const segundos = Number(response.headers.get('Retry-After'));
+  return Number.isFinite(segundos) && segundos > 0 ? Math.round(segundos * 1000) : undefined;
 }
 
 interface ApiClientOptions {
@@ -61,7 +69,7 @@ export class ApiClient {
 
     if (!response.ok) {
       const message = response.status === 401 ? 'Não autorizado' : 'Erro ao processar requisição';
-      throw new ApiError(response.status, message);
+      throw new ApiError(response.status, message, lerRetryAfterMs(response));
     }
 
     if (response.status === 204) {

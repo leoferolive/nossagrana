@@ -125,22 +125,25 @@ O JWT deixou de ir na URL do WebSocket. Decisão e alternativas em `docs/DECISIO
 3. Servidor: consome o ticket, confere que a família da query é a do ticket, e segue para
    `admitirSocket` (sessão → família → `join` → sessão/família de novo; #119/#147).
 4. Reconexão: **sempre** um ticket novo (o anterior já foi gasto). O store web faz isso a cada
-   tentativa; `401` na emissão encerra a sessão local, `403` para sem reconectar, demais erros
-   entram no backoff existente.
+   tentativa. Falhas na emissão: `401` encerra a sessão local (o `ApiClient` já tentou o
+   refresh), `403` para sem reconectar, `429` espera o `Retry-After` (padrão 60 s, mínimo 1 s) e
+   tenta de novo sem gastar tentativas nem deslogar; demais erros (rede, 5xx) entram no backoff
+   existente e, esgotadas as tentativas, deixam `status: 'error'` **sem** logout. Só o socket que
+   cai repetidamente depois de um ticket válido encerra a sessão ao esgotar as tentativas.
 
 **Propriedades**
 
-| Propriedade        | Como                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| Alta entropia      | 32 bytes de `crypto.randomBytes`, base64url (43 caracteres)                          |
-| Curto              | TTL de 30 s (`WS_TICKET_TTL_MS`); expirado é recusado no consumo                     |
-| Uso único          | `consumir` lê e apaga sem `await` no meio (atômico); teste com consumos simultâneos  |
-| Vinculado          | usuário + família + `iat` do access (sessão); família divergente na query é recusada |
-| Só hash persistido | o store guarda SHA-256; o valor bruto não é guardado nem logado                      |
-| Sem JWT no ticket  | o ticket é opaco; a sessão é representada só pelo `iat`                              |
-| Sessão revogada    | não obtém ticket (`401 SESSION_REVOKED`); ticket já emitido é recusado no handshake  |
-| Sem detalhe        | todas as recusas de autenticação: close `4001`, motivo `Autenticacao invalida`       |
-| Rate limit         | 20 emissões/min por IP no endpoint (rate limit global também vale)                   |
+| Propriedade        | Como                                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Alta entropia      | 32 bytes de `crypto.randomBytes`, base64url (43 caracteres)                                                                                                                |
+| Curto              | TTL de 30 s (`WS_TICKET_TTL_MS`); expirado é recusado no consumo                                                                                                           |
+| Uso único          | `consumir` lê e apaga sem `await` no meio (atômico); teste com consumos simultâneos                                                                                        |
+| Vinculado          | usuário + família + `iat` do access (sessão); família divergente na query é recusada                                                                                       |
+| Só hash persistido | o store guarda SHA-256; o valor bruto não é guardado nem logado                                                                                                            |
+| Sem JWT no ticket  | o ticket é opaco; a sessão é representada só pelo `iat`                                                                                                                    |
+| Sessão revogada    | não obtém ticket (`401 SESSION_REVOKED`); ticket já emitido é recusado no handshake                                                                                        |
+| Sem detalhe        | todas as recusas de autenticação: close `4001`, motivo `Autenticacao invalida`                                                                                             |
+| Rate limit         | 20 emissões/min por usuário (`sub`) no endpoint, contado em `preHandler`, depois do `authenticate`; o limite global por IP (100/min) continua valendo para as demais rotas |
 
 - Um ticket de outra família, ao ser tentado, é **queimado** (não serve nem para a família certa).
 - `?token=` na URL é **ignorado** pelo servidor (não é lido nem validado): access válido sem
@@ -174,6 +177,12 @@ reset e corrigir só o gatilho da troca normal; não revalidar sessões
 potencialmente comprometidas.
 
 Rollback do #118: reverter o deploy restaura o handshake por `?token=`, que é o fluxo anterior;
-como a API e o web sobem juntos, não há cliente novo falando com servidor antigo. Um cliente
-antigo (aba aberta antes do deploy) recebe `4001` ao reconectar e cai no backoff até o usuário
-recarregar a página; `4001` não encerra a sessão, só o esgotamento das tentativas.
+como a API e o web sobem juntos, não há cliente novo falando com servidor antigo.
+
+**Custo aceito no deploy do #118:** o servidor novo ignora `?token=`. Uma aba aberta (ou bundle
+PWA em cache) de antes do deploy ainda conecta com `?token=`; quando o socket cai no deploy, ele
+recebe `4001` a cada tentativa e, ao esgotar as 5 tentativas (~3 s de backoff), o código antigo
+chama `clearSession`: **todo usuário com aba antiga aberta é deslogado uma vez** e precisa entrar
+de novo (o bundle novo é carregado no login). Não há janela de compatibilidade com `?token=` por
+decisão de segurança (o ponto do #118 é tirar o JWT da URL). O impacto é um novo login, sem perda
+de dados.

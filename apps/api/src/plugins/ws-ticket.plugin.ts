@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 
 import { InMemoryWsTicketStore } from '../modules/ws/ws-ticket.store.js';
 import { WsTicketService } from '../modules/ws/ws-ticket.service.js';
-import type { WsTicketStore } from '../modules/ws/ws-ticket.types.js';
+import type { ConsultaDeSessaoRevogada, WsTicketStore } from '../modules/ws/ws-ticket.types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -14,6 +14,8 @@ declare module 'fastify' {
 export interface WsTicketPluginOptions {
   /** Injeção para testes; por padrão, store em memória (réplica única, ver DECISIONS.md). */
   store?: WsTicketStore;
+  /** Consulta de sessões revogadas; por padrão `fastify.sessoes` (resolvido a cada uso). */
+  sessoes?: ConsultaDeSessaoRevogada;
   /** Relógio injetável (testes de TTL). */
   agora?: () => Date;
   /** Intervalo da varredura de tickets expirados não consumidos. */
@@ -27,7 +29,12 @@ const INTERVALO_LIMPEZA_PADRAO_MS = 60_000;
  * TTL; a varredura só devolve a memória. `unref` para não segurar o processo aberto.
  */
 export const wsTicketPlugin = fp<WsTicketPluginOptions>(async (fastify, opts) => {
-  const service = new WsTicketService(opts.store ?? new InMemoryWsTicketStore(), opts.agora);
+  // Lazy: não depende da ordem de registro de `sessaoRevogacaoPlugin` em relação a este.
+  const sessoes = opts.sessoes ?? {
+    estaRevogada: (userId, emitidoEm) => fastify.sessoes.estaRevogada(userId, emitidoEm),
+  };
+  const store = opts.store ?? new InMemoryWsTicketStore();
+  const service = new WsTicketService(store, sessoes, opts.agora);
   fastify.decorate('wsTickets', service);
 
   const limpeza = setInterval(() => {

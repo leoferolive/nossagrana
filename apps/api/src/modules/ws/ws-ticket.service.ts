@@ -1,11 +1,20 @@
 import { randomBytes } from 'node:crypto';
 
-import { hashWsTicket, type WsTicketDados, type WsTicketStore } from './ws-ticket.types.js';
+import { hashWsTicket } from './ws-ticket.hash.js';
+import type { ConsultaDeSessaoRevogada, WsTicketDados, WsTicketStore } from './ws-ticket.types.js';
 
 /** Vida do ticket: só precisa cobrir o intervalo entre o `POST` de emissão e o handshake. */
 export const WS_TICKET_TTL_MS = 30_000;
 
 const BYTES_DE_ENTROPIA = 32;
+
+/** A sessão (`iat` do access) foi revogada (#119): não emite ticket. O route traduz em 401. */
+export class WsTicketSessaoRevogadaError extends Error {
+  constructor() {
+    super('Sessao revogada: ticket de WebSocket nao emitido');
+    this.name = 'WsTicketSessaoRevogadaError';
+  }
+}
 
 export interface WsTicketEmitido {
   /** Valor bruto: aparece só aqui e na URL do handshake; nunca é persistido nem logado. */
@@ -17,16 +26,22 @@ export interface WsTicketEmitido {
  * Emite e consome tickets efêmeros de WebSocket (#118): aleatórios (256 bits), de uso único,
  * vinculados a usuário + família + sessão. O JWT nunca entra no ticket nem na URL do WS.
  *
- * Ex.: `const { ticket } = await tickets.emitir({ userId, familiaId, emitidoEm: iat })`;
+ * Ex.: `const { ticket } = await tickets.emitir({ userId, familiaId, emitidoEm: iat })`
+ * (lança `WsTicketSessaoRevogadaError` se a sessão foi revogada);
  * no handshake, `await tickets.consumir(ticket, familiaIdDaQuery)` (`null` = recusar).
  */
 export class WsTicketService {
   constructor(
     private readonly store: WsTicketStore,
+    private readonly sessoes: ConsultaDeSessaoRevogada,
     private readonly agora: () => Date = () => new Date(),
   ) {}
 
+  /** Lança `WsTicketSessaoRevogadaError` se a sessão do pedido já foi revogada. */
   async emitir(dados: WsTicketDados): Promise<WsTicketEmitido> {
+    if (await this.sessoes.estaRevogada(dados.userId, dados.emitidoEm)) {
+      throw new WsTicketSessaoRevogadaError();
+    }
     const ticket = randomBytes(BYTES_DE_ENTROPIA).toString('base64url');
     const expiraEm = new Date(this.agora().getTime() + WS_TICKET_TTL_MS);
     await this.store.salvar(hashWsTicket(ticket), dados, expiraEm);

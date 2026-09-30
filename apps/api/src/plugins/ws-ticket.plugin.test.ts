@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { RelogioFake } from '../modules/ws/tests/relogio-fake.js';
+import { SessoesFake, StoreDeTicketsInspecionavel } from '../modules/ws/tests/ws-ticket-helpers.js';
 import { InMemoryWsTicketStore } from '../modules/ws/ws-ticket.store.js';
 import { WS_TICKET_TTL_MS } from '../modules/ws/ws-ticket.service.js';
 import type { WsTicketStore } from '../modules/ws/ws-ticket.types.js';
@@ -28,7 +29,7 @@ describe('wsTicketPlugin', () => {
 
   it('decora a instância com o serviço de tickets', async () => {
     const app = Fastify();
-    await app.register(wsTicketPlugin);
+    await app.register(wsTicketPlugin, { sessoes: new SessoesFake() });
 
     const { ticket } = await app.wsTickets.emitir({
       userId: 'u1',
@@ -43,10 +44,11 @@ describe('wsTicketPlugin', () => {
   it('varre periodicamente os tickets expirados que ninguém consumiu', async () => {
     vi.useFakeTimers();
     const relogio = new RelogioFake();
-    const store = new InMemoryWsTicketStore();
+    const store = new StoreDeTicketsInspecionavel();
     const app = Fastify();
     await app.register(wsTicketPlugin, {
       store,
+      sessoes: new SessoesFake(),
       agora: relogio.agora,
       intervaloLimpezaMs: INTERVALO_MS,
     });

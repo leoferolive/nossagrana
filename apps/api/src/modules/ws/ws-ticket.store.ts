@@ -12,7 +12,7 @@ interface EntradaDeTicket {
  * do Node não intercala outra chamada no meio.
  */
 export class InMemoryWsTicketStore implements WsTicketStore {
-  private readonly tickets = new Map<string, EntradaDeTicket>();
+  protected readonly tickets = new Map<string, EntradaDeTicket>();
 
   async salvar(ticketHash: string, dados: WsTicketDados, expiraEm: Date): Promise<void> {
     this.tickets.set(ticketHash, { dados, expiraEm });
@@ -33,10 +33,5 @@ export class InMemoryWsTicketStore implements WsTicketStore {
       removidos += 1;
     }
     return removidos;
-  }
-
-  /** Só para testes: prova que nada além do hash é guardado. */
-  chavesArmazenadas(): string[] {
-    return [...this.tickets.keys()];
   }
 }

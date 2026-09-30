@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { RelogioFake } from './tests/relogio-fake.js';
-import { InMemoryWsTicketStore } from './ws-ticket.store.js';
-import { WS_TICKET_TTL_MS, WsTicketService } from './ws-ticket.service.js';
-import { hashWsTicket } from './ws-ticket.types.js';
+import { SessoesFake, StoreDeTicketsInspecionavel } from './tests/ws-ticket-helpers.js';
+import { hashWsTicket } from './ws-ticket.hash.js';
+import {
+  WS_TICKET_TTL_MS,
+  WsTicketService,
+  WsTicketSessaoRevogadaError,
+} from './ws-ticket.service.js';
 
 const FAMILIA_A = '11111111-1111-4111-8111-111111111111';
 const FAMILIA_B = '22222222-2222-4222-8222-222222222222';
@@ -11,9 +15,10 @@ const dadosDa = (familiaId: string, userId = 'user-1') => ({ userId, familiaId, 
 
 function montar() {
   const relogio = new RelogioFake();
-  const store = new InMemoryWsTicketStore();
-  const service = new WsTicketService(store, relogio.agora);
-  return { relogio, store, service };
+  const store = new StoreDeTicketsInspecionavel();
+  const sessoes = new SessoesFake();
+  const service = new WsTicketService(store, sessoes, relogio.agora);
+  return { relogio, store, sessoes, service };
 }
 
 describe('WsTicketService — emissão', () => {
@@ -42,6 +47,18 @@ describe('WsTicketService — emissão', () => {
 
     expect(JSON.stringify(store.chavesArmazenadas())).not.toContain(ticket);
     expect(store.chavesArmazenadas()).toEqual([hashWsTicket(ticket)]);
+  });
+});
+
+describe('WsTicketService — sessão revogada (#119)', () => {
+  it('sessão revogada não obtém ticket e nada é armazenado', async () => {
+    const { store, sessoes, service } = montar();
+    sessoes.revogar();
+
+    await expect(service.emitir(dadosDa(FAMILIA_A))).rejects.toBeInstanceOf(
+      WsTicketSessaoRevogadaError,
+    );
+    expect(store.chavesArmazenadas()).toHaveLength(0);
   });
 });
 

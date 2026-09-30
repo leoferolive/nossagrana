@@ -22,6 +22,9 @@ const WS_CLOSE_MEMBRO_REMOVIDO = 4006;
 const CLOSE_SEM_RECONEXAO = [4003, 4004, WS_CLOSE_MEMBRO_REMOVIDO];
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 100;
+/** Espera padrão após 429 sem `Retry-After`: a janela do rate limit do endpoint é de 60 s. */
+const LIMITE_EXCEDIDO_ESPERA_PADRAO_MS = 60_000;
+const LIMITE_EXCEDIDO_ESPERA_MINIMA_MS = 1_000;
 
 interface ConnectOpts {
   familiaId: string;
@@ -39,7 +42,10 @@ interface WebSocketStore {
 const buildSocketUrl = (ticket: string, familiaId: string): string =>
   `${getWsUrl()}/api/ws?ticket=${encodeURIComponent(ticket)}&familiaId=${encodeURIComponent(familiaId)}`;
 
-type ResultadoDoTicket = { ticket: string } | { falha: 'sessao' | 'acesso' | 'transitoria' };
+type FalhaDoTicket =
+  | { falha: 'sessao' | 'acesso' | 'transitoria' }
+  | { falha: 'limite'; esperaMs: number };
+type ResultadoDoTicket = { ticket: string } | FalhaDoTicket;
 
 /** Um ticket novo por (re)conexão; classifica a falha para o store decidir entre retry e parar. */
 async function emitirTicket(familiaId: string): Promise<ResultadoDoTicket> {
@@ -49,6 +55,10 @@ async function emitirTicket(familiaId: string): Promise<ResultadoDoTicket> {
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) return { falha: 'sessao' };
     if (err instanceof ApiError && err.status === 403) return { falha: 'acesso' };
+    if (err instanceof ApiError && err.status === 429) {
+      const pedida = err.retryAfterMs ?? LIMITE_EXCEDIDO_ESPERA_PADRAO_MS;
+      return { falha: 'limite', esperaMs: Math.max(pedida, LIMITE_EXCEDIDO_ESPERA_MINIMA_MS) };
+    }
     return { falha: 'transitoria' };
   }
 }
@@ -66,9 +76,13 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     }
   };
 
-  const agendarReconexao = (opts: ConnectOpts) => {
+  /**
+   * `encerrarSessaoAoEsgotar`: só o socket que cai repetidamente (mesmo com ticket válido) indica
+   * sessão inutilizável. Falha ao emitir o ticket (rede, 5xx) não é motivo de logout.
+   */
+  const agendarReconexao = (opts: ConnectOpts, encerrarSessaoAoEsgotar: boolean) => {
     if (retryCount >= MAX_RETRIES) {
-      opts.clearSession();
+      if (encerrarSessaoAoEsgotar) opts.clearSession();
       set({ status: 'error' });
       return;
     }
@@ -86,7 +100,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
       return;
     }
     if (CLOSE_SEM_RECONEXAO.includes(event.code)) return;
-    agendarReconexao(opts);
+    agendarReconexao(opts, true);
   };
 
   const abrirSocket = (opts: ConnectOpts, ticket: string) => {
@@ -116,7 +130,18 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     };
   };
 
-  const tratarFalhaDoTicket = (opts: ConnectOpts, falha: 'sessao' | 'acesso' | 'transitoria') => {
+  /** 429: espera o que o servidor pediu e tenta de novo, sem gastar tentativas nem derrubar a sessão. */
+  const esperarLimite = (opts: ConnectOpts, esperaMs: number) => {
+    set({ status: 'connecting' });
+    retryTimer = setTimeout(() => void doConnect(opts), esperaMs);
+  };
+
+  const tratarFalhaDoTicket = (opts: ConnectOpts, resultado: FalhaDoTicket) => {
+    const { falha } = resultado;
+    if (falha === 'limite') {
+      esperarLimite(opts, resultado.esperaMs);
+      return;
+    }
     if (falha === 'sessao') {
       opts.clearSession();
       set({ status: 'error' });
@@ -126,7 +151,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
       set({ status: 'disconnected' });
       return;
     }
-    agendarReconexao(opts);
+    agendarReconexao(opts, false);
   };
 
   const doConnect = async (opts: ConnectOpts) => {
@@ -141,7 +166,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
     if (minhaGeracao !== geracao) return;
 
     if ('ticket' in resultado) abrirSocket(opts, resultado.ticket);
-    else tratarFalhaDoTicket(opts, resultado.falha);
+    else tratarFalhaDoTicket(opts, resultado);
   };
 
   return {

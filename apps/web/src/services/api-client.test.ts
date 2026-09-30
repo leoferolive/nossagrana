@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiClient } from './api-client';
+import { ApiClient, ApiError } from './api-client';
 
 interface TokenState {
   accessToken: string | null;
@@ -105,5 +105,44 @@ describe('ApiClient', () => {
     expect(tokenState.accessToken).toBeNull();
     expect(tokenState.refreshToken).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('429 expõe o Retry-After (em ms) no ApiError', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 429, headers: { 'Retry-After': '7' } }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      getRefreshToken: () => tokenState.refreshToken,
+      setAccessToken: vi.fn(),
+      setRefreshToken: vi.fn(),
+      clearSession: vi.fn(),
+    });
+
+    const erro = await apiClient.request('/dashboard').catch((err: unknown) => err);
+
+    expect(erro).toBeInstanceOf(ApiError);
+    expect(erro).toMatchObject({ status: 429, retryAfterMs: 7000 });
+  });
+
+  it('erro sem Retry-After (ou inválido) deixa retryAfterMs indefinido', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 429, headers: { 'Retry-After': 'logo' } }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      getRefreshToken: () => tokenState.refreshToken,
+      setAccessToken: vi.fn(),
+      setRefreshToken: vi.fn(),
+      clearSession: vi.fn(),
+    });
+
+    const erro = await apiClient.request('/dashboard').catch((err: unknown) => err);
+
+    expect(erro).toMatchObject({ status: 429, retryAfterMs: undefined });
   });
 });

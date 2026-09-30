@@ -5,5 +5,11 @@
     "declaration": true,
     "sourceMap": true
   },
-  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/scripts/**", "src/db/tests/**"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/scripts/**",
+    "src/db/tests/**",
+    "src/modules/ws/tests/**"
+  ]
 }

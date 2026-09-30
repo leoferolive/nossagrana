@@ -4,6 +4,10 @@ import {
   CATEGORIAS_PADRAO_RECEITA,
 } from '../../db/seeds/categorias-padrao.js';
 import { TEMPLATES_PADRAO } from '../../db/seeds/templates-padrao.js';
+import {
+  NoopFamiliaLifecyclePublisher,
+  type FamiliaLifecyclePublisher,
+} from '../../shared/familia-lifecycle/familia-lifecycle.events.js';
 import type { CategoriaRepository } from '../categoria/categoria.types.js';
 import type { TemplateTransacaoRepository } from '../template-transacao/template-transacao.types.js';
 import type { FamiliaRepository } from './familia.types.js';
@@ -99,6 +103,7 @@ export class FamiliaService {
     private readonly familiaRepository: FamiliaRepository,
     private readonly categoriaRepository?: CategoriaRepository,
     private readonly templateTransacaoRepository?: TemplateTransacaoRepository,
+    private readonly lifecycle: FamiliaLifecyclePublisher = new NoopFamiliaLifecyclePublisher(),
   ) {}
 
   async create(input: CreateFamiliaInput) {
@@ -307,6 +312,9 @@ export class FamiliaService {
     if (!deleted) {
       throw new FamiliaNotFoundError();
     }
+
+    // Só depois do commit: falha antes dele nunca fecha sockets (#66).
+    this.lifecycle.familiaExcluida(input.familiaId);
   }
 
   async listMinhas(input: { usuarioId: string }) {

@@ -23,6 +23,11 @@ import {
   DrizzleTemplateTransacaoRepository,
   InMemoryTemplateTransacaoRepository,
 } from '../template-transacao/template-transacao.repository.js';
+import {
+  EventBusFamiliaLifecyclePublisher,
+  NoopFamiliaLifecyclePublisher,
+  type FamiliaLifecyclePublisher,
+} from '../../shared/familia-lifecycle/familia-lifecycle.events.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 import {
   familiaBuscarSchema,
@@ -53,12 +58,13 @@ import {
   SelfMemberRemovalError,
 } from './familia.service.js';
 
-const defaultFamiliaService = (): FamiliaService => {
+const defaultFamiliaService = (lifecycle: FamiliaLifecyclePublisher): FamiliaService => {
   if (env.NODE_ENV === 'test') {
     return new FamiliaService(
       new InMemoryFamiliaRepository(),
       new InMemoryCategoriaRepository(),
       new InMemoryTemplateTransacaoRepository(),
+      lifecycle,
     );
   }
 
@@ -66,11 +72,16 @@ const defaultFamiliaService = (): FamiliaService => {
     new DrizzleFamiliaRepository(),
     new DrizzleCategoriaRepository(),
     new DrizzleTemplateTransacaoRepository(),
+    lifecycle,
   );
 };
 
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
-  const familiaService = defaultFamiliaService();
+  const familiaService = defaultFamiliaService(
+    fastify.eventBus
+      ? new EventBusFamiliaLifecyclePublisher(fastify.eventBus)
+      : new NoopFamiliaLifecyclePublisher(),
+  );
 
   fastify.get(
     '/familias/minhas',

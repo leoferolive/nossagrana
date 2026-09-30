@@ -39,6 +39,7 @@ import {
   familiaRequestJoinSchema,
 } from './familia.schema.js';
 import {
+  FamiliaInviteAlreadyUsedError,
   FamiliaMemberNotFoundError,
   FamiliaNotFoundError,
   ForbiddenActiveFamilySwitchError,
@@ -181,6 +182,10 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (error) {
         if (error instanceof InvalidFamiliaInviteCodeError) {
           return reply.code(404).send({ message: error.message });
+        }
+
+        if (error instanceof FamiliaInviteAlreadyUsedError) {
+          return reply.code(409).send({ message: error.message });
         }
 
         throw error;

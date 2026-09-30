@@ -40,6 +40,12 @@ export class InvalidFamiliaInviteCodeError extends Error {
   }
 }
 
+export class FamiliaInviteAlreadyUsedError extends Error {
+  constructor() {
+    super('Convite ja utilizado');
+  }
+}
+
 export class ForbiddenFamiliaJoinRequestListError extends Error {
   constructor() {
     super('Apenas admin pode listar solicitacoes');
@@ -172,16 +178,20 @@ export class FamiliaService {
   }
 
   async joinByInvite(input: JoinFamiliaByInviteInput) {
-    const familia = await this.familiaRepository.joinByInvite({
+    const resultado = await this.familiaRepository.joinByInvite({
       codigo: input.codigo,
       usuarioId: input.usuarioId,
     });
 
-    if (!familia) {
-      throw new InvalidFamiliaInviteCodeError();
+    if ('familia' in resultado) {
+      return resultado.familia;
     }
 
-    return familia;
+    if (resultado.status === 'usado') {
+      throw new FamiliaInviteAlreadyUsedError();
+    }
+
+    throw new InvalidFamiliaInviteCodeError();
   }
 
   async requestJoin(input: RequestFamiliaJoinInput) {

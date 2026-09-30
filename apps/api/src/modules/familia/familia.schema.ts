@@ -79,6 +79,9 @@ export const familiaJoinByInviteSchema = {
     404: z.object({
       message: z.literal('Codigo de convite invalido ou expirado'),
     }),
+    409: z.object({
+      message: z.literal('Convite ja utilizado'),
+    }),
   },
 };
 

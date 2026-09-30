@@ -45,7 +45,7 @@ describe('InMemoryFamiliaRepository', () => {
       codigo: invite.codigo,
       usuarioId: memberId,
     });
-    expect(joined?.id).toBe(familia.id);
+    expect(joined).toMatchObject({ status: 'entrou', familia: { id: familia.id } });
     expect(await repository.hasMembership({ familiaId: familia.id, usuarioId: memberId })).toBe(
       true,
     );
@@ -54,7 +54,7 @@ describe('InMemoryFamiliaRepository', () => {
       codigo: 'INVALID',
       usuarioId: 'u3',
     });
-    expect(invalidJoin).toBeNull();
+    expect(invalidJoin).toEqual({ status: 'invalido' });
 
     const request = await repository.requestJoin({
       familiaId: familia.id,
@@ -248,36 +248,7 @@ describe('DrizzleFamiliaRepository', () => {
     expect(members).toHaveLength(1);
   });
 
-  it('joins, reviews and removes records in transactional methods', async () => {
-    const joinTx = {
-      select: vi.fn().mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([
-                {
-                  id: 'invite1',
-                  familiaId: 'f1',
-                  familiaNome: 'Familia Drizzle',
-                  familiaDataCriacao: new Date('2026-01-01T00:00:00.000Z'),
-                },
-              ]),
-            }),
-          }),
-        }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockReturnValue({
-          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-        }),
-      }),
-      update: vi.fn().mockReturnValue({
-        set: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue(undefined),
-        }),
-      }),
-    };
-
+  it('requests, reviews and removes records in transactional methods', async () => {
     const reviewTx = {
       select: vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
@@ -336,7 +307,6 @@ describe('DrizzleFamiliaRepository', () => {
     };
 
     mockDb.transaction
-      .mockImplementationOnce(async (callback) => callback(joinTx as never))
       .mockImplementationOnce(async (callback) => callback(reviewTx as never))
       .mockImplementationOnce(async (callback) => callback(deleteTx as never));
 
@@ -383,12 +353,6 @@ describe('DrizzleFamiliaRepository', () => {
     });
 
     const repository = new DrizzleFamiliaRepository();
-
-    const joined = await repository.joinByInvite({
-      codigo: 'CODE123',
-      usuarioId: 'u2',
-    });
-    expect(joined?.id).toBe('f1');
 
     const joinRequest = await repository.requestJoin({
       familiaId: 'f1',

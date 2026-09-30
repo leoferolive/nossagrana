@@ -7,7 +7,7 @@
 ## Visão rápida
 
 ```bash
-kubectl get cronjob -n database pg-backup restic-backup nossagrana-restore-drill
+kubectl get cronjob -n database pg-backup restic-backup pg-dump-external nossagrana-restore-drill
 kubectl get jobs -n database --sort-by=.metadata.creationTimestamp | tail
 # Último relatório do drill (linha JSON final)
 kubectl logs -n database -l app=nossagrana-restore-drill -c restore-drill --tail=1
@@ -18,10 +18,14 @@ No Loki/Grafana: `{namespace="database", container="restore-drill"} |= "restore_
 ## Aplicar / atualizar os manifests
 
 ```bash
-kubectl apply -k k8s/backup
-# O ConfigMap do script tem hash no nome; remover versões antigas sem uso:
-kubectl get cm -n database -o name | grep nossagrana-restore-drill-script
+kubectl apply -k k8s/backup                    # restore drill + alertas
+kubectl apply -k k8s/backup/pg-dump-external   # dump cifrado externo (nasce suspenso)
+# Os ConfigMaps dos scripts têm hash no nome; remover versões antigas sem uso:
+kubectl get cm -n database -o name | grep -E 'nossagrana-restore-drill-script|pg-dump-external-script'
 ```
+
+Ordem no primeiro rollout: aplicar `pg-dump-external` **antes** de `k8s/backup`, senão
+`NossaGranaBackupCronJobMissing` dispara 1 h depois de as regras entrarem.
 
 Rodar os testes antes de aplicar mudanças:
 
@@ -29,6 +33,9 @@ Rodar os testes antes de aplicar mudanças:
 bash k8s/backup/tests/restore-drill.test.sh        # restore real via Docker
 bash k8s/backup/tests/prometheusrule-backup.test.sh # promtool test rules
 bash k8s/backup/tests/manifests.test.sh             # invariantes de isolamento
+bash k8s/backup/tests/pg-dump-external-manifests.test.sh # invariantes do dump externo
+bash k8s/backup/tests/pg-dump-external.test.sh      # job com fakes (sem Docker/rede)
+bash k8s/backup/tests/pg-dump-external.smoke.test.sh # job real: imagem, PostgreSQL, age, rclone
 ```
 
 ## Backup atrasado ou falhando
@@ -94,6 +101,9 @@ Alertas `NossaGranaRestoreDrillStale` / `NossaGranaBackupJobNotSucceeded{cronjob
 Alerta `NossaGranaBackupCronJobMissing`.
 
 - `nossagrana-restore-drill`: `kubectl apply -k k8s/backup` (este repo).
+- `pg-dump-external`: `kubectl apply -k k8s/backup/pg-dump-external` (este repo;
+  os Secrets não estão no repo — ver [Dump cifrado externo](#dump-cifrado-externo-pg-dump-external)).
+  Depois de reaplicar, conferir `spec.suspend` (`false` se já estava habilitado).
 - `pg-backup`: `kubectl apply -f cluster/backup/cronjob-pg-backup-database.yaml`
   (repo `self-workflows`, branch `feat/cluster-ops`).
 - `restic-backup`: manifest mantido fora deste repo; recriar a partir do backup
@@ -180,6 +190,121 @@ Depois seguir do passo 2. Em perda total do nó, subir primeiro um PostgreSQL 17
 novo (mesma imagem `pgvector/pgvector:pg17`) e restaurar o dump inteiro:
 `zcat pg-all-AAAA-MM-DD.sql.gz | psql -U <superuser> -d postgres` (recria roles e
 todos os bancos do servidor compartilhado).
+
+## Dump cifrado externo (pg-dump-external)
+
+Issue #47. `pg_dump -Fc` de `nossagrana_prod` → valida (tamanho e
+`pg_restore --list`) → cifra com **age** para uma chave pública → SHA-256 →
+upload por rclone (artefato, `.sha256`, `.meta.json`) → baixa de volta e compara →
+retenção. Código em `k8s/backup/pg-dump-external/pg-dump-external.sh`; manifests
+e imagem na mesma pasta. Política em [POLICY.md](./POLICY.md).
+
+Artefatos no destino (`<banco>` = `nossagrana_prod`):
+
+```
+<banco>-20260930T063500Z-<pod>.dump.age            # dump cifrado (age)
+<banco>-20260930T063500Z-<pod>.dump.age.sha256     # sha256 do arquivo cifrado
+<banco>-20260930T063500Z-<pod>.dump.age.meta.json  # metadata (último a ser enviado)
+```
+
+### Preparar (uma vez)
+
+1. **Chave age** — gerar fora do cluster e guardar a privada no gerenciador de senhas:
+   ```bash
+   age-keygen -o nossagrana-backup.key   # imprime "Public key: age1..."
+   ```
+2. **Role de leitura** no PostgreSQL compartilhado (não usar o superusuário). Defina a
+   senha fora do histórico do shell (ex.: `read -rs BACKUP_RO_PASSWORD`):
+   ```bash
+   kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1' <<SQL
+   CREATE ROLE backup_ro LOGIN PASSWORD '$BACKUP_RO_PASSWORD';
+   GRANT CONNECT ON DATABASE nossagrana_prod TO backup_ro;
+   GRANT pg_read_all_data TO backup_ro;
+   SQL
+   ```
+3. **Secrets** (valores só na sua máquina; nada disso vai para o repositório):
+   ```bash
+   kubectl create secret generic pg-dump-external-db -n database \
+     --from-literal=user=backup_ro --from-file=password=./backup_ro.password
+   kubectl create secret generic pg-dump-external-storage -n database \
+     --from-file=rclone.conf=./rclone.conf \
+     --from-literal=remote='<remoto-rclone>:<pasta>' \
+     --from-literal=age-recipient='age1...'
+   ```
+   O `rclone.conf` é montado **somente leitura**: prefira remotos sem renovação de
+   token (S3/B2/SFTP, ou Drive com service account). Um remoto OAuth que precise
+   regravar o refresh token vai logar erro de escrita do rclone.
+4. **Imagem** (linux/arm64, só ferramentas: `postgresql17-client`, `age`, `rclone`):
+   ```bash
+   docker buildx build --platform linux/arm64 \
+     -t ghcr.io/leoferolive/nossagrana-pg-dump-external:1.0.0 --push k8s/backup/pg-dump-external
+   ```
+   Ao mudar a versão, atualizar a tag em `cronjob.yaml`.
+
+### Rollout (CronJob nasce suspenso)
+
+```bash
+kubectl apply -k k8s/backup/pg-dump-external
+kubectl create job -n database --from=cronjob/pg-dump-external pg-dump-external-manual-$(date +%s)
+kubectl logs -n database -l app=pg-dump-external --tail=20     # última linha: result=success
+```
+
+1. Conferir no destino os três objetos e o `sha256sum -c` ([Verificar um artefato](#verificar-um-artefato)).
+2. Exercitar um restore completo a partir do artefato
+   ([Restaurar](#restaurar-a-partir-do-dump-externo)) e registrar na tabela de exercícios.
+3. Só então habilitar o agendamento:
+   `kubectl patch cronjob -n database pg-dump-external -p '{"spec":{"suspend":false}}'`.
+4. **Rollback**: mesmo comando com `"suspend":true`. Nenhuma cópia anterior é apagada
+   (a retenção só roda depois de um upload verificado).
+
+### Falhas (`stage` no JSON final)
+
+`kubectl logs -n database job/<job>`; a última linha é
+`{"event":"pg_dump_external","result":"failure","stage":...,"reason":...}`.
+
+| `stage`         | Significado                                            | Ação                                                                      |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `config`        | variável ausente/inválida ou `AGE_RECIPIENT` errado    | corrigir Secret/env; chave `AGE-SECRET-KEY-` no recipient = **trocar**    |
+| `dump`          | conexão, permissão ou timeout do `pg_dump`             | Postgres no ar? senha do `backup_ro`? `DUMP_TIMEOUT_SECONDS`              |
+| `verify_dump`   | dump < 10 KB ou TOC ilegível                           | dump truncado; ver logs do Postgres, rodar de novo                        |
+| `encrypt`       | `age` falhou                                           | recipient válido? memória do pod                                          |
+| `upload`        | rclone falhou após as tentativas, ou objeto já existia | credencial/cota/rede do destino; objeto existente **nunca** é sobrescrito |
+| `verify_upload` | objeto no destino difere do enviado                    | corrupção ou outro job no mesmo nome; investigar o destino                |
+
+`retention_ok=false` no relatório de sucesso = a limpeza falhou, o backup está
+íntegro; ver o aviso no log e o espaço do destino.
+
+### Verificar um artefato
+
+```bash
+rclone copyto <remoto>:<pasta>/<artefato>.dump.age ./artefato.dump.age
+rclone copyto <remoto>:<pasta>/<artefato>.dump.age.sha256 ./artefato.dump.age.sha256
+sha256sum -c artefato.dump.age.sha256
+```
+
+### Restaurar a partir do dump externo
+
+Exige a chave privada (fora do cluster). Restaura em banco paralelo e troca por
+rename, como em [Restaurar em produção](#restaurar-em-produção):
+
+```bash
+age -d -i nossagrana-backup.key -o restore.dump artefato.dump.age
+pg_restore --list restore.dump | head            # confere o TOC
+kubectl exec -n database deploy/postgres -- sh -c 'createdb -U "$POSTGRES_USER" -O nossagrana_prod nossagrana_prod_restore'
+kubectl exec -i -n database deploy/postgres -- sh -c \
+  'pg_restore -U "$POSTGRES_USER" --no-owner --role=nossagrana_prod --exit-on-error -d nossagrana_prod_restore' < restore.dump
+```
+
+Depois seguir os passos 4 a 8 de "Restaurar em produção" (validar, trocar com a API
+parada, rollback, apagar `restore.dump` e o artefato locais, registrar). O dump
+custom não precisa do `extract-database.sh` (que é só para o `pg_dumpall`).
+
+### Rotação da chave age
+
+1. `age-keygen` novo; atualizar `age-recipient` no Secret `pg-dump-external-storage`.
+2. **Manter a chave privada antiga** até expirar a retenção (30 dias): os artefatos
+   antigos só abrem com ela.
+3. Rodar um Job manual e restaurar dele com a chave nova antes de descartar a antiga.
 
 ## Registro de exercícios e incidentes
 

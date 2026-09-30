@@ -4,6 +4,9 @@
 # Fonte: kube-state-metrics (CronJobs do namespace `database`) e node-exporter.
 #   pg-backup                → pg_dumpall diário no PVC `postgres-backup` (03:20)
 #   restic-backup            → cópia cifrada para HD USB + Google Drive (04:00)
+#   pg-dump-external         → pg_dump cifrado (age) para storage externo (03:35);
+#                              nasce suspenso — sem série de sucesso não alerta
+#                              (issue #47; k8s/backup/pg-dump-external)
 #   nossagrana-restore-drill → restore em banco descartável (03:50)
 # Roteamento: Alertmanager do kps → Telegram (severity critical/warning).
 apiVersion: monitoring.coreos.com/v1
@@ -22,7 +25,7 @@ spec:
         # RPO = 24h; 26h dá margem para duração do job e atraso do scheduler.
         - alert: NossaGranaBackupStale
           expr: |
-            time() - kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup"}
+            time() - kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external"}
               > 26 * 3600
           for: 15m
           labels:
@@ -39,9 +42,9 @@ spec:
         - alert: NossaGranaBackupJobNotSucceeded
           expr: |
             (
-              kube_cronjob_status_last_schedule_time{namespace="database",cronjob=~"pg-backup|restic-backup|nossagrana-restore-drill"}
+              kube_cronjob_status_last_schedule_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
               - on (namespace, cronjob)
-              kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|nossagrana-restore-drill"}
+              kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"pg-backup|restic-backup|pg-dump-external|nossagrana-restore-drill"}
             ) > 3600
           for: 15m
           labels:
@@ -72,6 +75,7 @@ spec:
           expr: |
             absent(kube_cronjob_info{namespace="database",cronjob="pg-backup"})
               or absent(kube_cronjob_info{namespace="database",cronjob="restic-backup"})
+              or absent(kube_cronjob_info{namespace="database",cronjob="pg-dump-external"})
               or absent(kube_cronjob_info{namespace="database",cronjob="nossagrana-restore-drill"})
           for: 1h
           labels:

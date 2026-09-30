@@ -1,8 +1,23 @@
+import { randomBytes } from 'node:crypto';
+
 import type {
   ConsumoConviteResultado,
   CreatedFamilia,
   CreatedFamiliaInvite,
 } from './familia.types.js';
+
+const VALIDADE_CONVITE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Código (12 hex maiúsculos, 48 bits) e validade (7 dias) de um convite novo.
+ * Fonte única para o adapter Drizzle e o InMemory.
+ */
+export function montarNovoConvite(agora: Date): { codigo: string; expiraEm: Date } {
+  return {
+    codigo: randomBytes(6).toString('hex').toUpperCase(),
+    expiraEm: new Date(agora.getTime() + VALIDADE_CONVITE_MS),
+  };
+}
 
 type EstadoConvite = 'elegivel' | 'usado' | 'expirado' | 'invalido';
 

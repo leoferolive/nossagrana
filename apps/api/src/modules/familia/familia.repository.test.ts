@@ -42,7 +42,7 @@ describe('InMemoryFamiliaRepository', () => {
     });
 
     const joined = await repository.joinByInvite({
-      codigo: invite.codigo,
+      codigo: invite!.codigo,
       usuarioId: memberId,
     });
     expect(joined).toMatchObject({ status: 'entrou', familia: { id: familia.id } });
@@ -96,6 +96,27 @@ describe('InMemoryFamiliaRepository', () => {
 
     expect(await repository.deleteFamily({ familiaId: familia.id })).toBe(true);
     expect(await repository.deleteFamily({ familiaId: 'missing' })).toBe(false);
+  });
+
+  it('createInvite retorna null para família excluída ou inexistente', async () => {
+    const repo = new InMemoryFamiliaRepository();
+    const familia = await repo.createWithAdminMembership({ nome: 'Familia X', usuarioId: 'u1' });
+    await repo.deleteFamily({ familiaId: familia.id });
+
+    expect(await repo.createInvite({ familiaId: familia.id, criadoPor: 'u1' })).toBeNull();
+    expect(await repo.createInvite({ familiaId: 'nunca-existiu', criadoPor: 'u1' })).toBeNull();
+  });
+
+  it('createInvite de uma família não vaza para outra (multi-tenant)', async () => {
+    const repo = new InMemoryFamiliaRepository();
+    const a = await repo.createWithAdminMembership({ nome: 'A', usuarioId: 'u1' });
+    const b = await repo.createWithAdminMembership({ nome: 'B', usuarioId: 'u2' });
+    const convite = await repo.createInvite({ familiaId: a.id, criadoPor: 'u1' });
+
+    expect(convite?.familiaId).toBe(a.id);
+    const entrada = await repo.joinByInvite({ codigo: convite!.codigo, usuarioId: 'u9' });
+    expect(entrada).toMatchObject({ status: 'entrou', familia: { id: a.id } });
+    expect(await repo.hasMembership({ familiaId: b.id, usuarioId: 'u9' })).toBe(false);
   });
 
   it('listFamiliasByUsuarioId returns families for user', async () => {
@@ -187,22 +208,6 @@ describe('DrizzleFamiliaRepository', () => {
       from: fromMock,
     });
 
-    const insertReturningMock = vi.fn().mockResolvedValue([
-      {
-        id: 'c1',
-        familiaId: 'f1',
-        codigo: 'CODE123',
-        expiraEm: new Date('2026-01-08T00:00:00.000Z'),
-        criadoPor: 'u1',
-        dataCriacao: new Date('2026-01-01T00:00:00.000Z'),
-      },
-    ]);
-    mockDb.insert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: insertReturningMock,
-      }),
-    });
-
     whereMock.mockReturnValueOnce({
       limit: limitMock,
     });
@@ -238,14 +243,28 @@ describe('DrizzleFamiliaRepository', () => {
     expect(await repository.isUserAdmin({ familiaId: 'f1', usuarioId: 'u2' })).toBe(false);
     expect(await repository.hasMembership({ familiaId: 'f1', usuarioId: 'u1' })).toBe(true);
 
-    const invite = await repository.createInvite({
+    const members = await repository.listMembers({ familiaId: 'f1' });
+    expect(members).toHaveLength(1);
+  });
+
+  it('createInvite delega à criação coordenada com a exclusão (null se a família não está ativa)', async () => {
+    const travarFamilia = vi.fn().mockResolvedValue([]);
+    const tx = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({ for: travarFamilia }),
+        }),
+      }),
+    };
+    mockDb.transaction.mockImplementation(async (callback) => callback(tx as never));
+
+    const convite = await new DrizzleFamiliaRepository().createInvite({
       familiaId: 'f1',
       criadoPor: 'u1',
     });
-    expect(invite.codigo).toBe('CODE123');
 
-    const members = await repository.listMembers({ familiaId: 'f1' });
-    expect(members).toHaveLength(1);
+    expect(convite).toBeNull();
+    expect(travarFamilia).toHaveBeenCalledWith('share');
   });
 
   it('requests, reviews and removes records in transactional methods', async () => {

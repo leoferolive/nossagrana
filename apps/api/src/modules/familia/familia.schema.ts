@@ -65,6 +65,9 @@ export const familiaCreateInviteSchema = {
       z.object({ message: z.literal('Apenas admin pode gerar convite') }),
       familiaScope403Schema,
     ]),
+    404: z.object({
+      message: z.literal('Familia nao encontrada'),
+    }),
   },
 };
 

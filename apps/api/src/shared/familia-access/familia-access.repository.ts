@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import type { db } from '../../db/client.js';
 import { familias, usuarioFamilia } from '../../db/schema.js';
 
-type AcessoFamilia = 'ativa' | 'excluida' | 'sem_acesso';
+export type AcessoFamilia = 'ativa' | 'excluida' | 'sem_acesso';
 
 /** Consulta vínculo e exclusão lógica na mesma leitura para HTTP e WebSocket. */
 export async function verificarAcessoFamilia(

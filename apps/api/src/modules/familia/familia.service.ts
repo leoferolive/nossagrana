@@ -176,10 +176,13 @@ export class FamiliaService {
       throw new ForbiddenFamiliaInviteError();
     }
 
-    return this.familiaRepository.createInvite({
+    const convite = await this.familiaRepository.createInvite({
       familiaId: input.familiaId,
       criadoPor: input.usuarioId,
     });
+    // Família excluída entre a checagem de escopo e o INSERT (#66): sem convite.
+    if (!convite) throw new FamiliaNotFoundError();
+    return convite;
   }
 
   async joinByInvite(input: JoinFamiliaByInviteInput) {

@@ -170,6 +170,10 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
           return reply.code(403).send({ message: error.message });
         }
 
+        if (error instanceof FamiliaNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+
         throw error;
       }
     },

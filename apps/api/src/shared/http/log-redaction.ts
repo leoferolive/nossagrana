@@ -3,15 +3,43 @@ import type { FastifyRequest } from 'fastify';
 const MARCA_REDIGIDA = '[REDACTED]';
 
 /**
- * Parâmetros de query que carregam credencial. `ticket` é o do WebSocket (#118); `token` é o
- * formato legado (JWT na URL) que o servidor já não aceita, mas um cliente antigo ainda pode
- * enviar, e o valor não pode parar no log.
+ * Parâmetros de query que carregam credencial (comparados em minúsculas). `ticket` é o do
+ * WebSocket (#118); `token` é o formato legado (JWT na URL) que o servidor já não aceita, mas um
+ * cliente antigo ainda pode enviar, e o valor não pode parar no log.
  */
-const PARAMETROS_SENSIVEIS = /([?&](?:ticket|token|accessToken|refreshToken)=)[^&#]*/gi;
+const PARAMETROS_SENSIVEIS = new Set(['ticket', 'token', 'accesstoken', 'refreshtoken']);
 
-/** Troca o valor dos parâmetros sensíveis da query por `[REDACTED]`; o resto da URL fica igual. */
+/** A chave como o Fastify a lê: `+` vira espaço e `%XX` é decodificado (`%74icket` = `ticket`). */
+function decodificarChave(chaveBruta: string): string {
+  try {
+    return decodeURIComponent(chaveBruta.replace(/\+/g, ' '));
+  } catch {
+    return chaveBruta;
+  }
+}
+
+function redigirPar(par: string): string {
+  const igual = par.indexOf('=');
+  if (igual === -1) return par;
+  const chave = decodificarChave(par.slice(0, igual)).toLowerCase();
+  return PARAMETROS_SENSIVEIS.has(chave) ? `${par.slice(0, igual + 1)}${MARCA_REDIGIDA}` : par;
+}
+
+/**
+ * Troca o valor dos parâmetros sensíveis da query por `[REDACTED]`; o resto da URL fica igual.
+ * Decodifica a chave antes de comparar: o Fastify lê `?%74icket=...` como `ticket`, então um
+ * regex sobre o texto cru deixaria passar uma credencial válida.
+ */
 export function redigirUrl(url: string): string {
-  return url.replace(PARAMETROS_SENSIVEIS, `$1${MARCA_REDIGIDA}`);
+  const inicioDaQuery = url.indexOf('?');
+  if (inicioDaQuery === -1) return url;
+  const fimDaQuery = url.indexOf('#', inicioDaQuery);
+  const fim = fimDaQuery === -1 ? url.length : fimDaQuery;
+  const pares = url
+    .slice(inicioDaQuery + 1, fim)
+    .split('&')
+    .map(redigirPar);
+  return `${url.slice(0, inicioDaQuery + 1)}${pares.join('&')}${url.slice(fim)}`;
 }
 
 /**

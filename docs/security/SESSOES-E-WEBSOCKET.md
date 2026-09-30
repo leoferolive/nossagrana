@@ -128,7 +128,7 @@ O JWT deixou de ir na URL do WebSocket. Decisão e alternativas em `docs/DECISIO
    tentativa. Falhas na emissão: `401` encerra a sessão local (o `ApiClient` já tentou o
    refresh), `403` para sem reconectar, `429` espera o `Retry-After` (padrão 60 s, mínimo 1 s) e
    tenta de novo sem gastar tentativas nem deslogar; demais erros (rede, 5xx) entram no backoff
-   existente e, esgotadas as tentativas, deixam `status: 'error'` **sem** logout. Só o socket que
+   existente e, esgotadas as tentativas, deixam `status: 'error'` **sem** logout e seguem tentando a cada 30 s até a API voltar (ou `disconnect`). Só o socket que
    cai repetidamente depois de um ticket válido encerra a sessão ao esgotar as tentativas.
 
 **Propriedades**
@@ -151,10 +151,12 @@ O JWT deixou de ir na URL do WebSocket. Decisão e alternativas em `docs/DECISIO
 - Falha do store ao consumir fecha com `1011` (falha fechada).
 - Armazenamento em memória (Map + TTL), válido enquanto o API for réplica única; o que muda se
   isso deixar de valer está em DECISIONS.md. Um reinício perde tickets em voo (≤ 30 s): o cliente
-  reconecta com ticket novo.
+  reconecta com ticket novo. Os Deployments do API usam `strategy: Recreate` para que o pod velho
+  e o novo nunca recebam tráfego ao mesmo tempo (um ticket emitido num seria recusado no outro).
 
 **Logs:** o serializer `req` do logger do Fastify (`opcoesDoLogger`) redige `ticket`, `token`,
-`accessToken` e `refreshToken` na query (`[REDACTED]`). As mensagens de fechamento e de erro
+`accessToken` e `refreshToken` na query (`[REDACTED]`), comparando a chave já decodificada
+(`?%74icket=` também é redigido). As mensagens de fechamento e de erro
 nunca incluem ticket, id ou e-mail. Infra à frente do API (proxy/Cloudflare) ainda enxerga a
 URL do handshake; o ticket vale uma vez e ~30 s.
 

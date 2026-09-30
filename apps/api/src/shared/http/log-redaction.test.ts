@@ -42,6 +42,23 @@ describe('redigirUrl', () => {
     expect(redigirUrl('/api/health')).toBe('/api/health');
   });
 
+  it('redige o nome do parâmetro escrito com percent-encoding (o Fastify decodifica a chave)', () => {
+    expect(redigirUrl('/api/ws?%74icket=SEGREDO&familiaId=f1')).toBe(
+      '/api/ws?%74icket=[REDACTED]&familiaId=f1',
+    );
+    expect(redigirUrl('/x?a=1&to%6Ben=JWT&%61ccess%54oken=AAA&refresh%54oken=BBB')).toBe(
+      '/x?a=1&to%6Ben=[REDACTED]&%61ccess%54oken=[REDACTED]&refresh%54oken=[REDACTED]',
+    );
+  });
+
+  it('chave malformada (percent-encoding inválido) não quebra nem é alterada', () => {
+    expect(redigirUrl('/x?%E0%A4%A=1&a=2')).toBe('/x?%E0%A4%A=1&a=2');
+  });
+
+  it('o fragmento depois de # não é tratado como query', () => {
+    expect(redigirUrl('/x?a=1#ticket=abc')).toBe('/x?a=1#ticket=abc');
+  });
+
   it('não confunde parâmetros que apenas terminam com o nome sensível', () => {
     expect(redigirUrl('/x?meuticket=1&ticketing=2')).toBe('/x?meuticket=1&ticketing=2');
   });
@@ -59,5 +76,21 @@ describe('opcoesDoLogger', () => {
     expect(destino.texto).toContain('[REDACTED]');
     expect(destino.texto).not.toContain('SEGREDO-DO-TICKET');
     expect(destino.texto).not.toContain('SEGREDO-JWT');
+  });
+
+  it('nem quando o nome do parâmetro vem percent-encoded e o Fastify o decodifica', async () => {
+    const destino = new DestinoDeLogFake();
+    const app = Fastify({ logger: { ...opcoesDoLogger(), stream: destino } });
+    let ticketLido: unknown;
+    app.get('/api/ws', async (request) => {
+      ticketLido = (request.query as Record<string, unknown>).ticket;
+      return { ok: true };
+    });
+
+    await app.inject({ method: 'GET', url: '/api/ws?%74icket=SEGREDO-CODIFICADO' });
+    await app.close();
+
+    expect(ticketLido).toBe('SEGREDO-CODIFICADO');
+    expect(destino.texto).not.toContain('SEGREDO-CODIFICADO');
   });
 });

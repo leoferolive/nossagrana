@@ -196,19 +196,56 @@ describe('useWebSocketStore', () => {
     expect(WebSocket).toHaveBeenCalledTimes(1);
   });
 
-  it('falhas repetidas ao emitir o ticket esgotam as tentativas sem derrubar a sessão', async () => {
+  it('falhas repetidas ao emitir o ticket esgotam o backoff rápido sem derrubar a sessão', async () => {
     mockEmitirTicket.mockRejectedValue(new ApiError(500, 'Erro'));
     const clearSession = vi.fn();
     const { result } = renderHook(() => useWebSocketStore());
 
     await act(async () => {
       result.current.connect({ familiaId: 'f1', clearSession });
-      await vi.runAllTimersAsync();
+      await vi.advanceTimersByTimeAsync(5_000);
     });
 
     expect(WebSocket).not.toHaveBeenCalled();
     expect(clearSession).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
+  });
+
+  it('depois do backoff rápido continua tentando em cadência lenta e reconecta quando a API volta', async () => {
+    mockEmitirTicket.mockRejectedValue(new ApiError(503, 'Erro'));
+    const clearSession = vi.fn();
+    const { result } = renderHook(() => useWebSocketStore());
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession });
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    const tentativasRapidas = mockEmitirTicket.mock.calls.length;
+
+    mockEmitirTicket.mockImplementation(async () => proximoTicket());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+
+    expect(mockEmitirTicket.mock.calls.length).toBe(tentativasRapidas + 1);
+    expect(WebSocket).toHaveBeenCalledTimes(1);
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  it('disconnect interrompe a cadência lenta', async () => {
+    mockEmitirTicket.mockRejectedValue(new ApiError(503, 'Erro'));
+    const { result } = renderHook(() => useWebSocketStore());
+    await act(async () => {
+      result.current.connect({ familiaId: 'f1', clearSession: vi.fn() });
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    const tentativas = mockEmitirTicket.mock.calls.length;
+
+    await act(async () => {
+      result.current.disconnect();
+      await vi.advanceTimersByTimeAsync(120_000);
+    });
+
+    expect(mockEmitirTicket.mock.calls.length).toBe(tentativas);
   });
 
   it('429 ao emitir o ticket: espera o Retry-After, tenta de novo e nunca encerra a sessão', async () => {

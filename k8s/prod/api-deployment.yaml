@@ -5,6 +5,13 @@ metadata:
   namespace: nossagrana
 spec:
   replicas: 1
+  # Recreate: tickets de WebSocket (#118), eventBus e WebSocketManager vivem na memória de um único
+  # pod; num rolling update o pod velho e o novo ficam atrás do mesmo Service e um ticket emitido
+  # num deles seria recusado no outro. `rollingUpdate: null` é necessário para o `kubectl apply`
+  # sair do RollingUpdate padrão.
+  strategy:
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app: nossagrana-api

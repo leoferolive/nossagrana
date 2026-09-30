@@ -25,6 +25,8 @@ const BASE_DELAY_MS = 100;
 /** Espera padrão após 429 sem `Retry-After`: a janela do rate limit do endpoint é de 60 s. */
 const LIMITE_EXCEDIDO_ESPERA_PADRAO_MS = 60_000;
 const LIMITE_EXCEDIDO_ESPERA_MINIMA_MS = 1_000;
+/** Cadência lenta depois que o backoff rápido de emissão do ticket se esgota (API fora do ar). */
+const EMISSAO_FALHA_ESPERA_LENTA_MS = 30_000;
 
 interface ConnectOpts {
   familiaId: string;
@@ -78,12 +80,14 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
 
   /**
    * `encerrarSessaoAoEsgotar`: só o socket que cai repetidamente (mesmo com ticket válido) indica
-   * sessão inutilizável. Falha ao emitir o ticket (rede, 5xx) não é motivo de logout.
+   * sessão inutilizável. Falha ao emitir o ticket (rede, 5xx) não é motivo de logout: esgotado o
+   * backoff rápido, segue em cadência lenta até a API voltar ou o `disconnect`/`connect` seguinte.
    */
   const agendarReconexao = (opts: ConnectOpts, encerrarSessaoAoEsgotar: boolean) => {
     if (retryCount >= MAX_RETRIES) {
-      if (encerrarSessaoAoEsgotar) opts.clearSession();
       set({ status: 'error' });
+      if (encerrarSessaoAoEsgotar) opts.clearSession();
+      else retryTimer = setTimeout(() => void doConnect(opts), EMISSAO_FALHA_ESPERA_LENTA_MS);
       return;
     }
     const delay = BASE_DELAY_MS * Math.pow(2, retryCount);

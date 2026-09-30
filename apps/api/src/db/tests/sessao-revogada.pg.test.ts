@@ -101,6 +101,7 @@ describe('Revogação global de sessões no PostgreSQL', () => {
   async function lerMarcador(userId: string): Promise<{ revokedAt: Date; expiresAt: Date }> {
     const [linha] = await banco.sql`SELECT revoked_at, expires_at
       FROM revoked_refresh_tokens WHERE user_id = ${userId}`;
+    expect(linha).toBeDefined();
     return { revokedAt: linha.revoked_at as Date, expiresAt: linha.expires_at as Date };
   }
 
@@ -144,11 +145,14 @@ describe('Revogação global de sessões no PostgreSQL', () => {
 
     it.each(RODADAS)(
       'rodada %i: revogações simultâneas com carimbos embaralhados terminam no maior carimbo',
-      async () => {
+      async (rodada) => {
         const userId = await criarUsuario();
+        // Deslocamento por rodada: cada rodada embaralha os carimbos numa permutação diferente
+        // (determinística, logo repetível); 7 é coprimo com 12, então é sempre uma permutação.
         const carimbos = Array.from(
           { length: REVOGACOES_SIMULTANEAS },
-          (_, i) => new Date(CARIMBO_ANTIGO.getTime() + ((i * 7) % REVOGACOES_SIMULTANEAS) * 1000),
+          (_, i) =>
+            new Date(CARIMBO_ANTIGO.getTime() + ((i * 7 + rodada) % REVOGACOES_SIMULTANEAS) * 1000),
         );
         const maior = new Date(Math.max(...carimbos.map((c) => c.getTime())));
 

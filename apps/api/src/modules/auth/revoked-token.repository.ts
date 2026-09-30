@@ -51,6 +51,8 @@ export class DrizzleRevokedTokenRepository implements RevokedTokenRepository {
    * Por isso o conflito resolve com GREATEST(existente, novo) em `revoked_at` e `expires_at`:
    * o marcador nunca retrocede e o expiry (= `revoked_at` + 1 ano, crescente com ele) sempre
    * acompanha o maior `revoked_at`. SQL raw necessário: o Drizzle não expõe GREATEST.
+   * Não é DoNothing: uma 2ª revogação (ex.: reset depois de troca de senha) manteria o instante
+   * antigo e deixaria de matar sessões criadas entre as duas.
    */
   async revokeAllByUserId(userId: string): Promise<void> {
     const agora = this.now();

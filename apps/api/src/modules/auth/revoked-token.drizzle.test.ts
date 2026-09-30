@@ -38,22 +38,21 @@ describe('DrizzleRevokedTokenRepository (cliente fake)', () => {
     await repo.revokeAllByUserId('u1');
 
     const [escrita] = database.escritas;
+    expect(escrita).toBeDefined();
     expect(escrita?.conflito).toBe('update');
-    expect(escrita?.valores?.tokenHash).toBe('__compromised__u1');
-    expect(escrita?.valores?.userId).toBe('u1');
-    const revokedAt = escrita?.valores?.revokedAt as Date;
+    const valores = escrita?.valores ?? {};
+    const atualizacao = escrita?.atualizacao ?? {};
+    expect(valores.tokenHash).toBe('__compromised__u1');
+    expect(valores.userId).toBe('u1');
+    const revokedAt = valores.revokedAt as Date;
     expect(revokedAt.getTime()).toBeGreaterThanOrEqual(antes);
     // O UPDATE do conflito é decidido pelo banco (GREATEST), não pelo instante da app:
     // nunca um Date cru, senão uma revogação antiga tardia sobrescreveria a mais nova.
-    expect(escrita?.atualizacao?.revokedAt).not.toBeInstanceOf(Date);
-    expect(escrita?.atualizacao?.expiresAt).not.toBeInstanceOf(Date);
-    expect(sqlDoConflito(escrita?.atualizacao?.revokedAt)).toMatch(
-      /greatest\(.*excluded\.revoked_at\)/i,
-    );
-    expect(sqlDoConflito(escrita?.atualizacao?.expiresAt)).toMatch(
-      /greatest\(.*excluded\.expires_at\)/i,
-    );
-    const validadeMs = (escrita?.valores?.expiresAt as Date).getTime() - revokedAt.getTime();
+    expect(atualizacao.revokedAt).not.toBeInstanceOf(Date);
+    expect(atualizacao.expiresAt).not.toBeInstanceOf(Date);
+    expect(sqlDoConflito(atualizacao.revokedAt)).toMatch(/greatest\(.*excluded\.revoked_at\)/i);
+    expect(sqlDoConflito(atualizacao.expiresAt)).toMatch(/greatest\(.*excluded\.expires_at\)/i);
+    const validadeMs = (valores.expiresAt as Date).getTime() - revokedAt.getTime();
     expect(validadeMs).toBe(365 * 24 * 60 * 60 * 1000);
   });
 

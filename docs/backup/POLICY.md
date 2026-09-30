@@ -17,16 +17,27 @@
 
 ## 2. Pipeline de backup
 
-| Etapa                 | CronJob (ns `database`)    | Horário (BRT) | Destino                                                          | Cifragem                    | Retenção                     | Versionado em                       |
-| --------------------- | -------------------------- | ------------- | ---------------------------------------------------------------- | --------------------------- | ---------------------------- | ----------------------------------- |
-| Dump lógico           | `pg-backup`                | 03:20 diário  | PVC `postgres-backup` (`pg-all-AAAA-MM-DD.sql.gz`)               | não (mesmo disco do banco)  | 14 dias                      | `self-workflows` → `cluster/backup` |
-| Restore drill         | `nossagrana-restore-drill` | 03:50 diário  | PostgreSQL descartável (sidecar, emptyDir)                       | n/a                         | 3 Jobs ok / 3 falhos         | **este repo** → `k8s/backup`        |
-| Cópia local cifrada   | `restic-backup`            | 04:00 diário  | HD USB `/srv/backups/restic/database`                            | restic (AES-256 + Poly1305) | 7 diários, 4 sem., 6 mensais | cluster (fora deste repo)           |
-| Cópia externa cifrada | `restic-backup`            | 04:00 diário  | Google Drive `gdrive:backups/elitedesk-restic-repo` (via rclone) | restic (AES-256 + Poly1305) | 7 diários, 4 sem., 6 mensais | cluster (fora deste repo)           |
+| Etapa                 | CronJob (ns `database`)    | Horário (BRT) | Destino                                                               | Cifragem                                     | Retenção                     | Versionado em                                 |
+| --------------------- | -------------------------- | ------------- | --------------------------------------------------------------------- | -------------------------------------------- | ---------------------------- | --------------------------------------------- |
+| Dump lógico           | `pg-backup`                | 03:20 diário  | PVC `postgres-backup` (`pg-all-AAAA-MM-DD.sql.gz`)                    | não (mesmo disco do banco)                   | 14 dias                      | `self-workflows` → `cluster/backup`           |
+| Restore drill         | `nossagrana-restore-drill` | 03:50 diário  | PostgreSQL descartável (sidecar, emptyDir)                            | n/a                                          | 3 Jobs ok / 3 falhos         | **este repo** → `k8s/backup`                  |
+| Cópia local cifrada   | `restic-backup`            | 04:00 diário  | HD USB `/srv/backups/restic/database`                                 | restic (AES-256 + Poly1305)                  | 7 diários, 4 sem., 6 mensais | cluster (fora deste repo)                     |
+| Cópia externa cifrada | `restic-backup`            | 04:00 diário  | Google Drive `gdrive:backups/elitedesk-restic-repo` (via rclone)      | restic (AES-256 + Poly1305)                  | 7 diários, 4 sem., 6 mensais | cluster (fora deste repo)                     |
+| Dump externo cifrado  | `pg-dump-external`         | 03:35 diário  | Storage externo configurável (rclone), `<banco>-<UTC>-<pod>.dump.age` | age (chave pública no cluster, privada fora) | 30 dias, mínimo 7 artefatos  | **este repo** → `k8s/backup/pg-dump-external` |
 
 Formato: `pg_dumpall` (SQL puro, gzip -9), com roles e todos os bancos do servidor
 compartilhado. Timezone de todos os agendamentos: `America/Sao_Paulo` (explícito
 nos CronJobs).
+
+O `pg-dump-external` (issue #47) é a cópia **cifrada e verificável por artefato**:
+`pg_dump -Fc` só de `nossagrana_prod`, cifrado com [age](https://age-encryption.org)
+antes de sair do pod, com `.sha256` e `.meta.json` ao lado, enviado por rclone a um
+destino configurável e baixado de volta para conferência antes de o Job ser dado
+como sucesso. Nasce **suspenso** (rollout em [RUNBOOK](./RUNBOOK.md#dump-cifrado-externo-pg-dump-external)).
+O estado do agendamento é versionado em overlays kustomize (`suspended` para rollout/rollback,
+`enabled` para produção): reaplicar os manifests nunca suspende um backup ativo por acidente.
+Ele é aditivo: não substitui `pg-backup` nem `restic-backup` até o primeiro
+restore a partir dele ser exercitado e registrado.
 
 ## 3. RPO/RTO por cenário
 
@@ -52,12 +63,30 @@ nos CronJobs).
   numa única transação, tabelas obrigatórias, `drizzle.__drizzle_migrations` e
   dados essenciais (`users`, `familias` não vazios).
 - restic garante integridade por endereçamento de conteúdo (SHA-256) nas cópias.
+- `pg-dump-external`, a cada execução: dump ≥ 10 KB, `pg_restore --list` lê o TOC,
+  SHA-256 do artefato **cifrado** gravado em `<artefato>.sha256`, upload sem
+  sobrescrita (checagem prévia + `--ignore-existing`), download dos três objetos e
+  comparação byte a byte, `sha256sum -c`. Qualquer falha de conexão, dump,
+  cifragem, upload ou verificação termina o Job com erro (alerta
+  `NossaGranaBackupJobNotSucceeded`). Execuções concorrentes são impedidas
+  (`concurrencyPolicy: Forbid`) e o nome inclui timestamp UTC + nome do pod. O
+  `.meta.json` só sobe depois de artefato e `.sha256` verificados: artefato sem
+  `.meta.json` é órfão, não conta para o mínimo de 7 da retenção e expira em 30 dias.
 
 ## 5. Segredos e chaves
 
 - Credenciais do Postgres: Secret `postgres-secret` (ns `database`) — o restore
   drill **não** o recebe.
 - Chave restic e `rclone.conf`: Secret `restic-backup-secrets` (ns `database`).
+- `pg-dump-external`: Secret `pg-dump-external-db` (role `backup_ro`, somente
+  leitura só em `nossagrana_prod` via `grant-backup-ro.sql`, sem `pg_read_all_data`
+  nem superusuário) e Secret
+  `pg-dump-external-storage` (`rclone.conf`, `remote`, `age-recipient`). Nenhum
+  valor é versionado; o CronJob só referencia os Secrets por nome.
+- **Chave privada age**: fica **fora do cluster** (gerenciador de senhas do dono).
+  O cluster só recebe a chave pública (`age1...`), então quem lê o storage ou o
+  Secret não decifra os dumps — e, ao mesmo tempo, **sem a chave privada os
+  artefatos do `pg-dump-external` são irrecuperáveis**. Verificar a cada revisão.
 - **Obrigatório**: senha do repositório restic e `rclone.conf` guardados **fora do
   cluster** (gerenciador de senhas do dono). Sem eles a cópia no Google Drive é
   irrecuperável na perda do nó. Verificar a cada revisão desta política.
@@ -73,13 +102,14 @@ nos CronJobs).
 Alertas em `k8s/backup/prometheusrule-backup.yaml` (Prometheus do kps →
 Alertmanager → Telegram):
 
-| Alerta                            | Condição                                                      | Severidade |
-| --------------------------------- | ------------------------------------------------------------- | ---------- |
-| `NossaGranaBackupStale`           | `pg-backup` ou `restic-backup` sem sucesso há > 26 h (RPO)    | critical   |
-| `NossaGranaBackupJobNotSucceeded` | último agendamento sem sucesso após 1 h (dump, upload, drill) | critical   |
-| `NossaGranaRestoreDrillStale`     | nenhum restore comprovado há > 26 h                           | critical   |
-| `NossaGranaBackupCronJobMissing`  | algum dos três CronJobs deixou de existir                     | critical   |
-| `NossaGranaBackupDiskLow`         | < 10 % livre em `/` (PVCs) ou `/srv/backups` (restic local)   | warning    |
+| Alerta                             | Condição                                                                                                           | Severidade |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
+| `NossaGranaBackupStale`            | `pg-backup`, `restic-backup` ou `pg-dump-external` sem sucesso há > 26 h (RPO), ou nunca agendado 26 h após criado | critical   |
+| `NossaGranaBackupJobNotSucceeded`  | último agendamento sem sucesso 1 h depois, ou nunca teve sucesso (ignora suspensos)                                | critical   |
+| `NossaGranaRestoreDrillStale`      | nenhum restore comprovado há > 26 h                                                                                | critical   |
+| `NossaGranaBackupCronJobMissing`   | algum dos quatro CronJobs deixou de existir                                                                        | critical   |
+| `NossaGranaBackupCronJobSuspended` | algum dos quatro CronJobs com `spec.suspend=true` há > 24 h (o `Stale` ignora só o `pg-dump-external` suspenso)    | warning    |
+| `NossaGranaBackupDiskLow`          | < 10 % livre em `/` (PVCs) ou `/srv/backups` (restic local)                                                        | warning    |
 
 Violação de RPO/RTO: tratar como incidente — seguir o runbook, registrar data,
 causa e duração na seção "Registro de exercícios e incidentes" do runbook.
@@ -89,6 +119,14 @@ causa e duração na seção "Registro de exercícios e incidentes" do runbook.
 - O restore drill valida a cópia **local** (PVC). A cópia externa (Google Drive)
   depende do `restic backup` sem `restic check --read-data-subset` periódico nem
   restore automatizado a partir dela — próximo passo recomendado.
+- O restore drill diário ainda valida só o dump local (`pg_dumpall` do PVC). O
+  artefato do `pg-dump-external` é verificado no upload (integridade e TOC), mas
+  o restore completo a partir dele é manual (runbook) até um drill dedicado —
+  próximo passo natural, exige a chave privada fora do cluster.
+- O dump do `pg-dump-external` não inclui configuração de nível de banco (ACL do
+  banco, `ALTER DATABASE ... SET`) nem roles: ao restaurar, reaplicá-los (passo no
+  [RUNBOOK](./RUNBOOK.md#restaurar-a-partir-do-dump-externo)). O `pg_dumpall` local
+  os inclui.
 - Os dumps no PVC `postgres-backup` não são cifrados em repouso; estão no mesmo
   disco e sob o mesmo controle de acesso do próprio banco.
 - A NetworkPolicy do drill não é aplicada no cluster atual (controller de

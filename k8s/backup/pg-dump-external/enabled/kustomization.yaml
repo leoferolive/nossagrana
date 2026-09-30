@@ -1,0 +1,17 @@
+# pg-dump-external habilitado (estado de produção após o rollout). Reaplicar
+# (ex.: atualizar o script no ConfigMap) mantém o agendamento ativo, porque
+# `spec.suspend: false` é declarado aqui, não deixado ao acaso do estado do cluster.
+#
+#   kubectl apply -k k8s/backup/pg-dump-external/enabled
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+patches:
+  - target:
+      kind: CronJob
+      name: pg-dump-external
+    patch: |-
+      - op: replace
+        path: /spec/suspend
+        value: false

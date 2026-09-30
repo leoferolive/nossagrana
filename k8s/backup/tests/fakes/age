@@ -1,0 +1,26 @@
+#!/bin/sh
+# Fake nomeada de `age` (cifragem para recipient público): `age -r <pub> -o <saida> <entrada>`.
+# A "cifragem" só antepõe um cabeçalho, o suficiente para o teste distinguir
+# artefato cifrado de dump em claro. Controle por ambiente: FAKE_AGE_FAIL.
+echo "age $*" >>"$FAKE_STATE/calls.log"
+if [ -n "${FAKE_AGE_FAIL:-}" ]; then
+  echo "age: error: encryption failed (fake)" >&2
+  exit 1
+fi
+out=""
+in=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -r) shift ;;
+    -o)
+      shift
+      out="$1"
+      ;;
+    *) in="$1" ;;
+  esac
+  shift
+done
+{
+  echo "age-encryption.org/v1 (fake)"
+  cat "$in"
+} >"$out"

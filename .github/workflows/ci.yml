@@ -169,16 +169,26 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Shellcheck
-        run: shellcheck k8s/backup/*.sh k8s/backup/tests/*.sh
+        run: shellcheck k8s/backup/*.sh k8s/backup/pg-dump-external/base/*.sh k8s/backup/tests/*.sh k8s/backup/tests/fakes/*
 
       - name: Manifest invariants
         run: bash k8s/backup/tests/manifests.test.sh
+
+      # pg-dump-external (issue #47): invariantes do CronJob e job com fakes nomeadas.
+      - name: Dump externo (manifests)
+        run: bash k8s/backup/tests/pg-dump-external-manifests.test.sh
+
+      - name: Dump externo (fakes)
+        run: bash k8s/backup/tests/pg-dump-external.test.sh
 
       - name: Alert rules (promtool)
         run: bash k8s/backup/tests/prometheusrule-backup.test.sh
 
       - name: Restore drill (PostgreSQL real)
         run: bash k8s/backup/tests/restore-drill.test.sh
+
+      - name: Dump externo (smoke com imagem, PostgreSQL, age e rclone reais)
+        run: bash k8s/backup/tests/pg-dump-external.smoke.test.sh
 
   # FKs compostas por família (issue #58): aplica todas as migrations reais num
   # PostgreSQL 17 descartável (Docker) e prova que o banco rejeita referência

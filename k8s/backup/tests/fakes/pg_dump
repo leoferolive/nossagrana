@@ -1,0 +1,32 @@
+#!/bin/sh
+# Fake nomeada de `pg_dump` para pg-dump-external.test.sh (issue #47).
+# Contrato replicado: `--file=<destino>` recebe o dump; exit != 0 em falha.
+# Controles por ambiente: FAKE_PG_DUMP_FAIL, FAKE_PG_DUMP_SLEEP, FAKE_DUMP_BYTES.
+echo "pg_dump $*" >>"$FAKE_STATE/calls.log"
+if [ "${1:-}" = "--version" ]; then
+  echo "pg_dump (PostgreSQL) 17.0 (fake)"
+  exit 0
+fi
+# FAKE_PG_DUMP_EXIT_ON_TERM: como o pg_dump real, trata o SIGTERM e sai com 1
+# ("terminated by user"), em vez de morrer pelo sinal (exit 143).
+if [ -n "${FAKE_PG_DUMP_EXIT_ON_TERM:-}" ] && [ -n "${FAKE_PG_DUMP_SLEEP:-}" ]; then
+  trap 'echo "pg_dump: terminated by user" >&2; exit 1' TERM
+  sleep "$FAKE_PG_DUMP_SLEEP" &
+  wait $!
+  exit 1
+fi
+# exec: o SIGTERM do `timeout` precisa atingir o sleep, não um shell intermediário.
+[ -z "${FAKE_PG_DUMP_SLEEP:-}" ] || exec sleep "$FAKE_PG_DUMP_SLEEP"
+if [ -n "${FAKE_PG_DUMP_FAIL:-}" ]; then
+  echo "pg_dump: error: connection to server failed (fake)" >&2
+  exit 1
+fi
+out=""
+for arg in "$@"; do
+  case "$arg" in --file=*) out="${arg#--file=}" ;; esac
+done
+[ -n "$out" ] || {
+  echo "fake pg_dump: --file=<destino> ausente" >&2
+  exit 64
+}
+head -c "${FAKE_DUMP_BYTES:-20000}" /dev/zero | tr '\0' 'D' >"$out"

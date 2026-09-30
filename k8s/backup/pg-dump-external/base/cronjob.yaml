@@ -1,0 +1,151 @@
+# Dump cifrado do NossaGrana para storage externo (issue #47, epic #44).
+# Lógica e contrato em pg-dump-external.sh; operação em docs/backup/RUNBOOK.md.
+#
+# Complementa o `pg-backup` (pg_dumpall local, self-workflows) e o
+# `restic-backup`: aqui o artefato é um pg_dump -Fc só do banco da aplicação,
+# cifrado com age (chave pública; a privada fica FORA do cluster) e enviado por
+# rclone a um destino configurável, com .sha256 e .meta.json.
+#
+# A BASE É SUSPENSA (rollout da issue #47): criar os Secrets, aplicar o overlay
+# `suspended`, rodar manualmente (`kubectl create job --from=cronjob/pg-dump-external ...`),
+# inspecionar o artefato e só então aplicar o overlay `enabled`, que declara
+# `suspend: false`. Não editar `suspend` aqui: o estado habilitado vive no overlay,
+# para que reaplicar nunca suspenda o backup em silêncio.
+# Rollback: aplicar `suspended` — nenhuma cópia anterior é apagada.
+#
+# Nenhum valor sensível neste arquivo. Secrets esperados (namespace database),
+# criação em docs/backup/RUNBOOK.md:
+#   pg-dump-external-db       user, password   (role backup_ro, somente leitura)
+#   pg-dump-external-storage  rclone.conf, remote, age-recipient
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-dump-external
+  labels:
+    app: pg-dump-external
+spec:
+  # 03:35 BRT: entre o pg-backup (03:20) e o restic-backup (04:00), fora do
+  # restore drill (03:50).
+  schedule: '35 3 * * *'
+  timeZone: America/Sao_Paulo
+  suspend: true
+  # Execuções concorrentes nunca disputam o mesmo destino.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # Retry de upload é interno e limitado (UPLOAD_ATTEMPTS); um pod novo
+      # só repete o que já falhou de forma persistente.
+      backoffLimit: 1
+      # Teto do Job inteiro: dump 10 min + cifra + uploads/verificação.
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: pg-dump-external
+        spec:
+          restartPolicy: Never
+          serviceAccountName: pg-dump-external
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          # Tempo para o trap de SIGTERM remover o temporário e reportar.
+          terminationGracePeriodSeconds: 30
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump-external
+              image: ghcr.io/leoferolive/nossagrana-pg-dump-external:1.0.0
+              command: ['sh', '/job/pg-dump-external.sh']
+              env:
+                - name: PGHOST
+                  value: postgres.database.svc.cluster.local
+                - name: PGPORT
+                  value: '5432'
+                - name: PGDATABASE
+                  value: nossagrana_prod
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-dump-external-db
+                      key: user
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-dump-external-db
+                      key: password
+                - name: AGE_RECIPIENT
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-dump-external-storage
+                      key: age-recipient
+                - name: BACKUP_REMOTE
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-dump-external-storage
+                      key: remote
+                - name: RCLONE_CONFIG
+                  value: /etc/rclone/rclone.conf
+                - name: TMPDIR
+                  value: /work
+                # rclone grava cache/lock sob $HOME; a raiz do container é somente leitura.
+                - name: HOME
+                  value: /tmp
+                - name: DUMP_TIMEOUT_SECONDS
+                  value: '600'
+                - name: UPLOAD_ATTEMPTS
+                  value: '3'
+                - name: RETENTION_DAYS
+                  value: '30'
+                - name: RETENTION_MIN_KEEP
+                  value: '7'
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ['ALL']
+              volumeMounts:
+                - name: job-script
+                  mountPath: /job
+                  readOnly: true
+                - name: storage-config
+                  mountPath: /etc/rclone
+                  readOnly: true
+                # Único lugar gravável; apagado com o pod mesmo que o trap falhe.
+                - name: work
+                  mountPath: /work
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: job-script
+              configMap:
+                name: pg-dump-external-script
+            - name: storage-config
+              secret:
+                secretName: pg-dump-external-storage
+                items:
+                  - key: rclone.conf
+                    path: rclone.conf
+                defaultMode: 0440
+            - name: work
+              emptyDir:
+                # Pico ~2x o dump (claro + cifrado; depois cifrado + cópia baixada
+                # para verificação): limita o dump a ~500 MB. Estourar despeja o
+                # pod sem o JSON de falha (RUNBOOK, "Rollout").
+                sizeLimit: 1Gi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 64Mi

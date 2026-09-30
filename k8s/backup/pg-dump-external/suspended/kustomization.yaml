@@ -1,0 +1,10 @@
+# Rollout inicial e rollback do pg-dump-external: CronJob suspenso (herdado da
+# base). Aplicar de novo este overlay suspende o backup de propósito.
+#
+#   kubectl apply -k k8s/backup/pg-dump-external/suspended
+#
+# NossaGranaBackupCronJobSuspended avisa se ficar assim por mais de 24 h.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base

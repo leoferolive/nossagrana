@@ -1,0 +1,90 @@
+#!/bin/sh
+# Fake nomeada de `rclone` com o subconjunto usado pelo job: copyto, lsf e
+# deletefile. O "remoto" é um diretório local (BACKUP_REMOTE).
+#
+# Contrato replicado do rclone real: com `--ignore-existing`, copyto sobre um
+# destino existente não faz nada (exit 0) e não altera o destino; lsf de
+# diretório inexistente sai com 3. deletefile de objeto inexistente sai com 4
+# (object not found). Flags com valor devem vir como --flag=valor.
+# Controles por ambiente: FAKE_RCLONE_FAIL_UPLOADS=<n> (falha os n primeiros
+# uploads), FAKE_RCLONE_FAIL_ALWAYS, FAKE_RCLONE_CORRUPT_UPLOAD,
+# FAKE_RCLONE_LSF_FAIL_FROM_CALL=<n> (lsf falha a partir da n-ésima chamada),
+# FAKE_RCLONE_LSF_HIDE (lsf não lista nada: simula corrida com outro job),
+# FAKE_RCLONE_FAIL_SUFFIX=<sufixo> (falha sempre o upload de objetos cujo nome
+# termina no sufixo, ex.: .meta.json: simula upload parcial),
+# FAKE_RCLONE_FAIL_DELETE_SUFFIX=<sufixo> (deletefile de objeto com esse sufixo
+# falha com exit 1: erro transitório/permissão, diferente de "não encontrado").
+echo "rclone $*" >>"$FAKE_STATE/calls.log"
+cmd="$1"
+shift
+ignore_existing=""
+positional=""
+for arg in "$@"; do
+  case "$arg" in
+    --ignore-existing) ignore_existing=1 ;;
+    --*) ;;
+    *) positional="$positional $arg" ;;
+  esac
+done
+# shellcheck disable=SC2086 # os caminhos usados nos testes não têm espaços
+set -- $positional
+
+is_remote() {
+  case "$1" in "$BACKUP_REMOTE"/*) return 0 ;; *) return 1 ;; esac
+}
+
+upload_counter="$FAKE_STATE/upload-attempts"
+
+case "$cmd" in
+  copyto)
+    src="$1"
+    dst="$2"
+    if is_remote "$dst"; then
+      attempts=0
+      [ ! -f "$upload_counter" ] || attempts="$(cat "$upload_counter")"
+      attempts=$((attempts + 1))
+      echo "$attempts" >"$upload_counter"
+      if [ -n "${FAKE_RCLONE_FAIL_ALWAYS:-}" ] || [ "$attempts" -le "${FAKE_RCLONE_FAIL_UPLOADS:-0}" ]; then
+        echo "rclone: ERROR: upload failed (fake)" >&2
+        exit 1
+      fi
+      case "$dst" in
+        *"${FAKE_RCLONE_FAIL_SUFFIX:-@sem-sufixo@}")
+          echo "rclone: ERROR: upload of $(basename "$dst") failed (fake)" >&2
+          exit 1
+          ;;
+      esac
+      [ -z "$ignore_existing" ] || [ ! -e "$dst" ] || exit 0
+    fi
+    cp "$src" "$dst"
+    if is_remote "$dst" && [ -n "${FAKE_RCLONE_CORRUPT_UPLOAD:-}" ]; then
+      case "$dst" in *.dump.age) echo "corrompido" >>"$dst" ;; esac
+    fi
+    ;;
+  lsf)
+    lsf_calls=0
+    [ ! -f "$FAKE_STATE/lsf-calls" ] || lsf_calls="$(cat "$FAKE_STATE/lsf-calls")"
+    lsf_calls=$((lsf_calls + 1))
+    echo "$lsf_calls" >"$FAKE_STATE/lsf-calls"
+    if [ -n "${FAKE_RCLONE_LSF_FAIL_FROM_CALL:-}" ] && [ "$lsf_calls" -ge "$FAKE_RCLONE_LSF_FAIL_FROM_CALL" ]; then
+      echo "rclone: ERROR: list failed (fake)" >&2
+      exit 1
+    fi
+    [ -d "$1" ] || exit 3
+    [ -n "${FAKE_RCLONE_LSF_HIDE:-}" ] || ls -1 "$1"
+    ;;
+  deletefile)
+    case "$1" in
+      *"${FAKE_RCLONE_FAIL_DELETE_SUFFIX:-@sem-sufixo@}")
+        echo "rclone: ERROR: delete of $(basename "$1") failed (fake)" >&2
+        exit 1
+        ;;
+    esac
+    [ -e "$1" ] || exit 4
+    rm -f "$1"
+    ;;
+  *)
+    echo "fake rclone: subcomando não suportado: $cmd" >&2
+    exit 64
+    ;;
+esac

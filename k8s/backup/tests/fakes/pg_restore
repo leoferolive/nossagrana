@@ -1,0 +1,8 @@
+#!/bin/sh
+# Fake nomeada de `pg_restore` (só `--list`, usado para validar o TOC do dump).
+# Controle por ambiente: FAKE_PG_RESTORE_FAIL.
+echo "pg_restore $*" >>"$FAKE_STATE/calls.log"
+if [ -n "${FAKE_PG_RESTORE_FAIL:-}" ]; then
+  echo "pg_restore: error: did not find magic string in file header (fake)" >&2
+  exit 1
+fi

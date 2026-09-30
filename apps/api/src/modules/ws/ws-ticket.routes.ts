@@ -36,7 +36,9 @@ export const wsTicketRoutes: FastifyPluginAsync = async (fastify) => {
         return { ticket, expiraEm: expiraEm.toISOString() };
       } catch (err) {
         if (!(err instanceof WsTicketSessaoRevogadaError)) throw err;
-        return reply.code(401).send({ message: 'Sessao revogada', code: 'SESSION_REVOKED' });
+        return reply
+          .code(401)
+          .send({ error: { message: 'Sessao revogada', code: 'SESSION_REVOKED' } });
       }
     },
   );

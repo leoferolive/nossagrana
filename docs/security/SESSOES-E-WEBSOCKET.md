@@ -141,7 +141,7 @@ O JWT deixou de ir na URL do WebSocket. Decisão e alternativas em `docs/DECISIO
 | Vinculado          | usuário + família + `iat` do access (sessão); família divergente na query é recusada                                                                                       |
 | Só hash persistido | o store guarda SHA-256; o valor bruto não é guardado nem logado                                                                                                            |
 | Sem JWT no ticket  | o ticket é opaco; a sessão é representada só pelo `iat`                                                                                                                    |
-| Sessão revogada    | não obtém ticket (`401 SESSION_REVOKED`); ticket já emitido é recusado no handshake                                                                                        |
+| Sessão revogada    | não obtém ticket (`401 { error: { code: 'SESSION_REVOKED' } }`, envelope de api-design.md); ticket já emitido é recusado no handshake                                      |
 | Sem detalhe        | todas as recusas de autenticação: close `4001`, motivo `Autenticacao invalida`                                                                                             |
 | Rate limit         | 20 emissões/min por usuário (`sub`) no endpoint, contado em `preHandler`, depois do `authenticate`; o limite global por IP (100/min) continua valendo para as demais rotas |
 

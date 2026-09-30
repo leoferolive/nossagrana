@@ -114,7 +114,9 @@ describe('WebSocket — sessão revogada (#119)', () => {
     });
 
     expect(resposta.statusCode).toBe(401);
-    expect(resposta.json()).toMatchObject({ code: 'SESSION_REVOKED' });
+    expect(resposta.json()).toMatchObject({
+      error: { code: 'SESSION_REVOKED' },
+    });
   });
 
   it('depois de um novo login o usuário volta a conectar', async () => {

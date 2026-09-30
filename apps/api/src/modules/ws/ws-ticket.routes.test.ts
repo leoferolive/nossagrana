@@ -121,7 +121,9 @@ describe('POST /api/ws/ticket (#118)', () => {
     const resposta = await pedirTicket(app, ana.accessToken);
 
     expect(resposta.statusCode).toBe(401);
-    expect(resposta.json()).toMatchObject({ code: 'SESSION_REVOKED' });
+    expect(resposta.json()).toMatchObject({
+      error: { code: 'SESSION_REVOKED' },
+    });
   });
 
   it('falha ao consultar a revogação: falha fechada (500), sem ticket', async () => {

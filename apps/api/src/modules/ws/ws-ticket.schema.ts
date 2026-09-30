@@ -5,6 +5,10 @@ import { z } from 'zod';
 export const wsTicketSchema = {
   response: {
     200: wsTicketResponseSchema,
-    401: z.object({ message: z.string(), code: z.string().optional() }),
+    // 401 do `authenticate` ({ message }) ou da sessão revogada, no envelope de api-design.md.
+    401: z.union([
+      z.object({ error: z.object({ message: z.string(), code: z.string().optional() }) }),
+      z.object({ message: z.string() }),
+    ]),
   },
 };

@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 
 import type { EmailPayload, EmailSender } from './email.types.js';
 
@@ -12,7 +12,7 @@ interface SmtpConfig {
 }
 
 export class SmtpEmailSender implements EmailSender {
-  private readonly transporter: nodemailer.Transporter;
+  private readonly transporter: Transporter;
   private readonly from: string;
 
   constructor(config: SmtpConfig) {

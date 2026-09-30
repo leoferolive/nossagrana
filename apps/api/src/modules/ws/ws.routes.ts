@@ -4,6 +4,7 @@ import type { WebSocket } from 'ws';
 import { env } from '../../config/env.js';
 import { db } from '../../db/client.js';
 import { verificarAcessoFamilia } from '../../shared/familia-access/familia-access.repository.js';
+import { WS_CLOSE_FAMILIA_EXCLUIDA } from './ws-close-codes.js';
 
 export const wsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/ws', { websocket: true }, async (socket: WebSocket, request) => {
@@ -39,7 +40,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       if (acesso === 'excluida') {
-        socket.close(4004, 'Familia excluida');
+        socket.close(WS_CLOSE_FAMILIA_EXCLUIDA, 'Familia excluida');
         return;
       }
     }

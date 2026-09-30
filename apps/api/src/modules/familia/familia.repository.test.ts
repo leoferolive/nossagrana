@@ -288,22 +288,19 @@ describe('DrizzleFamiliaRepository', () => {
       }),
     };
 
-    let deleteCallCount = 0;
     const deleteTx = {
-      delete: vi.fn().mockImplementation(() => {
-        deleteCallCount += 1;
-        if (deleteCallCount === 9) {
-          return {
+      update: vi
+        .fn()
+        .mockReturnValueOnce({
+          set: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               returning: vi.fn().mockResolvedValue([{ id: 'f1' }]),
             }),
-          };
-        }
-
-        return {
-          where: vi.fn().mockResolvedValue(undefined),
-        };
-      }),
+          }),
+        })
+        .mockReturnValueOnce({
+          set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+        }),
     };
 
     mockDb.transaction

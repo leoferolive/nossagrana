@@ -3,6 +3,11 @@ import EventEmitter from 'node:events';
 import fp from 'fastify-plugin';
 
 import { WebSocketManager } from '../modules/ws/websocket-manager.js';
+import { WS_CLOSE_FAMILIA_EXCLUIDA } from '../modules/ws/ws-close-codes.js';
+import {
+  ehFamiliaExcluidaEvento,
+  FAMILIA_EXCLUIDA_EVENTO,
+} from '../shared/familia-lifecycle/familia-lifecycle.events.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -25,6 +30,18 @@ export const websocketPlugin = fp(async (fastify) => {
     wsManager.broadcast(familiaId, { tipo: 'transacao:alterada', familiaId });
   });
 
+  // Publicado pelo service DEPOIS do commit da exclusão (#66): encerra os sockets da família.
+  eventBus.on(FAMILIA_EXCLUIDA_EVENTO, (evento: unknown) => {
+    if (!ehFamiliaExcluidaEvento(evento)) {
+      fastify.log.warn(
+        { evento },
+        `Evento ${FAMILIA_EXCLUIDA_EVENTO} ignorado: recebido ${JSON.stringify(evento)}, esperado { familiaId: string }`,
+      );
+      return;
+    }
+    wsManager.closeFamily(evento.familiaId, WS_CLOSE_FAMILIA_EXCLUIDA, 'Familia excluida');
+  });
+
   // Heartbeat a cada 30s
   const HEARTBEAT_INTERVAL = 30_000;
   const PONG_TIMEOUT = 10_000;
@@ -37,7 +54,9 @@ export const websocketPlugin = fp(async (fastify) => {
           continue;
         }
         let alive = false;
-        ws.once('pong', () => { alive = true; });
+        ws.once('pong', () => {
+          alive = true;
+        });
         ws.ping();
         setTimeout(() => {
           if (!alive) {

@@ -25,6 +25,31 @@ export class WebSocketManager {
     }
   }
 
+  /**
+   * Encerra de forma controlada todos os sockets da família (ex.: exclusão) e
+   * esvazia o room. Retorna quantos sockets foram tratados. Um socket cujo
+   * `close` lança é terminado à força para não deixar conexão viva nem
+   * impedir o fechamento dos demais.
+   * Ex.: `closeFamily(familiaId, WS_CLOSE_FAMILIA_EXCLUIDA, 'Familia excluida')`.
+   */
+  closeFamily(familiaId: string, code: number, reason: string): number {
+    const room = this.rooms.get(familiaId);
+    if (!room) return 0;
+    this.rooms.delete(familiaId);
+    for (const ws of room) {
+      this.closeOrTerminate(ws, code, reason);
+    }
+    return room.size;
+  }
+
+  private closeOrTerminate(ws: WebSocket, code: number, reason: string): void {
+    try {
+      ws.close(code, reason);
+    } catch {
+      ws.terminate?.();
+    }
+  }
+
   roomSize(familiaId: string): number {
     return this.rooms.get(familiaId)?.size ?? 0;
   }

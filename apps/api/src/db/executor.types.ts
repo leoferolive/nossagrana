@@ -7,3 +7,6 @@ import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
  * dentro ou fora de uma Unit of Work.
  */
 export type ExecutorDrizzle = PgDatabase<PostgresJsQueryResultHKT, Record<string, never>>;
+
+/** Transação aberta por `executor.transaction(...)`, repassada aos passos privados dos repositórios. */
+export type TransacaoDrizzle = Parameters<Parameters<ExecutorDrizzle['transaction']>[0]>[0];

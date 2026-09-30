@@ -1,6 +1,6 @@
 import { and, eq, exists, gt, isNull, sql } from 'drizzle-orm';
 
-import type { ExecutorDrizzle } from '../../db/executor.types.js';
+import type { ExecutorDrizzle, TransacaoDrizzle } from '../../db/executor.types.js';
 import { convites, familias, usuarioFamilia } from '../../db/schema.js';
 import { classificarConvite, ehRepeticaoDoConsumidor } from './familia-convite.js';
 import type {
@@ -8,8 +8,6 @@ import type {
   CreatedFamilia,
   JoinFamiliaByInviteInput,
 } from './familia.types.js';
-
-type Transacao = Parameters<Parameters<ExecutorDrizzle['transaction']>[0]>[0];
 
 /**
  * Sinal interno para desfazer o consumo quando o usuário já é membro: o
@@ -51,7 +49,7 @@ export class DrizzleConviteConsumer {
   }
 
   private async consumirNaTransacao(
-    tx: Transacao,
+    tx: TransacaoDrizzle,
     input: JoinFamiliaByInviteInput,
     agora: Date,
   ): Promise<ConsumoConviteResultado> {
@@ -65,7 +63,11 @@ export class DrizzleConviteConsumer {
   }
 
   /** UPDATE condicional: o único ponto de decisão do uso único. */
-  private async marcarComoUsado(tx: Transacao, input: JoinFamiliaByInviteInput, agora: Date) {
+  private async marcarComoUsado(
+    tx: TransacaoDrizzle,
+    input: JoinFamiliaByInviteInput,
+    agora: Date,
+  ) {
     const [consumido] = await tx
       .update(convites)
       .set({ usadoPor: input.usuarioId, usadoEm: agora })
@@ -82,7 +84,7 @@ export class DrizzleConviteConsumer {
   }
 
   /** `false` quando o vínculo já existia (ON CONFLICT DO NOTHING não retorna linha). */
-  private async vincularMembro(tx: Transacao, usuarioId: string, familiaId: string) {
+  private async vincularMembro(tx: TransacaoDrizzle, usuarioId: string, familiaId: string) {
     const [vinculo] = await tx
       .insert(usuarioFamilia)
       .values({ usuarioId, familiaId, role: 'membro' })
@@ -91,14 +93,14 @@ export class DrizzleConviteConsumer {
     return Boolean(vinculo);
   }
 
-  private familiaAtivaDoConvite(tx: Transacao) {
+  private familiaAtivaDoConvite(tx: TransacaoDrizzle) {
     return tx
       .select({ um: sql`1` })
       .from(familias)
       .where(and(eq(familias.id, convites.familiaId), isNull(familias.deletedAt)));
   }
 
-  private async buscarFamilia(tx: Transacao, familiaId: string): Promise<CreatedFamilia> {
+  private async buscarFamilia(tx: TransacaoDrizzle, familiaId: string): Promise<CreatedFamilia> {
     const [familia] = await tx
       .select({ id: familias.id, nome: familias.nome, dataCriacao: familias.dataCriacao })
       .from(familias)
@@ -111,7 +113,7 @@ export class DrizzleConviteConsumer {
 
   /** Só roda quando o UPDATE não casou: descobre o motivo, sem alterar nada. */
   private async explicarRecusa(
-    tx: Transacao,
+    tx: TransacaoDrizzle,
     input: JoinFamiliaByInviteInput,
     agora: Date,
   ): Promise<ConsumoConviteResultado> {
@@ -126,7 +128,7 @@ export class DrizzleConviteConsumer {
     return { status: estado === 'elegivel' ? 'invalido' : estado };
   }
 
-  private async buscarConvite(tx: Transacao, codigo: string) {
+  private async buscarConvite(tx: TransacaoDrizzle, codigo: string) {
     const [convite] = await tx
       .select({
         familiaId: convites.familiaId,
@@ -141,7 +143,7 @@ export class DrizzleConviteConsumer {
     return convite;
   }
 
-  private async familiaSeAindaMembro(tx: Transacao, usuarioId: string, familiaId: string) {
+  private async familiaSeAindaMembro(tx: TransacaoDrizzle, usuarioId: string, familiaId: string) {
     const [vinculo] = await tx
       .select({ usuarioId: usuarioFamilia.usuarioId })
       .from(usuarioFamilia)

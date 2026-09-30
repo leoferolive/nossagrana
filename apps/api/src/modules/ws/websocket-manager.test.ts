@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { WebSocketFake } from './tests/websocket-fake.js';
 import { WebSocketManager } from './websocket-manager.js';
 
 const mockSocket = (readyState = 1 /* OPEN */) => ({
@@ -62,5 +63,50 @@ describe('WebSocketManager', () => {
 
   it('roomSize retorna 0 para room inexistente', () => {
     expect(manager.roomSize('inexistente')).toBe(0);
+  });
+  describe('closeFamily', () => {
+    it('fecha todos os sockets da família com código e motivo e esvazia o room', () => {
+      const a = new WebSocketFake();
+      const b = new WebSocketFake();
+      manager.join('f1', a.comoWebSocket());
+      manager.join('f1', b.comoWebSocket());
+
+      const fechados = manager.closeFamily('f1', 4004, 'Familia excluida');
+
+      expect(fechados).toBe(2);
+      expect(a.fechamento).toEqual({ codigo: 4004, motivo: 'Familia excluida' });
+      expect(b.fechamento).toEqual({ codigo: 4004, motivo: 'Familia excluida' });
+      expect(manager.roomSize('f1')).toBe(0);
+    });
+
+    it('não toca nos sockets de outra família (isolamento por familia_id)', () => {
+      const alvo = new WebSocketFake();
+      const outra = new WebSocketFake();
+      manager.join('f1', alvo.comoWebSocket());
+      manager.join('f2', outra.comoWebSocket());
+
+      manager.closeFamily('f1', 4004, 'Familia excluida');
+
+      expect(outra.fechamento).toBeNull();
+      expect(manager.roomSize('f2')).toBe(1);
+    });
+
+    it('um socket que falha ao fechar não impede os demais; ele é terminado à força', () => {
+      const quebrado = new WebSocketFake(true);
+      const saudavel = new WebSocketFake();
+      manager.join('f1', quebrado.comoWebSocket());
+      manager.join('f1', saudavel.comoWebSocket());
+
+      const fechados = manager.closeFamily('f1', 4004, 'Familia excluida');
+
+      expect(fechados).toBe(2);
+      expect(quebrado.encerradoPorTerminate).toBe(true);
+      expect(saudavel.fechamento).toEqual({ codigo: 4004, motivo: 'Familia excluida' });
+      expect(manager.roomSize('f1')).toBe(0);
+    });
+
+    it('não lança e retorna 0 para família sem sockets', () => {
+      expect(manager.closeFamily('inexistente', 4004, 'Familia excluida')).toBe(0);
+    });
   });
 });

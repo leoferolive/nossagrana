@@ -12,7 +12,7 @@ import {
   familiaReviewJoinRequestRequestSchema,
   familiaRequestJoinRequestSchema,
 } from '@nossagrana/types';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 import { env } from '../../config/env.js';
 import {
@@ -23,6 +23,11 @@ import {
   DrizzleTemplateTransacaoRepository,
   InMemoryTemplateTransacaoRepository,
 } from '../template-transacao/template-transacao.repository.js';
+import {
+  EventBusFamiliaLifecyclePublisher,
+  NoopFamiliaLifecyclePublisher,
+  type FamiliaLifecyclePublisher,
+} from '../../shared/familia-lifecycle/familia-lifecycle.events.js';
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 import {
   familiaBuscarSchema,
@@ -53,12 +58,13 @@ import {
   SelfMemberRemovalError,
 } from './familia.service.js';
 
-const defaultFamiliaService = (): FamiliaService => {
+const defaultFamiliaService = (lifecycle: FamiliaLifecyclePublisher): FamiliaService => {
   if (env.NODE_ENV === 'test') {
     return new FamiliaService(
       new InMemoryFamiliaRepository(),
       new InMemoryCategoriaRepository(),
       new InMemoryTemplateTransacaoRepository(),
+      lifecycle,
     );
   }
 
@@ -66,11 +72,22 @@ const defaultFamiliaService = (): FamiliaService => {
     new DrizzleFamiliaRepository(),
     new DrizzleCategoriaRepository(),
     new DrizzleTemplateTransacaoRepository(),
+    lifecycle,
   );
 };
 
+const lifecyclePublisherDe = (fastify: FastifyInstance): FamiliaLifecyclePublisher => {
+  if (fastify.eventBus) return new EventBusFamiliaLifecyclePublisher(fastify.eventBus, fastify.log);
+  // Sem `eventBus` os sockets da família excluída não são fechados; acontece se o
+  // `websocketPlugin` for registrado depois das rotas em `app.ts` (#66).
+  fastify.log.warn(
+    'eventBus ausente ao registrar familiaRoutes: exclusão de família não fechará sockets; registre websocketPlugin antes das rotas',
+  );
+  return new NoopFamiliaLifecyclePublisher();
+};
+
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
-  const familiaService = defaultFamiliaService();
+  const familiaService = defaultFamiliaService(lifecyclePublisherDe(fastify));
 
   fastify.get(
     '/familias/minhas',

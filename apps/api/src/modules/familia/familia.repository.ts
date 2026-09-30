@@ -6,6 +6,7 @@ import { db } from '../../db/client.js';
 import { convites, familias, solicitacoesEntrada, usuarioFamilia, users } from '../../db/schema.js';
 import { consumirConviteEmMemoria, type ConviteEmMemoria } from './familia-convite.js';
 import { DrizzleConviteConsumer } from './familia-convite.repository.js';
+import { DrizzleFamiliaExclusao } from './familia-exclusao.repository.js';
 import type {
   ConsumoConviteResultado,
   CreatedFamilia,
@@ -265,12 +266,7 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
   }
 
   async deleteFamily(input: { familiaId: string }): Promise<boolean> {
-    const result = await db
-      .update(familias)
-      .set({ deletedAt: new Date() })
-      .where(eq(familias.id, input.familiaId))
-      .returning({ id: familias.id });
-    return result.length > 0;
+    return new DrizzleFamiliaExclusao(db).excluir(input);
   }
 
   async buscarPorNome(nome: string): Promise<Array<{ id: string; nome: string }>> {

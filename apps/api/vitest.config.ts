@@ -23,6 +23,7 @@ export default defineConfig({
         'src/**/*.test.ts',
         'src/scripts/**',
         'src/db/tests/**',
+        'src/modules/ws/tests/**',
         'src/**/*.routes.ts',
         'src/**/*.types.ts',
         'src/modules/email/email.console-sender.ts',

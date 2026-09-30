@@ -79,7 +79,8 @@ restore a partir dele ser exercitado e registrado.
   drill **não** o recebe.
 - Chave restic e `rclone.conf`: Secret `restic-backup-secrets` (ns `database`).
 - `pg-dump-external`: Secret `pg-dump-external-db` (role `backup_ro`, somente
-  leitura via `pg_read_all_data`, não o superusuário) e Secret
+  leitura só em `nossagrana_prod` via `grant-backup-ro.sql`, sem `pg_read_all_data`
+  nem superusuário) e Secret
   `pg-dump-external-storage` (`rclone.conf`, `remote`, `age-recipient`). Nenhum
   valor é versionado; o CronJob só referencia os Secrets por nome.
 - **Chave privada age**: fica **fora do cluster** (gerenciador de senhas do dono).

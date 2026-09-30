@@ -248,10 +248,15 @@ Artefatos no destino (`<banco>` = `nossagrana_prod`):
    read -rs BACKUP_RO_PASSWORD
    kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1' <<SQL
    CREATE ROLE backup_ro LOGIN PASSWORD '$BACKUP_RO_PASSWORD';
-   GRANT CONNECT ON DATABASE nossagrana_prod TO backup_ro;
-   GRANT pg_read_all_data TO backup_ro;
    SQL
+   kubectl exec -i -n database deploy/postgres -- sh -c 'psql -U "$POSTGRES_USER" -d nossagrana_prod -v ON_ERROR_STOP=1' \
+     < k8s/backup/pg-dump-external/grant-backup-ro.sql
    ```
+   O `grant-backup-ro.sql` dá `SELECT` só em `nossagrana_prod` (schemas `public` e
+   `drizzle`, com default privileges para tabelas futuras). **Não** use
+   `pg_read_all_data`: é um role do cluster e abriria os demais bancos do servidor
+   a quem obtivesse o Secret. O smoke test aplica esse mesmo arquivo e prova que o
+   role não lê outro banco.
 3. **Secrets** (valores só na sua máquina; nada disso vai para o repositório). Use
    `--from-literal` com a variável do passo 2: gerar um arquivo com `echo` deixaria
    um `\n` no fim da senha e a autenticação falharia.
@@ -326,10 +331,14 @@ retenção depois de 30 dias. Para restaurar, use só artefatos com `.meta.json`
 
 ### Verificar um artefato
 
+O `.sha256` cita o nome original do artefato: baixe os dois arquivos **com o mesmo
+nome que têm no destino** (renomear quebra o `sha256sum -c`).
+
 ```bash
-rclone copyto <remoto>:<pasta>/<artefato>.dump.age ./artefato.dump.age
-rclone copyto <remoto>:<pasta>/<artefato>.dump.age.sha256 ./artefato.dump.age.sha256
-sha256sum -c artefato.dump.age.sha256
+ARTEFATO='<artefato>.dump.age'          # nome exato listado no destino
+rclone copyto "<remoto>:<pasta>/$ARTEFATO" "./$ARTEFATO"
+rclone copyto "<remoto>:<pasta>/$ARTEFATO.sha256" "./$ARTEFATO.sha256"
+sha256sum -c "$ARTEFATO.sha256"
 ```
 
 ### Restaurar a partir do dump externo
@@ -338,7 +347,7 @@ Exige a chave privada (fora do cluster). Restaura em banco paralelo e troca por
 rename, como em [Restaurar em produção](#restaurar-em-produção):
 
 ```bash
-age -d -i nossagrana-backup.key -o restore.dump artefato.dump.age
+age -d -i nossagrana-backup.key -o restore.dump "$ARTEFATO"    # $ARTEFATO: ver acima
 pg_restore --list restore.dump | head            # confere o TOC
 kubectl exec -n database deploy/postgres -- sh -c 'createdb -U "$POSTGRES_USER" -O nossagrana_prod nossagrana_prod_restore'
 kubectl exec -i -n database deploy/postgres -- sh -c \

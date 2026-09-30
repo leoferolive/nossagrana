@@ -108,14 +108,24 @@ prepare_environment() {
   docker network create "$NETWORK" >/dev/null
   docker run -d --name "$PG_CT" --network "$NETWORK" -e POSTGRES_PASSWORD=postgres "$POSTGRES_IMAGE" >/dev/null
   wait_pg_ready
+  # Mesmo passo a passo do RUNBOOK: role sem pg_read_all_data + grant-backup-ro.sql.
+  # A base de outra aplicação no mesmo servidor prova que o role não a enxerga.
   pg_exec -d postgres >/dev/null <<SQL
+CREATE ROLE nossagrana_prod LOGIN;
 CREATE ROLE backup_ro LOGIN PASSWORD '$ROLE_PASSWORD';
-GRANT pg_read_all_data TO backup_ro;
-CREATE DATABASE nossagrana_prod;
+CREATE DATABASE nossagrana_prod OWNER nossagrana_prod;
+CREATE DATABASE outra_aplicacao;
 SQL
   pg_exec -d nossagrana_prod >/dev/null <<'SQL'
+CREATE SCHEMA drizzle;
+CREATE TABLE drizzle.__drizzle_migrations (id serial PRIMARY KEY, hash text NOT NULL);
 CREATE TABLE familias (id serial PRIMARY KEY, nome text NOT NULL);
 INSERT INTO familias (nome) SELECT 'Familia ' || g FROM generate_series(1, 2000) g;
+SQL
+  pg_exec -d nossagrana_prod <"$JOB_DIR/grant-backup-ro.sql" >/dev/null
+  pg_exec -d outra_aplicacao >/dev/null <<'SQL'
+CREATE TABLE segredos (id serial PRIMARY KEY, valor text NOT NULL);
+INSERT INTO segredos (valor) VALUES ('nao-deve-vazar');
 SQL
   mkdir -p "$REMOTE_DIR" "$KEY_DIR"
   chmod 777 "$REMOTE_DIR"
@@ -145,6 +155,24 @@ test_full_cycle_restores_identical_data() {
     sh -c "age -d -i /keys/key.txt -o /tmp/restore.dump '/remote/$name' && pg_restore --no-owner -d restaurado /tmp/restore.dump"
   check "dados restaurados idênticos aos da origem (2000 famílias)" \
     test "$(pg_exec -d restaurado -At -c 'select count(*) from familias')" = "2000"
+}
+
+# Codex P1 (PR #143): backup_ro não pode ler outros bancos do servidor compartilhado
+# e continua somente leitura no banco da aplicação.
+test_backup_role_is_scoped_to_application_database() {
+  allowed() { "$@" >/dev/null 2>&1; }
+  denied() { ! "$@" >/dev/null 2>&1; }
+  backup_ro_psql() {
+    docker exec -i -e PGPASSWORD="$ROLE_PASSWORD" "$PG_CT" psql -q -h 127.0.0.1 -U backup_ro "$@"
+  }
+  check "backup_ro lê o banco da aplicação (public e drizzle)" \
+    allowed backup_ro_psql -d nossagrana_prod -c 'select count(*) from familias; select count(*) from drizzle.__drizzle_migrations'
+  check "backup_ro NÃO lê tabelas de outro banco do servidor" \
+    denied backup_ro_psql -d outra_aplicacao -c 'select valor from segredos'
+  check "backup_ro não escreve no banco da aplicação" \
+    denied backup_ro_psql -d nossagrana_prod -c 'delete from familias'
+  check "backup_ro não é membro de pg_read_all_data" \
+    test "$(pg_exec -d postgres -At -c "select pg_has_role('backup_ro', 'pg_read_all_data', 'member')")" = "f"
 }
 
 test_wrong_password_fails_without_uploading() {
@@ -219,6 +247,7 @@ if ! prepare_environment; then
   exit 1
 fi
 test_full_cycle_restores_identical_data
+test_backup_role_is_scoped_to_application_database
 test_wrong_password_fails_without_uploading
 test_second_run_never_overwrites_first
 test_dump_timeout_is_reported_as_timeout

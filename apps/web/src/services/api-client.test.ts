@@ -181,6 +181,7 @@ describe('ApiClient', () => {
       ]);
 
       expect(server.refreshCalls).toBe(1);
+      expect(server.reuseDetected).toBe(false);
       expect(results).toEqual([{ ok: true }, { ok: true }, { ok: true }, { ok: true }]);
       expect(state.accessToken).toBe('access-2');
       expect(server.retriesWithToken).toEqual(['access-2', 'access-2', 'access-2', 'access-2']);
@@ -197,6 +198,7 @@ describe('ApiClient', () => {
       ]);
 
       expect(server.refreshCalls).toBe(1);
+      expect(server.reuseDetected).toBe(false);
       expect(clearSession).toHaveBeenCalledTimes(1);
       expect(results.every((r) => r.status === 'rejected')).toBe(true);
     });
@@ -220,15 +222,40 @@ describe('ApiClient', () => {
       const lenta = client.request('/api/lenta');
       await client.request('/api/rapida');
       server.releaseStale();
-      await lenta;
+      const resultado = await lenta;
+
+      expect(resultado).toEqual({ ok: true });
+      expect(server.refreshCalls).toBe(1);
+      expect(server.reuseDetected).toBe(false);
+      expect(server.retriesWithToken.at(-1)).toBe('access-2');
+    });
+
+    it('erro de rede no refresh falha as requisições, não trava o single-flight e permite novo refresh', async () => {
+      const server = new FakeAuthServer({ refreshThrows: true });
+      const { client, state } = buildClient(server);
+
+      const results = await Promise.allSettled([
+        client.request('/api/a'),
+        client.request('/api/b'),
+      ]);
 
       expect(server.refreshCalls).toBe(1);
+      expect(results.every((r) => r.status === 'rejected')).toBe(true);
+
+      server.recoverNetwork();
+      await expect(client.request('/api/c')).resolves.toEqual({ ok: true });
+
+      expect(server.refreshCalls).toBe(2);
+      expect(server.reuseDetected).toBe(false);
+      expect(state.accessToken).toBe('access-2');
     });
   });
 });
 
 interface FakeAuthServerOptions {
   refreshFails?: boolean;
+  /** O fetch do refresh lança erro de rede (TypeError) até `recoverNetwork()`. */
+  refreshThrows?: boolean;
   /** A primeira requisição `/api/lenta` fica pendurada até `releaseStale()` e responde 401. */
   delayedStaleResponse?: boolean;
 }
@@ -236,13 +263,24 @@ interface FakeAuthServerOptions {
 /** Fake do servidor de auth: access válido é o último emitido; refresh conta chamadas. */
 class FakeAuthServer {
   refreshCalls = 0;
+  /** Verdadeiro se um refresh token já usado foi reapresentado (o que revogaria as sessões). */
+  reuseDetected = false;
   readonly retriesWithToken: string[] = [];
   private validAccess = 'access-1';
   private issued = 1;
   private releaseSlow: (() => void) | null = null;
   private slowServed = false;
+  private networkDown: boolean;
+  private currentRefresh = 'refresh-1';
+  private readonly usedRefresh = new Set<string>();
 
-  constructor(private readonly options: FakeAuthServerOptions = {}) {}
+  constructor(private readonly options: FakeAuthServerOptions = {}) {
+    this.networkDown = options.refreshThrows ?? false;
+  }
+
+  recoverNetwork(): void {
+    this.networkDown = false;
+  }
 
   expireAccessToken(): void {
     this.validAccess = 'expired';
@@ -254,17 +292,21 @@ class FakeAuthServer {
 
   readonly fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = String(input);
-    if (url.endsWith('/api/auth/refresh')) return this.handleRefresh();
+    if (url.endsWith('/api/auth/refresh')) return this.handleRefresh(init);
     const token = new Headers(init?.headers).get('Authorization')?.replace('Bearer ', '') ?? '';
     if (this.options.delayedStaleResponse && url.endsWith('/api/lenta') && !this.slowServed) {
       this.slowServed = true;
-      await new Promise<void>((resolve) => {
-        this.releaseSlow = resolve;
-      });
+      await this.waitForRelease();
       return new Response(null, { status: 401 });
     }
     return this.handleResource(token);
   };
+
+  private waitForRelease(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      this.releaseSlow = resolve;
+    });
+  }
 
   private handleResource(token: string): Response {
     if (token !== this.validAccess) return new Response(null, { status: 401 });
@@ -275,14 +317,22 @@ class FakeAuthServer {
     });
   }
 
-  private async handleRefresh(): Promise<Response> {
+  private async handleRefresh(init?: RequestInit): Promise<Response> {
     this.refreshCalls += 1;
     await Promise.resolve();
+    if (this.networkDown) throw new TypeError('Failed to fetch');
     if (this.options.refreshFails) return new Response(null, { status: 401 });
+    const { refreshToken } = JSON.parse(String(init?.body)) as { refreshToken: string };
+    if (this.usedRefresh.has(refreshToken) || refreshToken !== this.currentRefresh) {
+      this.reuseDetected = true;
+      return new Response(null, { status: 401 });
+    }
+    this.usedRefresh.add(refreshToken);
     this.issued += 1;
     this.validAccess = `access-${this.issued}`;
+    this.currentRefresh = `refresh-${this.issued}`;
     return new Response(
-      JSON.stringify({ accessToken: this.validAccess, refreshToken: `refresh-${this.issued}` }),
+      JSON.stringify({ accessToken: this.validAccess, refreshToken: this.currentRefresh }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
   }

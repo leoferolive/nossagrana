@@ -85,7 +85,8 @@ export interface FamiliaRepository {
   /** `null` quando a família não existe ou foi excluída (nenhum convite é gravado). */
   createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite | null>;
   joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado>;
-  requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest>;
+  /** `null` quando a família não existe ou foi excluída (nenhuma solicitação é gravada). */
+  requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest | null>;
   listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]>;
   reviewJoinRequest(input: {
     solicitacaoId: string;

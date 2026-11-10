@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 const distribuicaoItemZod = z.object({
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   total: z.string(),
   percentual: z.number(),
 });
 
 const porUsuarioItemZod = z.object({
-  usuarioId: z.string().uuid(),
+  usuarioId: z.guid(),
   usuarioNome: z.string(),
   total: z.string(),
   percentual: z.number(),

@@ -23,7 +23,7 @@ export const orcamentoListSchema = {
 };
 
 export const orcamentoSetSchema = {
-  params: z.object({ categoriaId: z.string().uuid() }),
+  params: z.object({ categoriaId: z.guid() }),
   body: z.object({
     valorLimite: z.string().regex(/^\d+(\.\d{1,2})?$/),
     vigenciaInicio: z.string().regex(/^\d{4}-\d{2}$/),
@@ -37,7 +37,7 @@ export const orcamentoSetSchema = {
 };
 
 export const orcamentoHistoricoSchema = {
-  params: z.object({ categoriaId: z.string().uuid() }),
+  params: z.object({ categoriaId: z.guid() }),
   response: {
     200: orcamentoHistoricoResponseSchema,
     400: errorSchemas[400],

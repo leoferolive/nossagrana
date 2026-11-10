@@ -19,7 +19,7 @@ declare module 'fastify' {
   }
 }
 
-const familiaHeaderSchema = z.string().uuid();
+const familiaHeaderSchema = z.guid();
 
 export const familiaScopePlugin = fp(async (fastify) => {
   fastify.decorate('requireFamiliaScope', async (request, reply) => {

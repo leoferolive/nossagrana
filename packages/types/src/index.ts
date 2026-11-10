@@ -27,7 +27,7 @@ export type AuthRegisterRequest = z.infer<typeof authRegisterRequestSchema>;
 
 export const authRegisterResponseSchema = z.object({
   user: z.object({
-    id: z.string().uuid(),
+    id: z.guid(),
     nome: z.string(),
     email: z.string().email(),
     dataCriacao: z.string(),
@@ -97,7 +97,7 @@ export type FamiliaCreateRequest = z.infer<typeof familiaCreateRequestSchema>;
 
 export const familiaCreateResponseSchema = z.object({
   familia: z.object({
-    id: z.string().uuid(),
+    id: z.guid(),
     nome: z.string().min(1),
     dataCriacao: z.string(),
   }),
@@ -111,11 +111,11 @@ export type FamiliaCreateInviteRequest = z.infer<typeof familiaCreateInviteReque
 
 export const familiaCreateInviteResponseSchema = z.object({
   convite: z.object({
-    id: z.string().uuid(),
-    familiaId: z.string().uuid(),
+    id: z.guid(),
+    familiaId: z.guid(),
     codigo: z.string().min(1),
     expiraEm: z.string(),
-    criadoPor: z.string().uuid(),
+    criadoPor: z.guid(),
     dataCriacao: z.string(),
   }),
 });
@@ -134,7 +134,7 @@ export type FamiliaJoinByInviteRequest = z.infer<typeof familiaJoinByInviteReque
 
 export const familiaJoinByInviteResponseSchema = z.object({
   familia: z.object({
-    id: z.string().uuid(),
+    id: z.guid(),
     nome: z.string().min(1),
     dataCriacao: z.string(),
   }),
@@ -143,16 +143,16 @@ export const familiaJoinByInviteResponseSchema = z.object({
 export type FamiliaJoinByInviteResponse = z.infer<typeof familiaJoinByInviteResponseSchema>;
 
 export const familiaRequestJoinRequestSchema = z.object({
-  familiaId: z.string().uuid(),
+  familiaId: z.guid(),
 });
 
 export type FamiliaRequestJoinRequest = z.infer<typeof familiaRequestJoinRequestSchema>;
 
 export const familiaRequestJoinResponseSchema = z.object({
   solicitacao: z.object({
-    id: z.string().uuid(),
-    familiaId: z.string().uuid(),
-    usuarioId: z.string().uuid(),
+    id: z.guid(),
+    familiaId: z.guid(),
+    usuarioId: z.guid(),
     status: z.literal('pendente'),
     solicitadoEm: z.string(),
   }),
@@ -163,9 +163,9 @@ export type FamiliaRequestJoinResponse = z.infer<typeof familiaRequestJoinRespon
 export const familiaListJoinRequestsResponseSchema = z.object({
   solicitacoes: z.array(
     z.object({
-      id: z.string().uuid(),
-      familiaId: z.string().uuid(),
-      usuarioId: z.string().uuid(),
+      id: z.guid(),
+      familiaId: z.guid(),
+      usuarioId: z.guid(),
       status: z.literal('pendente'),
       solicitadoEm: z.string(),
     }),
@@ -175,7 +175,7 @@ export const familiaListJoinRequestsResponseSchema = z.object({
 export type FamiliaListJoinRequestsResponse = z.infer<typeof familiaListJoinRequestsResponseSchema>;
 
 export const familiaReviewJoinRequestParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export type FamiliaReviewJoinRequestParams = z.infer<typeof familiaReviewJoinRequestParamsSchema>;
@@ -188,13 +188,13 @@ export type FamiliaReviewJoinRequestRequest = z.infer<typeof familiaReviewJoinRe
 
 export const familiaReviewJoinRequestResponseSchema = z.object({
   solicitacao: z.object({
-    id: z.string().uuid(),
-    familiaId: z.string().uuid(),
-    usuarioId: z.string().uuid(),
+    id: z.guid(),
+    familiaId: z.guid(),
+    usuarioId: z.guid(),
     status: z.enum(['aprovada', 'rejeitada']),
     solicitadoEm: z.string(),
     respondidoEm: z.string(),
-    respondidoPor: z.string().uuid(),
+    respondidoPor: z.guid(),
   }),
 });
 
@@ -203,7 +203,7 @@ export type FamiliaReviewJoinRequestResponse = z.infer<
 >;
 
 export const familiaListMembersParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export type FamiliaListMembersParams = z.infer<typeof familiaListMembersParamsSchema>;
@@ -211,8 +211,8 @@ export type FamiliaListMembersParams = z.infer<typeof familiaListMembersParamsSc
 export const familiaListMembersResponseSchema = z.object({
   membros: z.array(
     z.object({
-      usuarioId: z.string().uuid(),
-      familiaId: z.string().uuid(),
+      usuarioId: z.guid(),
+      familiaId: z.guid(),
       nome: z.string(),
       role: z.enum(['admin', 'membro']),
       dataEntrada: z.string(),
@@ -223,26 +223,26 @@ export const familiaListMembersResponseSchema = z.object({
 export type FamiliaListMembersResponse = z.infer<typeof familiaListMembersResponseSchema>;
 
 export const familiaRemoveMemberParamsSchema = z.object({
-  id: z.string().uuid(),
-  usuarioId: z.string().uuid(),
+  id: z.guid(),
+  usuarioId: z.guid(),
 });
 
 export type FamiliaRemoveMemberParams = z.infer<typeof familiaRemoveMemberParamsSchema>;
 
 export const familiaSwitchActiveRequestSchema = z.object({
-  familiaId: z.string().uuid(),
+  familiaId: z.guid(),
 });
 
 export type FamiliaSwitchActiveRequest = z.infer<typeof familiaSwitchActiveRequestSchema>;
 
 export const familiaSwitchActiveResponseSchema = z.object({
-  familiaIdAtiva: z.string().uuid(),
+  familiaIdAtiva: z.guid(),
 });
 
 export type FamiliaSwitchActiveResponse = z.infer<typeof familiaSwitchActiveResponseSchema>;
 
 export const familiaDeleteParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export type FamiliaDeleteParams = z.infer<typeof familiaDeleteParamsSchema>;
@@ -250,12 +250,12 @@ export type FamiliaDeleteParams = z.infer<typeof familiaDeleteParamsSchema>;
 export const categoriaListResponseSchema = z.object({
   categorias: z.array(
     z.object({
-      id: z.string().uuid(),
-      familiaId: z.string().uuid(),
+      id: z.guid(),
+      familiaId: z.guid(),
       nome: z.string().min(1),
       tipo: categoriaTipoSchema,
       ativo: z.boolean(),
-      criadoPor: z.string().uuid(),
+      criadoPor: z.guid(),
       criadoEm: z.string(),
     }),
   ),
@@ -272,12 +272,12 @@ export type CategoriaCreateRequest = z.infer<typeof categoriaCreateRequestSchema
 
 export const categoriaCreateResponseSchema = z.object({
   categoria: z.object({
-    id: z.string().uuid(),
-    familiaId: z.string().uuid(),
+    id: z.guid(),
+    familiaId: z.guid(),
     nome: z.string().min(1),
     tipo: categoriaTipoSchema,
     ativo: z.boolean(),
-    criadoPor: z.string().uuid(),
+    criadoPor: z.guid(),
     criadoEm: z.string(),
   }),
 });
@@ -285,7 +285,7 @@ export const categoriaCreateResponseSchema = z.object({
 export type CategoriaCreateResponse = z.infer<typeof categoriaCreateResponseSchema>;
 
 export const categoriaUpdateParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export type CategoriaUpdateParams = z.infer<typeof categoriaUpdateParamsSchema>;
@@ -302,19 +302,19 @@ export const categoriaUpdateResponseSchema = categoriaCreateResponseSchema;
 export type CategoriaUpdateResponse = z.infer<typeof categoriaUpdateResponseSchema>;
 
 export const categoriaDeleteParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export type CategoriaDeleteParams = z.infer<typeof categoriaDeleteParamsSchema>;
 
 export const categoriaDeleteResponseSchema = z.object({
   categoria: z.object({
-    id: z.string().uuid(),
-    familiaId: z.string().uuid(),
+    id: z.guid(),
+    familiaId: z.guid(),
     nome: z.string().min(1),
     tipo: categoriaTipoSchema,
     ativo: z.boolean(),
-    criadoPor: z.string().uuid(),
+    criadoPor: z.guid(),
     criadoEm: z.string(),
   }),
 });
@@ -327,13 +327,13 @@ export const metodoPagamentoTipoSchema = z.enum(['credito', 'debito', 'pix', 'di
 export type MetodoPagamentoTipo = z.infer<typeof metodoPagamentoTipoSchema>;
 
 const metodoPagamentoSchema = z.object({
-  id: z.string().uuid(),
-  familiaId: z.string().uuid(),
+  id: z.guid(),
+  familiaId: z.guid(),
   nome: z.string().min(1),
   tipo: metodoPagamentoTipoSchema,
   dataFechamento: z.number().int().min(1).max(31).nullable(),
   dataVencimento: z.number().int().min(1).max(31).nullable(),
-  usuarioDonoId: z.string().uuid(),
+  usuarioDonoId: z.guid(),
   ativo: z.boolean(),
   criadoEm: z.string(),
 });
@@ -356,7 +356,7 @@ export const metodoPagamentoCreateResponseSchema = z.object({
 });
 export type MetodoPagamentoCreateResponse = z.infer<typeof metodoPagamentoCreateResponseSchema>;
 
-export const metodoPagamentoParamsSchema = z.object({ id: z.string().uuid() });
+export const metodoPagamentoParamsSchema = z.object({ id: z.guid() });
 export type MetodoPagamentoParams = z.infer<typeof metodoPagamentoParamsSchema>;
 
 export const metodoPagamentoUpdateRequestSchema = z.object({
@@ -382,16 +382,16 @@ export const transacaoFrequenciaSchema = z.enum(['mensal', 'semanal', 'quinzenal
 export type TransacaoFrequencia = z.infer<typeof transacaoFrequenciaSchema>;
 
 const transacaoSchema = z.object({
-  id: z.string().uuid(),
-  familiaId: z.string().uuid(),
+  id: z.guid(),
+  familiaId: z.guid(),
   tipo: transacaoTipoSchema,
   valor: z.string(),
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   descricao: z.string().nullable(),
   data: z.string(),
   mesReferencia: z.string(),
-  metodoPagamentoId: z.string().uuid().nullable(),
-  usuarioRegistrouId: z.string().uuid(),
+  metodoPagamentoId: z.guid().nullable(),
+  usuarioRegistrouId: z.guid(),
   recorrente: z.boolean(),
   frequencia: transacaoFrequenciaSchema.nullable(),
   dataFimRecorrencia: z.string().nullable(),
@@ -400,7 +400,7 @@ const transacaoSchema = z.object({
   parcelaAtual: z.number().int().nullable(),
   valorTotal: z.string().nullable(),
   valorParcela: z.string().nullable(),
-  transacaoPaiId: z.string().uuid().nullable(),
+  transacaoPaiId: z.guid().nullable(),
   criadoEm: z.string(),
   atualizadoEm: z.string(),
 });
@@ -408,10 +408,10 @@ const transacaoSchema = z.object({
 export const transacaoCreateRequestSchema = z.object({
   tipo: transacaoTipoSchema,
   valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   descricao: z.string().trim().optional().nullable(),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve ser YYYY-MM-DD'),
-  metodoPagamentoId: z.string().uuid().optional().nullable(),
+  metodoPagamentoId: z.guid().optional().nullable(),
   parcelado: z.boolean().optional().default(false),
   numeroParcelas: z.number().int().min(2).max(72).optional().nullable(),
   recorrente: z.boolean().optional().default(false),
@@ -427,7 +427,7 @@ export type TransacaoCreateRequest = z.infer<typeof transacaoCreateRequestSchema
 export const transacaoCreateResponseSchema = z.object({ transacao: transacaoSchema });
 export type TransacaoCreateResponse = z.infer<typeof transacaoCreateResponseSchema>;
 
-export const transacaoParamsSchema = z.object({ id: z.string().uuid() });
+export const transacaoParamsSchema = z.object({ id: z.guid() });
 export type TransacaoParams = z.infer<typeof transacaoParamsSchema>;
 
 export const transacaoListQuerySchema = z.object({
@@ -436,9 +436,9 @@ export const transacaoListQuerySchema = z.object({
     .regex(/^\d{4}-\d{2}$/)
     .optional(),
   tipo: transacaoTipoSchema.optional(),
-  categoriaId: z.string().uuid().optional(),
-  usuarioRegistrouId: z.string().uuid().optional(),
-  metodoPagamentoId: z.string().uuid().optional(),
+  categoriaId: z.guid().optional(),
+  usuarioRegistrouId: z.guid().optional(),
+  metodoPagamentoId: z.guid().optional(),
 });
 export type TransacaoListQuery = z.infer<typeof transacaoListQuerySchema>;
 
@@ -451,10 +451,10 @@ export type TransacaoResponse = z.infer<typeof transacaoResponseSchema>;
 export const transacaoUpdateRequestSchema = z.object({
   tipo: transacaoTipoSchema,
   valor: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Valor inválido'),
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   descricao: z.string().trim().optional().nullable(),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  metodoPagamentoId: z.string().uuid().optional().nullable(),
+  metodoPagamentoId: z.guid().optional().nullable(),
 });
 export type TransacaoUpdateRequest = z.infer<typeof transacaoUpdateRequestSchema>;
 
@@ -493,7 +493,7 @@ export const dashboardResumoResponseSchema = z.object({
 export type DashboardResumoResponse = z.infer<typeof dashboardResumoResponseSchema>;
 
 export const dashboardDistribuicaoCategoriaSchema = z.object({
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   total: z.string(),
   percentual: z.number(),
@@ -514,7 +514,7 @@ export const dashboardGraficosResponseSchema = z.object({
 export type DashboardGraficosResponse = z.infer<typeof dashboardGraficosResponseSchema>;
 
 export const dashboardOrcamentoItemSchema = z.object({
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   valorLimite: z.string(),
   totalGasto: z.string(),
@@ -537,7 +537,7 @@ export const orcamentoQuerySchema = z.object({
 export type OrcamentoQuery = z.infer<typeof orcamentoQuerySchema>;
 
 export const orcamentoCategoriaParamsSchema = z.object({
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
 });
 export type OrcamentoCategoriaParams = z.infer<typeof orcamentoCategoriaParamsSchema>;
 
@@ -548,8 +548,8 @@ export const orcamentoSetRequestSchema = z.object({
 export type OrcamentoSetRequest = z.infer<typeof orcamentoSetRequestSchema>;
 
 export const orcamentoItemSchema = z.object({
-  id: z.string().uuid(),
-  categoriaId: z.string().uuid(),
+  id: z.guid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   valorLimite: z.string(),
   vigenciaInicio: z.string(),
@@ -566,8 +566,8 @@ export const orcamentoListResponseSchema = z.object({
 export type OrcamentoListResponse = z.infer<typeof orcamentoListResponseSchema>;
 
 export const orcamentoHistoricoItemSchema = z.object({
-  id: z.string().uuid(),
-  categoriaId: z.string().uuid(),
+  id: z.guid(),
+  categoriaId: z.guid(),
   valorLimite: z.string(),
   vigenciaInicio: z.string(),
   vigenciaFim: z.string().nullable(),
@@ -601,7 +601,7 @@ export const relatorioTendenciasQuerySchema = z.object({
 export type RelatorioTendenciasQuery = z.infer<typeof relatorioTendenciasQuerySchema>;
 
 export const relatorioDistribuicaoItemSchema = z.object({
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   total: z.string(),
   percentual: z.number(),
@@ -615,7 +615,7 @@ export const relatorioDistribuicaoResponseSchema = z.object({
 export type RelatorioDistribuicaoResponse = z.infer<typeof relatorioDistribuicaoResponseSchema>;
 
 export const relatorioPorUsuarioItemSchema = z.object({
-  usuarioId: z.string().uuid(),
+  usuarioId: z.guid(),
   usuarioNome: z.string(),
   total: z.string(),
   percentual: z.number(),
@@ -644,17 +644,17 @@ export type RelatorioTendenciasResponse = z.infer<typeof relatorioTendenciasResp
 // ─── Fatura ───────────────────────────────────────────────────────────────────
 
 export const faturaParamsSchema = z.object({
-  metodoPagamentoId: z.string().uuid(),
+  metodoPagamentoId: z.guid(),
   mesReferencia: z.string().regex(/^\d{4}-\d{2}$/, 'Mês no formato YYYY-MM'),
 });
 export type FaturaParams = z.infer<typeof faturaParamsSchema>;
 
 export const faturaItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   descricao: z.string().nullable(),
   valor: z.string(),
   data: z.string(),
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   usuarioNome: z.string(),
   parcelaAtual: z.number().int().nullable(),
@@ -663,7 +663,7 @@ export const faturaItemSchema = z.object({
 export type FaturaItem = z.infer<typeof faturaItemSchema>;
 
 export const faturaResponseSchema = z.object({
-  metodoPagamentoId: z.string().uuid(),
+  metodoPagamentoId: z.guid(),
   mesReferencia: z.string(),
   total: z.string(),
   transacoes: z.array(faturaItemSchema),
@@ -694,14 +694,14 @@ export const historicoMesParamsSchema = z.object({
 export type HistoricoMesParams = z.infer<typeof historicoMesParamsSchema>;
 
 export const snapshotDadosCategoriaSchema = z.object({
-  categoriaId: z.string().uuid(),
+  categoriaId: z.guid(),
   categoriaNome: z.string(),
   total: z.string(),
 });
 export type SnapshotDadosCategoria = z.infer<typeof snapshotDadosCategoriaSchema>;
 
 export const snapshotDadosUsuarioSchema = z.object({
-  usuarioId: z.string().uuid(),
+  usuarioId: z.guid(),
   usuarioNome: z.string(),
   total: z.string(),
 });
@@ -741,7 +741,7 @@ export type SnapshotManualResponse = z.infer<typeof snapshotManualResponseSchema
 // ─── Familia Minhas ──────────────────────────────────────────────────────────
 
 export const familiaMinhasItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   nome: z.string(),
   role: z.enum(['admin', 'membro']),
   dataEntrada: z.string(),
@@ -763,7 +763,7 @@ export type FamiliaBuscarQuery = z.infer<typeof familiaBuscarQuerySchema>;
 export const familiaBuscarResponseSchema = z.object({
   familias: z.array(
     z.object({
-      id: z.string().uuid(),
+      id: z.guid(),
       nome: z.string(),
     }),
   ),
@@ -779,15 +779,15 @@ export const movimentacaoCofrinhoTipoSchema = z.enum(['aporte', 'retirada']);
 export type MovimentacaoCofrinhoTipo = z.infer<typeof movimentacaoCofrinhoTipoSchema>;
 
 const cofrinhoSchema = z.object({
-  id: z.string().uuid(),
-  familiaId: z.string().uuid(),
+  id: z.guid(),
+  familiaId: z.guid(),
   nome: z.string().min(1),
   emoji: z.string().nullable(),
   descricao: z.string().nullable(),
   metaValor: z.string().nullable(),
   saldoAtual: z.string(),
   status: cofrinhoStatusSchema,
-  criadoPor: z.string().uuid(),
+  criadoPor: z.guid(),
   criadoEm: z.string(),
   encerradoEm: z.string().nullable(),
 });
@@ -819,7 +819,7 @@ export const cofrinhoUpdateRequestSchema = z.object({
 });
 export type CofrinhoUpdateRequest = z.infer<typeof cofrinhoUpdateRequestSchema>;
 
-export const cofrinhoParamsSchema = z.object({ id: z.string().uuid() });
+export const cofrinhoParamsSchema = z.object({ id: z.guid() });
 export type CofrinhoParams = z.infer<typeof cofrinhoParamsSchema>;
 
 export const cofrinhoListQuerySchema = z.object({
@@ -833,13 +833,13 @@ export const cofrinhoListResponseSchema = z.object({
 export type CofrinhoListResponse = z.infer<typeof cofrinhoListResponseSchema>;
 
 const movimentacaoCofrinhoSchema = z.object({
-  id: z.string().uuid(),
-  cofrinhoId: z.string().uuid(),
+  id: z.guid(),
+  cofrinhoId: z.guid(),
   tipo: movimentacaoCofrinhoTipoSchema,
   valor: z.string(),
   descricao: z.string().nullable(),
-  transacaoId: z.string().uuid().nullable(),
-  registradoPor: z.string().uuid(),
+  transacaoId: z.guid().nullable(),
+  registradoPor: z.guid(),
   registradoEm: z.string(),
   mesReferencia: z.string(),
 });
@@ -849,7 +849,7 @@ export const cofrinhoDetalheResponseSchema = z.object({
   movimentacoes: z.array(movimentacaoCofrinhoSchema),
   aporteRecorrenteAtivo: z
     .object({
-      transacaoPaiId: z.string().uuid(),
+      transacaoPaiId: z.guid(),
       valor: z.string(),
       frequencia: transacaoFrequenciaSchema,
       dataFimRecorrencia: z.string().nullable(),
@@ -910,7 +910,7 @@ export const cofrinhoEncerrarResponseSchema = z.object({ cofrinho: cofrinhoSchem
 export type CofrinhoEncerrarResponse = z.infer<typeof cofrinhoEncerrarResponseSchema>;
 
 export const cofrinhoResumoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   nome: z.string(),
   emoji: z.string().nullable(),
   saldoAtual: z.string(),

@@ -117,6 +117,64 @@ describe('AuthService.logout x refresh em voo (#116)', () => {
   });
 });
 
+describe('AuthService.login x logout pendente (#116)', () => {
+  const montar = (logoutFalha = false) => {
+    const postados: string[] = [];
+    let terminarRefresh!: () => void;
+    const apiClient = buildApiClient({
+      aguardarRefresh: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            terminarRefresh = resolve;
+          }),
+      ),
+      request: vi.fn(async (path: string) => {
+        postados.push(path);
+        if (path === '/api/auth/logout' && logoutFalha) throw new Error('500');
+        return { accessToken: 'at' };
+      }) as ApiClient['request'],
+    });
+    return { service: new AuthService(apiClient), postados, liberar: () => terminarRefresh() };
+  };
+  const credenciais = { email: 'a@b.c', senha: 'senha12345' };
+
+  it('o POST de login só sai depois do POST de logout (o cookie novo não é revogado)', async () => {
+    const { service, postados, liberar } = montar();
+
+    const logout = service.logout();
+    const login = service.login(credenciais);
+    await Promise.resolve();
+    expect(postados).toEqual([]);
+    liberar();
+    await Promise.all([logout, login]);
+
+    expect(postados).toEqual(['/api/auth/logout', '/api/auth/login']);
+  });
+
+  it('erro no logout pendente não impede o login', async () => {
+    const { service, postados, liberar } = montar(true);
+
+    const logout = service.logout().catch(() => undefined);
+    const login = service.login(credenciais);
+    liberar();
+    await logout;
+
+    await expect(login).resolves.toEqual({ accessToken: 'at' });
+    expect(postados).toEqual(['/api/auth/logout', '/api/auth/login']);
+  });
+
+  it('sem logout pendente o login sai imediatamente, e a referência é limpa após o logout', async () => {
+    const { service, postados, liberar } = montar();
+    const logout = service.logout();
+    liberar();
+    await logout;
+
+    await service.login(credenciais);
+
+    expect(postados).toEqual(['/api/auth/logout', '/api/auth/login']);
+  });
+});
+
 describe('AuthService.login retoma a sessão (#116)', () => {
   it('login bem-sucedido libera refreshes de novo; falho não', async () => {
     const apiClient = buildApiClient();

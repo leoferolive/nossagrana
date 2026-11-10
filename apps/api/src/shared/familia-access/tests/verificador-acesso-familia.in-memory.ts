@@ -9,7 +9,7 @@ import type { VerificadorAcessoFamilia } from '../verificador-acesso-familia.js'
  * criou ou entrou na família pela API (#79). `obterRepositorio` é lazy porque o
  * verificador nasce antes da app que detém os repositórios compartilhados.
  */
-export class VerificadorAcessoFamiliaInMemory implements VerificadorAcessoFamilia {
+class VerificadorAcessoFamiliaInMemory implements VerificadorAcessoFamilia {
   constructor(private readonly obterRepositorio: () => InMemoryFamiliaRepository) {}
 
   async verificar(usuarioId: string, familiaId: string): Promise<AcessoFamilia> {

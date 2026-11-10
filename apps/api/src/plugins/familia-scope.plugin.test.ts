@@ -194,12 +194,12 @@ describe('familiaScopePlugin', () => {
     await app.close();
   });
 
-  it('fails closed with 403 when the membership lookup throws', async () => {
+  it('fails closed with 503 when the membership lookup throws', async () => {
     mockLimit.mockRejectedValue(new Error('db down'));
 
     const response = await requestFamily();
 
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(503);
     expect(response.json()).toMatchObject({ error: { code: 'FAMILIA_ACESSO_INDISPONIVEL' } });
   });
 });

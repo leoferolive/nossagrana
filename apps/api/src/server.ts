@@ -1,11 +1,14 @@
 import { buildApp } from './app.js';
 import { env } from './config/env.js';
+import { assertNodeEnvDoServidor } from './config/node-env-servidor.js';
 import { runMigrations } from './db/migrate.js';
 import { iniciarRevokedTokenCleanupJob } from './modules/auth/revoked-token-cleanup.job.js';
 import { iniciarSnapshotJob } from './modules/historico/snapshot.job.js';
 import { iniciarLimpezaIdempotenciaJob } from './shared/idempotencia/idempotencia-limpeza.job.js';
 
 const start = async () => {
+  assertNodeEnvDoServidor(env.NODE_ENV);
+
   try {
     await runMigrations();
   } catch (error) {

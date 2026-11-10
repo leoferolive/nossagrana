@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import { z } from 'zod';
 
+import type { AcessoFamilia } from '../shared/familia-access/familia-access.repository.js';
 import {
   DrizzleVerificadorAcessoFamilia,
   type VerificadorAcessoFamilia,
@@ -42,17 +43,38 @@ function familiaIdDoHeader(request: FastifyRequest): string | null {
 }
 
 async function consultarAcesso(
-  fastify: { verificadorAcessoFamilia: VerificadorAcessoFamilia; log: FastifyRequest['log'] },
+  request: FastifyRequest,
+  verificador: VerificadorAcessoFamilia,
   usuarioId: string,
   familiaId: string,
 ) {
   try {
-    return await fastify.verificadorAcessoFamilia.verificar(usuarioId, familiaId);
+    return await verificador.verificar(usuarioId, familiaId);
   } catch (err) {
     // Falha fechada: indisponibilidade do verificador nunca libera acesso.
-    fastify.log.error({ err, familiaId }, `Falha ao verificar acesso à família ${familiaId}`);
+    request.log.error({ err, familiaId }, `Falha ao verificar acesso à família ${familiaId}`);
     return null;
   }
+}
+
+/**
+ * Recusa de acesso: 403 é definitivo (cliente WS não reconecta); a indisponibilidade
+ * do verificador é 503 para ser tratada como transitória, com backoff (#79).
+ */
+function responderFalhaDeAcesso(
+  reply: FastifyReply,
+  acesso: Exclude<AcessoFamilia, 'ativa'> | null,
+) {
+  if (acesso === null) {
+    reply.code(503).send({
+      error: {
+        message: 'Nao foi possivel verificar o acesso a familia',
+        code: 'FAMILIA_ACESSO_INDISPONIVEL',
+      },
+    });
+    return;
+  }
+  reply.code(403).send({ error: RECUSAS[acesso] });
 }
 
 export const familiaScopePlugin = fp<FamiliaScopeOpcoes>(async (fastify, opcoes) => {
@@ -74,18 +96,14 @@ export const familiaScopePlugin = fp<FamiliaScopeOpcoes>(async (fastify, opcoes)
       return;
     }
 
-    const acesso = await consultarAcesso(fastify, userId, familiaId);
-    if (acesso === null) {
-      reply.code(403).send({
-        error: {
-          message: 'Nao foi possivel verificar o acesso a familia',
-          code: 'FAMILIA_ACESSO_INDISPONIVEL',
-        },
-      });
-      return;
-    }
+    const acesso = await consultarAcesso(
+      request,
+      fastify.verificadorAcessoFamilia,
+      userId,
+      familiaId,
+    );
     if (acesso !== 'ativa') {
-      reply.code(403).send({ error: RECUSAS[acesso] });
+      responderFalhaDeAcesso(reply, acesso);
       return;
     }
 

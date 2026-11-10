@@ -62,12 +62,12 @@ describe('autorização por família não depende de NODE_ENV (#79)', () => {
     expect(resposta.json()).toMatchObject({ error: { code: 'FAMILIA_SEM_ACESSO' } });
   });
 
-  it('HTTP: falha do verificador vira 403, nunca 200 nem erro silencioso', async () => {
+  it('HTTP: falha do verificador vira 503 (transitória), nunca 200 nem erro silencioso', async () => {
     verificador.falharCom(new Error('banco indisponível'));
 
     const resposta = await listarCategorias(app, token, FAMILIA_PROPRIA);
 
-    expect(resposta.statusCode).toBe(403);
+    expect(resposta.statusCode).toBe(503);
     expect(resposta.json()).toMatchObject({ error: { code: 'FAMILIA_ACESSO_INDISPONIVEL' } });
   });
 

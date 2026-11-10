@@ -11,13 +11,11 @@ describe('useAuth', () => {
       <AuthContext.Provider
         value={{
           accessToken: 'token',
-          refreshToken: 'refresh',
           isAuthenticated: true,
           familiaIdAtiva: null,
           login: () => undefined,
           logout: () => undefined,
           setAccessToken: () => undefined,
-          setRefreshToken: () => undefined,
           updateFamiliaIdAtiva: () => undefined,
         }}
       >

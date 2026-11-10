@@ -30,12 +30,10 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: true,
       accessToken: 'token',
-      refreshToken: 'rt',
       familiaIdAtiva: 'fam-test',
       login: vi.fn(),
       logout: logoutMock,
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       updateFamiliaIdAtiva: vi.fn(),
     });
 
@@ -49,7 +47,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     await waitFor(() => within(main).getByRole('button', { name: /sair da conta/i }));
     fireEvent.click(within(main).getByRole('button', { name: /sair da conta/i }));
 
-    expect(authService.logout).toHaveBeenCalledWith('rt');
+    expect(authService.logout).toHaveBeenCalledWith();
     expect(logoutMock).toHaveBeenCalled();
   });
 
@@ -69,12 +67,10 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: true,
       accessToken: 'token',
-      refreshToken: 'rt',
       familiaIdAtiva: 'fam-123',
       login: vi.fn(),
       logout: vi.fn(),
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       updateFamiliaIdAtiva: vi.fn(),
     });
 

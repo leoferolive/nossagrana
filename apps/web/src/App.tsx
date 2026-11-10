@@ -62,7 +62,7 @@ type Screen =
 type Transacao = TransacaoListResponse['transacoes'][number];
 
 export const App = () => {
-  const { familiaIdAtiva, isAuthenticated, refreshToken, logout, updateFamiliaIdAtiva } = useAuth();
+  const { familiaIdAtiva, isAuthenticated, logout, updateFamiliaIdAtiva } = useAuth();
   const familiaId = familiaIdAtiva ?? '';
 
   const [screen, setScreen] = useState<Screen>(() => {
@@ -126,11 +126,10 @@ export const App = () => {
   );
 
   const handleLogout = useCallback(() => {
-    if (refreshToken) {
-      authService.logout(refreshToken).catch(() => {});
-    }
+    // O servidor revoga o refresh vigente pelo cookie (não por uma cópia obsoleta no estado).
+    authService.logout().catch(() => {});
     logout();
-  }, [refreshToken, logout]);
+  }, [logout]);
 
   useEffect(() => {
     if (screen === 'familia-selector' && isAuthenticated && familiasDoUsuario.length === 0) {

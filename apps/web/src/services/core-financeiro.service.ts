@@ -333,10 +333,10 @@ export class DashboardService {
 
 const AUTH_STORAGE_KEY = 'nossagrana.auth.session';
 
-const readStoredSession = (): { accessToken?: string; refreshToken?: string } => {
+const readStoredSession = (): { accessToken?: string } => {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as { accessToken?: string; refreshToken?: string }) : {};
+    return raw ? (JSON.parse(raw) as { accessToken?: string }) : {};
   } catch {
     return {};
   }
@@ -345,14 +345,9 @@ const readStoredSession = (): { accessToken?: string; refreshToken?: string } =>
 const lazyApiClient = new ApiClient({
   baseUrl: typeof import.meta !== 'undefined' ? (import.meta.env.VITE_API_URL ?? '') : '',
   getAccessToken: () => readStoredSession().accessToken ?? null,
-  getRefreshToken: () => readStoredSession().refreshToken ?? null,
   setAccessToken: (token: string) => {
     const session = readStoredSession();
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, accessToken: token }));
-  },
-  setRefreshToken: (token: string) => {
-    const session = readStoredSession();
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, refreshToken: token }));
   },
   clearSession: () => localStorage.removeItem(AUTH_STORAGE_KEY),
 });

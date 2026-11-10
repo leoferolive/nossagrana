@@ -16,7 +16,7 @@ import type {
   FamiliaSwitchActiveResponse,
 } from '@nossagrana/types';
 
-import { ApiClient } from './api-client';
+import { ApiClient, cookieAuthInit } from './api-client';
 import { lazyApiClient } from './core-financeiro.service';
 
 const familiaHeader = (familiaId: string): Record<string, string> => ({
@@ -30,9 +30,10 @@ export class AuthService {
 
   async login(payload: AuthLoginRequest): Promise<AuthLoginResponse> {
     return this.api.request<AuthLoginResponse>('/api/auth/login', {
+      ...cookieAuthInit({ 'Content-Type': 'application/json' }),
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      skipAuthRetry: true,
     });
   }
 
@@ -44,11 +45,12 @@ export class AuthService {
     });
   }
 
-  async logout(refreshToken: string): Promise<void> {
+  /** O servidor revoga o refresh vigente (cookie) e limpa o cookie; não há token para enviar. */
+  async logout(): Promise<void> {
     return this.api.request<void>('/api/auth/logout', {
+      ...cookieAuthInit(),
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      skipAuthRetry: true,
     });
   }
 }

@@ -35,7 +35,6 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
       const loginResponse = await authService.login({ email, senha });
       login({
         accessToken: loginResponse.accessToken,
-        refreshToken: loginResponse.refreshToken,
         familiaIdAtiva: '',
       });
       onCompleteSignUp();

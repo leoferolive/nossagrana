@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from './app.js';
+import {
+  lerRefreshEmitido,
+  logarComCookie,
+  logoutComCookie,
+  refreshComCookie,
+} from './modules/auth/tests/sessao-cookie.js';
 
 describe('API health endpoint', () => {
   const app = buildApp();
@@ -67,10 +73,8 @@ describe('API health endpoint', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({
-      accessToken: expect.any(String),
-      refreshToken: expect.any(String),
-    });
+    expect(response.json()).toEqual({ accessToken: expect.any(String) });
+    expect(response.headers['set-cookie']).toContain('HttpOnly');
   });
 
   it('refreshes access token with refresh token', async () => {
@@ -84,24 +88,8 @@ describe('API health endpoint', () => {
       },
     });
 
-    const loginResponse = await app.inject({
-      method: 'POST',
-      url: '/api/auth/login',
-      payload: {
-        email: 'leo-refresh@example.com',
-        senha: 'password123',
-      },
-    });
-
-    const { refreshToken } = loginResponse.json() as { refreshToken: string };
-
-    const refreshResponse = await app.inject({
-      method: 'POST',
-      url: '/api/auth/refresh',
-      payload: {
-        refreshToken,
-      },
-    });
+    const loginResponse = await logarComCookie(app, 'leo-refresh@example.com', 'password123');
+    const refreshResponse = await refreshComCookie(app, lerRefreshEmitido(loginResponse) ?? '');
 
     expect(refreshResponse.statusCode).toBe(200);
     expect(refreshResponse.json()).toMatchObject({
@@ -120,46 +108,20 @@ describe('API health endpoint', () => {
       },
     });
 
-    const loginResponse = await app.inject({
-      method: 'POST',
-      url: '/api/auth/login',
-      payload: {
-        email: 'leo-logout@example.com',
-        senha: 'password123',
-      },
-    });
+    const loginResponse = await logarComCookie(app, 'leo-logout@example.com', 'password123');
+    const refreshToken = lerRefreshEmitido(loginResponse) ?? '';
 
-    const { refreshToken } = loginResponse.json() as { refreshToken: string };
-
-    const logoutResponse = await app.inject({
-      method: 'POST',
-      url: '/api/auth/logout',
-      payload: {
-        refreshToken,
-      },
-    });
+    const logoutResponse = await logoutComCookie(app, refreshToken);
 
     expect(logoutResponse.statusCode).toBe(204);
 
-    const refreshAfterLogoutResponse = await app.inject({
-      method: 'POST',
-      url: '/api/auth/refresh',
-      payload: {
-        refreshToken,
-      },
-    });
+    const refreshAfterLogoutResponse = await refreshComCookie(app, refreshToken);
 
     expect(refreshAfterLogoutResponse.statusCode).toBe(401);
   });
 
   it('rejects invalid refresh token on logout', async () => {
-    const logoutResponse = await app.inject({
-      method: 'POST',
-      url: '/api/auth/logout',
-      payload: {
-        refreshToken: 'invalid-token',
-      },
-    });
+    const logoutResponse = await logoutComCookie(app, 'invalid-token');
 
     expect(logoutResponse.statusCode).toBe(401);
     expect(logoutResponse.json()).toMatchObject({

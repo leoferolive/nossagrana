@@ -73,7 +73,7 @@ export const test = base.extend<E2EFixtures>({
 
     const context: AuthContext = {
       accessToken: loginResponse.accessToken,
-      refreshToken: loginResponse.refreshToken,
+      refreshToken: loginResponse.refreshToken ?? '',
       password: senha,
       user: {
         id: registerResponse.user.id,

@@ -10,6 +10,8 @@ import {
 } from '@nossagrana/types';
 import { z } from 'zod';
 
+const erroCsrfSchema = z.object({ message: z.string(), code: z.literal('CSRF_INVALID') });
+
 export const authRegisterSchema = {
   body: authRegisterRequestSchema,
   response: {
@@ -38,6 +40,7 @@ export const authRefreshSchema = {
       message: z.string(),
       code: z.string().optional(),
     }),
+    403: erroCsrfSchema,
   },
 };
 
@@ -48,6 +51,7 @@ export const authLogoutSchema = {
     401: z.object({
       message: z.literal('Refresh token invalido'),
     }),
+    403: erroCsrfSchema,
   },
 };
 

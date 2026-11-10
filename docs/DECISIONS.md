@@ -209,6 +209,17 @@ else:
 - **Logs:** o serializer `req` do Fastify grava a URL, então `opcoesDoLogger()` (`shared/http/log-redaction.ts`) troca o valor de `ticket`, `token`, `accessToken` e `refreshToken` da query por `[REDACTED]`, comparando a chave **decodificada** (o Fastify lê `?%74icket=` como `ticket`). Proxies/Cloudflare à frente do API continuam vendo o ticket na URL; é um risco baixo e aceito porque o ticket vale uma vez e ~30 s, e já terá sido gasto pelo próprio cliente.
 - **Alternativas descartadas:** cookie no handshake (depende de topologia/CSRF, é o escopo do #116) e subprotocolo `Sec-WebSocket-Protocol` (negociação extra e o valor também pode vazar em logs de proxy).
 
+### Refresh token em cookie HttpOnly (#116, epic #115)
+
+- **Problema:** o refresh ficava em `localStorage`, legível por qualquer XSS. Agora viaja só em cookie `HttpOnly`; o JSON de login/refresh devolve apenas o `accessToken` (o access em memória é o escopo da #117).
+- **Topologia:** em produção web e API são o mesmo host (`nossagrana.*` roteia `/api` para a API no Traefik); em dev, `localhost:5173` e `localhost:3000` são same-site. Por isso `SameSite=Strict` não custa nada.
+- **Cookie:** `ng_refresh` (`__Secure-ng_refresh` em produção, com `Secure`), `HttpOnly`, `SameSite=Strict`, `Path=/api/auth` (só login/refresh/logout o recebem), sem `Domain` (host-only), `Max-Age` = `exp` do token. `__Host-` foi descartado: exige `Path=/` e mandaria o cookie a toda requisição. Em dev (http) não há `Secure`/prefixo.
+- **CSRF:** endpoints que usam o cookie sozinho (`/auth/refresh`, `/auth/logout`) exigem o cabeçalho não-simples `X-Nossagrana-CSRF: 1` (força preflight CORS, que só libera `CORS_ORIGIN`) e, se houver `Origin`, ele precisa ser `CORS_ORIGIN` ou o próprio host da requisição (comparação por host tolera TLS terminado no proxy). Falha vira `403 CSRF_INVALID` **sem gastar o refresh**. Token CSRF por sessão/double-submit foi descartado: o token vinculado ao refresh ficaria obsoleto a cada rotação e quebraria o uso com várias abas.
+- **CORS:** `credentials: true` com origem explícita (`CORS_ORIGIN`, validada como URL: nunca `*`).
+- **Rotação/replay:** inalterados (`tratarReuso` revoga todas as sessões). O refresh ganhou `jti` aleatório: dois refreshes no mesmo segundo geravam a mesma string, e o token novo tinha o hash do recém-revogado.
+- **Rollout:** `REFRESH_TOKEN_BODY_FALLBACK` (default `false`). Ligada, um cliente antigo (sem o cabeçalho CSRF) recebe e envia o refresh no corpo, como antes; clientes novos nunca recebem o refresh no JSON. Desligada, sessões antigas do `localStorage` deixam de renovar e o usuário faz login de novo uma vez. Remover a flag e o ramo `corpo` de `auth.refresh-origem.ts` após a migração.
+- **Cliente:** `credentials: 'include'` + CSRF apenas em login/refresh/logout (`cookieAuthInit`); o refresh legado é apagado do `localStorage` ao carregar. O logout deixa de enviar um refresh obsoleto do estado React: o servidor revoga o cookie vigente.
+
 ---
 
 ## Performance (considerações para o Raspberry Pi)

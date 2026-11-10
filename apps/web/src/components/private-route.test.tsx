@@ -18,7 +18,6 @@ describe('PrivateRoute', () => {
     useEffect(() => {
       login({
         accessToken: 'access-token',
-        refreshToken: 'refresh-token',
         familiaIdAtiva: 'f1',
       });
     }, [login]);

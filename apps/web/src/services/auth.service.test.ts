@@ -1,3 +1,4 @@
+import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from './api-client';
@@ -24,10 +25,7 @@ describe('AuthService', () => {
   });
 
   it('login faz POST /api/auth/login com payload', async () => {
-    vi.mocked(apiClient.request).mockResolvedValueOnce({
-      accessToken: 'at',
-      refreshToken: 'rt',
-    });
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ accessToken: 'at' });
 
     const payload = { email: 'user@test.com', senha: 'senhaSegura123' };
     const result = await service.login(payload);
@@ -37,8 +35,12 @@ describe('AuthService', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify(payload),
+        credentials: 'include',
+        skipAuthRetry: true,
       }),
     );
+    const { headers } = vi.mocked(apiClient.request).mock.calls[0][1] as RequestInit;
+    expect(new Headers(headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
     expect(result.accessToken).toBe('at');
   });
 
@@ -59,18 +61,16 @@ describe('AuthService', () => {
     );
   });
 
-  it('logout faz POST /api/auth/logout com { refreshToken }', async () => {
+  it('logout faz POST /api/auth/logout só com cookie + CSRF, sem corpo nem token', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce(undefined);
 
-    await service.logout('my-refresh-token');
+    await service.logout();
 
-    expect(apiClient.request).toHaveBeenCalledWith(
-      '/api/auth/logout',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ refreshToken: 'my-refresh-token' }),
-      }),
-    );
+    const [path, init] = vi.mocked(apiClient.request).mock.calls[0] as [string, RequestInit];
+    expect(path).toBe('/api/auth/logout');
+    expect(init).toMatchObject({ method: 'POST', credentials: 'include' });
+    expect(init.body).toBeUndefined();
+    expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
   });
 });
 

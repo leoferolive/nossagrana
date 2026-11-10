@@ -1,4 +1,5 @@
-import type { AuthRefreshRequest, AuthRefreshResponse } from '@nossagrana/types';
+import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
+import type { AuthRefreshResponse } from '@nossagrana/types';
 
 export class ApiError extends Error {
   constructor(
@@ -22,9 +23,7 @@ interface ApiClientOptions {
   baseUrl: string;
   fetchFn?: typeof fetch;
   getAccessToken: () => string | null;
-  getRefreshToken: () => string | null;
   setAccessToken: (accessToken: string) => void;
-  setRefreshToken: (refreshToken: string) => void;
   clearSession: () => void;
 }
 
@@ -32,13 +31,22 @@ interface RequestOptions extends RequestInit {
   skipAuthRetry?: boolean;
 }
 
+/**
+ * Opções dos endpoints que usam o cookie HttpOnly de refresh (login, refresh, logout, #116):
+ * `include` para o navegador enviar/aceitar o cookie (também em dev cross-origin) e o
+ * cabeçalho CSRF. As demais requisições não levam credenciais.
+ */
+export function cookieAuthInit(headers: HeadersInit = {}): RequestInit {
+  const comCsrf = new Headers(headers);
+  comCsrf.set(CSRF_HEADER_NAME, CSRF_HEADER_VALUE);
+  return { credentials: 'include', headers: comCsrf };
+}
+
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly fetchFn: typeof fetch;
   private readonly getAccessToken: () => string | null;
-  private readonly getRefreshToken: () => string | null;
   private readonly setAccessToken: (accessToken: string) => void;
-  private readonly setRefreshToken: (refreshToken: string) => void;
   private readonly clearSession: () => void;
   /**
    * Refresh em andamento (single-flight, #153): requisições concorrentes com 401
@@ -51,9 +59,7 @@ export class ApiClient {
     this.baseUrl = options.baseUrl;
     this.fetchFn = options.fetchFn ?? fetch.bind(globalThis);
     this.getAccessToken = options.getAccessToken;
-    this.getRefreshToken = options.getRefreshToken;
     this.setAccessToken = options.setAccessToken;
-    this.setRefreshToken = options.setRefreshToken;
     this.clearSession = options.clearSession;
   }
 
@@ -66,7 +72,8 @@ export class ApiClient {
       headers: this.withAuthHeader(headers, accessToken),
     });
 
-    if (response.status === 401 && !skipAuthRetry && path !== '/api/auth/refresh') {
+    // Sem access token não há sessão a renovar (ex.: 401 de credenciais erradas no login).
+    if (response.status === 401 && accessToken && !skipAuthRetry && path !== '/api/auth/refresh') {
       const refreshed = await this.renewSession(accessToken);
       if (refreshed) {
         return this.request<T>(path, { ...options, skipAuthRetry: true });
@@ -101,19 +108,11 @@ export class ApiClient {
   }
 
   private async refreshAccessToken(): Promise<boolean> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      this.clearSession();
-      return false;
-    }
-
-    const payload: AuthRefreshRequest = { refreshToken };
+    // O refresh token vai (e volta) no cookie HttpOnly: o JS nunca o vê.
     const response = await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
+      ...cookieAuthInit({ 'Content-Type': 'application/json' }),
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+      body: '{}',
     });
 
     if (!response.ok) {
@@ -123,7 +122,6 @@ export class ApiClient {
 
     const body = (await response.json()) as AuthRefreshResponse;
     this.setAccessToken(body.accessToken);
-    this.setRefreshToken(body.refreshToken);
     return true;
   }
 

@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { FastifyInstance } from 'fastify';
 
 import { env } from '../../config/env.js';
@@ -24,7 +26,9 @@ export function emitirParDeTokens(
   const accessToken = fastify.jwt.sign({ sub: usuario.sub, email: usuario.email });
   const refreshToken = fastify.jwt.sign(
     { sub: usuario.sub, email: usuario.email, tokenType: 'refresh' },
-    { expiresIn: env.REFRESH_TOKEN_EXPIRES_IN, key: env.REFRESH_TOKEN_SECRET },
+    // `jti` único: dois refreshes no mesmo segundo não podem gerar a mesma string, ou o
+    // token novo teria o mesmo hash do recém-revogado.
+    { expiresIn: env.REFRESH_TOKEN_EXPIRES_IN, key: env.REFRESH_TOKEN_SECRET, jti: randomUUID() },
   );
   return { accessToken, refreshToken };
 }

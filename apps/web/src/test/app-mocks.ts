@@ -34,7 +34,7 @@ vi.mock('../services/core-financeiro.service', () => ({
 
 vi.mock('../services/auth.service', () => ({
   authService: {
-    login: vi.fn().mockResolvedValue({ accessToken: 'at', refreshToken: 'rt' }),
+    login: vi.fn().mockResolvedValue({ accessToken: 'at' }),
     register: vi.fn().mockResolvedValue({ user: {} }),
     logout: vi.fn().mockResolvedValue(undefined),
   },
@@ -85,12 +85,10 @@ vi.mock('../contexts/use-auth', () => ({
   useAuth: vi.fn(() => ({
     isAuthenticated: true,
     accessToken: 'token',
-    refreshToken: 'rt',
     familiaIdAtiva: 'fam-test',
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
-    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   })),
 }));
@@ -154,12 +152,10 @@ export const resetAppMocks = () => {
   vi.mocked(useAuth).mockImplementation(() => ({
     isAuthenticated: true,
     accessToken: 'token',
-    refreshToken: 'rt',
     familiaIdAtiva: 'fam-test',
     login: vi.fn(),
     logout: vi.fn(),
     setAccessToken: vi.fn(),
-    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   }));
 };

@@ -10,19 +10,17 @@ afterEach(() => {
 });
 
 const AuthConsumer = () => {
-  const { isAuthenticated, accessToken, refreshToken, login, logout, setAccessToken } = useAuth();
+  const { isAuthenticated, accessToken, login, logout, setAccessToken } = useAuth();
 
   return (
     <div>
       <p>authenticated: {isAuthenticated ? 'yes' : 'no'}</p>
       <p>accessToken: {accessToken ?? 'none'}</p>
-      <p>refreshToken: {refreshToken ?? 'none'}</p>
       <button
         type="button"
         onClick={() =>
           login({
             accessToken: 'access-token-1',
-            refreshToken: 'refresh-token-1',
             familiaIdAtiva: 'f1',
           })
         }
@@ -45,7 +43,6 @@ describe('AuthContext', () => {
       'nossagrana.auth.session',
       JSON.stringify({
         accessToken: 'saved-access-token',
-        refreshToken: 'saved-refresh-token',
       }),
     );
 
@@ -57,7 +54,23 @@ describe('AuthContext', () => {
 
     expect(screen.getByText('authenticated: yes')).toBeInTheDocument();
     expect(screen.getByText('accessToken: saved-access-token')).toBeInTheDocument();
-    expect(screen.getByText('refreshToken: saved-refresh-token')).toBeInTheDocument();
+  });
+
+  it('migração: descarta o refresh token legado do localStorage ao carregar', () => {
+    localStorage.setItem(
+      'nossagrana.auth.session',
+      JSON.stringify({ accessToken: 'a', refreshToken: 'legado-secreto', familiaIdAtiva: 'f1' }),
+    );
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByText('authenticated: yes')).toBeInTheDocument();
+    expect(localStorage.getItem('nossagrana.auth.session')).not.toContain('legado-secreto');
+    expect(localStorage.getItem('nossagrana.auth.session')).not.toContain('refreshToken');
   });
 
   it('starts logged out and allows login/logout flow', () => {
@@ -69,21 +82,18 @@ describe('AuthContext', () => {
 
     expect(screen.getByText('authenticated: no')).toBeInTheDocument();
     expect(screen.getByText('accessToken: none')).toBeInTheDocument();
-    expect(screen.getByText('refreshToken: none')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'login' }));
 
     expect(screen.getByText('authenticated: yes')).toBeInTheDocument();
     expect(screen.getByText('accessToken: access-token-1')).toBeInTheDocument();
-    expect(screen.getByText('refreshToken: refresh-token-1')).toBeInTheDocument();
     expect(localStorage.getItem('nossagrana.auth.session')).toContain('access-token-1');
-    expect(localStorage.getItem('nossagrana.auth.session')).toContain('refresh-token-1');
+    expect(localStorage.getItem('nossagrana.auth.session')).not.toContain('refresh');
 
     fireEvent.click(screen.getByRole('button', { name: 'logout' }));
 
     expect(screen.getByText('authenticated: no')).toBeInTheDocument();
     expect(screen.getByText('accessToken: none')).toBeInTheDocument();
-    expect(screen.getByText('refreshToken: none')).toBeInTheDocument();
     expect(localStorage.getItem('nossagrana.auth.session')).toBeNull();
   });
 
@@ -98,8 +108,7 @@ describe('AuthContext', () => {
     fireEvent.click(screen.getByRole('button', { name: 'rotate-access-token' }));
 
     expect(screen.getByText('accessToken: access-token-2')).toBeInTheDocument();
-    expect(screen.getByText('refreshToken: refresh-token-1')).toBeInTheDocument();
     expect(localStorage.getItem('nossagrana.auth.session')).toContain('access-token-2');
-    expect(localStorage.getItem('nossagrana.auth.session')).toContain('refresh-token-1');
+    expect(localStorage.getItem('nossagrana.auth.session')).not.toContain('refresh');
   });
 });

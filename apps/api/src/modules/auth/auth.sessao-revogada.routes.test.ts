@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../../app.js';
 
+import { lerRefreshEmitido, logarComCookie, refreshComCookie } from './tests/sessao-cookie.js';
+
 const SENHA = 'senha12345';
 const NOVA_SENHA = 'outraSenha678';
 
@@ -26,12 +28,9 @@ async function registrarELogar(app: App): Promise<{ email: string; sessao: Sessa
 }
 
 async function logar(app: App, email: string, senha: string): Promise<Sessao> {
-  const resposta = await app.inject({
-    method: 'POST',
-    url: '/api/auth/login',
-    payload: { email, senha },
-  });
-  return resposta.json() as Sessao;
+  const resposta = await logarComCookie(app, email, senha);
+  const { accessToken } = resposta.json() as { accessToken: string };
+  return { accessToken, refreshToken: lerRefreshEmitido(resposta) ?? '' };
 }
 
 const trocarSenha = (app: App, accessToken: string, senhaAtual = SENHA) =>
@@ -42,8 +41,7 @@ const trocarSenha = (app: App, accessToken: string, senhaAtual = SENHA) =>
     headers: { authorization: `Bearer ${accessToken}` },
   });
 
-const refresh = (app: App, refreshToken: string) =>
-  app.inject({ method: 'POST', url: '/api/auth/refresh', payload: { refreshToken } });
+const refresh = (app: App, refreshToken: string) => refreshComCookie(app, refreshToken);
 
 describe('sessões revogadas na troca de senha (#119)', () => {
   let app: App;
@@ -72,7 +70,9 @@ describe('sessões revogadas na troca de senha (#119)', () => {
   it('refresh rotacionado antes da troca de senha também morre (todos os dispositivos)', async () => {
     const { email, sessao } = await registrarELogar(app);
     const outroDispositivo = await logar(app, email, SENHA);
-    const rotacionado = (await refresh(app, sessao.refreshToken)).json() as Sessao;
+    const rotacionado = {
+      refreshToken: lerRefreshEmitido(await refresh(app, sessao.refreshToken)) ?? '',
+    };
 
     await trocarSenha(app, sessao.accessToken);
 
@@ -92,7 +92,7 @@ describe('sessões revogadas na troca de senha (#119)', () => {
     const renovada = await refresh(app, novaSessao.refreshToken);
 
     expect(renovada.statusCode).toBe(200);
-    const proximo = await refresh(app, (renovada.json() as Sessao).refreshToken);
+    const proximo = await refresh(app, lerRefreshEmitido(renovada) ?? '');
     expect(proximo.statusCode).toBe(200);
   });
 

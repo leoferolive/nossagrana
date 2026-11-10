@@ -23,12 +23,10 @@ beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated: false,
     accessToken: null,
-    refreshToken: null,
     familiaIdAtiva: null,
     login: mockLogin,
     logout: vi.fn(),
     setAccessToken: vi.fn(),
-    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   });
 });
@@ -100,7 +98,6 @@ describe('SignUpPage', () => {
     });
     vi.mocked(authService.login).mockResolvedValueOnce({
       accessToken: 'access-token-123',
-      refreshToken: 'refresh-token-456',
     });
 
     renderPage({ onCompleteSignUp });
@@ -135,7 +132,6 @@ describe('SignUpPage', () => {
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         accessToken: 'access-token-123',
-        refreshToken: 'refresh-token-456',
         familiaIdAtiva: '',
       });
     });
@@ -179,7 +175,6 @@ describe('SignUpPage', () => {
     );
     vi.mocked(authService.login).mockResolvedValueOnce({
       accessToken: 'at',
-      refreshToken: 'rt',
     });
 
     renderPage();

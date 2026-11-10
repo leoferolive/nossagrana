@@ -60,6 +60,9 @@ export const buildApp = () => {
     crossOriginEmbedderPolicy: false,
   });
 
+  // Só lê o cookie de refresh (#116); não assina valores.
+  app.register(import('@fastify/cookie'));
+
   app.register(import('@fastify/cors'), {
     origin: env.CORS_ORIGIN,
     credentials: true,

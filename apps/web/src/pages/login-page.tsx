@@ -27,7 +27,6 @@ export const LoginPage = ({ onOpenSignUp, onLoginSuccess }: LoginPageProps) => {
       const response = await authService.login({ email, senha });
       login({
         accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
         familiaIdAtiva: '',
       });
       const minhasRes = await familiaService.listarMinhas();

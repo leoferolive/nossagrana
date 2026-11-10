@@ -23,7 +23,8 @@ interface RegisterResponse {
 
 interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
+  /** Ausente desde #116: o refresh viaja em cookie HttpOnly (a sessão E2E dura menos que o access). */
+  refreshToken?: string;
 }
 
 interface Familia {
@@ -200,7 +201,7 @@ export async function register(data: RegisterInput): Promise<RegisterResponse> {
 
 /**
  * POST /auth/login
- * Returns accessToken and refreshToken. Does NOT return user data.
+ * Returns accessToken (refresh goes in an HttpOnly cookie). Does NOT return user data.
  */
 export async function login(data: LoginInput): Promise<LoginResponse> {
   return request<LoginResponse>('POST', '/api/auth/login', { body: data });

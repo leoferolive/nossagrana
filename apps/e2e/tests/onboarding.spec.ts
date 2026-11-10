@@ -41,17 +41,17 @@ const AUTH_KEY = 'nossagrana.auth.session';
  */
 async function gotoOnboarding(
   page: import('@playwright/test').Page,
-  tokens: { accessToken: string; refreshToken: string; email: string; password: string },
+  tokens: { accessToken: string; email: string; password: string },
 ) {
   await page.goto('/');
   await page.evaluate(
-    ([accessToken, refreshToken]) => {
+    ([accessToken]) => {
       localStorage.setItem(
         'nossagrana.auth.session',
-        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: '' }),
+        JSON.stringify({ accessToken, familiaIdAtiva: '' }),
       );
     },
-    [tokens.accessToken, tokens.refreshToken],
+    [tokens.accessToken],
   );
   await page.reload();
   // The app should show the onboarding screen (no familia → onboarding)
@@ -65,7 +65,6 @@ test.describe('Onboarding', () => {
   test('usuário autenticado sem familia vê tela de onboarding', async ({ page, authContext }) => {
     await gotoOnboarding(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       email: authContext.user.email,
       password: authContext.password,
     });
@@ -85,7 +84,6 @@ test.describe('Onboarding', () => {
   test('criar familia avança para configurações da família', async ({ page, authContext }) => {
     await gotoOnboarding(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       email: authContext.user.email,
       password: authContext.password,
     });
@@ -120,7 +118,6 @@ test.describe('Onboarding', () => {
   }) => {
     await gotoOnboarding(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       email: authContext.user.email,
       password: authContext.password,
     });
@@ -139,7 +136,6 @@ test.describe('Onboarding', () => {
   }) => {
     await gotoOnboarding(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       email: authContext.user.email,
       password: authContext.password,
     });
@@ -156,7 +152,6 @@ test.describe('Onboarding', () => {
   test('código de convite inválido exibe mensagem de erro', async ({ page, authContext }) => {
     await gotoOnboarding(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       email: authContext.user.email,
       password: authContext.password,
     });
@@ -181,7 +176,6 @@ test.describe('Onboarding', () => {
   }) => {
     await gotoOnboarding(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       email: authContext.user.email,
       password: authContext.password,
     });

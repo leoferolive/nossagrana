@@ -3,8 +3,8 @@ import type { FastifyRequest } from 'fastify';
 
 import { env } from '../../config/env.js';
 
-/** Presença do cabeçalho CSRF com o valor esperado (também identifica o cliente novo no login). */
-export const temCabecalhoCsrf = (request: FastifyRequest): boolean =>
+/** Presença do cabeçalho CSRF com o valor esperado. */
+const temCabecalhoCsrf = (request: FastifyRequest): boolean =>
   request.headers[CSRF_HEADER_NAME] === CSRF_HEADER_VALUE;
 
 /** `Origin` ausente (cliente não-navegador) passa; presente, tem que ser a configurada ou o próprio host. */

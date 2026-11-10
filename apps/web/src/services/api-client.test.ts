@@ -117,6 +117,42 @@ describe('ApiClient', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('aguardarRefresh resolve quando não há refresh em andamento e espera o em andamento', async () => {
+    let liberar!: () => void;
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      if (String(input).endsWith('/api/auth/refresh')) {
+        return new Promise<Response>((resolve) => {
+          liberar = () =>
+            resolve(new Response(JSON.stringify({ accessToken: 'novo' }), { status: 200 }));
+        });
+      }
+      const ok = tokenState.accessToken === 'novo';
+      return Promise.resolve(new Response(ok ? '{}' : null, { status: ok ? 200 : 401 }));
+    });
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: (accessToken) => {
+        tokenState.accessToken = accessToken;
+      },
+      clearSession: vi.fn(),
+    });
+    await apiClient.aguardarRefresh();
+
+    const requisicao = apiClient.request('/api/a');
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    let terminou = false;
+    const espera = apiClient.aguardarRefresh().then(() => (terminou = true));
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    liberar();
+    await espera;
+    await requisicao;
+
+    expect(tokenState.accessToken).toBe('novo');
+  });
+
   it('clears session when refresh token is invalid', async () => {
     const fetchMock = vi
       .fn()

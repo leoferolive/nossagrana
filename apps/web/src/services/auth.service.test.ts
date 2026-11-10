@@ -1,19 +1,21 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from './api-client';
 import {
   categoriaService,
+  gravarAccessTokenSeHouverSessao,
   metodoPagamentoService,
   transacaoService,
 } from './core-financeiro.service';
 import { AuthService, FamiliaService } from './auth.service';
 
-const buildApiClient = (overrides?: Partial<Pick<ApiClient, 'request'>>) =>
+const buildApiClient = (overrides?: Partial<Pick<ApiClient, 'request' | 'aguardarRefresh'>>) =>
   ({
     request: vi.fn(),
+    aguardarRefresh: vi.fn().mockResolvedValue(undefined),
     ...overrides,
-  }) as Pick<ApiClient, 'request'> as ApiClient;
+  }) as Pick<ApiClient, 'request' | 'aguardarRefresh'> as ApiClient;
 
 describe('AuthService', () => {
   let apiClient: ApiClient;
@@ -71,6 +73,59 @@ describe('AuthService', () => {
     expect(init).toMatchObject({ method: 'POST', credentials: 'include' });
     expect(init.body).toBeUndefined();
     expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+  });
+});
+
+describe('AuthService.logout x refresh em voo (#116)', () => {
+  it('espera o refresh em andamento terminar antes de enviar o logout (revoga o cookie vigente)', async () => {
+    const ordem: string[] = [];
+    let terminarRefresh!: () => void;
+    const apiClient = buildApiClient({
+      aguardarRefresh: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            terminarRefresh = () => {
+              ordem.push('refresh-terminou');
+              resolve();
+            };
+          }),
+      ),
+      request: vi.fn(async () => {
+        ordem.push('logout-enviado');
+      }) as ApiClient['request'],
+    });
+
+    const logout = new AuthService(apiClient).logout();
+    await Promise.resolve();
+    expect(apiClient.request).not.toHaveBeenCalled();
+    terminarRefresh();
+    await logout;
+
+    expect(ordem).toEqual(['refresh-terminou', 'logout-enviado']);
+  });
+});
+
+describe('setAccessToken do client singleton (#116)', () => {
+  afterEach(() => localStorage.clear());
+
+  it('não recria a sessão quando um refresh termina depois do logout', () => {
+    gravarAccessTokenSeHouverSessao('token-tardio');
+
+    expect(localStorage.getItem('nossagrana.auth.session')).toBeNull();
+  });
+
+  it('atualiza o access token quando há sessão armazenada', () => {
+    localStorage.setItem(
+      'nossagrana.auth.session',
+      JSON.stringify({ accessToken: 'velho', familiaIdAtiva: 'f1' }),
+    );
+
+    gravarAccessTokenSeHouverSessao('novo');
+
+    expect(JSON.parse(localStorage.getItem('nossagrana.auth.session') ?? '{}')).toEqual({
+      accessToken: 'novo',
+      familiaIdAtiva: 'f1',
+    });
   });
 });
 

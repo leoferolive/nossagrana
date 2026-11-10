@@ -23,11 +23,17 @@ import { metricsPlugin_ } from './plugins/metrics.plugin.js';
 import { sessaoRevogacaoPlugin } from './plugins/sessao-revogacao.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
 import { wsTicketPlugin } from './plugins/ws-ticket.plugin.js';
+import type { VerificadorAcessoFamilia } from './shared/familia-access/verificador-acesso-familia.js';
 import { opcoesDoLogger } from './shared/http/log-redaction.js';
 import { registrarRespostaReferenciaInvalida } from './shared/referencia-ownership/referencia-ownership.http.js';
 import { decorarRepositoriosInMemoryDeTeste } from './shared/repositorios-in-memory.js';
 
-export const buildApp = () => {
+export interface OpcoesDoApp {
+  /** Verificador de posse de família; padrão PostgreSQL. Testes injetam uma fake nomeada. */
+  verificadorAcessoFamilia?: VerificadorAcessoFamilia;
+}
+
+export const buildApp = (opcoes: OpcoesDoApp = {}) => {
   const app = Fastify({
     // Logger JSON com a URL redigida: o ticket do WS (#118) nunca vai para o log.
     logger: env.NODE_ENV !== 'test' ? opcoesDoLogger() : false,
@@ -71,7 +77,9 @@ export const buildApp = () => {
   app.register(metricsPlugin_);
 
   app.register(authPlugin);
-  app.register(familiaScopePlugin);
+  app.register(familiaScopePlugin, {
+    verificadorAcessoFamilia: opcoes.verificadorAcessoFamilia,
+  });
   app.register(websocketPlugin);
   app.register(sessaoRevogacaoPlugin);
   app.register(wsTicketPlugin);

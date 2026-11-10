@@ -36,6 +36,15 @@ function extrairUserId(fastify: FastifyInstance, refreshToken: string): string |
   }
 }
 
+/** `null` para token inválido/expirado; falhas de infraestrutura não passam por aqui. */
+function extrairRefreshVerificado(fastify: FastifyInstance, refreshToken: string) {
+  try {
+    return verificarRefreshToken(fastify, refreshToken);
+  } catch {
+    return null;
+  }
+}
+
 /** Falha aqui deixa sessões vivas após um possível roubo de token: não pode sumir em silêncio. */
 async function revogarPorReuso(fastify: FastifyInstance, userId: string): Promise<void> {
   try {
@@ -46,7 +55,7 @@ async function revogarPorReuso(fastify: FastifyInstance, userId: string): Promis
 }
 
 /**
- * Rotaciona o refresh token. Lança se o token não for verificável (o chamador responde 401).
+ * Rotaciona o refresh token. Token inválido/expirado vira recusa; erro de infraestrutura propaga (5xx).
  *
  * Ordem importa (#119, corrida refresh x revogação): checar → gastar o refresh → emitir o
  * novo par → checar DE NOVO o refresh antigo. Uma revogação global gravada entre a 1ª
@@ -62,7 +71,8 @@ export async function renovarSessao(
     return tratarReuso(fastify, refreshToken);
   }
 
-  const refresh = verificarRefreshToken(fastify, refreshToken);
+  const refresh = extrairRefreshVerificado(fastify, refreshToken);
+  if (!refresh) return RECUSA_TOKEN_INVALIDO;
   if (refresh.tokenType !== 'refresh') return RECUSA_TOKEN_INVALIDO;
   if (await fastify.sessoes.estaRevogada(refresh.sub, refresh.iat)) return RECUSA_SESSAO_REVOGADA;
 

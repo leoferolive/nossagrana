@@ -51,29 +51,20 @@ export type AuthLoginRequest = z.infer<typeof authLoginRequestSchema>;
 export const CSRF_HEADER_NAME = 'x-nossagrana-csrf';
 export const CSRF_HEADER_VALUE = '1';
 
-/**
- * O refresh token viaja em cookie HttpOnly e não aparece no JSON. `refreshToken` só é
- * preenchido no modo legado (flag `REFRESH_TOKEN_BODY_FALLBACK`), para clientes antigos.
- */
+/** O refresh token viaja só em cookie HttpOnly: nunca aparece no JSON (#116). */
 export const authLoginResponseSchema = z.object({
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1).optional(),
 });
 
 export type AuthLoginResponse = z.infer<typeof authLoginResponseSchema>;
 
-/** Corpo opcional: o refresh vem do cookie; `refreshToken` só é aceito no modo legado. */
-export const authRefreshRequestSchema = z
-  .object({
-    refreshToken: z.string().min(1).optional(),
-  })
-  .nullish();
+/** Sem campos: o refresh vem do cookie. Corpo opcional, e campos extras são ignorados. */
+export const authRefreshRequestSchema = z.object({}).nullish();
 
 export type AuthRefreshRequest = z.infer<typeof authRefreshRequestSchema>;
 
 export const authRefreshResponseSchema = z.object({
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1).optional(),
 });
 
 export type AuthRefreshResponse = z.infer<typeof authRefreshResponseSchema>;
@@ -89,11 +80,7 @@ export const wsTicketEnvelopeSchema = z.object({ data: wsTicketResponseSchema })
 
 export type WsTicketResponse = z.infer<typeof wsTicketResponseSchema>;
 
-export const authLogoutRequestSchema = z
-  .object({
-    refreshToken: z.string().min(1).optional(),
-  })
-  .nullish();
+export const authLogoutRequestSchema = z.object({}).nullish();
 
 export type AuthLogoutRequest = z.infer<typeof authLogoutRequestSchema>;
 

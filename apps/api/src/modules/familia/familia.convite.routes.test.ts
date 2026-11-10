@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { buildApp } from '../../app.js';
+import { buildAppComFamiliasInMemory } from '../../shared/familia-access/tests/verificador-acesso-familia.in-memory.js';
 import { InMemoryFamiliaRepository } from './familia.repository.js';
 
 describe('POST /familias/entrar/:codigo (uso único)', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   const tokens: Record<string, string> = {};
   let familiaId: string;
   let codigo: string;
@@ -86,7 +86,7 @@ describe('POST /familias/entrar/:codigo (uso único)', () => {
 });
 
 describe('POST /familias/convites (família excluída no meio da criação, #147)', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
 
   afterAll(() => app.close());
 

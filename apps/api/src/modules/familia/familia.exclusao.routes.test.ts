@@ -1,12 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { buildApp } from '../../app.js';
+import type { buildApp } from '../../app.js';
+import { buildAppComFamiliasInMemory } from '../../shared/familia-access/tests/verificador-acesso-familia.in-memory.js';
 import { conectarComAccess } from '../ws/tests/ws-ticket-helpers.js';
 
 type ClienteWs = Awaited<ReturnType<ReturnType<typeof buildApp>['injectWS']>>;
 
 describe('DELETE /familias/:id — convites e sockets (#66)', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let token: string;
   let familiaId: string;
   let outraFamiliaId: string;

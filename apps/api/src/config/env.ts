@@ -11,11 +11,12 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
-  // Rollout #116: aceita/devolve o refresh no corpo JSON para clientes antigos. Desligado por
-  // padrão (um cliente que não migra é deslogado em vez de manter o token exposto ao JS).
-  REFRESH_TOKEN_BODY_FALLBACK: z
+  // Controla `Secure` e o prefixo `__Secure-` do cookie de refresh (#116). Explícito (e não
+  // derivado de NODE_ENV) porque o dev do cluster roda NODE_ENV=production sobre HTTP puro,
+  // onde o navegador recusaria um cookie Secure. Default seguro: true.
+  REFRESH_COOKIE_SECURE: z
     .enum(['true', 'false'])
-    .default('false')
+    .default('true')
     .transform((valor) => valor === 'true'),
   CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
   SMTP_HOST: z.string().default('smtp-relay.brevo.com'),

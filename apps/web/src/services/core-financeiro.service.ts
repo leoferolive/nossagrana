@@ -342,13 +342,20 @@ const readStoredSession = (): { accessToken?: string } => {
   }
 };
 
+/**
+ * Atualiza o access token só se ainda houver sessão armazenada: um refresh que termina depois
+ * do logout não pode recriar a sessão (ela voltaria no próximo reload).
+ */
+export const gravarAccessTokenSeHouverSessao = (token: string): void => {
+  const session = readStoredSession();
+  if (!session.accessToken) return;
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, accessToken: token }));
+};
+
 const lazyApiClient = new ApiClient({
   baseUrl: typeof import.meta !== 'undefined' ? (import.meta.env.VITE_API_URL ?? '') : '',
   getAccessToken: () => readStoredSession().accessToken ?? null,
-  setAccessToken: (token: string) => {
-    const session = readStoredSession();
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, accessToken: token }));
-  },
+  setAccessToken: gravarAccessTokenSeHouverSessao,
   clearSession: () => localStorage.removeItem(AUTH_STORAGE_KEY),
 });
 

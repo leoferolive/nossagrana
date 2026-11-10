@@ -93,6 +93,14 @@ export class ApiClient {
   }
 
   /**
+   * Resolve quando não há refresh em andamento (ou quando o atual termina, mesmo falhando).
+   * O logout espera por aqui para revogar o cookie já rotacionado, não o antigo.
+   */
+  async aguardarRefresh(): Promise<void> {
+    await this.refreshInFlight?.catch(() => undefined);
+  }
+
+  /**
    * Se o access token já mudou desde que a requisição foi enviada, outra
    * requisição concluiu o refresh enquanto esta esperava: basta re-tentar.
    */

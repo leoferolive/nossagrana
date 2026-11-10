@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../../app.js';
 import { env } from '../../config/env.js';
@@ -29,7 +29,7 @@ describe('refresh token em cookie HttpOnly (#116)', () => {
 
   afterEach(async () => {
     env.NODE_ENV = 'test';
-    env.REFRESH_TOKEN_BODY_FALLBACK = false;
+    env.REFRESH_COOKIE_SECURE = false;
     await app.close();
   });
 
@@ -46,10 +46,10 @@ describe('refresh token em cookie HttpOnly (#116)', () => {
       expect(cookie).not.toContain('Domain');
     });
 
-    it('em produção o cookie é Secure e usa o prefixo __Secure-', async () => {
+    it('REFRESH_COOKIE_SECURE=true: cookie Secure com prefixo __Secure-', async () => {
       const email = novoEmail();
       await registrarELogarComCookie(app, email);
-      env.NODE_ENV = 'production';
+      env.REFRESH_COOKIE_SECURE = true;
 
       const resposta = await logarComCookie(app, email, 'senha12345');
 
@@ -57,6 +57,37 @@ describe('refresh token em cookie HttpOnly (#116)', () => {
       expect(cookie).toMatch(new RegExp(`^${NOME_COOKIE_PROD}=`));
       expect(cookie).toContain('Secure');
       expect(cookie).toContain('HttpOnly');
+    });
+
+    it('REFRESH_COOKIE_SECURE=false: sem Secure e sem prefixo, mesmo com NODE_ENV=production (dev em HTTP)', async () => {
+      const email = novoEmail();
+      await registrarELogarComCookie(app, email);
+      env.NODE_ENV = 'production';
+      env.REFRESH_COOKIE_SECURE = false;
+
+      const resposta = await logarComCookie(app, email, 'senha12345');
+
+      const [cookie] = lerSetCookie(resposta);
+      expect(cookie).toMatch(/^ng_refresh=/);
+      expect(cookie).not.toContain('Secure');
+    });
+
+    it('REFRESH_COOKIE_SECURE=true com NODE_ENV=test também limpa com os mesmos atributos no logout', async () => {
+      const email = novoEmail();
+      await registrarELogarComCookie(app, email);
+      env.REFRESH_COOKIE_SECURE = true;
+      const login = await logarComCookie(app, email, 'senha12345');
+      const refresh = lerRefreshEmitido(login) ?? '';
+
+      const logout = await app.inject({
+        method: 'POST',
+        url: '/api/auth/logout',
+        headers: CABECALHO_CSRF,
+        cookies: { [NOME_COOKIE_PROD]: refresh },
+      });
+
+      expect(logout.statusCode).toBe(204);
+      expect(lerSetCookie(logout)[0]).toMatch(new RegExp(`^${NOME_COOKIE_PROD}=;.*Secure`));
     });
 
     it('Max-Age acompanha a validade do refresh (7 dias)', async () => {
@@ -218,21 +249,35 @@ describe('refresh token em cookie HttpOnly (#116)', () => {
     });
   });
 
-  describe('modo legado (REFRESH_TOKEN_BODY_FALLBACK)', () => {
-    it('desligado: refresh no corpo, sem cookie, é recusado', async () => {
+  describe('refresh nunca viaja no corpo', () => {
+    it('refresh no corpo, sem cookie, é recusado', async () => {
       const { refresh } = await registrarELogarComCookie(app, novoEmail());
 
       const resposta = await app.inject({
         method: 'POST',
         url: '/api/auth/refresh',
         payload: { refreshToken: refresh },
+        headers: CABECALHO_CSRF,
       });
 
       expect(resposta.statusCode).toBe(401);
     });
 
-    it('ligado: cliente antigo (sem cabeçalho CSRF) recebe e envia refresh no corpo', async () => {
-      env.REFRESH_TOKEN_BODY_FALLBACK = true;
+    it('logout com refresh só no corpo é recusado e não revoga nada', async () => {
+      const { refresh } = await registrarELogarComCookie(app, novoEmail());
+
+      const logout = await app.inject({
+        method: 'POST',
+        url: '/api/auth/logout',
+        payload: { refreshToken: refresh },
+        headers: CABECALHO_CSRF,
+      });
+
+      expect(logout.statusCode).toBe(401);
+      expect((await refreshComCookie(app, refresh)).statusCode).toBe(200);
+    });
+
+    it('login e refresh nunca devolvem refreshToken no JSON, nem com cliente sem cabeçalho CSRF', async () => {
       const email = novoEmail();
       await registrarELogarComCookie(app, email);
 
@@ -241,43 +286,41 @@ describe('refresh token em cookie HttpOnly (#116)', () => {
         url: '/api/auth/login',
         payload: { email, senha: 'senha12345' },
       });
-      const { refreshToken } = login.json() as { refreshToken: string };
-      const renovado = await app.inject({
-        method: 'POST',
-        url: '/api/auth/refresh',
-        payload: { refreshToken },
-      });
 
-      expect(refreshToken).toEqual(expect.any(String));
-      expect(renovado.statusCode).toBe(200);
-      expect(renovado.json()).toMatchObject({ refreshToken: expect.any(String) });
+      expect(login.json()).toEqual({ accessToken: expect.any(String) });
+    });
+  });
+
+  describe('falha de infraestrutura x token inválido', () => {
+    it('falha ao checar revogação no refresh vira 500 e NÃO limpa o cookie', async () => {
+      const { refresh } = await registrarELogarComCookie(app, novoEmail());
+      vi.spyOn(app.repositoriosInMemory!.tokensRevogados, 'isRevoked').mockRejectedValue(
+        new Error('armazenamento indisponível'),
+      );
+
+      const resposta = await refreshComCookie(app, refresh);
+
+      expect(resposta.statusCode).toBe(500);
+      expect(lerSetCookie(resposta)).toEqual([]);
     });
 
-    it('ligado: cliente novo (com cabeçalho CSRF) continua sem refresh no JSON', async () => {
-      env.REFRESH_TOKEN_BODY_FALLBACK = true;
+    it('falha ao gravar a revogação no logout vira 500 e NÃO limpa o cookie', async () => {
+      const { refresh } = await registrarELogarComCookie(app, novoEmail());
+      vi.spyOn(app.repositoriosInMemory!.tokensRevogados, 'revokeToken').mockRejectedValue(
+        new Error('armazenamento indisponível'),
+      );
 
-      const { resposta } = await registrarELogarComCookie(app, novoEmail());
+      const resposta = await logoutComCookie(app, refresh);
 
-      expect(resposta.json()).toEqual({ accessToken: expect.any(String) });
+      expect(resposta.statusCode).toBe(500);
+      expect(lerSetCookie(resposta)).toEqual([]);
     });
 
-    it('ligado: replay do refresh legado continua detectado', async () => {
-      env.REFRESH_TOKEN_BODY_FALLBACK = true;
-      const email = novoEmail();
-      await registrarELogarComCookie(app, email);
-      const login = await app.inject({
-        method: 'POST',
-        url: '/api/auth/login',
-        payload: { email, senha: 'senha12345' },
-      });
-      const { refreshToken } = login.json() as { refreshToken: string };
-      const enviar = () =>
-        app.inject({ method: 'POST', url: '/api/auth/refresh', payload: { refreshToken } });
-      await enviar();
+    it('token malformado no refresh continua 401 e limpa o cookie', async () => {
+      const resposta = await refreshComCookie(app, 'lixo');
 
-      const replay = await enviar();
-
-      expect(replay.json()).toMatchObject({ code: 'TOKEN_REUSE_DETECTED' });
+      expect(resposta.statusCode).toBe(401);
+      expect(lerSetCookie(resposta)[0]).toMatch(/^ng_refresh=;/);
     });
   });
 

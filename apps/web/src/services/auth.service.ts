@@ -47,6 +47,8 @@ export class AuthService {
 
   /** O servidor revoga o refresh vigente (cookie) e limpa o cookie; não há token para enviar. */
   async logout(): Promise<void> {
+    // Um refresh em voo rotaciona o cookie: revogar antes dele deixaria o novo cookie vivo.
+    await this.api.aguardarRefresh();
     return this.api.request<void>('/api/auth/logout', {
       ...cookieAuthInit(),
       method: 'POST',

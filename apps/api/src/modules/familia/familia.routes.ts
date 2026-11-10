@@ -28,7 +28,8 @@ import {
   NoopFamiliaLifecyclePublisher,
   type FamiliaLifecyclePublisher,
 } from '../../shared/familia-lifecycle/familia-lifecycle.events.js';
-import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
+import { repositoriosInMemoryDe } from '../../shared/repositorios-in-memory.js';
+import { DrizzleFamiliaRepository } from './familia.repository.js';
 import {
   familiaBuscarSchema,
   familiaCreateInviteSchema,
@@ -58,10 +59,13 @@ import {
   SelfMemberRemovalError,
 } from './familia.service.js';
 
-const defaultFamiliaService = (lifecycle: FamiliaLifecyclePublisher): FamiliaService => {
+const defaultFamiliaService = (
+  fastify: FastifyInstance,
+  lifecycle: FamiliaLifecyclePublisher,
+): FamiliaService => {
   if (env.NODE_ENV === 'test') {
     return new FamiliaService(
-      new InMemoryFamiliaRepository(),
+      repositoriosInMemoryDe(fastify).familias,
       new InMemoryCategoriaRepository(),
       new InMemoryTemplateTransacaoRepository(),
       lifecycle,
@@ -87,7 +91,7 @@ const lifecyclePublisherDe = (fastify: FastifyInstance): FamiliaLifecyclePublish
 };
 
 export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
-  const familiaService = defaultFamiliaService(lifecyclePublisherDe(fastify));
+  const familiaService = defaultFamiliaService(fastify, lifecyclePublisherDe(fastify));
 
   fastify.get(
     '/familias/minhas',

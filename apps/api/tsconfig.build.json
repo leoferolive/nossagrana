@@ -10,6 +10,7 @@
     "src/**/*.spec.ts",
     "src/scripts/**",
     "src/db/tests/**",
-    "src/modules/ws/tests/**"
+    "src/modules/ws/tests/**",
+    "src/shared/familia-access/tests/**"
   ]
 }

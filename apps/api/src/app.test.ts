@@ -7,9 +7,10 @@ import {
   logoutComCookie,
   refreshComCookie,
 } from './modules/auth/tests/sessao-cookie.js';
+import { buildAppComFamiliasInMemory } from './shared/familia-access/tests/verificador-acesso-familia.in-memory.js';
 
 describe('API health endpoint', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
 
   beforeAll(async () => {
     await app.ready();
@@ -204,7 +205,23 @@ describe('API health endpoint', () => {
     });
     expect(missingHeaderResponse.statusCode).toBe(400);
 
+    const familiaResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia Escopo' },
+    });
+    const familiaId = familiaResponse.json().familia.id as string;
+
     const validHeaderResponse = await app.inject({
+      method: 'GET',
+      url: '/api/auth/familia-context',
+      headers: { authorization: `Bearer ${accessToken}`, 'x-familia-id': familiaId },
+    });
+    expect(validHeaderResponse.statusCode).toBe(200);
+    expect(validHeaderResponse.json()).toMatchObject({ familiaId });
+
+    const familiaAlheiaResponse = await app.inject({
       method: 'GET',
       url: '/api/auth/familia-context',
       headers: {
@@ -212,10 +229,7 @@ describe('API health endpoint', () => {
         'x-familia-id': '11111111-1111-1111-1111-111111111111',
       },
     });
-    expect(validHeaderResponse.statusCode).toBe(200);
-    expect(validHeaderResponse.json()).toMatchObject({
-      familiaId: '11111111-1111-1111-1111-111111111111',
-    });
+    expect(familiaAlheiaResponse.statusCode).toBe(403);
   });
 
   it('creates a family for authenticated user', async () => {
@@ -1308,7 +1322,7 @@ describe('API health endpoint', () => {
 // ─── Métodos de Pagamento ────────────────────────────────────────────────────
 
 describe('métodos de pagamento routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
 
   beforeAll(async () => {
     await app.ready();
@@ -1403,7 +1417,7 @@ describe('métodos de pagamento routes', () => {
 // ─── Transações ──────────────────────────────────────────────────────────────
 
 describe('transacao routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
 
   beforeAll(async () => {
     await app.ready();
@@ -1645,9 +1659,9 @@ describe('transacao routes', () => {
 });
 
 describe('Dashboard routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let accessToken: string;
-  const familiaId = '00000000-0000-0000-0000-000000000001';
+  let familiaId: string;
 
   beforeAll(async () => {
     await app.ready();
@@ -1662,6 +1676,13 @@ describe('Dashboard routes', () => {
       payload: { email: 'dash@example.com', senha: 'password123' },
     });
     accessToken = loginRes.json().accessToken;
+    const familiaRes = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { nome: 'Familia Dash' },
+    });
+    familiaId = familiaRes.json().familia.id;
   });
 
   afterAll(() => app.close());
@@ -1719,7 +1740,7 @@ describe('Dashboard routes', () => {
 });
 
 describe('Orcamento routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let accessToken: string;
   let familiaId: string;
   let categoriaId: string;
@@ -1808,7 +1829,7 @@ describe('Orcamento routes', () => {
 });
 
 describe('Relatorio routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let accessToken: string;
   let familiaId: string;
 
@@ -1878,7 +1899,7 @@ describe('Relatorio routes', () => {
 });
 
 describe('Fatura routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let accessToken: string;
   let familiaId: string;
   let metodoPagamentoId: string;
@@ -2057,7 +2078,7 @@ describe('Admin routes', () => {
 });
 
 describe('Historico routes', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let accessToken: string;
   let familiaId: string;
 

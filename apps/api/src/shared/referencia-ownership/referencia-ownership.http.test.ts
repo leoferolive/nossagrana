@@ -3,6 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import {
+  VerificadorAcessoFamiliaFake,
+  subDoAccessToken,
+} from '../../shared/familia-access/tests/verificador-acesso-familia.fake.js';
 
 /**
  * Contrato HTTP da validação de ownership (#55): rotas reais, com o repositório
@@ -16,8 +20,10 @@ function expectEnvelopeReferenciaInvalida(body: unknown) {
 }
 
 describe('Referências de outra família nas rotas financeiras', () => {
-  const app = buildApp();
+  const verificador = new VerificadorAcessoFamiliaFake();
+  const app = buildApp({ verificadorAcessoFamilia: verificador });
   const familiaId = randomUUID();
+  const familiaB = randomUUID();
   const categoriaDeOutraFamilia = randomUUID();
   let token: string;
 
@@ -36,6 +42,9 @@ describe('Referências de outra família nas rotas financeiras', () => {
       payload: { email: 'ownership@example.com', senha: 'password123' },
     });
     token = login.json().accessToken;
+    verificador
+      .vincular(subDoAccessToken(token), familiaId)
+      .vincular(subDoAccessToken(token), familiaB);
   });
 
   afterAll(() => app.close());
@@ -62,7 +71,6 @@ describe('Referências de outra família nas rotas financeiras', () => {
   });
 
   it('categoria criada pela família A é aceita em A e rejeitada em B', async () => {
-    const familiaB = randomUUID();
     const criada = await app.inject({
       method: 'POST',
       url: '/api/categorias',

@@ -7,7 +7,6 @@ const mockInnerJoin = vi.fn();
 const mockFrom = vi.fn();
 const mockSelect = vi.fn();
 
-vi.mock('../../config/env.js', () => ({ env: { NODE_ENV: 'development' } }));
 vi.mock('../../db/client.js', () => ({ db: { select: mockSelect } }));
 
 const familiaId = '11111111-1111-1111-1111-111111111111';
@@ -18,7 +17,9 @@ async function createApp() {
   const { sessaoRevogacaoPlugin } = await import('../../plugins/sessao-revogacao.plugin.js');
   const { InMemoryRevokedTokenRepository } = await import('../auth/revoked-token.repository.js');
   const { wsTicketPlugin } = await import('../../plugins/ws-ticket.plugin.js');
+  const { familiaScopePlugin } = await import('../../plugins/familia-scope.plugin.js');
   const { wsRoutes } = await import('./ws.routes.js');
+  await app.register(familiaScopePlugin);
   await app.register(websocketPlugin);
   await app.register(sessaoRevogacaoPlugin, {
     tokensRevogados: new InMemoryRevokedTokenRepository(),

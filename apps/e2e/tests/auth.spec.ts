@@ -20,7 +20,7 @@ const AUTH_KEY = 'nossagrana.auth.session';
  */
 async function injectAuthSession(
   page: import('@playwright/test').Page,
-  session: { accessToken: string; refreshToken: string; familiaIdAtiva?: string },
+  session: { accessToken: string; familiaIdAtiva?: string },
 ) {
   await page.evaluate(
     ({ key, value }) => {
@@ -30,7 +30,6 @@ async function injectAuthSession(
       key: AUTH_KEY,
       value: {
         accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
         familiaIdAtiva: session.familiaIdAtiva ?? '',
       },
     },
@@ -131,7 +130,6 @@ test.describe('Autenticação', () => {
     await page.goto('/');
     await injectAuthSession(page, {
       accessToken: authContext.accessToken,
-      refreshToken: authContext.refreshToken,
       familiaIdAtiva: '',
     });
 

@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import {
+  VerificadorAcessoFamiliaFake,
+  subDoAccessToken,
+} from '../../shared/familia-access/tests/verificador-acesso-familia.fake.js';
 
 import {
   conectarComAccess,
@@ -52,11 +56,16 @@ async function loginNovo(app: App): Promise<string> {
 describe('ws.routes — handshake com ticket efêmero (#118)', () => {
   let app: App;
   let accessToken: string;
+  let verificador: VerificadorAcessoFamiliaFake;
 
   beforeEach(async () => {
-    app = buildApp();
+    verificador = new VerificadorAcessoFamiliaFake();
+    app = buildApp({ verificadorAcessoFamilia: verificador });
     await app.ready();
     accessToken = await loginNovo(app);
+    verificador
+      .vincular(subDoAccessToken(accessToken), FAMILIA)
+      .vincular(subDoAccessToken(accessToken), OUTRA_FAMILIA);
   });
 
   afterEach(async () => {
@@ -64,7 +73,7 @@ describe('ws.routes — handshake com ticket efêmero (#118)', () => {
     await app.close();
   });
 
-  it('conecta com ticket válido e familiaId UUID (NODE_ENV=test bypassa membership)', async () => {
+  it('conecta com ticket válido e familiaId UUID (membership verificado)', async () => {
     const ws = await conectarComAccess(app, accessToken, FAMILIA);
 
     expect(ws.readyState).toBe(1);

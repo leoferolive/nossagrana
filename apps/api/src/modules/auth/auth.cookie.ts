@@ -10,21 +10,19 @@ import { env } from '../../config/env.js';
  *   em dev, localhost:5173 e localhost:3000 também são same-site), então Strict não custa nada.
  * - `Path=/api/auth`: o cookie só viaja para login/refresh/logout, não para as demais rotas.
  * - Sem `Domain`: cookie "host-only", nunca compartilhado com subdomínios.
- * - `Secure` + prefixo `__Secure-` em produção. `__Host-` exigiria `Path=/` (mandaria o
+ * - `Secure` + prefixo `__Secure-` conforme `REFRESH_COOKIE_SECURE` (true em prod, false no dev HTTP). `__Host-` exigiria `Path=/` (mandaria o
  *   cookie a toda requisição), então ficamos com `__Secure-` e o Path mínimo.
  */
 const CAMINHO_COOKIE = '/api/auth';
 const NOME_BASE = 'ng_refresh';
 
-const emProducao = (): boolean => env.NODE_ENV === 'production';
-
-/** Nome do cookie no ambiente atual (`__Secure-ng_refresh` em produção). */
+/** Nome do cookie (`__Secure-ng_refresh` quando `REFRESH_COOKIE_SECURE`). */
 export const nomeDoCookieRefresh = (): string =>
-  emProducao() ? `__Secure-${NOME_BASE}` : NOME_BASE;
+  env.REFRESH_COOKIE_SECURE ? `__Secure-${NOME_BASE}` : NOME_BASE;
 
 const opcoesBase = () => ({
   httpOnly: true,
-  secure: emProducao(),
+  secure: env.REFRESH_COOKIE_SECURE,
   sameSite: 'strict' as const,
   path: CAMINHO_COOKIE,
 });

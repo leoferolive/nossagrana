@@ -1,8 +1,7 @@
-import { and, eq, isNull } from 'drizzle-orm';
-
 import type { ExecutorDrizzle, TransacaoDrizzle } from '../../db/executor.types.js';
-import { convites, familias } from '../../db/schema.js';
+import { convites } from '../../db/schema.js';
 import { montarNovoConvite } from './familia-convite.js';
+import { travarFamiliaAtiva } from './familia-trava.js';
 import type { CreatedFamiliaInvite, CreateFamiliaInviteInput } from './familia.types.js';
 
 /**
@@ -30,19 +29,10 @@ export class DrizzleConviteCriador {
     agora: Date = new Date(),
   ): Promise<CreatedFamiliaInvite | null> {
     return this.executor.transaction(async (tx) => {
-      const ativa = await this.travarFamiliaAtiva(tx, input.familiaId);
+      const ativa = await travarFamiliaAtiva(tx, input.familiaId);
       if (!ativa) return null;
       return this.inserir(tx, input, agora);
     });
-  }
-
-  private async travarFamiliaAtiva(tx: TransacaoDrizzle, familiaId: string): Promise<boolean> {
-    const linhas = await tx
-      .select({ id: familias.id })
-      .from(familias)
-      .where(and(eq(familias.id, familiaId), isNull(familias.deletedAt)))
-      .for('share');
-    return linhas.length > 0;
   }
 
   private async inserir(

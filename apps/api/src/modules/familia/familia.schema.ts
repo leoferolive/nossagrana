@@ -95,6 +95,9 @@ export const familiaRequestJoinSchema = {
     401: z.object({
       message: z.literal('Nao autenticado'),
     }),
+    404: z.object({
+      message: z.literal('Familia nao encontrada'),
+    }),
   },
 };
 

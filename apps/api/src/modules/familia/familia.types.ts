@@ -52,6 +52,13 @@ export interface CreatedFamiliaJoinRequest {
   respondidoPor?: string;
 }
 
+export interface ReviewFamiliaJoinRequestInput {
+  solicitacaoId: string;
+  familiaId: string;
+  adminId: string;
+  acao: 'aprovar' | 'rejeitar';
+}
+
 export interface ReviewedFamiliaJoinRequest {
   id: string;
   familiaId: string;
@@ -85,14 +92,12 @@ export interface FamiliaRepository {
   /** `null` quando a família não existe ou foi excluída (nenhum convite é gravado). */
   createInvite(input: CreateFamiliaInviteInput): Promise<CreatedFamiliaInvite | null>;
   joinByInvite(input: JoinFamiliaByInviteInput): Promise<ConsumoConviteResultado>;
-  requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest>;
+  /** `null` quando a família não existe ou foi excluída (nenhuma solicitação é gravada). */
+  requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest | null>;
   listPendingJoinRequests(input: { familiaId: string }): Promise<CreatedFamiliaJoinRequest[]>;
-  reviewJoinRequest(input: {
-    solicitacaoId: string;
-    familiaId: string;
-    adminId: string;
-    acao: 'aprovar' | 'rejeitar';
-  }): Promise<ReviewedFamiliaJoinRequest | null>;
+  reviewJoinRequest(
+    input: ReviewFamiliaJoinRequestInput,
+  ): Promise<ReviewedFamiliaJoinRequest | null>;
   listMembers(input: { familiaId: string }): Promise<FamiliaMember[]>;
   removeMember(input: { familiaId: string; usuarioId: string }): Promise<boolean>;
   deleteFamily(input: { familiaId: string }): Promise<boolean>;

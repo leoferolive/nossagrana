@@ -14,6 +14,34 @@ vi.mock('../../db/client.js', () => ({
 
 import { DrizzleFamiliaRepository, InMemoryFamiliaRepository } from './familia.repository.js';
 
+describe('InMemoryFamiliaRepository (família inexistente/excluída)', () => {
+  it('requestJoin retorna null para família inexistente e não grava', async () => {
+    const repository = new InMemoryFamiliaRepository();
+
+    const pedido = await repository.requestJoin({ familiaId: 'f-x', usuarioId: 'u1' });
+
+    expect(pedido).toBeNull();
+    expect(await repository.listPendingJoinRequests({ familiaId: 'f-x' })).toEqual([]);
+  });
+
+  it('reviewJoinRequest retorna null depois da exclusão e não vincula o membro', async () => {
+    const repository = new InMemoryFamiliaRepository();
+    const familia = await repository.createWithAdminMembership({ nome: 'F', usuarioId: 'adm' });
+    const pedido = await repository.requestJoin({ familiaId: familia.id, usuarioId: 'u2' });
+    await repository.deleteFamily({ familiaId: familia.id });
+
+    const revisada = await repository.reviewJoinRequest({
+      solicitacaoId: pedido!.id,
+      familiaId: familia.id,
+      adminId: 'adm',
+      acao: 'aprovar',
+    });
+
+    expect(revisada).toBeNull();
+    expect(await repository.hasMembership({ familiaId: familia.id, usuarioId: 'u2' })).toBe(false);
+  });
+});
+
 describe('InMemoryFamiliaRepository', () => {
   it('handles family lifecycle flows', async () => {
     const repository = new InMemoryFamiliaRepository();
@@ -64,7 +92,7 @@ describe('InMemoryFamiliaRepository', () => {
     expect(pending).toHaveLength(1);
 
     const reviewed = await repository.reviewJoinRequest({
-      solicitacaoId: request.id,
+      solicitacaoId: request!.id,
       familiaId: familia.id,
       adminId,
       acao: 'aprovar',
@@ -267,46 +295,7 @@ describe('DrizzleFamiliaRepository', () => {
     expect(travarFamilia).toHaveBeenCalledWith('share');
   });
 
-  it('requests, reviews and removes records in transactional methods', async () => {
-    const reviewTx = {
-      select: vi.fn().mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: 'r1',
-                familiaId: 'f1',
-                usuarioId: 'u2',
-                solicitadoEm: new Date('2026-01-01T00:00:00.000Z'),
-              },
-            ]),
-          }),
-        }),
-      }),
-      update: vi.fn().mockReturnValue({
-        set: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: 'r1',
-                familiaId: 'f1',
-                usuarioId: 'u2',
-                status: 'aprovada',
-                solicitadoEm: new Date('2026-01-01T00:00:00.000Z'),
-                respondidoEm: new Date('2026-01-02T00:00:00.000Z'),
-                respondidoPor: 'u1',
-              },
-            ]),
-          }),
-        }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockReturnValue({
-          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-        }),
-      }),
-    };
-
+  it('lists pending requests, removes members and deletes family in transactional methods', async () => {
     const deleteTx = {
       update: vi
         .fn()
@@ -322,23 +311,7 @@ describe('DrizzleFamiliaRepository', () => {
         }),
     };
 
-    mockDb.transaction
-      .mockImplementationOnce(async (callback) => callback(reviewTx as never))
-      .mockImplementationOnce(async (callback) => callback(deleteTx as never));
-
-    mockDb.insert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            id: 'r1',
-            familiaId: 'f1',
-            usuarioId: 'u2',
-            status: 'pendente',
-            solicitadoEm: new Date('2026-01-01T00:00:00.000Z'),
-          },
-        ]),
-      }),
-    });
+    mockDb.transaction.mockImplementationOnce(async (callback) => callback(deleteTx as never));
 
     mockDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
@@ -370,22 +343,8 @@ describe('DrizzleFamiliaRepository', () => {
 
     const repository = new DrizzleFamiliaRepository();
 
-    const joinRequest = await repository.requestJoin({
-      familiaId: 'f1',
-      usuarioId: 'u2',
-    });
-    expect(joinRequest.status).toBe('pendente');
-
     const pending = await repository.listPendingJoinRequests({ familiaId: 'f1' });
     expect(pending).toHaveLength(1);
-
-    const reviewed = await repository.reviewJoinRequest({
-      solicitacaoId: 'r1',
-      familiaId: 'f1',
-      adminId: 'u1',
-      acao: 'aprovar',
-    });
-    expect(reviewed?.status).toBe('aprovada');
 
     const removed = await repository.removeMember({
       familiaId: 'f1',

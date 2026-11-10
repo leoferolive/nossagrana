@@ -203,10 +203,12 @@ export class FamiliaService {
   }
 
   async requestJoin(input: RequestFamiliaJoinInput) {
-    return this.familiaRepository.requestJoin({
+    const solicitacao = await this.familiaRepository.requestJoin({
       familiaId: input.familiaId,
       usuarioId: input.usuarioId,
     });
+    if (!solicitacao) throw new FamiliaNotFoundError();
+    return solicitacao;
   }
 
   async listPendingJoinRequests(input: { familiaId: string; usuarioId: string }) {

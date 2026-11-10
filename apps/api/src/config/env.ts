@@ -11,6 +11,13 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
+  // Controla `Secure` e o prefixo `__Secure-` do cookie de refresh (#116). Explícito (e não
+  // derivado de NODE_ENV) porque o dev do cluster roda NODE_ENV=production sobre HTTP puro,
+  // onde o navegador recusaria um cookie Secure. Default seguro: true.
+  REFRESH_COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((valor) => valor === 'true'),
   CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
   SMTP_HOST: z.string().default('smtp-relay.brevo.com'),
   SMTP_PORT: z.coerce.number().default(587),

@@ -14,12 +14,10 @@ describe('App > fluxo não autenticado > convites e login', () => {
     vi.mocked(useAuth).mockImplementation(() => ({
       isAuthenticated: false as const,
       accessToken: null,
-      refreshToken: null,
       familiaIdAtiva: currentFamiliaId,
       login: vi.fn(),
       logout: vi.fn(),
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       updateFamiliaIdAtiva: vi.fn((id: string) => {
         currentFamiliaId = id;
       }),
@@ -124,14 +122,12 @@ describe('App > fluxo não autenticado > convites e login', () => {
     vi.mocked(useAuth).mockImplementation(() => ({
       isAuthenticated: authenticated,
       accessToken: authenticated ? 'token' : null,
-      refreshToken: null,
       familiaIdAtiva: null,
       login: vi.fn(() => {
         authenticated = true;
       }),
       logout: vi.fn(),
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       updateFamiliaIdAtiva: vi.fn(),
     }));
 
@@ -148,12 +144,10 @@ describe('App > fluxo não autenticado > convites e login', () => {
     vi.mocked(useAuth).mockImplementation(() => ({
       isAuthenticated: false,
       accessToken: null,
-      refreshToken: null,
       familiaIdAtiva: null,
       login: vi.fn(),
       logout: vi.fn(),
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       updateFamiliaIdAtiva: updateFamilia,
     }));
 

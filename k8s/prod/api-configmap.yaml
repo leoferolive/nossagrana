@@ -8,4 +8,5 @@ data:
   PORT: '3000'
   JWT_EXPIRES_IN: 15m
   REFRESH_TOKEN_EXPIRES_IN: 7d
-  CORS_ORIGIN: http://nossagrana.leoferolive.com.br
+  CORS_ORIGIN: https://nossagrana.leoferolive.com.br
+  REFRESH_COOKIE_SECURE: 'true'

@@ -24,12 +24,10 @@ beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated: false,
     accessToken: null,
-    refreshToken: null,
     familiaIdAtiva: null,
     login: mockLogin,
     logout: vi.fn(),
     setAccessToken: vi.fn(),
-    setRefreshToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn(),
   });
 });
@@ -75,7 +73,6 @@ describe('LoginPage', () => {
     ];
     vi.mocked(authService.login).mockResolvedValueOnce({
       accessToken: 'access-token-123',
-      refreshToken: 'refresh-token-456',
     });
     vi.mocked(familiaService.listarMinhas).mockResolvedValueOnce({ familias: mockFamilias });
 
@@ -100,7 +97,6 @@ describe('LoginPage', () => {
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         accessToken: 'access-token-123',
-        refreshToken: 'refresh-token-456',
         familiaIdAtiva: '',
       });
     });
@@ -134,7 +130,7 @@ describe('LoginPage', () => {
   });
 
   it('botão fica desabilitado e mostra "Entrando..." durante loading', async () => {
-    let resolveLogin!: (value: { accessToken: string; refreshToken: string }) => void;
+    let resolveLogin!: (value: { accessToken: string }) => void;
     vi.mocked(authService.login).mockReturnValueOnce(
       new Promise((resolve) => {
         resolveLogin = resolve;
@@ -157,7 +153,7 @@ describe('LoginPage', () => {
       expect(screen.getByRole('button', { name: /entrando/i })).toBeDisabled();
     });
 
-    resolveLogin({ accessToken: 'at', refreshToken: 'rt' });
+    resolveLogin({ accessToken: 'at' });
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /entrar/i })).not.toBeDisabled();

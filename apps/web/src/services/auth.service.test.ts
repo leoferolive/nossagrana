@@ -1,18 +1,30 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from './api-client';
 import {
   categoriaService,
+  gravarAccessTokenSeHouverSessao,
   metodoPagamentoService,
   transacaoService,
 } from './core-financeiro.service';
 import { AuthService, FamiliaService } from './auth.service';
 
-const buildApiClient = (overrides?: Partial<Pick<ApiClient, 'request'>>) =>
+const buildApiClient = (
+  overrides?: Partial<
+    Pick<ApiClient, 'request' | 'aguardarRefresh' | 'encerrarSessao' | 'retomarSessao'>
+  >,
+) =>
   ({
     request: vi.fn(),
+    aguardarRefresh: vi.fn().mockResolvedValue(undefined),
+    encerrarSessao: vi.fn(),
+    retomarSessao: vi.fn(),
     ...overrides,
-  }) as Pick<ApiClient, 'request'> as ApiClient;
+  }) as Pick<
+    ApiClient,
+    'request' | 'aguardarRefresh' | 'encerrarSessao' | 'retomarSessao'
+  > as ApiClient;
 
 describe('AuthService', () => {
   let apiClient: ApiClient;
@@ -24,10 +36,7 @@ describe('AuthService', () => {
   });
 
   it('login faz POST /api/auth/login com payload', async () => {
-    vi.mocked(apiClient.request).mockResolvedValueOnce({
-      accessToken: 'at',
-      refreshToken: 'rt',
-    });
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ accessToken: 'at' });
 
     const payload = { email: 'user@test.com', senha: 'senhaSegura123' };
     const result = await service.login(payload);
@@ -37,8 +46,12 @@ describe('AuthService', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify(payload),
+        credentials: 'include',
+        skipAuthRetry: true,
       }),
     );
+    const { headers } = vi.mocked(apiClient.request).mock.calls[0][1] as RequestInit;
+    expect(new Headers(headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
     expect(result.accessToken).toBe('at');
   });
 
@@ -59,18 +72,145 @@ describe('AuthService', () => {
     );
   });
 
-  it('logout faz POST /api/auth/logout com { refreshToken }', async () => {
+  it('logout faz POST /api/auth/logout só com cookie + CSRF, sem corpo nem token', async () => {
     vi.mocked(apiClient.request).mockResolvedValueOnce(undefined);
 
-    await service.logout('my-refresh-token');
+    await service.logout();
 
-    expect(apiClient.request).toHaveBeenCalledWith(
-      '/api/auth/logout',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ refreshToken: 'my-refresh-token' }),
-      }),
+    const [path, init] = vi.mocked(apiClient.request).mock.calls[0] as [string, RequestInit];
+    expect(path).toBe('/api/auth/logout');
+    expect(init).toMatchObject({ method: 'POST', credentials: 'include' });
+    expect(init.body).toBeUndefined();
+    expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+  });
+});
+
+describe('AuthService.logout x refresh em voo (#116)', () => {
+  it('espera o refresh em andamento terminar antes de enviar o logout (revoga o cookie vigente)', async () => {
+    const ordem: string[] = [];
+    let terminarRefresh!: () => void;
+    const apiClient = buildApiClient({
+      aguardarRefresh: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            terminarRefresh = () => {
+              ordem.push('refresh-terminou');
+              resolve();
+            };
+          }),
+      ),
+      request: vi.fn(async () => {
+        ordem.push('logout-enviado');
+      }) as ApiClient['request'],
+    });
+
+    vi.mocked(apiClient.encerrarSessao).mockImplementation(() => {
+      ordem.push('sessao-encerrada');
+    });
+    const logout = new AuthService(apiClient).logout();
+    await Promise.resolve();
+    expect(apiClient.request).not.toHaveBeenCalled();
+    terminarRefresh();
+    await logout;
+
+    expect(ordem).toEqual(['sessao-encerrada', 'refresh-terminou', 'logout-enviado']);
+  });
+});
+
+describe('AuthService.login x logout pendente (#116)', () => {
+  const montar = (logoutFalha = false) => {
+    const postados: string[] = [];
+    let terminarRefresh!: () => void;
+    const apiClient = buildApiClient({
+      aguardarRefresh: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            terminarRefresh = resolve;
+          }),
+      ),
+      request: vi.fn(async (path: string) => {
+        postados.push(path);
+        if (path === '/api/auth/logout' && logoutFalha) throw new Error('500');
+        return { accessToken: 'at' };
+      }) as ApiClient['request'],
+    });
+    return { service: new AuthService(apiClient), postados, liberar: () => terminarRefresh() };
+  };
+  const credenciais = { email: 'a@b.c', senha: 'senha12345' };
+
+  it('o POST de login só sai depois do POST de logout (o cookie novo não é revogado)', async () => {
+    const { service, postados, liberar } = montar();
+
+    const logout = service.logout();
+    const login = service.login(credenciais);
+    await Promise.resolve();
+    expect(postados).toEqual([]);
+    liberar();
+    await Promise.all([logout, login]);
+
+    expect(postados).toEqual(['/api/auth/logout', '/api/auth/login']);
+  });
+
+  it('erro no logout pendente não impede o login', async () => {
+    const { service, postados, liberar } = montar(true);
+
+    const logout = service.logout().catch(() => undefined);
+    const login = service.login(credenciais);
+    liberar();
+    await logout;
+
+    await expect(login).resolves.toEqual({ accessToken: 'at' });
+    expect(postados).toEqual(['/api/auth/logout', '/api/auth/login']);
+  });
+
+  it('sem logout pendente o login sai imediatamente, e a referência é limpa após o logout', async () => {
+    const { service, postados, liberar } = montar();
+    const logout = service.logout();
+    liberar();
+    await logout;
+
+    await service.login(credenciais);
+
+    expect(postados).toEqual(['/api/auth/logout', '/api/auth/login']);
+  });
+});
+
+describe('AuthService.login retoma a sessão (#116)', () => {
+  it('login bem-sucedido libera refreshes de novo; falho não', async () => {
+    const apiClient = buildApiClient();
+    const service = new AuthService(apiClient);
+    vi.mocked(apiClient.request).mockRejectedValueOnce(new Error('401'));
+    await expect(service.login({ email: 'a@b.c', senha: 'senha12345' })).rejects.toThrow();
+    expect(apiClient.retomarSessao).not.toHaveBeenCalled();
+
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ accessToken: 'at' });
+    await service.login({ email: 'a@b.c', senha: 'senha12345' });
+
+    expect(apiClient.retomarSessao).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('setAccessToken do client singleton (#116)', () => {
+  afterEach(() => localStorage.clear());
+
+  it('não recria a sessão quando um refresh termina depois do logout', () => {
+    gravarAccessTokenSeHouverSessao('token-tardio');
+
+    expect(localStorage.getItem('nossagrana.auth.session')).toBeNull();
+  });
+
+  it('atualiza o access token quando há sessão armazenada', () => {
+    localStorage.setItem(
+      'nossagrana.auth.session',
+      JSON.stringify({ accessToken: 'velho', familiaIdAtiva: 'f1' }),
     );
+
+    gravarAccessTokenSeHouverSessao('novo');
+
+    expect(JSON.parse(localStorage.getItem('nossagrana.auth.session') ?? '{}')).toEqual({
+      accessToken: 'novo',
+      familiaIdAtiva: 'f1',
+    });
   });
 });
 

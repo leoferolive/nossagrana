@@ -6,12 +6,16 @@ import { AuthContext, type AuthContextValue } from './auth-context-store';
 
 interface AuthSession {
   accessToken: string;
-  refreshToken: string;
   familiaIdAtiva: string;
 }
 
 const AUTH_SESSION_STORAGE_KEY = 'nossagrana.auth.session';
 
+/**
+ * O refresh token vive em cookie HttpOnly (#116). Sessões gravadas antes da migração ainda
+ * têm `refreshToken` no JSON: ele é descartado na leitura e o storage é regravado limpo
+ * pelo efeito de persistência abaixo.
+ */
 const loadStoredSession = (): AuthSession | null => {
   const rawValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
   if (!rawValue) {
@@ -20,18 +24,12 @@ const loadStoredSession = (): AuthSession | null => {
 
   try {
     const parsedValue = JSON.parse(rawValue) as Partial<AuthSession>;
-    if (
-      typeof parsedValue.accessToken !== 'string' ||
-      parsedValue.accessToken.length === 0 ||
-      typeof parsedValue.refreshToken !== 'string' ||
-      parsedValue.refreshToken.length === 0
-    ) {
+    if (typeof parsedValue.accessToken !== 'string' || parsedValue.accessToken.length === 0) {
       return null;
     }
 
     return {
       accessToken: parsedValue.accessToken,
-      refreshToken: parsedValue.refreshToken,
       familiaIdAtiva:
         typeof parsedValue.familiaIdAtiva === 'string' ? parsedValue.familiaIdAtiva : '',
     };
@@ -69,19 +67,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
   }, []);
 
-  const setRefreshToken = useCallback((refreshToken: string) => {
-    setSession((currentSession) => {
-      if (!currentSession) {
-        return null;
-      }
-
-      return {
-        ...currentSession,
-        refreshToken,
-      };
-    });
-  }, []);
-
   const updateFamiliaIdAtiva = useCallback((familiaIdAtiva: string) => {
     const currentRaw = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
     if (currentRaw) {
@@ -98,15 +83,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     () => ({
       isAuthenticated: session !== null,
       accessToken: session?.accessToken ?? null,
-      refreshToken: session?.refreshToken ?? null,
       familiaIdAtiva: session?.familiaIdAtiva ?? null,
       login,
       logout,
       setAccessToken,
-      setRefreshToken,
       updateFamiliaIdAtiva,
     }),
-    [login, logout, session, setAccessToken, setRefreshToken, updateFamiliaIdAtiva],
+    [login, logout, session, setAccessToken, updateFamiliaIdAtiva],
   );
 
   useEffect(() => {

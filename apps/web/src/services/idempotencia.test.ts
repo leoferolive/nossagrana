@@ -52,15 +52,13 @@ describe('ApiClient — retry após refresh do token', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
-      .mockResolvedValueOnce(json({ accessToken: 'novo', refreshToken: 'rt2' }))
+      .mockResolvedValueOnce(json({ accessToken: 'novo' }))
       .mockResolvedValueOnce(json({ ok: true }, 201));
     const api = new ApiClient({
       baseUrl: '',
       fetchFn: fetchMock,
       getAccessToken: () => 'velho',
-      getRefreshToken: () => 'rt',
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       clearSession: vi.fn(),
     });
 

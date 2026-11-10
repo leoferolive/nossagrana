@@ -1,10 +1,10 @@
+import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClient, ApiError } from './api-client';
 
 interface TokenState {
   accessToken: string | null;
-  refreshToken: string | null;
 }
 
 describe('ApiClient', () => {
@@ -13,7 +13,6 @@ describe('ApiClient', () => {
   beforeEach(() => {
     tokenState = {
       accessToken: 'access-token-old',
-      refreshToken: 'refresh-token-valid',
     };
   });
 
@@ -26,13 +25,10 @@ describe('ApiClient', () => {
         }),
       )
       .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ accessToken: 'access-token-new', refreshToken: 'refresh-token-new' }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          },
-        ),
+        new Response(JSON.stringify({ accessToken: 'access-token-new' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ ok: true }), {
@@ -45,16 +41,11 @@ describe('ApiClient', () => {
       baseUrl: 'http://localhost:3000',
       fetchFn: fetchMock,
       getAccessToken: () => tokenState.accessToken,
-      getRefreshToken: () => tokenState.refreshToken,
       setAccessToken: (accessToken) => {
         tokenState.accessToken = accessToken;
       },
-      setRefreshToken: (refreshToken) => {
-        tokenState.refreshToken = refreshToken;
-      },
       clearSession: () => {
         tokenState.accessToken = null;
-        tokenState.refreshToken = null;
       },
     });
 
@@ -62,11 +53,210 @@ describe('ApiClient', () => {
 
     expect(result).toEqual({ ok: true });
     expect(tokenState.accessToken).toBe('access-token-new');
-    expect(tokenState.refreshToken).toBe('refresh-token-new');
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:3000/api/auth/refresh');
     const requestHeaders = new Headers(fetchMock.mock.calls[2][1]?.headers);
     expect(requestHeaders.get('Authorization')).toBe('Bearer access-token-new');
+  });
+
+  it('refresh usa o cookie: credentials include + cabeçalho CSRF, sem refresh no corpo nem no storage', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'access-token-new' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: (accessToken) => {
+        tokenState.accessToken = accessToken;
+      },
+      clearSession: vi.fn(),
+    });
+
+    await apiClient.request('/api/dashboard');
+
+    const [, refreshInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(refreshInit.credentials).toBe('include');
+    expect(new Headers(refreshInit.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+    expect(refreshInit.body).toBe('{}');
+    expect(localStorage.length).toBe(0);
+  });
+
+  it('requisições comuns não enviam credenciais (cookie só vai nos endpoints de auth)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: vi.fn(),
+      clearSession: vi.fn(),
+    });
+
+    await apiClient.request('/api/dashboard');
+
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].credentials).toBeUndefined();
+  });
+
+  it('401 sem sessão (ex.: login errado) não dispara refresh', async () => {
+    tokenState.accessToken = null;
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: vi.fn(),
+      clearSession: vi.fn(),
+    });
+
+    await expect(apiClient.request('/api/auth/login')).rejects.toThrow('Não autorizado');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('aguardarRefresh resolve quando não há refresh em andamento e espera o em andamento', async () => {
+    let liberar!: () => void;
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      if (String(input).endsWith('/api/auth/refresh')) {
+        return new Promise<Response>((resolve) => {
+          liberar = () =>
+            resolve(new Response(JSON.stringify({ accessToken: 'novo' }), { status: 200 }));
+        });
+      }
+      const ok = tokenState.accessToken === 'novo';
+      return Promise.resolve(new Response(ok ? '{}' : null, { status: ok ? 200 : 401 }));
+    });
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: (accessToken) => {
+        tokenState.accessToken = accessToken;
+      },
+      clearSession: vi.fn(),
+    });
+    await apiClient.aguardarRefresh();
+
+    const requisicao = apiClient.request('/api/a');
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    let terminou = false;
+    const espera = apiClient.aguardarRefresh().then(() => (terminou = true));
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    liberar();
+    await espera;
+    await requisicao;
+
+    expect(tokenState.accessToken).toBe('novo');
+  });
+
+  it.each([500, 503])(
+    'refresh com %i não limpa a sessão local (o cookie segue válido)',
+    async (status) => {
+      const clearSession = vi.fn();
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 401 }))
+        .mockResolvedValueOnce(new Response(null, { status }));
+      const apiClient = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchMock,
+        getAccessToken: () => tokenState.accessToken,
+        setAccessToken: vi.fn(),
+        clearSession,
+      });
+
+      await expect(apiClient.request('/api/dashboard')).rejects.toThrow();
+
+      expect(clearSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([401, 403])('refresh com %i limpa a sessão', async (status) => {
+    const clearSession = vi.fn();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: vi.fn(),
+      clearSession,
+    });
+
+    await expect(apiClient.request('/api/dashboard')).rejects.toThrow();
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+  });
+
+  describe('logout x requisição em voo (#116)', () => {
+    const montar = () => {
+      let liberar401!: () => void;
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        if (String(input).endsWith('/api/auth/refresh')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ accessToken: 'novo' }), { status: 200 }),
+          );
+        }
+        return new Promise<Response>((resolve) => {
+          liberar401 = () => resolve(new Response(null, { status: 401 }));
+        });
+      });
+      const apiClient = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchMock,
+        getAccessToken: () => tokenState.accessToken,
+        setAccessToken: (accessToken) => {
+          tokenState.accessToken = accessToken;
+        },
+        clearSession: vi.fn(),
+      });
+      return { apiClient, fetchMock, liberar: () => liberar401() };
+    };
+    const refreshCalls = (fetchMock: ReturnType<typeof montar>['fetchMock']) =>
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/auth/refresh'));
+
+    it('401 atrasado depois do logout não dispara refresh', async () => {
+      const { apiClient, fetchMock, liberar } = montar();
+      const lenta = apiClient.request('/api/lenta');
+      apiClient.encerrarSessao();
+      tokenState.accessToken = null;
+
+      liberar();
+
+      await expect(lenta).rejects.toThrow('Não autorizado');
+      expect(refreshCalls(fetchMock)).toHaveLength(0);
+    });
+
+    it('sem access token atual no 401 (sessão já limpa) não dispara refresh', async () => {
+      const { apiClient, fetchMock, liberar } = montar();
+      const lenta = apiClient.request('/api/lenta');
+      tokenState.accessToken = null;
+
+      liberar();
+
+      await expect(lenta).rejects.toThrow('Não autorizado');
+      expect(refreshCalls(fetchMock)).toHaveLength(0);
+    });
+
+    it('encerrarSessao bloqueia refresh mesmo com token presente; retomarSessao libera de novo', async () => {
+      const { apiClient, fetchMock, liberar } = montar();
+      apiClient.encerrarSessao();
+      const bloqueada = apiClient.request('/api/a');
+      liberar();
+      await expect(bloqueada).rejects.toThrow();
+      expect(refreshCalls(fetchMock)).toHaveLength(0);
+
+      apiClient.retomarSessao();
+      void apiClient.request('/api/b').catch(() => undefined);
+      liberar();
+      await vi.waitFor(() => expect(refreshCalls(fetchMock)).toHaveLength(1));
+    });
   });
 
   it('clears session when refresh token is invalid', async () => {
@@ -88,22 +278,16 @@ describe('ApiClient', () => {
       baseUrl: 'http://localhost:3000',
       fetchFn: fetchMock,
       getAccessToken: () => tokenState.accessToken,
-      getRefreshToken: () => tokenState.refreshToken,
       setAccessToken: (accessToken) => {
         tokenState.accessToken = accessToken;
       },
-      setRefreshToken: (refreshToken) => {
-        tokenState.refreshToken = refreshToken;
-      },
       clearSession: () => {
         tokenState.accessToken = null;
-        tokenState.refreshToken = null;
       },
     });
 
     await expect(apiClient.request('/dashboard')).rejects.toThrow('Não autorizado');
     expect(tokenState.accessToken).toBeNull();
-    expect(tokenState.refreshToken).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -115,9 +299,7 @@ describe('ApiClient', () => {
       baseUrl: 'http://localhost:3000',
       fetchFn: fetchMock,
       getAccessToken: () => tokenState.accessToken,
-      getRefreshToken: () => tokenState.refreshToken,
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       clearSession: vi.fn(),
     });
 
@@ -135,9 +317,7 @@ describe('ApiClient', () => {
       baseUrl: 'http://localhost:3000',
       fetchFn: fetchMock,
       getAccessToken: () => tokenState.accessToken,
-      getRefreshToken: () => tokenState.refreshToken,
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       clearSession: vi.fn(),
     });
 
@@ -148,21 +328,16 @@ describe('ApiClient', () => {
 
   describe('single-flight do refresh', () => {
     const buildClient = (server: FakeAuthServer) => {
-      const state: TokenState = { accessToken: 'access-old', refreshToken: 'refresh-1' };
+      const state: TokenState = { accessToken: 'access-old' };
       const clearSession = vi.fn(() => {
         state.accessToken = null;
-        state.refreshToken = null;
       });
       const client = new ApiClient({
         baseUrl: 'http://localhost:3000',
         fetchFn: server.fetch,
         getAccessToken: () => state.accessToken,
-        getRefreshToken: () => state.refreshToken,
         setAccessToken: (token) => {
           state.accessToken = token;
-        },
-        setRefreshToken: (token) => {
-          state.refreshToken = token;
         },
         clearSession,
       });
@@ -271,7 +446,8 @@ class FakeAuthServer {
   private releaseSlow: (() => void) | null = null;
   private slowServed = false;
   private networkDown: boolean;
-  private currentRefresh = 'refresh-1';
+  /** Cookie de refresh vigente no "navegador" (HttpOnly: o client nunca o vê). */
+  private cookieJar: string | null = 'refresh-1';
   private readonly usedRefresh = new Set<string>();
 
   constructor(private readonly options: FakeAuthServerOptions = {}) {
@@ -322,18 +498,21 @@ class FakeAuthServer {
     await Promise.resolve();
     if (this.networkDown) throw new TypeError('Failed to fetch');
     if (this.options.refreshFails) return new Response(null, { status: 401 });
-    const { refreshToken } = JSON.parse(String(init?.body)) as { refreshToken: string };
-    if (this.usedRefresh.has(refreshToken) || refreshToken !== this.currentRefresh) {
+    // O refresh vive no cookie HttpOnly: só chega se a requisição pediu credenciais e o CSRF.
+    const enviouCookie = init?.credentials === 'include';
+    const enviouCsrf = new Headers(init?.headers).get(CSRF_HEADER_NAME) === CSRF_HEADER_VALUE;
+    if (!enviouCookie || !enviouCsrf || !this.cookieJar) return new Response(null, { status: 401 });
+    if (this.usedRefresh.has(this.cookieJar)) {
       this.reuseDetected = true;
       return new Response(null, { status: 401 });
     }
-    this.usedRefresh.add(refreshToken);
+    this.usedRefresh.add(this.cookieJar);
     this.issued += 1;
     this.validAccess = `access-${this.issued}`;
-    this.currentRefresh = `refresh-${this.issued}`;
-    return new Response(
-      JSON.stringify({ accessToken: this.validAccess, refreshToken: this.currentRefresh }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
-    );
+    this.cookieJar = `refresh-${this.issued}`;
+    return new Response(JSON.stringify({ accessToken: this.validAccess }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }

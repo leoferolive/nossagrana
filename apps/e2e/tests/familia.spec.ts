@@ -28,7 +28,6 @@ function uniqueEmail(label: string): string {
 /** Minimal shape of the authContext fixture used in navigation helpers. */
 interface AuthCtx {
   accessToken: string;
-  refreshToken: string;
   password: string;
   user: { id: string; nome: string; email: string };
 }
@@ -40,13 +39,13 @@ interface AuthCtx {
 async function gotoOnboarding(page: import('@playwright/test').Page, ctx: AuthCtx) {
   await page.goto('/');
   await page.evaluate(
-    ([accessToken, refreshToken]) => {
+    ([accessToken]) => {
       localStorage.setItem(
         'nossagrana.auth.session',
-        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: '' }),
+        JSON.stringify({ accessToken, familiaIdAtiva: '' }),
       );
     },
-    [ctx.accessToken, ctx.refreshToken],
+    [ctx.accessToken],
   );
   await page.reload();
   await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
@@ -71,10 +70,10 @@ async function gotoFamilySettings(
 ) {
   await page.goto('/');
   await page.evaluate(
-    ([accessToken, refreshToken, fid]) => {
+    ([accessToken, fid]) => {
       localStorage.setItem(
         'nossagrana.auth.session',
-        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+        JSON.stringify({ accessToken, familiaIdAtiva: fid }),
       );
       // Suppress all first-time tours so they do not block UI interactions.
       for (const key of [
@@ -88,7 +87,7 @@ async function gotoFamilySettings(
         localStorage.setItem(`tour-${key}`, 'true');
       }
     },
-    [ctx.accessToken, ctx.refreshToken, familiaId],
+    [ctx.accessToken, familiaId],
   );
   await page.reload();
 

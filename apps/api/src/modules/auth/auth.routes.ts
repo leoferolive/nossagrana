@@ -1,17 +1,14 @@
-import {
-  authLoginRequestSchema,
-  authLogoutRequestSchema,
-  authRefreshRequestSchema,
-  authRegisterRequestSchema,
-} from '@nossagrana/types';
-import type { FastifyPluginAsync } from 'fastify';
+import { authLoginRequestSchema, authRegisterRequestSchema } from '@nossagrana/types';
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply } from 'fastify';
 
 import { env } from '../../config/env.js';
 import { ConsoleEmailSender } from '../email/email.console-sender.js';
 import { EmailService } from '../email/email.service.js';
 import { SmtpEmailSender } from '../email/email.smtp-sender.js';
 
+import { gravarCookieRefresh, limparCookieRefresh } from './auth.cookie.js';
 import { renovarSessao } from './auth.refresh.js';
+import { extrairRefresh } from './auth.refresh-origem.js';
 import { DrizzleAuthRepository, InMemoryAuthRepository } from './auth.repository.js';
 import {
   authFamiliaContextSchema,
@@ -41,6 +38,22 @@ import {
 import { InvalidResetTokenError, PasswordResetService } from './password-reset.service.js';
 import { hashToken } from './revoked-token.repository.js';
 import { logarSessoesNaoRevogadas } from './sessoes-nao-revogadas.error.js';
+
+/** 401 do refresh/logout: o cookie inválido é removido para o cliente não insistir nele. */
+const recusarRefresh = (reply: FastifyReply, corpo: { message: string; code?: string }) => {
+  limparCookieRefresh(reply);
+  return reply.code(401).send(corpo);
+};
+
+/** Payload do refresh válido (assinatura, validade e `tokenType`); `null` se não for. */
+const decodificarRefreshOuNull = (fastify: FastifyInstance, token: string) => {
+  try {
+    const decodificado = verificarRefreshToken(fastify, token);
+    return decodificado.tokenType === 'refresh' ? decodificado : null;
+  } catch {
+    return null;
+  }
+};
 
 const defaultAuthService = (sessoes: SessaoRevogador): AuthService => {
   if (env.NODE_ENV === 'test') {
@@ -127,10 +140,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           email: authenticatedUser.email,
         });
 
-        return reply.code(200).send({
-          accessToken,
-          refreshToken,
-        });
+        gravarCookieRefresh(reply, refreshToken);
+        return reply.code(200).send({ accessToken });
       } catch (error) {
         if (error instanceof InvalidCredentialsError) {
           return reply.code(401).send({ message: error.message });
@@ -145,38 +156,35 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     '/auth/refresh',
     { schema: authRefreshSchema, config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request, reply) => {
-      try {
-        const payload = authRefreshRequestSchema.parse(request.body);
-        const resultado = await renovarSessao(fastify, payload.refreshToken);
-        if (!resultado.ok) return reply.code(401).send(resultado.corpo);
+      const recebido = extrairRefresh(request);
+      if (!recebido.ok) return reply.code(recebido.status).send(recebido.corpo);
 
-        const { accessToken, refreshToken } = resultado;
-        return reply.code(200).send({ accessToken, refreshToken });
-      } catch {
-        return reply.code(401).send({ message: 'Refresh token invalido' });
-      }
+      // Só token inválido/revogado/reuso limpa o cookie; falha de infraestrutura propaga (5xx)
+      // e o cookie segue valendo para a próxima tentativa.
+      const resultado = await renovarSessao(fastify, recebido.token);
+      if (!resultado.ok) return recusarRefresh(reply, resultado.corpo);
+
+      gravarCookieRefresh(reply, resultado.refreshToken);
+      return reply.code(200).send({ accessToken: resultado.accessToken });
     },
   );
 
   fastify.post('/auth/logout', { schema: authLogoutSchema }, async (request, reply) => {
-    try {
-      const payload = authLogoutRequestSchema.parse(request.body);
+    const recebido = extrairRefresh(request);
+    if (!recebido.ok) return reply.code(recebido.status).send(recebido.corpo);
 
-      const decodedToken = verificarRefreshToken(fastify, payload.refreshToken);
+    const decodedToken = decodificarRefreshOuNull(fastify, recebido.token);
+    if (!decodedToken) return recusarRefresh(reply, { message: 'Refresh token invalido' });
 
-      if (decodedToken.tokenType !== 'refresh') {
-        return reply.code(401).send({ message: 'Refresh token invalido' });
-      }
+    const expiresAt = new Date((decodedToken.exp ?? Math.floor(Date.now() / 1000)) * 1000);
+    await fastify.tokensRevogados.revokeToken(
+      hashToken(recebido.token),
+      expiresAt,
+      decodedToken.sub,
+    );
 
-      const tokenHash = hashToken(payload.refreshToken);
-      const expiresAtSeconds = decodedToken.exp ?? Math.floor(Date.now() / 1000);
-      const expiresAt = new Date(expiresAtSeconds * 1000);
-      await fastify.tokensRevogados.revokeToken(tokenHash, expiresAt, decodedToken.sub);
-
-      return reply.code(204).send();
-    } catch {
-      return reply.code(401).send({ message: 'Refresh token invalido' });
-    }
+    limparCookieRefresh(reply);
+    return reply.code(204).send();
   });
 
   fastify.get(

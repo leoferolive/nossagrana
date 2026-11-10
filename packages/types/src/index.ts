@@ -43,22 +43,28 @@ export const authLoginRequestSchema = z.object({
 
 export type AuthLoginRequest = z.infer<typeof authLoginRequestSchema>;
 
+/**
+ * Cabeçalho obrigatório nos endpoints que autenticam pelo cookie de refresh (#116).
+ * É não-simples: um site de terceiros não consegue enviá-lo sem passar por preflight CORS,
+ * e o CORS só libera a origem configurada. Complementa o `SameSite=Strict` do cookie.
+ */
+export const CSRF_HEADER_NAME = 'x-nossagrana-csrf';
+export const CSRF_HEADER_VALUE = '1';
+
+/** O refresh token viaja só em cookie HttpOnly: nunca aparece no JSON (#116). */
 export const authLoginResponseSchema = z.object({
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1),
 });
 
 export type AuthLoginResponse = z.infer<typeof authLoginResponseSchema>;
 
-export const authRefreshRequestSchema = z.object({
-  refreshToken: z.string().min(1),
-});
+/** Sem campos: o refresh vem do cookie. Corpo opcional, e campos extras são ignorados. */
+export const authRefreshRequestSchema = z.object({}).nullish();
 
 export type AuthRefreshRequest = z.infer<typeof authRefreshRequestSchema>;
 
 export const authRefreshResponseSchema = z.object({
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1),
 });
 
 export type AuthRefreshResponse = z.infer<typeof authRefreshResponseSchema>;
@@ -74,9 +80,7 @@ export const wsTicketEnvelopeSchema = z.object({ data: wsTicketResponseSchema })
 
 export type WsTicketResponse = z.infer<typeof wsTicketResponseSchema>;
 
-export const authLogoutRequestSchema = z.object({
-  refreshToken: z.string().min(1),
-});
+export const authLogoutRequestSchema = z.object({}).nullish();
 
 export type AuthLogoutRequest = z.infer<typeof authLogoutRequestSchema>;
 

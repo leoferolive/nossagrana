@@ -16,7 +16,7 @@ import type {
   FamiliaSwitchActiveResponse,
 } from '@nossagrana/types';
 
-import { ApiClient } from './api-client';
+import { ApiClient, cookieAuthInit } from './api-client';
 import { lazyApiClient } from './core-financeiro.service';
 
 const familiaHeader = (familiaId: string): Record<string, string> => ({
@@ -26,14 +26,26 @@ const familiaHeader = (familiaId: string): Record<string, string> => ({
 // ─── AuthService ───────────────────────────────────────────────────────────────
 
 export class AuthService {
+  /**
+   * Logout em andamento (espera um refresh em voo antes do POST). Um login feito nesse
+   * intervalo precisa esperar: senão o POST de logout sairia com o cookie NOVO e revogaria a
+   * sessão recém-criada.
+   */
+  private logoutEmAndamento: Promise<void> | null = null;
+
   constructor(private readonly api: ApiClient) {}
 
   async login(payload: AuthLoginRequest): Promise<AuthLoginResponse> {
-    return this.api.request<AuthLoginResponse>('/api/auth/login', {
+    // Falha do logout pendente não pode impedir o login.
+    await this.logoutEmAndamento?.catch(() => undefined);
+    const resposta = await this.api.request<AuthLoginResponse>('/api/auth/login', {
+      ...cookieAuthInit({ 'Content-Type': 'application/json' }),
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      skipAuthRetry: true,
     });
+    this.api.retomarSessao();
+    return resposta;
   }
 
   async register(payload: AuthRegisterRequest): Promise<AuthRegisterResponse> {
@@ -44,11 +56,24 @@ export class AuthService {
     });
   }
 
-  async logout(refreshToken: string): Promise<void> {
+  /** O servidor revoga o refresh vigente (cookie) e limpa o cookie; não há token para enviar. */
+  async logout(): Promise<void> {
+    // Sem refresh novo a partir daqui (nem por 401 atrasado de requisições já enviadas).
+    this.api.encerrarSessao();
+    const logout = this.enviarLogout().finally(() => {
+      if (this.logoutEmAndamento === logout) this.logoutEmAndamento = null;
+    });
+    this.logoutEmAndamento = logout;
+    return logout;
+  }
+
+  private async enviarLogout(): Promise<void> {
+    // Um refresh em voo rotaciona o cookie: revogar antes dele deixaria o novo cookie vivo.
+    await this.api.aguardarRefresh();
     return this.api.request<void>('/api/auth/logout', {
+      ...cookieAuthInit(),
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      skipAuthRetry: true,
     });
   }
 }

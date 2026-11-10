@@ -27,7 +27,6 @@ import * as api from '../helpers/api-client.js';
 
 interface AuthContext {
   accessToken: string;
-  refreshToken: string;
   user: {
     id: string;
     nome: string;
@@ -73,7 +72,6 @@ export const test = base.extend<E2EFixtures>({
 
     const context: AuthContext = {
       accessToken: loginResponse.accessToken,
-      refreshToken: loginResponse.refreshToken,
       password: senha,
       user: {
         id: registerResponse.user.id,
@@ -119,10 +117,10 @@ export const test = base.extend<E2EFixtures>({
   authenticatedPage: async ({ page, authContext, familiaId }, use) => {
     await page.goto('/');
     await page.evaluate(
-      ([accessToken, refreshToken, fid]) => {
+      ([accessToken, fid]) => {
         localStorage.setItem(
           'nossagrana.auth.session',
-          JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+          JSON.stringify({ accessToken, familiaIdAtiva: fid }),
         );
         // Suppress all first-time tours so they do not block UI interactions.
         for (const key of [
@@ -136,7 +134,7 @@ export const test = base.extend<E2EFixtures>({
           localStorage.setItem(`tour-${key}`, 'true');
         }
       },
-      [authContext.accessToken, authContext.refreshToken, familiaId],
+      [authContext.accessToken, familiaId],
     );
     await page.reload();
     await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({

@@ -5,3 +5,4 @@ process.env.JWT_SECRET = 'test-jwt-secret-must-be-32-chars!';
 process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret-32-chars-ok!';
 process.env.CORS_ORIGIN = 'http://localhost:5173';
 process.env.ADMIN_SECRET = 'test-admin-secret-with-32-chars!!';
+process.env.REFRESH_COOKIE_SECURE = 'false';

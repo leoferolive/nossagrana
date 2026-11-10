@@ -14,12 +14,10 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
     vi.mocked(useAuth).mockImplementation(() => ({
       isAuthenticated: false as const,
       accessToken: null,
-      refreshToken: null,
       familiaIdAtiva: currentFamiliaId,
       login: vi.fn(),
       logout: vi.fn(),
       setAccessToken: vi.fn(),
-      setRefreshToken: vi.fn(),
       updateFamiliaIdAtiva: vi.fn((id: string) => {
         currentFamiliaId = id;
       }),

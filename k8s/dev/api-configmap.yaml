@@ -9,3 +9,5 @@ data:
   JWT_EXPIRES_IN: 15m
   REFRESH_TOKEN_EXPIRES_IN: 7d
   CORS_ORIGIN: http://dev-app.nossagrana.home
+  # Dev roda NODE_ENV=production sobre HTTP puro: cookie Secure/__Secure- seria recusado (#116)
+  REFRESH_COOKIE_SECURE: 'false'

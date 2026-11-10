@@ -25,7 +25,6 @@ import * as api from '../helpers/api-client.js';
 /** Minimal shape of the authContext fixture used in navigation helpers. */
 interface AuthCtx {
   accessToken: string;
-  refreshToken: string;
   password: string;
   user: { id: string; nome: string; email: string };
 }
@@ -42,10 +41,10 @@ async function gotoDashboard(
 ) {
   await page.goto('/');
   await page.evaluate(
-    ([accessToken, refreshToken, fid]) => {
+    ([accessToken, fid]) => {
       localStorage.setItem(
         'nossagrana.auth.session',
-        JSON.stringify({ accessToken, refreshToken, familiaIdAtiva: fid }),
+        JSON.stringify({ accessToken, familiaIdAtiva: fid }),
       );
       // Suppress all first-time tours so they do not block UI interactions.
       for (const key of [
@@ -59,7 +58,7 @@ async function gotoDashboard(
         localStorage.setItem(`tour-${key}`, 'true');
       }
     },
-    [ctx.accessToken, ctx.refreshToken, familiaId],
+    [ctx.accessToken, familiaId],
   );
   await page.reload();
   await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({

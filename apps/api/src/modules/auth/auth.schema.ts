@@ -60,7 +60,7 @@ export const authMeSchema = {
 export const authFamiliaContextSchema = {
   response: {
     200: z.object({
-      familiaId: z.string().uuid(),
+      familiaId: z.guid(),
     }),
   },
 };
@@ -93,7 +93,7 @@ export const authForgotPasswordSchema = {
 
 export const authResetPasswordSchema = {
   body: z.object({
-    token: z.string().uuid(),
+    token: z.guid(),
     novaSenha: z.string().min(8).max(128),
   }),
   response: {

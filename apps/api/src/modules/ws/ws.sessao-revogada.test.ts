@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import {
+  VerificadorAcessoFamiliaFake,
+  subDoAccessToken,
+} from '../../shared/familia-access/tests/verificador-acesso-familia.fake.js';
+import { buildAppComFamiliasInMemory } from '../../shared/familia-access/tests/verificador-acesso-familia.in-memory.js';
 
 import {
   conectarComAccess,
@@ -20,9 +25,14 @@ interface Usuario {
   accessToken: string;
 }
 
+const FAMILIA_REVOGACAO = '00000000-0000-4000-8000-000000000119';
+const OUTRA_FAMILIA_REVOGACAO = '00000000-0000-4000-8000-000000000120';
 let contador = 0;
 
-async function criarUsuario(app: App): Promise<Usuario> {
+async function criarUsuario(
+  app: App,
+  verificador?: VerificadorAcessoFamiliaFake,
+): Promise<Usuario> {
   contador += 1;
   const email = `ws-sessao-${contador}@example.com`;
   const registro = await app.inject({
@@ -36,6 +46,8 @@ async function criarUsuario(app: App): Promise<Usuario> {
     payload: { email, senha: SENHA },
   });
   const { accessToken } = login.json() as { accessToken: string };
+  verificador?.vincular(subDoAccessToken(accessToken), FAMILIA_REVOGACAO);
+  verificador?.vincular(subDoAccessToken(accessToken), OUTRA_FAMILIA_REVOGACAO);
   return { id: registro.json().user.id as string, email, accessToken };
 }
 
@@ -61,11 +73,13 @@ const trocarSenha = (app: App, usuario: Usuario) =>
 describe('WebSocket — sessão revogada (#119)', () => {
   let app: App;
   let familiaId: string;
+  let verificador: VerificadorAcessoFamiliaFake;
 
   beforeEach(async () => {
-    app = buildApp();
+    verificador = new VerificadorAcessoFamiliaFake();
+    app = buildApp({ verificadorAcessoFamilia: verificador });
     await app.ready();
-    familiaId = '00000000-0000-4000-8000-000000000119';
+    familiaId = FAMILIA_REVOGACAO;
   });
 
   afterEach(async () => {
@@ -74,9 +88,9 @@ describe('WebSocket — sessão revogada (#119)', () => {
   });
 
   it('fecha com 4005 os sockets do usuário que trocou a senha, em todas as famílias, e só os dele', async () => {
-    const ana = await criarUsuario(app);
-    const bruno = await criarUsuario(app);
-    const outraFamilia = '00000000-0000-4000-8000-000000000120';
+    const ana = await criarUsuario(app, verificador);
+    const bruno = await criarUsuario(app, verificador);
+    const outraFamilia = OUTRA_FAMILIA_REVOGACAO;
     const anaF1 = await conectar(app, ana.accessToken, familiaId);
     const anaF2 = await conectar(app, ana.accessToken, outraFamilia);
     const brunoF1 = await conectar(app, bruno.accessToken, familiaId);
@@ -93,7 +107,7 @@ describe('WebSocket — sessão revogada (#119)', () => {
   });
 
   it('o ticket emitido antes da troca não abre socket: handshake recusado com 4005', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     const ticket = await emitirTicketPorHttp(app, ana.accessToken, familiaId);
     await trocarSenha(app, ana);
 
@@ -104,7 +118,7 @@ describe('WebSocket — sessão revogada (#119)', () => {
   });
 
   it('o access emitido antes da troca não obtém ticket novo: 401 SESSION_REVOKED', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     await trocarSenha(app, ana);
 
     const resposta = await app.inject({
@@ -122,7 +136,7 @@ describe('WebSocket — sessão revogada (#119)', () => {
   it('depois de um novo login o usuário volta a conectar', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-30T10:00:00Z'));
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     await trocarSenha(app, ana);
 
     vi.setSystemTime(new Date('2026-09-30T10:00:05Z'));
@@ -138,7 +152,7 @@ describe('WebSocket — sessão revogada (#119)', () => {
   });
 
   it('revogação gravada entre a 1ª checagem e o join: a 2ª checagem (já no room) fecha com 4005', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     const ticket = await emitirTicketPorHttp(app, ana.accessToken, familiaId);
     const tokens = app.repositoriosInMemory!.tokensRevogados;
     await tokens.revokeAllByUserId(ana.id);
@@ -152,7 +166,7 @@ describe('WebSocket — sessão revogada (#119)', () => {
   });
 
   it('falha ao consultar a revogação: falha fechada (1011), sem ficar no room', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     const ticket = await emitirTicketPorHttp(app, ana.accessToken, familiaId);
     vi.spyOn(app.repositoriosInMemory!.tokensRevogados, 'findRevokedAllAt').mockRejectedValue(
       new Error('armazenamento indisponível'),
@@ -169,7 +183,7 @@ describe('WebSocket — membro removido (#119)', () => {
   let app: App;
 
   beforeEach(async () => {
-    app = buildApp();
+    app = buildAppComFamiliasInMemory();
     await app.ready();
   });
 
@@ -209,7 +223,13 @@ describe('WebSocket — membro removido (#119)', () => {
 
   it('fecha com 4006 só os sockets do membro removido naquela família', async () => {
     const { admin, membro, familiaId } = await familiaComMembro();
-    const outraFamilia = '00000000-0000-4000-8000-000000000121';
+    const outraCriada = await app.inject({
+      method: 'POST',
+      url: '/api/familias',
+      headers: { authorization: `Bearer ${membro.accessToken}` },
+      payload: { nome: 'Familia Propria do Membro' },
+    });
+    const outraFamilia = outraCriada.json().familia.id as string;
     const doMembro = await conectar(app, membro.accessToken, familiaId);
     const doMembroEmOutra = await conectar(app, membro.accessToken, outraFamilia);
     const doAdmin = await conectar(app, admin.accessToken, familiaId);

@@ -14,12 +14,6 @@ vi.mock('../db/client.js', () => ({
   },
 }));
 
-vi.mock('../config/env.js', () => ({
-  env: {
-    NODE_ENV: 'development',
-  },
-}));
-
 describe('familiaScopePlugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -180,5 +174,32 @@ describe('familiaScopePlugin', () => {
         code: 'FAMILIA_SEM_ACESSO',
       },
     });
+  });
+
+  it('returns 401 when the request reaches the scope without an authenticated user', async () => {
+    const app = Fastify();
+    const { familiaScopePlugin } = await import('./familia-scope.plugin.js');
+    await app.register(familiaScopePlugin);
+    app.get('/needs-family', { preHandler: [app.requireFamiliaScope] }, async () => ({ ok: true }));
+    await app.ready();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/needs-family',
+      headers: { 'x-familia-id': '11111111-1111-1111-1111-111111111111' },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(mockSelect).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it('fails closed with 403 when the membership lookup throws', async () => {
+    mockLimit.mockRejectedValue(new Error('db down'));
+
+    const response = await requestFamily();
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ error: { code: 'FAMILIA_ACESSO_INDISPONIVEL' } });
   });
 });

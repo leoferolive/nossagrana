@@ -2,12 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
 
-import { env } from '../../config/env.js';
-import { db } from '../../db/client.js';
-import {
-  type AcessoFamilia,
-  verificarAcessoFamilia,
-} from '../../shared/familia-access/familia-access.repository.js';
+import type { AcessoFamilia } from '../../shared/familia-access/familia-access.repository.js';
 import {
   WS_CLOSE_ERRO_INTERNO,
   WS_CLOSE_FAMILIA_EXCLUIDA,
@@ -72,14 +67,14 @@ async function admitirComRevalidacao(
   familiaId: string,
 ): Promise<void> {
   try {
-    const primeira = await verificarAcessoFamilia(db, userId, familiaId);
+    const primeira = await fastify.verificadorAcessoFamilia.verificar(userId, familiaId);
     if (recusarSeSemAcesso(fastify, socket, familiaId, primeira)) return;
     // O `close` do cliente durante o `await` acima já passou: entrar agora deixaria
     // o socket no room para sempre (o listener de `close` só nasce no `join`).
     if (socket.readyState !== socket.OPEN) return;
 
     entrarNoRoom(fastify, socket, familiaId, userId);
-    const segunda = await verificarAcessoFamilia(db, userId, familiaId);
+    const segunda = await fastify.verificadorAcessoFamilia.verificar(userId, familiaId);
     recusarSeSemAcesso(fastify, socket, familiaId, segunda);
   } catch (err) {
     fastify.log.error(
@@ -109,20 +104,6 @@ async function recusarSeSessaoRevogada(
   return true;
 }
 
-/** Em NODE_ENV=test o vínculo com a família não é checado (repositórios InMemory separados). */
-async function entrarValidandoFamilia(
-  fastify: FastifyInstance,
-  socket: WebSocket,
-  familiaId: string,
-  userId: string,
-): Promise<void> {
-  if (env.NODE_ENV === 'test') {
-    entrarNoRoom(fastify, socket, familiaId, userId);
-    return;
-  }
-  await admitirComRevalidacao(fastify, socket, userId, familiaId);
-}
-
 /**
  * Sessão, depois família, depois sessão de novo (#119). A revogação publica
  * `sessao:revogadas` só depois do commit; um handshake que passou da 1ª checagem
@@ -141,7 +122,7 @@ async function admitirSocket(
     if (await recusarSeSessaoRevogada(fastify, socket, familiaId, credencial)) return;
     if (socket.readyState !== socket.OPEN) return;
 
-    await entrarValidandoFamilia(fastify, socket, familiaId, credencial.userId);
+    await admitirComRevalidacao(fastify, socket, credencial.userId, familiaId);
     if (socket.readyState !== socket.OPEN) return;
 
     await recusarSeSessaoRevogada(fastify, socket, familiaId, credencial);

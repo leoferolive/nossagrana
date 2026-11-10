@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLimit = vi.hoisted(() => vi.fn());
 
-vi.mock('../../config/env.js', () => ({ env: { NODE_ENV: 'development' } }));
 vi.mock('../../db/client.js', () => ({
   db: {
     select: () => ({
@@ -64,7 +63,9 @@ async function createApp() {
   const { sessaoRevogacaoPlugin } = await import('../../plugins/sessao-revogacao.plugin.js');
   const { InMemoryRevokedTokenRepository } = await import('../auth/revoked-token.repository.js');
   const { wsTicketPlugin } = await import('../../plugins/ws-ticket.plugin.js');
+  const { familiaScopePlugin } = await import('../../plugins/familia-scope.plugin.js');
   const { wsRoutes } = await import('./ws.routes.js');
+  await app.register(familiaScopePlugin);
   await app.register(websocketPlugin);
   await app.register(sessaoRevogacaoPlugin, {
     tokensRevogados: new InMemoryRevokedTokenRepository(),

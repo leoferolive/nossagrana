@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { buildApp } from '../../app.js';
+import { buildAppComFamiliasInMemory } from '../../shared/familia-access/tests/verificador-acesso-familia.in-memory.js';
 import { InMemoryTransacaoRepositoryFalhaNoEnesimoInsert } from './transacao.fakes.js';
 import type { Transacao } from './transacao.types.js';
 
@@ -11,7 +11,7 @@ import type { Transacao } from './transacao.types.js';
  * (#85): nunca em falha, e quando sai os dados já estão visíveis.
  */
 describe('POST /api/transacoes — evento só após sucesso', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let headers: Record<string, string>;
   let familiaId: string;
   let categoriaId: string;

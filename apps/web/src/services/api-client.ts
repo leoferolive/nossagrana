@@ -124,7 +124,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      this.clearSession();
+      // Só 401/403 significam sessão perdida; 5xx é oscilação do servidor e o cookie segue válido.
+      if (response.status === 401 || response.status === 403) this.clearSession();
       return false;
     }
 

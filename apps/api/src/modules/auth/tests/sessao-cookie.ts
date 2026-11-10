@@ -5,7 +5,7 @@ import type { buildApp } from '../../../app.js';
 
 type App = ReturnType<typeof buildApp>;
 
-export const NOME_COOKIE_DEV = 'ng_refresh';
+const NOME_COOKIE_DEV = 'ng_refresh';
 export const NOME_COOKIE_PROD = '__Secure-ng_refresh';
 export const CABECALHO_CSRF = { [CSRF_HEADER_NAME]: CSRF_HEADER_VALUE };
 

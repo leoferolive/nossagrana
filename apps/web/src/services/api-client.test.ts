@@ -153,6 +153,47 @@ describe('ApiClient', () => {
     expect(tokenState.accessToken).toBe('novo');
   });
 
+  it.each([500, 503])(
+    'refresh com %i não limpa a sessão local (o cookie segue válido)',
+    async (status) => {
+      const clearSession = vi.fn();
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 401 }))
+        .mockResolvedValueOnce(new Response(null, { status }));
+      const apiClient = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchMock,
+        getAccessToken: () => tokenState.accessToken,
+        setAccessToken: vi.fn(),
+        clearSession,
+      });
+
+      await expect(apiClient.request('/api/dashboard')).rejects.toThrow();
+
+      expect(clearSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([401, 403])('refresh com %i limpa a sessão', async (status) => {
+    const clearSession = vi.fn();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status }));
+    const apiClient = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: fetchMock,
+      getAccessToken: () => tokenState.accessToken,
+      setAccessToken: vi.fn(),
+      clearSession,
+    });
+
+    await expect(apiClient.request('/api/dashboard')).rejects.toThrow();
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+  });
+
   it('clears session when refresh token is invalid', async () => {
     const fetchMock = vi
       .fn()

@@ -3,9 +3,14 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import {
+  VerificadorAcessoFamiliaFake,
+  subDoAccessToken,
+} from '../../shared/familia-access/tests/verificador-acesso-familia.fake.js';
 
 describe('Cofrinho Routes', () => {
-  const app = buildApp();
+  const verificador = new VerificadorAcessoFamiliaFake();
+  const app = buildApp({ verificadorAcessoFamilia: verificador });
   let validToken: string;
   const familiaId = randomUUID();
 
@@ -34,6 +39,7 @@ describe('Cofrinho Routes', () => {
     });
 
     validToken = loginRes.json().accessToken;
+    verificador.vincular(subDoAccessToken(validToken), familiaId);
   });
 
   afterAll(() => app.close());

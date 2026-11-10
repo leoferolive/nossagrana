@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import {
+  VerificadorAcessoFamiliaFake,
+  subDoAccessToken,
+} from '../../shared/familia-access/tests/verificador-acesso-familia.fake.js';
 
 type App = ReturnType<typeof buildApp>;
 
@@ -10,7 +14,7 @@ const OUTRA_FAMILIA = '00000000-0000-4000-8000-000000000218';
 
 let contador = 0;
 
-async function criarUsuario(app: App) {
+async function criarUsuario(app: App, verificador: VerificadorAcessoFamiliaFake) {
   contador += 1;
   const email = `ws-ticket-${contador}@example.com`;
   const registro = await app.inject({
@@ -24,6 +28,9 @@ async function criarUsuario(app: App) {
     payload: { email, senha: SENHA },
   });
   const { accessToken } = login.json() as { accessToken: string };
+  verificador
+    .vincular(subDoAccessToken(accessToken), FAMILIA)
+    .vincular(subDoAccessToken(accessToken), OUTRA_FAMILIA);
   return { id: registro.json().user.id as string, accessToken };
 }
 
@@ -39,16 +46,18 @@ const pedirTicket = (app: App, accessToken: string | null, familiaId: string | n
 
 describe('POST /api/ws/ticket (#118)', () => {
   let app: App;
+  let verificador: VerificadorAcessoFamiliaFake;
 
   beforeEach(async () => {
-    app = buildApp();
+    verificador = new VerificadorAcessoFamiliaFake();
+    app = buildApp({ verificadorAcessoFamilia: verificador });
     await app.ready();
   });
 
   afterEach(() => app.close());
 
   it('emite ticket de uso único vinculado a usuário, família e sessão', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
 
     const resposta = await pedirTicket(app, ana.accessToken);
 
@@ -63,7 +72,7 @@ describe('POST /api/ws/ticket (#118)', () => {
   });
 
   it('cada chamada emite um ticket novo', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
 
     const primeiro = await pedirTicket(app, ana.accessToken);
     const segundo = await pedirTicket(app, ana.accessToken);
@@ -72,14 +81,14 @@ describe('POST /api/ws/ticket (#118)', () => {
   });
 
   it('o ticket de uma família não vale para outra', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     const { ticket } = (await pedirTicket(app, ana.accessToken, FAMILIA)).json().data;
 
     expect(await app.wsTickets.consumir(ticket, OUTRA_FAMILIA)).toBeNull();
   });
 
   it('a resposta não contém JWT', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
 
     const resposta = await pedirTicket(app, ana.accessToken);
 
@@ -100,7 +109,7 @@ describe('POST /api/ws/ticket (#118)', () => {
   });
 
   it('400 sem o header x-familia-id', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
 
     const resposta = await pedirTicket(app, ana.accessToken, null);
 
@@ -108,7 +117,7 @@ describe('POST /api/ws/ticket (#118)', () => {
   });
 
   it('400 com x-familia-id que não é UUID', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
 
     const resposta = await pedirTicket(app, ana.accessToken, 'nao-e-uuid');
 
@@ -116,7 +125,7 @@ describe('POST /api/ws/ticket (#118)', () => {
   });
 
   it('sessão revogada não obtém ticket: 401 SESSION_REVOKED', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     await app.sessoes.revogarTodas(ana.id);
 
     const resposta = await pedirTicket(app, ana.accessToken);
@@ -128,7 +137,7 @@ describe('POST /api/ws/ticket (#118)', () => {
   });
 
   it('falha ao consultar a revogação: falha fechada (500), sem ticket', async () => {
-    const ana = await criarUsuario(app);
+    const ana = await criarUsuario(app, verificador);
     app.repositoriosInMemory!.tokensRevogados.findRevokedAllAt = async () => {
       throw new Error('armazenamento indisponível');
     };

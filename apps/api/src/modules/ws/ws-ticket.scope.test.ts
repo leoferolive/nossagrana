@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLimit = vi.hoisted(() => vi.fn());
 
-// Fora de NODE_ENV=test o `requireFamiliaScope` consulta o vínculo de verdade.
-vi.mock('../../config/env.js', () => ({ env: { NODE_ENV: 'development' } }));
+// O `requireFamiliaScope` usa o verificador padrão (Drizzle) sobre o `db` mockado abaixo.
 vi.mock('../../db/client.js', () => ({
   db: {
     select: () => ({

@@ -6,6 +6,7 @@ import { InMemoryRevokedTokenRepository } from '../modules/auth/revoked-token.re
 import { InMemoryCategoriaRepository } from '../modules/categoria/categoria.repository.js';
 import { InMemoryCofrinhoRepository } from '../modules/cofrinho/cofrinho.in-memory-repository.js';
 import { InMemoryMovimentacaoCofrinhoRepository } from '../modules/cofrinho/cofrinho.movimentacao.repository.js';
+import { InMemoryFamiliaRepository } from '../modules/familia/familia.repository.js';
 import { InMemoryMetodoPagamentoRepository } from '../modules/metodo-pagamento/metodo-pagamento.repository.js';
 import { InMemoryTransacaoRepository } from '../modules/transacao/transacao.repository.js';
 import { InMemoryIdempotenciaRepository } from './idempotencia/idempotencia.repository.js';
@@ -27,6 +28,8 @@ export interface RepositoriosInMemoryCompartilhados {
   transacoes: InMemoryTransacaoRepository;
   /** Chaves de `Idempotency-Key` (#90), publicadas pelas mesmas unidades de trabalho. */
   idempotencia: InMemoryIdempotenciaRepository;
+  /** Famílias e vínculos: fonte da posse que o verificador de acesso consulta nos testes de rota (#79). */
+  familias: InMemoryFamiliaRepository;
   /** Refresh tokens revogados e revogação global de sessões (#119), vistos por auth e WebSocket. */
   tokensRevogados: InMemoryRevokedTokenRepository;
 }
@@ -45,6 +48,7 @@ export function criarRepositoriosInMemoryCompartilhados(): RepositoriosInMemoryC
     movimentacoesCofrinho: new InMemoryMovimentacaoCofrinhoRepository(),
     transacoes: new InMemoryTransacaoRepository(),
     idempotencia: new InMemoryIdempotenciaRepository(),
+    familias: new InMemoryFamiliaRepository(),
     tokensRevogados: new InMemoryRevokedTokenRepository(),
   };
 }

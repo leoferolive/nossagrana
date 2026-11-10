@@ -3,13 +3,18 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../app.js';
+import {
+  VerificadorAcessoFamiliaFake,
+  subDoAccessToken,
+} from '../../shared/familia-access/tests/verificador-acesso-familia.fake.js';
 
 /**
  * Contrato HTTP da `Idempotency-Key` (#90) em aporte, retirada e aplicar
  * templates, com os repositórios InMemory compartilhados da app de teste.
  */
 describe('Idempotency-Key em aportes, retiradas e aplicar templates', () => {
-  const app = buildApp();
+  const verificador = new VerificadorAcessoFamiliaFake();
+  const app = buildApp({ verificadorAcessoFamilia: verificador });
   const familiaId = randomUUID();
   let headers: Record<string, string>;
   let cofrinhoId: string;
@@ -28,8 +33,10 @@ describe('Idempotency-Key em aportes, retiradas e aplicar templates', () => {
       url: '/api/auth/login',
       payload: { email, senha: 'password123' },
     });
+    const accessToken = login.json<{ accessToken: string }>().accessToken;
+    verificador.vincular(subDoAccessToken(accessToken), familiaId);
     headers = {
-      authorization: `Bearer ${login.json<{ accessToken: string }>().accessToken}`,
+      authorization: `Bearer ${accessToken}`,
       'x-familia-id': familiaId,
     };
     const cofrinho = await app.inject({

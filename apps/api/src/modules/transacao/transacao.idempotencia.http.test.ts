@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { buildApp } from '../../app.js';
+import { buildAppComFamiliasInMemory } from '../../shared/familia-access/tests/verificador-acesso-familia.in-memory.js';
 import { InMemoryTransacaoRepositoryFalhaNoEnesimoInsert } from './transacao.fakes.js';
 
 /**
@@ -10,7 +10,7 @@ import { InMemoryTransacaoRepositoryFalhaNoEnesimoInsert } from './transacao.fak
  * repositórios InMemory compartilhados da app de teste.
  */
 describe('POST /api/transacoes — Idempotency-Key', () => {
-  const app = buildApp();
+  const app = buildAppComFamiliasInMemory();
   let headers: Record<string, string>;
   let familiaId: string;
   let categoriaId: string;

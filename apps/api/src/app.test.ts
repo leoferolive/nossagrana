@@ -532,6 +532,34 @@ describe('API health endpoint', () => {
     });
   });
 
+  it('responds 404 when requesting to join a non-existent or deleted family', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        nome: 'Solicitante Orfao',
+        email: 'requester-family-missing@example.com',
+        senha: 'password123',
+      },
+    });
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'requester-family-missing@example.com', senha: 'password123' },
+    });
+    const { accessToken } = loginResponse.json() as { accessToken: string };
+
+    const requestResponse = await app.inject({
+      method: 'POST',
+      url: '/api/familias/solicitar',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { familiaId: '00000000-0000-4000-8000-000000000000' },
+    });
+
+    expect(requestResponse.statusCode).toBe(404);
+    expect(requestResponse.json()).toEqual({ message: 'Familia nao encontrada' });
+  });
+
   it('lists pending join requests for admin user', async () => {
     await app.inject({
       method: 'POST',

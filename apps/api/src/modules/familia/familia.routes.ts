@@ -221,18 +221,26 @@ export const familiaRoutes: FastifyPluginAsync = async (fastify) => {
       schema: familiaRequestJoinSchema,
     },
     async (request, reply) => {
-      const payload = familiaRequestJoinRequestSchema.parse(request.body);
-      const solicitacao = await familiaService.requestJoin({
-        familiaId: payload.familiaId,
-        usuarioId: request.user.sub,
-      });
+      try {
+        const payload = familiaRequestJoinRequestSchema.parse(request.body);
+        const solicitacao = await familiaService.requestJoin({
+          familiaId: payload.familiaId,
+          usuarioId: request.user.sub,
+        });
 
-      return reply.code(201).send({
-        solicitacao: {
-          ...solicitacao,
-          solicitadoEm: solicitacao.solicitadoEm.toISOString(),
-        },
-      });
+        return reply.code(201).send({
+          solicitacao: {
+            ...solicitacao,
+            solicitadoEm: solicitacao.solicitadoEm.toISOString(),
+          },
+        });
+      } catch (error) {
+        if (error instanceof FamiliaNotFoundError) {
+          return reply.code(404).send({ message: error.message });
+        }
+
+        throw error;
+      }
     },
   );
 

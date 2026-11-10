@@ -12,6 +12,7 @@ import {
 import { DrizzleConviteCriador } from './familia-convite-criacao.repository.js';
 import { DrizzleConviteConsumer } from './familia-convite.repository.js';
 import { DrizzleFamiliaExclusao } from './familia-exclusao.repository.js';
+import { DrizzleSolicitacaoEntrada } from './familia-solicitacao.repository.js';
 import type {
   ConsumoConviteResultado,
   CreatedFamilia,
@@ -24,6 +25,7 @@ import type {
   JoinFamiliaByInviteInput,
   RequestFamiliaJoinInput,
   ReviewedFamiliaJoinRequest,
+  ReviewFamiliaJoinRequestInput,
 } from './familia.types.js';
 
 export class DrizzleFamiliaRepository implements FamiliaRepository {
@@ -102,26 +104,8 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     return new DrizzleConviteConsumer(db).consumir(input);
   }
 
-  async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest> {
-    const [joinRequest] = await db
-      .insert(solicitacoesEntrada)
-      .values({
-        familiaId: input.familiaId,
-        usuarioId: input.usuarioId,
-        status: 'pendente',
-      })
-      .returning({
-        id: solicitacoesEntrada.id,
-        familiaId: solicitacoesEntrada.familiaId,
-        usuarioId: solicitacoesEntrada.usuarioId,
-        status: solicitacoesEntrada.status,
-        solicitadoEm: solicitacoesEntrada.solicitadoEm,
-      });
-
-    return {
-      ...joinRequest,
-      status: 'pendente',
-    };
+  async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest | null> {
+    return new DrizzleSolicitacaoEntrada(db).solicitar(input);
   }
 
   async listPendingJoinRequests(input: {
@@ -149,76 +133,10 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     }));
   }
 
-  async reviewJoinRequest(input: {
-    solicitacaoId: string;
-    familiaId: string;
-    adminId: string;
-    acao: 'aprovar' | 'rejeitar';
-  }): Promise<ReviewedFamiliaJoinRequest | null> {
-    const now = new Date();
-    const reviewedStatus = input.acao === 'aprovar' ? 'aprovada' : 'rejeitada';
-
-    return db.transaction(async (tx) => {
-      const [pending] = await tx
-        .select({
-          id: solicitacoesEntrada.id,
-          familiaId: solicitacoesEntrada.familiaId,
-          usuarioId: solicitacoesEntrada.usuarioId,
-          solicitadoEm: solicitacoesEntrada.solicitadoEm,
-        })
-        .from(solicitacoesEntrada)
-        .where(
-          and(
-            eq(solicitacoesEntrada.id, input.solicitacaoId),
-            eq(solicitacoesEntrada.familiaId, input.familiaId),
-            eq(solicitacoesEntrada.status, 'pendente'),
-          ),
-        )
-        .limit(1);
-
-      if (!pending) {
-        return null;
-      }
-
-      const [reviewed] = await tx
-        .update(solicitacoesEntrada)
-        .set({
-          status: reviewedStatus,
-          respondidoEm: now,
-          respondidoPor: input.adminId,
-        })
-        .where(eq(solicitacoesEntrada.id, pending.id))
-        .returning({
-          id: solicitacoesEntrada.id,
-          familiaId: solicitacoesEntrada.familiaId,
-          usuarioId: solicitacoesEntrada.usuarioId,
-          status: solicitacoesEntrada.status,
-          solicitadoEm: solicitacoesEntrada.solicitadoEm,
-          respondidoEm: solicitacoesEntrada.respondidoEm,
-          respondidoPor: solicitacoesEntrada.respondidoPor,
-        });
-
-      if (reviewedStatus === 'aprovada') {
-        await tx
-          .insert(usuarioFamilia)
-          .values({
-            usuarioId: pending.usuarioId,
-            familiaId: pending.familiaId,
-            role: 'membro',
-          })
-          .onConflictDoNothing();
-      }
-
-      return {
-        id: reviewed.id,
-        familiaId: reviewed.familiaId,
-        usuarioId: reviewed.usuarioId,
-        status: reviewedStatus,
-        solicitadoEm: reviewed.solicitadoEm,
-        respondidoEm: reviewed.respondidoEm ?? now,
-        respondidoPor: reviewed.respondidoPor ?? input.adminId,
-      };
-    });
+  async reviewJoinRequest(
+    input: ReviewFamiliaJoinRequestInput,
+  ): Promise<ReviewedFamiliaJoinRequest | null> {
+    return new DrizzleSolicitacaoEntrada(db).revisar(input);
   }
 
   async listMembers(input: { familiaId: string }) {
@@ -358,7 +276,8 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     );
   }
 
-  async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest> {
+  async requestJoin(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest | null> {
+    if (!this.familiasById.has(input.familiaId)) return null;
     const joinRequest: CreatedFamiliaJoinRequest = {
       id: randomUUID(),
       familiaId: input.familiaId,
@@ -379,12 +298,10 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     );
   }
 
-  async reviewJoinRequest(input: {
-    solicitacaoId: string;
-    familiaId: string;
-    adminId: string;
-    acao: 'aprovar' | 'rejeitar';
-  }): Promise<ReviewedFamiliaJoinRequest | null> {
+  async reviewJoinRequest(
+    input: ReviewFamiliaJoinRequestInput,
+  ): Promise<ReviewedFamiliaJoinRequest | null> {
+    if (!this.familiasById.has(input.familiaId)) return null;
     const request = this.joinRequestsById.get(input.solicitacaoId);
     if (!request || request.familiaId !== input.familiaId || request.status !== 'pendente') {
       return null;

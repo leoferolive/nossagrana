@@ -91,6 +91,15 @@ describe('FamiliaService', () => {
     ).rejects.toBeInstanceOf(ForbiddenFamiliaInviteError);
   });
 
+  it('requestJoin lança FamiliaNotFoundError quando a família não existe ou foi excluída', async () => {
+    const repository = buildRepository({ requestJoin: vi.fn().mockResolvedValue(null) });
+    const service = new FamiliaService(repository);
+
+    await expect(
+      service.requestJoin({ familiaId: 'f-excluida', usuarioId: 'u1' }),
+    ).rejects.toBeInstanceOf(FamiliaNotFoundError);
+  });
+
   it('throws when reviewed request is not found', async () => {
     const repository = buildRepository({
       reviewJoinRequest: vi.fn().mockResolvedValue(null),

@@ -54,6 +54,12 @@ export class ApiClient {
    * disparam a detecção de reuso no servidor e revogam todas as sessões.
    */
   private refreshInFlight: Promise<boolean> | null = null;
+  /**
+   * Logout em curso/concluído: nenhum refresh novo pode começar. Um 401 atrasado de uma
+   * requisição enviada antes do logout dispararia um refresh cujo `Set-Cookie` restauraria
+   * um refresh rotacionado que o logout nunca revogou. Zerado no próximo login.
+   */
+  private sessaoEncerrada = false;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl;
@@ -92,6 +98,16 @@ export class ApiClient {
     return (await response.json()) as T;
   }
 
+  /** Chamado no início do logout, antes de qualquer `await`: bloqueia refreshes novos. */
+  encerrarSessao(): void {
+    this.sessaoEncerrada = true;
+  }
+
+  /** Chamado após um login bem-sucedido: refreshes voltam a ser permitidos. */
+  retomarSessao(): void {
+    this.sessaoEncerrada = false;
+  }
+
   /**
    * Resolve quando não há refresh em andamento (ou quando o atual termina, mesmo falhando).
    * O logout espera por aqui para revogar o cookie já rotacionado, não o antigo.
@@ -105,8 +121,10 @@ export class ApiClient {
    * requisição concluiu o refresh enquanto esta esperava: basta re-tentar.
    */
   private renewSession(tokenUsed: string | null): Promise<boolean> {
-    if (this.refreshInFlight) return this.refreshInFlight;
+    // O token atual (não o capturado no envio) diz se ainda há sessão: sem ela, não há o que renovar.
     const current = this.getAccessToken();
+    if (this.sessaoEncerrada || !current) return Promise.resolve(false);
+    if (this.refreshInFlight) return this.refreshInFlight;
     if (current && current !== tokenUsed) return Promise.resolve(true);
 
     this.refreshInFlight = this.refreshAccessToken().finally(() => {

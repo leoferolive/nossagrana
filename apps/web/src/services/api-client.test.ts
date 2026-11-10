@@ -194,6 +194,71 @@ describe('ApiClient', () => {
     expect(clearSession).toHaveBeenCalledTimes(1);
   });
 
+  describe('logout x requisição em voo (#116)', () => {
+    const montar = () => {
+      let liberar401!: () => void;
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        if (String(input).endsWith('/api/auth/refresh')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ accessToken: 'novo' }), { status: 200 }),
+          );
+        }
+        return new Promise<Response>((resolve) => {
+          liberar401 = () => resolve(new Response(null, { status: 401 }));
+        });
+      });
+      const apiClient = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchMock,
+        getAccessToken: () => tokenState.accessToken,
+        setAccessToken: (accessToken) => {
+          tokenState.accessToken = accessToken;
+        },
+        clearSession: vi.fn(),
+      });
+      return { apiClient, fetchMock, liberar: () => liberar401() };
+    };
+    const refreshCalls = (fetchMock: ReturnType<typeof montar>['fetchMock']) =>
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/auth/refresh'));
+
+    it('401 atrasado depois do logout não dispara refresh', async () => {
+      const { apiClient, fetchMock, liberar } = montar();
+      const lenta = apiClient.request('/api/lenta');
+      apiClient.encerrarSessao();
+      tokenState.accessToken = null;
+
+      liberar();
+
+      await expect(lenta).rejects.toThrow('Não autorizado');
+      expect(refreshCalls(fetchMock)).toHaveLength(0);
+    });
+
+    it('sem access token atual no 401 (sessão já limpa) não dispara refresh', async () => {
+      const { apiClient, fetchMock, liberar } = montar();
+      const lenta = apiClient.request('/api/lenta');
+      tokenState.accessToken = null;
+
+      liberar();
+
+      await expect(lenta).rejects.toThrow('Não autorizado');
+      expect(refreshCalls(fetchMock)).toHaveLength(0);
+    });
+
+    it('encerrarSessao bloqueia refresh mesmo com token presente; retomarSessao libera de novo', async () => {
+      const { apiClient, fetchMock, liberar } = montar();
+      apiClient.encerrarSessao();
+      const bloqueada = apiClient.request('/api/a');
+      liberar();
+      await expect(bloqueada).rejects.toThrow();
+      expect(refreshCalls(fetchMock)).toHaveLength(0);
+
+      apiClient.retomarSessao();
+      void apiClient.request('/api/b').catch(() => undefined);
+      liberar();
+      await vi.waitFor(() => expect(refreshCalls(fetchMock)).toHaveLength(1));
+    });
+  });
+
   it('clears session when refresh token is invalid', async () => {
     const fetchMock = vi
       .fn()

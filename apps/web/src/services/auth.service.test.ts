@@ -10,12 +10,21 @@ import {
 } from './core-financeiro.service';
 import { AuthService, FamiliaService } from './auth.service';
 
-const buildApiClient = (overrides?: Partial<Pick<ApiClient, 'request' | 'aguardarRefresh'>>) =>
+const buildApiClient = (
+  overrides?: Partial<
+    Pick<ApiClient, 'request' | 'aguardarRefresh' | 'encerrarSessao' | 'retomarSessao'>
+  >,
+) =>
   ({
     request: vi.fn(),
     aguardarRefresh: vi.fn().mockResolvedValue(undefined),
+    encerrarSessao: vi.fn(),
+    retomarSessao: vi.fn(),
     ...overrides,
-  }) as Pick<ApiClient, 'request' | 'aguardarRefresh'> as ApiClient;
+  }) as Pick<
+    ApiClient,
+    'request' | 'aguardarRefresh' | 'encerrarSessao' | 'retomarSessao'
+  > as ApiClient;
 
 describe('AuthService', () => {
   let apiClient: ApiClient;
@@ -95,13 +104,31 @@ describe('AuthService.logout x refresh em voo (#116)', () => {
       }) as ApiClient['request'],
     });
 
+    vi.mocked(apiClient.encerrarSessao).mockImplementation(() => {
+      ordem.push('sessao-encerrada');
+    });
     const logout = new AuthService(apiClient).logout();
     await Promise.resolve();
     expect(apiClient.request).not.toHaveBeenCalled();
     terminarRefresh();
     await logout;
 
-    expect(ordem).toEqual(['refresh-terminou', 'logout-enviado']);
+    expect(ordem).toEqual(['sessao-encerrada', 'refresh-terminou', 'logout-enviado']);
+  });
+});
+
+describe('AuthService.login retoma a sessão (#116)', () => {
+  it('login bem-sucedido libera refreshes de novo; falho não', async () => {
+    const apiClient = buildApiClient();
+    const service = new AuthService(apiClient);
+    vi.mocked(apiClient.request).mockRejectedValueOnce(new Error('401'));
+    await expect(service.login({ email: 'a@b.c', senha: 'senha12345' })).rejects.toThrow();
+    expect(apiClient.retomarSessao).not.toHaveBeenCalled();
+
+    vi.mocked(apiClient.request).mockResolvedValueOnce({ accessToken: 'at' });
+    await service.login({ email: 'a@b.c', senha: 'senha12345' });
+
+    expect(apiClient.retomarSessao).toHaveBeenCalledTimes(1);
   });
 });
 

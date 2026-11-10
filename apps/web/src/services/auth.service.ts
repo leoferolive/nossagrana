@@ -29,12 +29,14 @@ export class AuthService {
   constructor(private readonly api: ApiClient) {}
 
   async login(payload: AuthLoginRequest): Promise<AuthLoginResponse> {
-    return this.api.request<AuthLoginResponse>('/api/auth/login', {
+    const resposta = await this.api.request<AuthLoginResponse>('/api/auth/login', {
       ...cookieAuthInit({ 'Content-Type': 'application/json' }),
       method: 'POST',
       body: JSON.stringify(payload),
       skipAuthRetry: true,
     });
+    this.api.retomarSessao();
+    return resposta;
   }
 
   async register(payload: AuthRegisterRequest): Promise<AuthRegisterResponse> {
@@ -47,6 +49,8 @@ export class AuthService {
 
   /** O servidor revoga o refresh vigente (cookie) e limpa o cookie; não há token para enviar. */
   async logout(): Promise<void> {
+    // Sem refresh novo a partir daqui (nem por 401 atrasado de requisições já enviadas).
+    this.api.encerrarSessao();
     // Um refresh em voo rotaciona o cookie: revogar antes dele deixaria o novo cookie vivo.
     await this.api.aguardarRefresh();
     return this.api.request<void>('/api/auth/logout', {

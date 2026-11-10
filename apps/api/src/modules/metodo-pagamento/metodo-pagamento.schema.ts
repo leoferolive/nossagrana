@@ -55,21 +55,21 @@ export const metodoPagamentoDeleteSchema = {
 
 export const metodoPagamentoFaturaSchema = {
   params: z.object({
-    metodoPagamentoId: z.string().uuid(),
+    metodoPagamentoId: z.guid(),
     mesReferencia: z.string().regex(/^\d{4}-\d{2}$/),
   }),
   response: {
     200: z.object({
-      metodoPagamentoId: z.string().uuid(),
+      metodoPagamentoId: z.guid(),
       mesReferencia: z.string(),
       total: z.string(),
       transacoes: z.array(
         z.object({
-          id: z.string().uuid(),
+          id: z.guid(),
           descricao: z.string().nullable(),
           valor: z.string(),
           data: z.string(),
-          categoriaId: z.string().uuid(),
+          categoriaId: z.guid(),
           categoriaNome: z.string(),
           usuarioNome: z.string(),
           parcelaAtual: z.number().int().nullable(),

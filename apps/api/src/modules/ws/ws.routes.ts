@@ -136,7 +136,7 @@ async function admitirSocket(
 /** Query do handshake: só ticket e família. Qualquer outro parâmetro (inclusive `token`) é ignorado. */
 const handshakeQuerySchema = z.object({
   ticket: z.string().min(1).max(256),
-  familiaId: z.string().uuid(),
+  familiaId: z.guid(),
 });
 
 /** Credencial já vinculada a uma família: é a do ticket, não a que o cliente alega na query. */

@@ -25,7 +25,7 @@ export interface FamiliaScopeOpcoes {
   verificadorAcessoFamilia?: VerificadorAcessoFamilia;
 }
 
-const familiaHeaderSchema = z.string().uuid();
+const familiaHeaderSchema = z.guid();
 
 const RECUSAS = {
   sem_acesso: {

@@ -1,19 +1,14 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import type { ExecutorDrizzle, TransacaoDrizzle } from '../../db/executor.types.js';
-import { familias, solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
+import { solicitacoesEntrada, usuarioFamilia } from '../../db/schema.js';
+import { travarFamiliaAtiva } from './familia-trava.js';
 import type {
   CreatedFamiliaJoinRequest,
   RequestFamiliaJoinInput,
   ReviewedFamiliaJoinRequest,
+  ReviewFamiliaJoinRequestInput,
 } from './familia.types.js';
-
-interface RevisaoInput {
-  solicitacaoId: string;
-  familiaId: string;
-  adminId: string;
-  acao: 'aprovar' | 'rejeitar';
-}
 
 /**
  * Solicitação e revisão de entrada coordenadas com a exclusão da família (#149,
@@ -33,22 +28,30 @@ export class DrizzleSolicitacaoEntrada {
 
   /**
    * Ex.: `solicitar({ familiaId, usuarioId })` → a solicitação pendente; `null`
-   * se a família não existe ou está excluída (nada é gravado).
+   * se a família não existe ou está excluída (nada é gravado). Decisão: a
+   * exclusão NÃO invalida solicitações pendentes (ao contrário dos convites);
+   * após uma restauração elas voltam a ser aprováveis por um admin.
    */
   async solicitar(input: RequestFamiliaJoinInput): Promise<CreatedFamiliaJoinRequest | null> {
     return this.executor.transaction(async (tx) => {
-      if (!(await this.travarFamiliaAtiva(tx, input.familiaId))) return null;
+      if (!(await travarFamiliaAtiva(tx, input.familiaId))) return null;
       return this.inserir(tx, input);
     });
   }
 
-  /** `null` se a solicitação não está pendente na família, ou a família está excluída. */
+  /**
+   * `null` se a solicitação não está pendente na família, ou a família está
+   * excluída. A solicitação é travada com `FOR UPDATE`: duas revisões
+   * simultâneas (aprovar x rejeitar) serializam e a segunda vê que já não está
+   * pendente. Decisão: a exclusão NÃO invalida solicitações pendentes; após a
+   * restauração elas voltam a ser aprováveis por um admin.
+   */
   async revisar(
-    input: RevisaoInput,
+    input: ReviewFamiliaJoinRequestInput,
     agora: Date = new Date(),
   ): Promise<ReviewedFamiliaJoinRequest | null> {
     return this.executor.transaction(async (tx) => {
-      if (!(await this.travarFamiliaAtiva(tx, input.familiaId))) return null;
+      if (!(await travarFamiliaAtiva(tx, input.familiaId))) return null;
       const status = input.acao === 'aprovar' ? 'aprovada' : 'rejeitada';
       const pendente = await this.buscarPendente(tx, input);
       if (!pendente) return null;
@@ -56,15 +59,6 @@ export class DrizzleSolicitacaoEntrada {
       if (status === 'aprovada') await this.vincularMembro(tx, pendente);
       return revisada;
     });
-  }
-
-  private async travarFamiliaAtiva(tx: TransacaoDrizzle, familiaId: string): Promise<boolean> {
-    const linhas = await tx
-      .select({ id: familias.id })
-      .from(familias)
-      .where(and(eq(familias.id, familiaId), isNull(familias.deletedAt)))
-      .for('share');
-    return linhas.length > 0;
   }
 
   private async inserir(
@@ -88,7 +82,7 @@ export class DrizzleSolicitacaoEntrada {
     return { ...criada, status: 'pendente' };
   }
 
-  private async buscarPendente(tx: TransacaoDrizzle, input: RevisaoInput) {
+  private async buscarPendente(tx: TransacaoDrizzle, input: ReviewFamiliaJoinRequestInput) {
     const [pendente] = await tx
       .select({
         id: solicitacoesEntrada.id,
@@ -103,7 +97,8 @@ export class DrizzleSolicitacaoEntrada {
           eq(solicitacoesEntrada.status, 'pendente'),
         ),
       )
-      .limit(1);
+      .limit(1)
+      .for('update');
     return pendente;
   }
 

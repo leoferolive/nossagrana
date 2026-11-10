@@ -131,8 +131,11 @@ describe('Solicitação de entrada x exclusão de família no PostgreSQL', () =>
     expect(await statusDa(solicitacaoId)).toBe('pendente');
   });
 
+  // Teste de CONSISTÊNCIA sob concorrência real, não prova da correção: o
+  // entrelaçamento varia por rodada. A prova determinística da correção são os
+  // testes que seguram o lock numa transação aberta (acima e abaixo).
   it.each(RODADAS)(
-    'rodada %i: aprovação e exclusão concorrentes nunca deixam membro novo em família excluída sem a aprovação ter ocorrido antes',
+    'rodada %i (consistência, não prova): aprovação e exclusão concorrentes deixam membro vinculado sse a aprovação ocorreu',
     async () => {
       const c = await semearFamilia('CorridaAprovar');
       const solicitacaoId = await semearPendente(c);
@@ -154,6 +157,52 @@ describe('Solicitação de entrada x exclusão de família no PostgreSQL', () =>
       expect(await statusDa(solicitacaoId)).toBe(aprovada ? 'aprovada' : 'pendente');
     },
   );
+
+  it('operação em andamento, a exclusão espera o commit dela e a solicitação fica criada', async () => {
+    const c = await semearFamilia('SolicitarPrimeiro');
+    const { exclusao } = novaSessao();
+    let exclusaoPedida!: Promise<unknown>;
+
+    // Simula a transação de `solicitar`: trava a família (FOR SHARE) e insere.
+    await banco.sql.begin(async (tx) => {
+      await tx.unsafe('SELECT id FROM familias WHERE id = $1 FOR SHARE', [c.familiaId]);
+      await tx.unsafe('INSERT INTO solicitacoes_entrada (familia_id, usuario_id) VALUES ($1, $2)', [
+        c.familiaId,
+        c.solicitanteId,
+      ]);
+      exclusaoPedida = exclusao.excluir({ familiaId: c.familiaId });
+      await expect.poll(() => esperandoLock(observador), { timeout: 5_000 }).toBe(1);
+    });
+
+    await exclusaoPedida;
+    expect(await totalDeSolicitacoes(c.familiaId)).toBe(1);
+    const [linha] = await observador`SELECT deleted_at FROM familias WHERE id = ${c.familiaId}`;
+    expect(linha?.deleted_at).not.toBeNull();
+  });
+
+  it('revisar: segunda revisão da mesma solicitação espera a primeira e retorna null', async () => {
+    const c = await semearFamilia('RevisaoDupla');
+    const solicitacaoId = await semearPendente(c);
+    const { solicitacoes } = novaSessao();
+    let segunda!: Promise<unknown>;
+
+    // Simula a 1ª revisão (aprovar) ainda não commitada, segurando a linha.
+    await banco.sql.begin(async (tx) => {
+      await tx.unsafe("UPDATE solicitacoes_entrada SET status = 'aprovada' WHERE id = $1", [
+        solicitacaoId,
+      ]);
+      segunda = solicitacoes.revisar({
+        solicitacaoId,
+        familiaId: c.familiaId,
+        adminId: c.adminId,
+        acao: 'rejeitar',
+      });
+      await expect.poll(() => esperandoLock(observador), { timeout: 5_000 }).toBe(1);
+    });
+
+    expect(await segunda).toBeNull();
+    expect(await statusDa(solicitacaoId)).toBe('aprovada');
+  });
 
   it('família ativa: solicita e aprova normalmente', async () => {
     const c = await semearFamilia('Ativa');

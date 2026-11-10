@@ -25,6 +25,7 @@ import type {
   JoinFamiliaByInviteInput,
   RequestFamiliaJoinInput,
   ReviewedFamiliaJoinRequest,
+  ReviewFamiliaJoinRequestInput,
 } from './familia.types.js';
 
 export class DrizzleFamiliaRepository implements FamiliaRepository {
@@ -132,12 +133,9 @@ export class DrizzleFamiliaRepository implements FamiliaRepository {
     }));
   }
 
-  async reviewJoinRequest(input: {
-    solicitacaoId: string;
-    familiaId: string;
-    adminId: string;
-    acao: 'aprovar' | 'rejeitar';
-  }): Promise<ReviewedFamiliaJoinRequest | null> {
+  async reviewJoinRequest(
+    input: ReviewFamiliaJoinRequestInput,
+  ): Promise<ReviewedFamiliaJoinRequest | null> {
     return new DrizzleSolicitacaoEntrada(db).revisar(input);
   }
 
@@ -300,12 +298,9 @@ export class InMemoryFamiliaRepository implements FamiliaRepository {
     );
   }
 
-  async reviewJoinRequest(input: {
-    solicitacaoId: string;
-    familiaId: string;
-    adminId: string;
-    acao: 'aprovar' | 'rejeitar';
-  }): Promise<ReviewedFamiliaJoinRequest | null> {
+  async reviewJoinRequest(
+    input: ReviewFamiliaJoinRequestInput,
+  ): Promise<ReviewedFamiliaJoinRequest | null> {
     if (!this.familiasById.has(input.familiaId)) return null;
     const request = this.joinRequestsById.get(input.solicitacaoId);
     if (!request || request.familiaId !== input.familiaId || request.status !== 'pendente') {

@@ -2,17 +2,17 @@ import { z } from 'zod';
 
 // --- Entity ---
 export const templateTransacaoSchema = z.object({
-  id: z.string().uuid(),
-  familiaId: z.string().uuid(),
+  id: z.guid(),
+  familiaId: z.guid(),
   nome: z.string().min(1),
   tipo: z.enum(['receita', 'despesa']),
-  categoriaId: z.string().uuid().nullable(),
-  metodoPagamentoId: z.string().uuid().nullable(),
-  cofrinhoId: z.string().uuid().nullable(),
+  categoriaId: z.guid().nullable(),
+  metodoPagamentoId: z.guid().nullable(),
+  cofrinhoId: z.guid().nullable(),
   ordem: z.number().int(),
   valorPadrao: z.string().nullable(),
   ativo: z.boolean(),
-  criadoPor: z.string().uuid(),
+  criadoPor: z.guid(),
   criadoEm: z.string(),
   atualizadoEm: z.string(),
 });
@@ -36,9 +36,9 @@ export type TemplateTransacaoListResponse = z.infer<typeof templateTransacaoList
 export const templateTransacaoCreateRequestSchema = z.object({
   nome: z.string().trim().min(1).max(200),
   tipo: z.enum(['receita', 'despesa']),
-  categoriaId: z.string().uuid().nullable().optional(),
-  metodoPagamentoId: z.string().uuid().nullable().optional(),
-  cofrinhoId: z.string().uuid().nullable().optional(),
+  categoriaId: z.guid().nullable().optional(),
+  metodoPagamentoId: z.guid().nullable().optional(),
+  cofrinhoId: z.guid().nullable().optional(),
   valorPadrao: z
     .string()
     .regex(/^\d+(\.\d{1,2})?$/)
@@ -56,9 +56,9 @@ export type TemplateTransacaoCreateResponse = z.infer<typeof templateTransacaoCr
 // --- Update request ---
 export const templateTransacaoUpdateRequestSchema = z.object({
   nome: z.string().trim().min(1).max(200).optional(),
-  categoriaId: z.string().uuid().nullable().optional(),
-  metodoPagamentoId: z.string().uuid().nullable().optional(),
-  cofrinhoId: z.string().uuid().nullable().optional(),
+  categoriaId: z.guid().nullable().optional(),
+  metodoPagamentoId: z.guid().nullable().optional(),
+  cofrinhoId: z.guid().nullable().optional(),
   valorPadrao: z
     .string()
     .regex(/^\d+(\.\d{1,2})?$/)
@@ -69,16 +69,16 @@ export const templateTransacaoUpdateRequestSchema = z.object({
 export type TemplateTransacaoUpdateRequest = z.infer<typeof templateTransacaoUpdateRequestSchema>;
 
 export const templateTransacaoUpdateParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export const templateTransacaoDeleteParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 // --- Aplicar request ---
 export const templateTransacaoAplicarItemSchema = z.object({
-  templateId: z.string().uuid(),
+  templateId: z.guid(),
   valor: z.string().regex(/^\d+(\.\d{1,2})?$/),
 });
 
@@ -99,7 +99,7 @@ export type TemplateTransacaoAplicarResponse = z.infer<
 
 // --- Reordenar request ---
 export const templateTransacaoReordenarItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   ordem: z.number().int().min(0),
 });
 

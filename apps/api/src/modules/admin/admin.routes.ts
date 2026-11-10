@@ -35,7 +35,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [requireAdmin],
       config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
       schema: {
-        params: z.object({ familiaId: z.string().uuid() }),
+        params: z.object({ familiaId: z.guid() }),
         response: {
           200: z.object({ id: z.string(), nome: z.string() }),
           403: z.object({ message: z.string() }),
@@ -63,7 +63,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [requireAdmin],
       config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
       schema: {
-        params: z.object({ userId: z.string().uuid() }),
+        params: z.object({ userId: z.guid() }),
         response: {
           200: z.object({ accessToken: z.string() }),
           403: z.object({ message: z.string() }),

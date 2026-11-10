@@ -40,6 +40,12 @@ export class ApiClient {
   private readonly setAccessToken: (accessToken: string) => void;
   private readonly setRefreshToken: (refreshToken: string) => void;
   private readonly clearSession: () => void;
+  /**
+   * Refresh em andamento (single-flight, #153): requisições concorrentes com 401
+   * compartilham a mesma promise. Dois refreshes com o mesmo refresh token
+   * disparam a detecção de reuso no servidor e revogam todas as sessões.
+   */
+  private refreshInFlight: Promise<boolean> | null = null;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl;
@@ -61,7 +67,7 @@ export class ApiClient {
     });
 
     if (response.status === 401 && !skipAuthRetry && path !== '/api/auth/refresh') {
-      const refreshed = await this.refreshAccessToken();
+      const refreshed = await this.renewSession(accessToken);
       if (refreshed) {
         return this.request<T>(path, { ...options, skipAuthRetry: true });
       }
@@ -77,6 +83,21 @@ export class ApiClient {
     }
 
     return (await response.json()) as T;
+  }
+
+  /**
+   * Se o access token já mudou desde que a requisição foi enviada, outra
+   * requisição concluiu o refresh enquanto esta esperava: basta re-tentar.
+   */
+  private renewSession(tokenUsed: string | null): Promise<boolean> {
+    if (this.refreshInFlight) return this.refreshInFlight;
+    const current = this.getAccessToken();
+    if (current && current !== tokenUsed) return Promise.resolve(true);
+
+    this.refreshInFlight = this.refreshAccessToken().finally(() => {
+      this.refreshInFlight = null;
+    });
+    return this.refreshInFlight;
   }
 
   private async refreshAccessToken(): Promise<boolean> {

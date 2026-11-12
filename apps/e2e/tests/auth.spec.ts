@@ -8,33 +8,9 @@
  */
 
 import { expect, test } from '../fixtures/base.js';
+import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** The localStorage key used by the auth context to persist the session. */
-const AUTH_KEY = 'nossagrana.auth.session';
-
-/**
- * Injects a valid auth session directly into localStorage so the app
- * treats the browser as already logged in, without going through the UI.
- */
-async function injectAuthSession(
-  page: import('@playwright/test').Page,
-  session: { accessToken: string; familiaIdAtiva?: string },
-) {
-  await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(key, JSON.stringify(value));
-    },
-    {
-      key: AUTH_KEY,
-      value: {
-        accessToken: session.accessToken,
-        familiaIdAtiva: session.familiaIdAtiva ?? '',
-      },
-    },
-  );
-}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -126,28 +102,21 @@ test.describe('Autenticação', () => {
 
   // ── 5. Logout limpa sessão e retorna para login ────────────────────────────
   test('logout limpa sessão e exibe tela de login', async ({ page, authContext }) => {
-    // Start with an authenticated session by injecting tokens before navigating.
-    await page.goto('/');
-    await injectAuthSession(page, {
-      accessToken: authContext.accessToken,
-      familiaIdAtiva: '',
+    // Sessão restaurada no bootstrap pelo cookie de refresh (sem familia → onboarding).
+    await abrirAppAutenticado(page, {
+      email: authContext.user.email,
+      password: authContext.password,
     });
+    await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
+    expect(await storageSemToken(page)).toBe(true);
 
-    // Reload so the app picks up the session from localStorage.
+    // Logout revoga o refresh e limpa o cookie; o reload não restaura mais a sessão.
+    const resposta = await page.request.post('http://localhost:3000/api/auth/logout', {
+      headers: { 'x-nossagrana-csrf': '1' },
+    });
+    expect(resposta.ok()).toBe(true);
     await page.reload();
 
-    // The app navigates to onboarding because familiaIdAtiva is empty
-    // and no screen state was persisted. The exact post-login screen depends
-    // on whether the user has a familia. Regardless, the user should NOT be
-    // on the login screen yet.
-    // Simulate logout by clearing the auth session key and reloading.
-    await page.evaluate((key: string) => {
-      localStorage.removeItem(key);
-    }, AUTH_KEY);
-
-    await page.reload();
-
-    // After clearing the session the app must show the login screen.
     await expect(page.getByRole('heading', { name: 'Entrar no NossaGrana' })).toBeVisible({
       timeout: 10_000,
     });

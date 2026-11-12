@@ -28,32 +28,21 @@
  */
 
 import { expect, test } from '../fixtures/base.js';
+import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 
 // ─── Constant ────────────────────────────────────────────────────────────────
-
-const AUTH_KEY = 'nossagrana.auth.session';
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 /**
- * Injects auth tokens without a familiaIdAtiva into localStorage and reloads
+ * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session and reloads
  * the page so the App.tsx lazy initializer navigates to screen = 'onboarding'.
  */
 async function gotoOnboarding(
   page: import('@playwright/test').Page,
   tokens: { accessToken: string; email: string; password: string },
 ) {
-  await page.goto('/');
-  await page.evaluate(
-    ([accessToken]) => {
-      localStorage.setItem(
-        'nossagrana.auth.session',
-        JSON.stringify({ accessToken, familiaIdAtiva: '' }),
-      );
-    },
-    [tokens.accessToken],
-  );
-  await page.reload();
+  await abrirAppAutenticado(page, { email: tokens.email, password: tokens.password });
   // The app should show the onboarding screen (no familia → onboarding)
   await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
 }
@@ -196,14 +185,11 @@ test.describe('Onboarding', () => {
       page.getByRole('heading', { name: 'Como deseja entrar na sua familia?' }),
     ).not.toBeVisible({ timeout: 10_000 });
 
-    // Confirm the session has been updated with a familiaIdAtiva.
-    const session = await page.evaluate((key: string) => {
-      const raw = localStorage.getItem(key);
-      if (!raw) return null;
-      return JSON.parse(raw) as { familiaIdAtiva?: string };
-    }, AUTH_KEY);
-
-    expect(session).not.toBeNull();
-    expect(session?.familiaIdAtiva).toBeTruthy();
+    // The active familia id (non-secret) is persisted; no token may reach the storage.
+    const familiaAtiva = await page.evaluate(() =>
+      localStorage.getItem('nossagrana.familia-ativa'),
+    );
+    expect(familiaAtiva).toBeTruthy();
+    expect(await storageSemToken(page)).toBe(true);
   });
 });

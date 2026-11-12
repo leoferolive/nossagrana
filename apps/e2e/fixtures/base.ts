@@ -4,24 +4,24 @@
  * Provides:
  *  - `authContext`      – a registered and authenticated user with tokens
  *  - `familiaId`        – a familia created and owned by `authContext.user`
- *  - `authenticatedPage` – a Playwright Page with auth tokens already set in
- *                          localStorage so the app treats the user as logged in
+ *  - `authenticatedPage` – a Playwright Page logged in through the browser context
+ *                          (HttpOnly refresh cookie); the app bootstrap restores the
+ *                          session in memory (#117)
  *
  * Cleanup (deleteAccount) runs automatically after each test that uses any of
  * these fixtures.
  *
  * ## Navigation strategy
  *
- * The NossaGrana frontend reads the localStorage session during the initial
- * render of `App.tsx` via a lazy initializer on the `screen` useState.
- * Injecting auth tokens into localStorage and reloading the page is therefore
- * sufficient to land on `screen = 'dashboard'` (when familiaIdAtiva is set) or
- * `screen = 'onboarding'` (when familiaIdAtiva is empty).
+ * Tokens are never stored in the browser storage. `abrirAppAutenticado` logs in via
+ * `page.request` (cookie jar shared with the page), stores only the non-secret active
+ * familia id and reloads: the bootstrap refreshes the session from the cookie.
  */
 
 import { test as base, expect, type Page } from '@playwright/test';
 
 import * as api from '../helpers/api-client.js';
+import { abrirAppAutenticado } from '../helpers/session.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,35 +108,16 @@ export const test = base.extend<E2EFixtures>({
    * screen (familiaIdAtiva is set to the familia created by the `familiaId`
    * fixture).
    *
-   * Auth tokens and familiaIdAtiva are injected into localStorage before
-   * loading the app. The App.tsx lazy initializer reads the session on first
-   * render and navigates directly to screen = 'dashboard'.
+   * The session is restored by the cookie-based bootstrap (no token in storage).
    *
    * Depends on `authContext` and `familiaId`.
    */
   authenticatedPage: async ({ page, authContext, familiaId }, use) => {
-    await page.goto('/');
-    await page.evaluate(
-      ([accessToken, fid]) => {
-        localStorage.setItem(
-          'nossagrana.auth.session',
-          JSON.stringify({ accessToken, familiaIdAtiva: fid }),
-        );
-        // Suppress all first-time tours so they do not block UI interactions.
-        for (const key of [
-          'dashboard',
-          'extrato',
-          'historico',
-          'orcamento',
-          'configuracoes',
-          'perfil',
-        ]) {
-          localStorage.setItem(`tour-${key}`, 'true');
-        }
-      },
-      [authContext.accessToken, familiaId],
+    await abrirAppAutenticado(
+      page,
+      { email: authContext.user.email, password: authContext.password },
+      familiaId,
     );
-    await page.reload();
     await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
       timeout: 15_000,
     });

@@ -17,6 +17,7 @@
  */
 
 import { expect, test } from '../fixtures/base.js';
+import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 import * as api from '../helpers/api-client.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -33,26 +34,16 @@ interface AuthCtx {
 }
 
 /**
- * Injects auth tokens without a familiaIdAtiva into localStorage and reloads
+ * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session and reloads
  * the page so the App.tsx lazy initializer navigates to screen = 'onboarding'.
  */
 async function gotoOnboarding(page: import('@playwright/test').Page, ctx: AuthCtx) {
-  await page.goto('/');
-  await page.evaluate(
-    ([accessToken]) => {
-      localStorage.setItem(
-        'nossagrana.auth.session',
-        JSON.stringify({ accessToken, familiaIdAtiva: '' }),
-      );
-    },
-    [ctx.accessToken],
-  );
-  await page.reload();
+  await abrirAppAutenticado(page, { email: ctx.user.email, password: ctx.password });
   await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
 }
 
 /**
- * Injects auth tokens and familiaIdAtiva into localStorage, reloads the page
+ * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session, reloads the page
  * to land on screen = 'dashboard', then navigates to FamilySettingsPage via
  * ConfiguracoesPage.
  *
@@ -68,28 +59,7 @@ async function gotoFamilySettings(
   ctx: AuthCtx,
   familiaId: string,
 ) {
-  await page.goto('/');
-  await page.evaluate(
-    ([accessToken, fid]) => {
-      localStorage.setItem(
-        'nossagrana.auth.session',
-        JSON.stringify({ accessToken, familiaIdAtiva: fid }),
-      );
-      // Suppress all first-time tours so they do not block UI interactions.
-      for (const key of [
-        'dashboard',
-        'extrato',
-        'historico',
-        'orcamento',
-        'configuracoes',
-        'perfil',
-      ]) {
-        localStorage.setItem(`tour-${key}`, 'true');
-      }
-    },
-    [ctx.accessToken, familiaId],
-  );
-  await page.reload();
+  await abrirAppAutenticado(page, { email: ctx.user.email, password: ctx.password }, familiaId);
 
   // Wait for dashboard.
   await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
@@ -137,14 +107,12 @@ test.describe('Família', () => {
       timeout: 10_000,
     });
 
-    // The session must now contain a familiaIdAtiva.
-    const session = await page.evaluate(() => {
-      const raw = localStorage.getItem('nossagrana.auth.session');
-      if (!raw) return null;
-      return JSON.parse(raw) as { familiaIdAtiva?: string };
-    });
-
-    expect(session?.familiaIdAtiva).toBeTruthy();
+    // The active familia id (non-secret) is persisted; no token may reach the storage.
+    const familiaAtiva = await page.evaluate(() =>
+      localStorage.getItem('nossagrana.familia-ativa'),
+    );
+    expect(familiaAtiva).toBeTruthy();
+    expect(await storageSemToken(page)).toBe(true);
   });
 
   // ── 2. Gerar código de convite → código exibido na UI ────────────────────

@@ -3,12 +3,16 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { categorias } from '../../db/schema.js';
 import type { Categoria, CategoriaRepository } from './categoria.types.js';
 
 export class DrizzleCategoriaRepository implements CategoriaRepository {
+  /** Padrão: `db` da app; testes contra PostgreSQL real injetam o banco da fixture. */
+  constructor(private readonly database: ExecutorDrizzle = db) {}
+
   async listByFamiliaId(input: { familiaId: string }): Promise<Categoria[]> {
-    const found = await db
+    const found = await this.database
       .select({
         id: categorias.id,
         familiaId: categorias.familiaId,
@@ -29,7 +33,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
   }
 
   async findById(input: { id: string; familiaId: string }): Promise<Categoria | null> {
-    const [found] = await db
+    const [found] = await this.database
       .select({
         id: categorias.id,
         familiaId: categorias.familiaId,
@@ -60,7 +64,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     criadoPor: string;
     sistema?: boolean;
   }): Promise<Categoria> {
-    const [created] = await db
+    const [created] = await this.database
       .insert(categorias)
       .values({
         familiaId: input.familiaId,
@@ -93,7 +97,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
     nome: string;
     tipo: 'receita' | 'despesa';
   }): Promise<Categoria | null> {
-    const [updated] = await db
+    const [updated] = await this.database
       .update(categorias)
       .set({
         nome: input.nome,
@@ -128,7 +132,7 @@ export class DrizzleCategoriaRepository implements CategoriaRepository {
   }
 
   async deactivate(input: { id: string; familiaId: string }): Promise<Categoria | null> {
-    const [updated] = await db
+    const [updated] = await this.database
       .update(categorias)
       .set({ ativo: false })
       .where(

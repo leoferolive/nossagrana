@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { categorias, metodosPagamento, transacoes, users } from '../../db/schema.js';
 import type {
   FaturaTransacaoRow,
@@ -38,8 +39,11 @@ const mapRow = (row: {
 });
 
 export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoRepository {
+  /** Padrão: `db` da app; testes contra PostgreSQL real injetam o banco da fixture. */
+  constructor(private readonly database: ExecutorDrizzle = db) {}
+
   async listByFamiliaId(input: { familiaId: string }): Promise<MetodoPagamento[]> {
-    const rows = await db
+    const rows = await this.database
       .select(RETURNING_FIELDS)
       .from(metodosPagamento)
       .where(
@@ -50,7 +54,7 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
   }
 
   async findById(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null> {
-    const [row] = await db
+    const [row] = await this.database
       .select(RETURNING_FIELDS)
       .from(metodosPagamento)
       .where(
@@ -71,7 +75,7 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
     dataVencimento: number | null;
     usuarioDonoId: string;
   }): Promise<MetodoPagamento> {
-    const [created] = await db
+    const [created] = await this.database
       .insert(metodosPagamento)
       .values({
         familiaId: input.familiaId,
@@ -95,7 +99,7 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
     dataFechamento: number | null;
     dataVencimento: number | null;
   }): Promise<MetodoPagamento | null> {
-    const [updated] = await db
+    const [updated] = await this.database
       .update(metodosPagamento)
       .set({
         nome: input.nome,
@@ -116,7 +120,7 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
   }
 
   async deactivate(input: { id: string; familiaId: string }): Promise<MetodoPagamento | null> {
-    const [updated] = await db
+    const [updated] = await this.database
       .update(metodosPagamento)
       .set({ ativo: false })
       .where(
@@ -136,7 +140,7 @@ export class DrizzleMetodoPagamentoRepository implements MetodoPagamentoReposito
     metodoPagamentoId: string,
     mesReferencia: string,
   ): Promise<FaturaTransacaoRow[]> {
-    return db
+    return this.database
       .select({
         id: transacoes.id,
         descricao: transacoes.descricao,

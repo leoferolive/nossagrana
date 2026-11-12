@@ -10,13 +10,18 @@ export interface FamiliaSemeada {
   transacaoId: string;
 }
 
-async function inserirId(query: Promise<postgres.Row[]>): Promise<string> {
+export async function inserirId(query: Promise<postgres.Row[]>): Promise<string> {
   const [row] = await query;
   if (!row) throw new Error('Insert do seed não retornou linha: esperado RETURNING id');
   return row.id as string;
 }
 
-async function semearCadastros(sql: postgres.Sql, familiaId: string, usuarioId: string) {
+/** Categoria e método de pagamento da família (sem cofrinho, para quem não precisa dele). */
+export async function semearCategoriaEMetodo(
+  sql: postgres.Sql,
+  familiaId: string,
+  usuarioId: string,
+) {
   const categoriaId = await inserirId(
     sql`INSERT INTO categorias (familia_id, nome, tipo, criado_por)
         VALUES (${familiaId}, 'Mercado', 'despesa', ${usuarioId}) RETURNING id`,
@@ -25,11 +30,16 @@ async function semearCadastros(sql: postgres.Sql, familiaId: string, usuarioId: 
     sql`INSERT INTO metodos_pagamento (familia_id, nome, tipo, usuario_dono_id)
         VALUES (${familiaId}, 'Pix', 'pix', ${usuarioId}) RETURNING id`,
   );
+  return { categoriaId, metodoPagamentoId };
+}
+
+async function semearCadastros(sql: postgres.Sql, familiaId: string, usuarioId: string) {
+  const base = await semearCategoriaEMetodo(sql, familiaId, usuarioId);
   const cofrinhoId = await inserirId(
     sql`INSERT INTO cofrinhos (familia_id, nome, criado_por)
         VALUES (${familiaId}, 'Viagem', ${usuarioId}) RETURNING id`,
   );
-  return { categoriaId, metodoPagamentoId, cofrinhoId };
+  return { ...base, cofrinhoId };
 }
 
 /**

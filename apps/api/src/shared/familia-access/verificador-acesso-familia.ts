@@ -1,4 +1,5 @@
 import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { type AcessoFamilia, verificarAcessoFamilia } from './familia-access.repository.js';
 
 /**
@@ -12,7 +13,10 @@ export interface VerificadorAcessoFamilia {
 
 /** Implementação de produção: consulta `usuario_familia` + `familias` no PostgreSQL. */
 export class DrizzleVerificadorAcessoFamilia implements VerificadorAcessoFamilia {
+  /** Padrão: `db` da app; a fixture pg injeta a conexão do cenário. */
+  constructor(private readonly database: ExecutorDrizzle = db) {}
+
   async verificar(usuarioId: string, familiaId: string): Promise<AcessoFamilia> {
-    return verificarAcessoFamilia(db, usuarioId, familiaId);
+    return verificarAcessoFamilia(this.database, usuarioId, familiaId);
   }
 }

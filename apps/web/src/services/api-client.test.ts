@@ -1,6 +1,8 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useAuthSessionStore } from '../stores/auth-session.store';
+
 import { ApiClient, ApiError } from './api-client';
 
 interface TokenState {
@@ -516,3 +518,87 @@ class FakeAuthServer {
     });
   }
 }
+
+describe('ApiClient com o store de sessão em memória (#117)', () => {
+  const respostaJson = (corpo: unknown, status = 200) =>
+    new Response(JSON.stringify(corpo), { status });
+
+  const criarClient = (fetchFn: typeof fetch) =>
+    new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn,
+      getAccessToken: () => useAuthSessionStore.getState().accessToken,
+      setAccessToken: (token) => useAuthSessionStore.getState().atualizarAccessToken(token),
+      clearSession: () => useAuthSessionStore.getState().encerrarSessao(),
+    });
+
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    useAuthSessionStore.getState().iniciarSessao('access-velho', '');
+  });
+
+  it('401 simultâneos disparam um único refresh e o token novo fica só em memória', async () => {
+    const fetchMock = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).endsWith('/api/auth/refresh')) return respostaJson({ accessToken: 'novo' });
+      const auth = new Headers(init?.headers).get('Authorization');
+      return auth === 'Bearer novo'
+        ? respostaJson({ ok: true })
+        : new Response(null, { status: 401 });
+    });
+    const client = criarClient(fetchMock as unknown as typeof fetch);
+
+    await Promise.all([
+      client.request('/api/a'),
+      client.request('/api/b'),
+      client.request('/api/c'),
+    ]);
+
+    const refreshes = fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/api/auth/refresh'));
+    expect(refreshes).toHaveLength(1);
+    expect(useAuthSessionStore.getState().accessToken).toBe('novo');
+    expect(localStorage.length + sessionStorage.length).toBe(0);
+  });
+
+  it('restaurarSessao (bootstrap) usa o cookie, guarda o token em memória e compartilha o single-flight', async () => {
+    useAuthSessionStore.setState({ status: 'carregando', accessToken: null, familiaIdAtiva: null });
+    const fetchMock = vi.fn(async () => respostaJson({ accessToken: 'restaurado' }));
+    const client = criarClient(fetchMock as unknown as typeof fetch);
+
+    const [a, b] = await Promise.all([client.restaurarSessao(), client.restaurarSessao()]);
+
+    expect([a, b]).toEqual([true, true]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.credentials).toBe('include');
+    expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+    expect(useAuthSessionStore.getState().accessToken).toBe('restaurado');
+  });
+
+  it('restaurarSessao com 401 limpa a sessão e retorna false', async () => {
+    useAuthSessionStore.setState({ status: 'carregando', accessToken: null, familiaIdAtiva: null });
+    const fetch401 = vi.fn(async () => new Response(null, { status: 401 }));
+    await expect(criarClient(fetch401 as unknown as typeof fetch).restaurarSessao()).resolves.toBe(
+      false,
+    );
+    expect(useAuthSessionStore.getState().status).toBe('anonimo');
+  });
+
+  it('logout (encerrarSessao) limpa a memória e um refresh tardio não recria a sessão', async () => {
+    let liberar: () => void = () => undefined;
+    const fetchMock = vi.fn(async (url: RequestInfo | URL) => {
+      if (!String(url).endsWith('/api/auth/refresh')) return new Response(null, { status: 401 });
+      await new Promise<void>((r) => (liberar = r));
+      return respostaJson({ accessToken: 'tardio' });
+    });
+    const client = criarClient(fetchMock as unknown as typeof fetch);
+
+    const pedido = client.request('/api/a').catch(() => undefined);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    useAuthSessionStore.getState().encerrarSessao();
+    liberar();
+    await pedido;
+
+    expect(useAuthSessionStore.getState().accessToken).toBeNull();
+  });
+});

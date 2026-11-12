@@ -1,119 +1,73 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
+import { lazyApiClient } from '../services/core-financeiro.service';
+import { bootstrapSessao } from '../services/sessao-bootstrap';
+import { useAuthSessionStore } from '../stores/auth-session.store';
 import { useWebSocketStore } from '../stores/websocket.store';
 
 import { AuthContext, type AuthContextValue } from './auth-context-store';
-
-interface AuthSession {
-  accessToken: string;
-  familiaIdAtiva: string;
-}
-
-const AUTH_SESSION_STORAGE_KEY = 'nossagrana.auth.session';
-
-/**
- * O refresh token vive em cookie HttpOnly (#116). Sessões gravadas antes da migração ainda
- * têm `refreshToken` no JSON: ele é descartado na leitura e o storage é regravado limpo
- * pelo efeito de persistência abaixo.
- */
-const loadStoredSession = (): AuthSession | null => {
-  const rawValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
-  if (!rawValue) {
-    return null;
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as Partial<AuthSession>;
-    if (typeof parsedValue.accessToken !== 'string' || parsedValue.accessToken.length === 0) {
-      return null;
-    }
-
-    return {
-      accessToken: parsedValue.accessToken,
-      familiaIdAtiva:
-        typeof parsedValue.familiaIdAtiva === 'string' ? parsedValue.familiaIdAtiva : '',
-    };
-  } catch {
-    return null;
-  }
-};
 
 interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+/** Evita o flash da tela de login enquanto o refresh do bootstrap decide se há sessão. */
+const SessaoCarregando = () => (
+  <div
+    role="status"
+    aria-label="Carregando sessão"
+    className="flex min-h-screen items-center justify-center bg-bg text-text-muted"
+  >
+    Carregando...
+  </div>
+);
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
-  const login = useCallback((nextSession: AuthSession) => {
-    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(nextSession));
-    setSession(nextSession);
+  const status = useAuthSessionStore((s) => s.status);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+  const familiaIdAtiva = useAuthSessionStore((s) => s.familiaIdAtiva);
+
+  useEffect(() => {
+    void bootstrapSessao(lazyApiClient);
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
-    setSession(null);
+  const login = useCallback((s: { accessToken: string; familiaIdAtiva: string }) => {
+    useAuthSessionStore.getState().iniciarSessao(s.accessToken, s.familiaIdAtiva);
   }, []);
-
-  const setAccessToken = useCallback((accessToken: string) => {
-    setSession((currentSession) => {
-      if (!currentSession) {
-        return null;
-      }
-
-      return {
-        ...currentSession,
-        accessToken,
-      };
-    });
-  }, []);
-
-  const updateFamiliaIdAtiva = useCallback((familiaIdAtiva: string) => {
-    const currentRaw = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
-    if (currentRaw) {
-      const current = JSON.parse(currentRaw) as Partial<AuthSession>;
-      localStorage.setItem(
-        AUTH_SESSION_STORAGE_KEY,
-        JSON.stringify({ ...current, familiaIdAtiva }),
-      );
-    }
-    setSession((s) => (s ? { ...s, familiaIdAtiva } : null));
-  }, []);
+  const logout = useCallback(() => useAuthSessionStore.getState().encerrarSessao(), []);
+  const setAccessToken = useCallback(
+    (token: string) => useAuthSessionStore.getState().atualizarAccessToken(token),
+    [],
+  );
+  const updateFamiliaIdAtiva = useCallback(
+    (id: string) => useAuthSessionStore.getState().definirFamiliaAtiva(id),
+    [],
+  );
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      isAuthenticated: session !== null,
-      accessToken: session?.accessToken ?? null,
-      familiaIdAtiva: session?.familiaIdAtiva ?? null,
+      isAuthenticated: status === 'autenticado',
+      accessToken,
+      familiaIdAtiva,
       login,
       logout,
       setAccessToken,
       updateFamiliaIdAtiva,
     }),
-    [login, logout, session, setAccessToken, updateFamiliaIdAtiva],
+    [status, accessToken, familiaIdAtiva, login, logout, setAccessToken, updateFamiliaIdAtiva],
   );
-
-  useEffect(() => {
-    if (!session) {
-      localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
-      return;
-    }
-
-    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
-  }, [session]);
 
   const wsConnect = useWebSocketStore((s) => s.connect);
   const wsDisconnect = useWebSocketStore((s) => s.disconnect);
 
   useEffect(() => {
-    if (session && session.familiaIdAtiva) {
-      wsConnect({
-        familiaId: session.familiaIdAtiva,
-        clearSession: logout,
-      });
+    if (status === 'autenticado' && familiaIdAtiva) {
+      wsConnect({ familiaId: familiaIdAtiva, clearSession: logout });
     } else {
       wsDisconnect();
     }
-  }, [session, wsConnect, wsDisconnect, logout]);
+  }, [status, familiaIdAtiva, wsConnect, wsDisconnect, logout]);
 
+  if (status === 'carregando') return <SessaoCarregando />;
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

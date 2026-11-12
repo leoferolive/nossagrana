@@ -1,6 +1,8 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
 import type { AuthRefreshResponse } from '@nossagrana/types';
 
+import { comLockDeRefresh } from './refresh-lock';
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -117,6 +119,23 @@ export class ApiClient {
   }
 
   /**
+   * Bootstrap/reload: sem access token em memória, renova pelo cookie (mesmo single-flight e
+   * lock entre abas das renovações por 401). `false` = sem sessão (ou servidor indisponível).
+   */
+  restaurarSessao(): Promise<boolean> {
+    if (this.sessaoEncerrada) return Promise.resolve(false);
+    return this.iniciarRefresh();
+  }
+
+  private iniciarRefresh(): Promise<boolean> {
+    if (this.refreshInFlight) return this.refreshInFlight;
+    this.refreshInFlight = comLockDeRefresh(() => this.refreshAccessToken()).finally(() => {
+      this.refreshInFlight = null;
+    });
+    return this.refreshInFlight;
+  }
+
+  /**
    * Se o access token já mudou desde que a requisição foi enviada, outra
    * requisição concluiu o refresh enquanto esta esperava: basta re-tentar.
    */
@@ -125,12 +144,8 @@ export class ApiClient {
     const current = this.getAccessToken();
     if (this.sessaoEncerrada || !current) return Promise.resolve(false);
     if (this.refreshInFlight) return this.refreshInFlight;
-    if (current && current !== tokenUsed) return Promise.resolve(true);
-
-    this.refreshInFlight = this.refreshAccessToken().finally(() => {
-      this.refreshInFlight = null;
-    });
-    return this.refreshInFlight;
+    if (current !== tokenUsed) return Promise.resolve(true);
+    return this.iniciarRefresh();
   }
 
   private async refreshAccessToken(): Promise<boolean> {

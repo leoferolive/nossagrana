@@ -1,10 +1,9 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from './api-client';
 import {
   categoriaService,
-  gravarAccessTokenSeHouverSessao,
   metodoPagamentoService,
   transacaoService,
 } from './core-financeiro.service';
@@ -187,30 +186,6 @@ describe('AuthService.login retoma a sessão (#116)', () => {
     await service.login({ email: 'a@b.c', senha: 'senha12345' });
 
     expect(apiClient.retomarSessao).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('setAccessToken do client singleton (#116)', () => {
-  afterEach(() => localStorage.clear());
-
-  it('não recria a sessão quando um refresh termina depois do logout', () => {
-    gravarAccessTokenSeHouverSessao('token-tardio');
-
-    expect(localStorage.getItem('nossagrana.auth.session')).toBeNull();
-  });
-
-  it('atualiza o access token quando há sessão armazenada', () => {
-    localStorage.setItem(
-      'nossagrana.auth.session',
-      JSON.stringify({ accessToken: 'velho', familiaIdAtiva: 'f1' }),
-    );
-
-    gravarAccessTokenSeHouverSessao('novo');
-
-    expect(JSON.parse(localStorage.getItem('nossagrana.auth.session') ?? '{}')).toEqual({
-      accessToken: 'novo',
-      familiaIdAtiva: 'f1',
-    });
   });
 });
 

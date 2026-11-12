@@ -1,11 +1,16 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEffect } from 'react';
 
 import { AuthProvider } from '@/contexts/auth-context';
 import { useAuth } from '@/contexts/use-auth';
 
 import { PrivateRoute } from './private-route';
+
+// Bootstrap sem sessão (refresh recusado): evita rede real no AuthProvider.
+vi.mock('@/services/core-financeiro.service', () => ({
+  lazyApiClient: { restaurarSessao: async () => false },
+}));
 
 afterEach(() => {
   cleanup();
@@ -25,7 +30,7 @@ describe('PrivateRoute', () => {
     return null;
   };
 
-  it('renders fallback when user is not authenticated', () => {
+  it('renders fallback when user is not authenticated', async () => {
     render(
       <AuthProvider>
         <PrivateRoute fallback={<p>login required</p>}>
@@ -34,11 +39,11 @@ describe('PrivateRoute', () => {
       </AuthProvider>,
     );
 
-    expect(screen.getByText('login required')).toBeInTheDocument();
+    expect(await screen.findByText('login required')).toBeInTheDocument();
     expect(screen.queryByText('dashboard content')).not.toBeInTheDocument();
   });
 
-  it('renders protected content when user is authenticated', () => {
+  it('renders protected content when user is authenticated', async () => {
     render(
       <AuthProvider>
         <LoginSeed />
@@ -48,7 +53,7 @@ describe('PrivateRoute', () => {
       </AuthProvider>,
     );
 
-    expect(screen.getByText('dashboard content')).toBeInTheDocument();
+    expect(await screen.findByText('dashboard content')).toBeInTheDocument();
     expect(screen.queryByText('login required')).not.toBeInTheDocument();
   });
 });

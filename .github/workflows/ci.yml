@@ -212,6 +212,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared types
+        run: pnpm --filter @nossagrana/types build
+
       - name: Shellcheck
         run: shellcheck scripts/test-pg.sh
 

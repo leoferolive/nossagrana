@@ -7,6 +7,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
+    setupFiles: ['./vitest.pg.setup.ts'],
     include: ['src/**/*.pg.test.ts'],
     pool: 'forks',
     fileParallelism: false,

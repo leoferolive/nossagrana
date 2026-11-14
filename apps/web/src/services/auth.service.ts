@@ -20,6 +20,9 @@ import { ApiClient, cookieAuthInit } from './api-client';
 import { lazyApiClient } from './core-financeiro.service';
 import { comLockDeRefresh, type LockManagerLike } from './refresh-lock';
 
+/** Um POST pendurado seguraria o lock entre abas e travaria bootstrap e próximo login. */
+const POST_COM_LOCK_TIMEOUT_MS = 10_000;
+
 const familiaHeader = (familiaId: string): Record<string, string> => ({
   'X-Familia-Id': familiaId,
 });
@@ -54,6 +57,7 @@ export class AuthService {
           method: 'POST',
           body: JSON.stringify(payload),
           skipAuthRetry: true,
+          timeoutMs: POST_COM_LOCK_TIMEOUT_MS,
         }),
       this.locks,
     );
@@ -89,6 +93,7 @@ export class AuthService {
           ...cookieAuthInit(),
           method: 'POST',
           skipAuthRetry: true,
+          timeoutMs: POST_COM_LOCK_TIMEOUT_MS,
         }),
       this.locks,
     );

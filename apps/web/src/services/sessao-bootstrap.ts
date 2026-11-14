@@ -7,6 +7,12 @@ export interface SessaoRestauravel {
   restaurarSessao(): Promise<ResultadoRefresh>;
 }
 
+/** A sessão já é válida: a validação da família não pode prender o spinner. */
+const LISTAGEM_TIMEOUT_MS = 5_000;
+
+const expirarEm = (ms: number): Promise<never> =>
+  new Promise((_resolve, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+
 /** Ids das famílias do usuário (`/familias/minhas`), para validar a família persistida. */
 type ListarFamiliaIds = () => Promise<string[]>;
 
@@ -34,7 +40,7 @@ const descartarFamiliaObsoleta = async (listarFamiliaIds: ListarFamiliaIds): Pro
   const persistida = lerFamiliaAtiva();
   if (!persistida) return;
   try {
-    const ids = await listarFamiliaIds();
+    const ids = await Promise.race([listarFamiliaIds(), expirarEm(LISTAGEM_TIMEOUT_MS)]);
     if (!ids.includes(persistida)) gravarFamiliaAtiva('');
   } catch {
     // Mantém a família: a validação é best effort.

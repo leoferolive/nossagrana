@@ -1,7 +1,7 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ApiClient } from './api-client';
+import { ApiClient as RealApiClient, type ApiClient } from './api-client';
 import {
   categoriaService,
   metodoPagamentoService,
@@ -119,6 +119,53 @@ describe('AuthService x lock entre abas (#117)', () => {
     liberar();
     await login;
     expect(apiClient.request).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('AuthService x POST pendurado dentro do lock (#117)', () => {
+  const montar = () => {
+    const fetchPendurado = vi.fn(
+      (_url: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('abort', 'AbortError')),
+          );
+        }),
+    );
+    const locks = new FakeLockManager();
+    const api = new RealApiClient({
+      baseUrl: 'http://x',
+      fetchFn: fetchPendurado as unknown as typeof fetch,
+      getAccessToken: () => null,
+      setAccessToken: vi.fn(),
+      clearSession: vi.fn(),
+      locks,
+    });
+    return { service: new AuthService(api, locks), locks };
+  };
+  afterEach(() => vi.useRealTimers());
+
+  it('login pendurado: após 10 s vira erro exibível e o lock é liberado', async () => {
+    vi.useFakeTimers();
+    const { service, locks } = montar();
+
+    const login = service.login({ email: 'a@b.c', senha: 'senha12345' });
+    const verificado = expect(login).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await verificado;
+    await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
+  });
+
+  it('logout pendurado: após 10 s descarta o resultado, libera o lock e destrava o próximo login', async () => {
+    vi.useFakeTimers();
+    const { service, locks } = montar();
+
+    const logout = service.logout().catch(() => undefined);
+    await vi.advanceTimersByTimeAsync(10_000);
+    await logout;
+
+    await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
   });
 });
 

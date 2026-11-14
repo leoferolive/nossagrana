@@ -42,6 +42,8 @@ interface ApiClientOptions {
 
 interface RequestOptions extends RequestInit {
   skipAuthRetry?: boolean;
+  /** Aborta a requisição após este tempo; obrigatório para POSTs que seguram o lock entre abas. */
+  timeoutMs?: number;
 }
 
 /**
@@ -85,19 +87,26 @@ export class ApiClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { skipAuthRetry = false, headers, ...requestOptions } = options;
+    const { skipAuthRetry = false, headers, timeoutMs, ...requestOptions } = options;
 
     const accessToken = this.getAccessToken();
-    const response = await this.fetchFn(`${this.baseUrl}${path}`, {
-      ...requestOptions,
-      headers: this.withAuthHeader(headers, accessToken),
-    });
+    const response = await this.comTimeout(timeoutMs, (signal) =>
+      this.fetchFn(`${this.baseUrl}${path}`, {
+        ...requestOptions,
+        ...(signal && { signal }),
+        headers: this.withAuthHeader(headers, accessToken),
+      }),
+    );
 
     // Sem access token não há sessão a renovar (ex.: 401 de credenciais erradas no login).
     if (response.status === 401 && accessToken && !skipAuthRetry && path !== '/api/auth/refresh') {
       const refreshed = await this.renewSession(accessToken);
       if (refreshed === 'ok') {
         return this.request<T>(path, { ...options, skipAuthRetry: true });
+      }
+      // Oscilação do servidor no refresh não é sessão inválida: 503 evita o logout por 401 falso.
+      if (refreshed === 'indisponivel') {
+        throw new ApiError(503, 'Servidor indisponível', undefined);
       }
     }
 
@@ -164,32 +173,47 @@ export class ApiClient {
   }
 
   private async refreshAccessToken(): Promise<ResultadoRefresh> {
-    const response = await this.enviarRefresh();
-    if (!response) return 'indisponivel';
-    if (response.status === 401 || response.status === 403) {
+    const resposta = await this.enviarRefresh();
+    if (!resposta) return 'indisponivel';
+    if (resposta.status === 401 || resposta.status === 403) {
       this.clearSession();
       return 'sem-sessao';
     }
-    if (!response.ok) return 'indisponivel';
-
-    const body = (await response.json()) as AuthRefreshResponse;
-    this.setAccessToken(body.accessToken);
+    if (!resposta.body) return 'indisponivel';
+    this.setAccessToken(resposta.body.accessToken);
     return 'ok';
   }
 
-  /** O refresh token vai (e volta) no cookie HttpOnly. `null` = rede/timeout (transitório). */
-  private async enviarRefresh(): Promise<Response | null> {
-    const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), REFRESH_TIMEOUT_MS);
+  /**
+   * O refresh token vai (e volta) no cookie HttpOnly. Fetch e leitura do JSON ficam dentro do
+   * timeout. `null` = rede, timeout ou corpo inválido (transitório).
+   */
+  private async enviarRefresh(): Promise<{ status: number; body?: AuthRefreshResponse } | null> {
     try {
-      return await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
-        ...cookieAuthInit({ 'Content-Type': 'application/json' }),
-        method: 'POST',
-        body: '{}',
-        signal: abort.signal,
+      return await this.comTimeout(REFRESH_TIMEOUT_MS, async (signal) => {
+        const response = await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
+          ...cookieAuthInit({ 'Content-Type': 'application/json' }),
+          method: 'POST',
+          body: '{}',
+          signal,
+        });
+        if (!response.ok) return { status: response.status };
+        return { status: response.status, body: (await response.json()) as AuthRefreshResponse };
       });
     } catch {
       return null;
+    }
+  }
+
+  private async comTimeout<R>(
+    timeoutMs: number | undefined,
+    tarefa: (signal: AbortSignal | undefined) => Promise<R>,
+  ): Promise<R> {
+    if (timeoutMs === undefined) return tarefa(undefined);
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      return await tarefa(abort.signal);
     } finally {
       clearTimeout(timer);
     }

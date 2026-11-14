@@ -665,6 +665,71 @@ describe('ApiClient com o store de sessão em memória (#117)', () => {
     });
   });
 
+  describe('indisponibilidade durante o uso normal (#117)', () => {
+    const montar = (refresh: () => Promise<Response>) => {
+      const clearSession = vi.fn();
+      const fetchMock = vi.fn(async (url: RequestInfo | URL) =>
+        String(url).endsWith('/api/auth/refresh') ? refresh() : new Response(null, { status: 401 }),
+      );
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchMock as unknown as typeof fetch,
+        getAccessToken: () => 'at',
+        setAccessToken: vi.fn(),
+        clearSession,
+      });
+      return { client, clearSession };
+    };
+
+    it('refresh 5xx após 401 lança ApiError 503 (transitório), não 401', async () => {
+      const { client, clearSession } = montar(async () => new Response(null, { status: 500 }));
+
+      await expect(client.request('/api/dashboard')).rejects.toMatchObject({ status: 503 });
+      expect(clearSession).not.toHaveBeenCalled();
+    });
+
+    it('refresh 401 real mantém ApiError 401 (sessão inválida)', async () => {
+      const { client } = montar(async () => new Response(null, { status: 401 }));
+
+      await expect(client.request('/api/dashboard')).rejects.toMatchObject({ status: 401 });
+    });
+
+    it('JSON inválido na resposta do refresh vira indisponível, sem rejeitar', async () => {
+      const { client, clearSession } = montar(async () => new Response('<html>', { status: 200 }));
+
+      await expect(client.restaurarSessao()).resolves.toBe('indisponivel');
+      expect(clearSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('timeout em requisições dentro do lock (#117)', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('timeoutMs aborta o fetch pendurado e a promise rejeita', async () => {
+      vi.useFakeTimers();
+      const fetchPendurado = vi.fn(
+        (_url: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(new DOMException('abort', 'AbortError')),
+            );
+          }),
+      );
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchPendurado as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession: vi.fn(),
+      });
+
+      const resultado = client.request('/api/auth/login', { method: 'POST', timeoutMs: 10_000 });
+      const verificado = expect(resultado).rejects.toThrow();
+      await vi.advanceTimersByTimeAsync(10_000);
+      await verificado;
+    });
+  });
+
   it('logout (encerrarSessao) limpa a memória e um refresh tardio não recria a sessão', async () => {
     let liberar: () => void = () => undefined;
     const fetchMock = vi.fn(async (url: RequestInfo | URL) => {

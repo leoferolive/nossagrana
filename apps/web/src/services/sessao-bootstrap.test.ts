@@ -143,6 +143,23 @@ describe('bootstrapSessao (#117)', () => {
     expect(estado().familiaIdAtiva).toBe('f1');
   });
 
+  it('I3: listarMinhas pendurado estoura em 5 s, mantém a família e conclui o bootstrap', async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem('nossagrana.familia-ativa', 'f1');
+      const pendurado = () => new Promise<string[]>(() => undefined);
+
+      const boot = bootstrapSessao(new FakeApiClient('ok', 'a'), pendurado);
+      await vi.advanceTimersByTimeAsync(5_000);
+      await boot;
+
+      expect(estado().status).toBe('autenticado');
+      expect(estado().familiaIdAtiva).toBe('f1');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('N4: bootstrap chamado duas vezes (StrictMode) com o ApiClient real faz um único fetch', async () => {
     const { ApiClient } = await import('./api-client');
     const fetchMock = vi.fn(

@@ -90,13 +90,15 @@ export class ApiClient {
     const { skipAuthRetry = false, headers, timeoutMs, ...requestOptions } = options;
 
     const accessToken = this.getAccessToken();
-    const response = await this.comTimeout(timeoutMs, (signal) =>
-      this.fetchFn(`${this.baseUrl}${path}`, {
+    // Fetch e leitura do corpo no mesmo timeout: headers sem corpo também segurariam o lock.
+    const { response, body } = await this.comTimeout(timeoutMs, async (signal) => {
+      const res = await this.fetchFn(`${this.baseUrl}${path}`, {
         ...requestOptions,
         ...(signal && { signal }),
         headers: this.withAuthHeader(headers, accessToken),
-      }),
-    );
+      });
+      return { response: res, body: res.ok && res.status !== 204 ? await res.json() : undefined };
+    });
 
     // Sem access token não há sessão a renovar (ex.: 401 de credenciais erradas no login).
     if (response.status === 401 && accessToken && !skipAuthRetry && path !== '/api/auth/refresh') {
@@ -115,11 +117,7 @@ export class ApiClient {
       throw new ApiError(response.status, message, lerRetryAfterMs(response));
     }
 
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return (await response.json()) as T;
+    return body as T;
   }
 
   /** Chamado no início do logout, antes de qualquer `await`: bloqueia refreshes novos. */
@@ -211,9 +209,16 @@ export class ApiClient {
   ): Promise<R> {
     if (timeoutMs === undefined) return tarefa(undefined);
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), timeoutMs);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // A corrida garante a rejeição mesmo se o corpo ignorar o abort (ex.: stream travado).
+    const expirou = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        abort.abort();
+        reject(new DOMException('Tempo esgotado', 'TimeoutError'));
+      }, timeoutMs);
+    });
     try {
-      return await tarefa(abort.signal);
+      return await Promise.race([tarefa(abort.signal), expirou]);
     } finally {
       clearTimeout(timer);
     }

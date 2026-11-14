@@ -705,6 +705,33 @@ describe('ApiClient com o store de sessão em memória (#117)', () => {
   describe('timeout em requisições dentro do lock (#117)', () => {
     afterEach(() => vi.useRealTimers());
 
+    it('corpo que nunca resolve (headers já recebidos) também estoura o timeout e libera o lock', async () => {
+      vi.useFakeTimers();
+      const corpoPendurado = {
+        ok: true,
+        status: 200,
+        json: () => new Promise<never>(() => undefined),
+      } as unknown as Response;
+      const locks = new FakeLockManager();
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: vi.fn(async () => corpoPendurado) as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession: vi.fn(),
+        locks,
+      });
+
+      const sob = locks.request('nossagrana-refresh', () =>
+        client.request('/api/auth/login', { method: 'POST', timeoutMs: 10_000 }),
+      );
+      const verificado = expect(sob).rejects.toBeDefined();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await verificado;
+      await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
+    });
+
     it('timeoutMs aborta o fetch pendurado e a promise rejeita', async () => {
       vi.useFakeTimers();
       const fetchPendurado = vi.fn(

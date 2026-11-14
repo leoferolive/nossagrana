@@ -1,5 +1,8 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { useAuthSessionStore } from '../stores/auth-session.store';
+import { FakeLockManager } from '../test/fake-lock-manager';
 
 import { ApiClient, ApiError } from './api-client';
 
@@ -516,3 +519,259 @@ class FakeAuthServer {
     });
   }
 }
+
+describe('ApiClient com o store de sessão em memória (#117)', () => {
+  const respostaJson = (corpo: unknown, status = 200) =>
+    new Response(JSON.stringify(corpo), { status });
+
+  const criarClient = (fetchFn: typeof fetch) =>
+    new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn,
+      getAccessToken: () => useAuthSessionStore.getState().accessToken,
+      setAccessToken: (token) => useAuthSessionStore.getState().atualizarAccessToken(token),
+      clearSession: () => useAuthSessionStore.getState().encerrarSessao(),
+    });
+
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    useAuthSessionStore.getState().iniciarSessao('access-velho', '');
+  });
+
+  it('401 simultâneos disparam um único refresh e o token novo fica só em memória', async () => {
+    const fetchMock = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).endsWith('/api/auth/refresh')) return respostaJson({ accessToken: 'novo' });
+      const auth = new Headers(init?.headers).get('Authorization');
+      return auth === 'Bearer novo'
+        ? respostaJson({ ok: true })
+        : new Response(null, { status: 401 });
+    });
+    const client = criarClient(fetchMock as unknown as typeof fetch);
+
+    await Promise.all([
+      client.request('/api/a'),
+      client.request('/api/b'),
+      client.request('/api/c'),
+    ]);
+
+    const refreshes = fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/api/auth/refresh'));
+    expect(refreshes).toHaveLength(1);
+    expect(useAuthSessionStore.getState().accessToken).toBe('novo');
+    expect(localStorage.length + sessionStorage.length).toBe(0);
+  });
+
+  it('restaurarSessao (bootstrap) usa o cookie, guarda o token em memória e compartilha o single-flight', async () => {
+    useAuthSessionStore.setState({ status: 'carregando', accessToken: null, familiaIdAtiva: null });
+    const fetchMock = vi.fn(async () => respostaJson({ accessToken: 'restaurado' }));
+    const client = criarClient(fetchMock as unknown as typeof fetch);
+
+    const [a, b] = await Promise.all([client.restaurarSessao(), client.restaurarSessao()]);
+
+    expect([a, b]).toEqual(['ok', 'ok']);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.credentials).toBe('include');
+    expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+    expect(useAuthSessionStore.getState().accessToken).toBe('restaurado');
+  });
+
+  it.each([401, 403])(
+    'restaurarSessao com %i limpa a sessão e retorna sem-sessao',
+    async (status) => {
+      useAuthSessionStore.setState({
+        status: 'carregando',
+        accessToken: null,
+        familiaIdAtiva: null,
+      });
+      const fetchNegado = vi.fn(async () => new Response(null, { status }));
+
+      await expect(
+        criarClient(fetchNegado as unknown as typeof fetch).restaurarSessao(),
+      ).resolves.toBe('sem-sessao');
+      expect(useAuthSessionStore.getState().status).toBe('anonimo');
+    },
+  );
+
+  it.each([500, 503, 429])(
+    'restaurarSessao com %i é indisponível e não limpa a sessão',
+    async (status) => {
+      useAuthSessionStore.setState({
+        status: 'carregando',
+        accessToken: null,
+        familiaIdAtiva: null,
+      });
+      const clearSession = vi.fn();
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: (async () => new Response(null, { status })) as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession,
+      });
+
+      await expect(client.restaurarSessao()).resolves.toBe('indisponivel');
+      expect(clearSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rede offline (fetch rejeita) é indisponível, sem clearSession', async () => {
+    const clearSession = vi.fn();
+    const client = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: (async () => {
+        throw new TypeError('Failed to fetch');
+      }) as unknown as typeof fetch,
+      getAccessToken: () => null,
+      setAccessToken: vi.fn(),
+      clearSession,
+    });
+
+    await expect(client.restaurarSessao()).resolves.toBe('indisponivel');
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  describe('timeout do refresh (I1)', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('fetch de refresh que nunca resolve é abortado após 10 s: indisponível, lock liberado, sem clearSession', async () => {
+      vi.useFakeTimers();
+      const clearSession = vi.fn();
+      const fetchPendurado = vi.fn(
+        (_url: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(new DOMException('abort', 'AbortError')),
+            );
+          }),
+      );
+      const locks = new FakeLockManager();
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchPendurado as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession,
+        locks,
+      });
+
+      const resultado = client.restaurarSessao();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(resultado).resolves.toBe('indisponivel');
+      expect(clearSession).not.toHaveBeenCalled();
+      // O lock foi liberado: um segundo uso do lock não trava.
+      await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
+    });
+  });
+
+  describe('indisponibilidade durante o uso normal (#117)', () => {
+    const montar = (refresh: () => Promise<Response>) => {
+      const clearSession = vi.fn();
+      const fetchMock = vi.fn(async (url: RequestInfo | URL) =>
+        String(url).endsWith('/api/auth/refresh') ? refresh() : new Response(null, { status: 401 }),
+      );
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchMock as unknown as typeof fetch,
+        getAccessToken: () => 'at',
+        setAccessToken: vi.fn(),
+        clearSession,
+      });
+      return { client, clearSession };
+    };
+
+    it('refresh 5xx após 401 lança ApiError 503 (transitório), não 401', async () => {
+      const { client, clearSession } = montar(async () => new Response(null, { status: 500 }));
+
+      await expect(client.request('/api/dashboard')).rejects.toMatchObject({ status: 503 });
+      expect(clearSession).not.toHaveBeenCalled();
+    });
+
+    it('refresh 401 real mantém ApiError 401 (sessão inválida)', async () => {
+      const { client } = montar(async () => new Response(null, { status: 401 }));
+
+      await expect(client.request('/api/dashboard')).rejects.toMatchObject({ status: 401 });
+    });
+
+    it('JSON inválido na resposta do refresh vira indisponível, sem rejeitar', async () => {
+      const { client, clearSession } = montar(async () => new Response('<html>', { status: 200 }));
+
+      await expect(client.restaurarSessao()).resolves.toBe('indisponivel');
+      expect(clearSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('timeout em requisições dentro do lock (#117)', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('corpo que nunca resolve (headers já recebidos) também estoura o timeout e libera o lock', async () => {
+      vi.useFakeTimers();
+      const corpoPendurado = {
+        ok: true,
+        status: 200,
+        json: () => new Promise<never>(() => undefined),
+      } as unknown as Response;
+      const locks = new FakeLockManager();
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: vi.fn(async () => corpoPendurado) as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession: vi.fn(),
+        locks,
+      });
+
+      const sob = locks.request('nossagrana-refresh', () =>
+        client.request('/api/auth/login', { method: 'POST', timeoutMs: 10_000 }),
+      );
+      const verificado = expect(sob).rejects.toBeDefined();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await verificado;
+      await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
+    });
+
+    it('timeoutMs aborta o fetch pendurado e a promise rejeita', async () => {
+      vi.useFakeTimers();
+      const fetchPendurado = vi.fn(
+        (_url: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(new DOMException('abort', 'AbortError')),
+            );
+          }),
+      );
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchPendurado as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession: vi.fn(),
+      });
+
+      const resultado = client.request('/api/auth/login', { method: 'POST', timeoutMs: 10_000 });
+      const verificado = expect(resultado).rejects.toThrow();
+      await vi.advanceTimersByTimeAsync(10_000);
+      await verificado;
+    });
+  });
+
+  it('logout (encerrarSessao) limpa a memória e um refresh tardio não recria a sessão', async () => {
+    let liberar: () => void = () => undefined;
+    const fetchMock = vi.fn(async (url: RequestInfo | URL) => {
+      if (!String(url).endsWith('/api/auth/refresh')) return new Response(null, { status: 401 });
+      await new Promise<void>((r) => (liberar = r));
+      return respostaJson({ accessToken: 'tardio' });
+    });
+    const client = criarClient(fetchMock as unknown as typeof fetch);
+
+    const pedido = client.request('/api/a').catch(() => undefined);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    useAuthSessionStore.getState().encerrarSessao();
+    liberar();
+    await pedido;
+
+    expect(useAuthSessionStore.getState().accessToken).toBeNull();
+  });
+});

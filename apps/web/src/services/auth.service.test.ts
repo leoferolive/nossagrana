@@ -1,13 +1,14 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ApiClient } from './api-client';
+import { ApiClient as RealApiClient, type ApiClient } from './api-client';
 import {
   categoriaService,
-  gravarAccessTokenSeHouverSessao,
   metodoPagamentoService,
   transacaoService,
 } from './core-financeiro.service';
+import { FakeLockManager } from '../test/fake-lock-manager';
+
 import { AuthService, FamiliaService } from './auth.service';
 
 const buildApiClient = (
@@ -82,6 +83,89 @@ describe('AuthService', () => {
     expect(init).toMatchObject({ method: 'POST', credentials: 'include' });
     expect(init.body).toBeUndefined();
     expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+  });
+});
+
+describe('AuthService x lock entre abas (#117)', () => {
+  const esperar = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('logout só sai quando outra aba libera o lock de refresh', async () => {
+    const locks = new FakeLockManager();
+    const apiClient = buildApiClient({
+      request: vi.fn(async () => undefined) as ApiClient['request'],
+    });
+    const liberar = locks.segurar();
+
+    const logout = new AuthService(apiClient, locks).logout();
+    await esperar();
+    expect(apiClient.request).not.toHaveBeenCalled();
+
+    liberar();
+    await logout;
+    expect(apiClient.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('login só sai quando outra aba libera o lock de refresh', async () => {
+    const locks = new FakeLockManager();
+    const apiClient = buildApiClient({
+      request: vi.fn(async () => ({ accessToken: 'at' })) as ApiClient['request'],
+    });
+    const liberar = locks.segurar();
+
+    const login = new AuthService(apiClient, locks).login({ email: 'a@b.c', senha: 'senha12345' });
+    await esperar();
+    expect(apiClient.request).not.toHaveBeenCalled();
+
+    liberar();
+    await login;
+    expect(apiClient.request).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('AuthService x POST pendurado dentro do lock (#117)', () => {
+  const montar = () => {
+    const fetchPendurado = vi.fn(
+      (_url: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('abort', 'AbortError')),
+          );
+        }),
+    );
+    const locks = new FakeLockManager();
+    const api = new RealApiClient({
+      baseUrl: 'http://x',
+      fetchFn: fetchPendurado as unknown as typeof fetch,
+      getAccessToken: () => null,
+      setAccessToken: vi.fn(),
+      clearSession: vi.fn(),
+      locks,
+    });
+    return { service: new AuthService(api, locks), locks };
+  };
+  afterEach(() => vi.useRealTimers());
+
+  it('login pendurado: após 10 s vira erro exibível e o lock é liberado', async () => {
+    vi.useFakeTimers();
+    const { service, locks } = montar();
+
+    const login = service.login({ email: 'a@b.c', senha: 'senha12345' });
+    const verificado = expect(login).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await verificado;
+    await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
+  });
+
+  it('logout pendurado: após 10 s descarta o resultado, libera o lock e destrava o próximo login', async () => {
+    vi.useFakeTimers();
+    const { service, locks } = montar();
+
+    const logout = service.logout().catch(() => undefined);
+    await vi.advanceTimersByTimeAsync(10_000);
+    await logout;
+
+    await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
   });
 });
 
@@ -187,30 +271,6 @@ describe('AuthService.login retoma a sessão (#116)', () => {
     await service.login({ email: 'a@b.c', senha: 'senha12345' });
 
     expect(apiClient.retomarSessao).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('setAccessToken do client singleton (#116)', () => {
-  afterEach(() => localStorage.clear());
-
-  it('não recria a sessão quando um refresh termina depois do logout', () => {
-    gravarAccessTokenSeHouverSessao('token-tardio');
-
-    expect(localStorage.getItem('nossagrana.auth.session')).toBeNull();
-  });
-
-  it('atualiza o access token quando há sessão armazenada', () => {
-    localStorage.setItem(
-      'nossagrana.auth.session',
-      JSON.stringify({ accessToken: 'velho', familiaIdAtiva: 'f1' }),
-    );
-
-    gravarAccessTokenSeHouverSessao('novo');
-
-    expect(JSON.parse(localStorage.getItem('nossagrana.auth.session') ?? '{}')).toEqual({
-      accessToken: 'novo',
-      familiaIdAtiva: 'f1',
-    });
   });
 });
 

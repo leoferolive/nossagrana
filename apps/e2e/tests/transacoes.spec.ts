@@ -15,6 +15,7 @@
  */
 
 import { expect, test } from '../fixtures/base.js';
+import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 import * as api from '../helpers/api-client.js';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -36,28 +37,7 @@ async function gotoDashboard(
   ctx: AuthCtx,
   familiaId: string,
 ) {
-  await page.goto('/');
-  await page.evaluate(
-    ([accessToken, fid]) => {
-      localStorage.setItem(
-        'nossagrana.auth.session',
-        JSON.stringify({ accessToken, familiaIdAtiva: fid }),
-      );
-      // Suppress all first-time tours so they do not block UI interactions.
-      for (const key of [
-        'dashboard',
-        'extrato',
-        'historico',
-        'orcamento',
-        'configuracoes',
-        'perfil',
-      ]) {
-        localStorage.setItem(`tour-${key}`, 'true');
-      }
-    },
-    [ctx.accessToken, familiaId],
-  );
-  await page.reload();
+  await abrirAppAutenticado(page, { email: ctx.user.email, password: ctx.password }, familiaId);
   await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
     timeout: 15_000,
   });

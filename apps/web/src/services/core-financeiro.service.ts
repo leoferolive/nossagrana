@@ -33,6 +33,8 @@ import type {
   TransacaoUpdateRequest,
 } from '@nossagrana/types';
 
+import { useAuthSessionStore } from '../stores/auth-session.store';
+
 import { ApiClient } from './api-client';
 import { cabecalhoIdempotencia } from './idempotencia';
 
@@ -331,32 +333,11 @@ export class DashboardService {
 
 // ─── Singleton ─────────────────────────────────────────────────────────────────
 
-const AUTH_STORAGE_KEY = 'nossagrana.auth.session';
-
-const readStoredSession = (): { accessToken?: string } => {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as { accessToken?: string }) : {};
-  } catch {
-    return {};
-  }
-};
-
-/**
- * Atualiza o access token só se ainda houver sessão armazenada: um refresh que termina depois
- * do logout não pode recriar a sessão (ela voltaria no próximo reload).
- */
-export const gravarAccessTokenSeHouverSessao = (token: string): void => {
-  const session = readStoredSession();
-  if (!session.accessToken) return;
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...session, accessToken: token }));
-};
-
 const lazyApiClient = new ApiClient({
   baseUrl: typeof import.meta !== 'undefined' ? (import.meta.env.VITE_API_URL ?? '') : '',
-  getAccessToken: () => readStoredSession().accessToken ?? null,
-  setAccessToken: gravarAccessTokenSeHouverSessao,
-  clearSession: () => localStorage.removeItem(AUTH_STORAGE_KEY),
+  getAccessToken: () => useAuthSessionStore.getState().accessToken,
+  setAccessToken: (token) => useAuthSessionStore.getState().atualizarAccessToken(token),
+  clearSession: () => useAuthSessionStore.getState().encerrarSessao(),
 });
 
 export const coreFinanceiroService = new DashboardService(lazyApiClient);

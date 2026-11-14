@@ -17,7 +17,7 @@ const defaultRepo = () =>
 export const historicoRoutes: FastifyPluginAsync = async (fastify) => {
   const repo = defaultRepo();
   const service = new HistoricoService(repo);
-  const snapshotService = new SnapshotService(repo);
+  const snapshotService = new SnapshotService(repo, fastify.log);
 
   fastify.get(
     '/historico',
@@ -58,7 +58,7 @@ export const historicoRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const { mesReferencia } = historicoMesParamsSchema.parse(request.params);
-      const snap = await snapshotService.gerarSnapshot(
+      const { snapshot: snap } = await snapshotService.gerarSnapshot(
         request.familiaIdAtiva as string,
         mesReferencia,
       );

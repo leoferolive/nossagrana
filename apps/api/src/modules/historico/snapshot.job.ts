@@ -4,7 +4,7 @@ import { db } from '../../db/client.js';
 import { familias } from '../../db/schema.js';
 import { chunk } from '../../utils/array.js';
 import { DrizzleHistoricoRepository } from './historico.repository.js';
-import { SnapshotService } from './snapshot.service.js';
+import { SnapshotService, type LogDoSnapshot } from './snapshot.service.js';
 
 const SNAPSHOT_BATCH_SIZE = 50;
 
@@ -20,10 +20,10 @@ function getMesReferencia(): string {
   return `${ano}-${mes}`;
 }
 
-export async function gerarSnapshotsParaTodasFamilias(): Promise<void> {
+export async function gerarSnapshotsParaTodasFamilias(log?: LogDoSnapshot): Promise<void> {
   const mesReferencia = getMesReferencia();
   const repo = new DrizzleHistoricoRepository();
-  const service = new SnapshotService(repo);
+  const service = new SnapshotService(repo, log);
 
   const todasFamilias = await db.select({ id: familias.id }).from(familias);
   const batches = chunk(todasFamilias, SNAPSHOT_BATCH_SIZE);
@@ -33,14 +33,14 @@ export async function gerarSnapshotsParaTodasFamilias(): Promise<void> {
 }
 
 // Executa às 23:55 do último dia do mês (checa se amanhã é dia 1)
-export function iniciarSnapshotJob(): void {
+export function iniciarSnapshotJob(log?: LogDoSnapshot): void {
   cron.schedule(
     '55 23 28-31 * *',
     async () => {
       const amanha = new Date();
       amanha.setDate(amanha.getDate() + 1);
       if (amanha.getDate() === 1) {
-        await gerarSnapshotsParaTodasFamilias();
+        await gerarSnapshotsParaTodasFamilias(log);
       }
     },
     { timezone: 'America/Sao_Paulo' },

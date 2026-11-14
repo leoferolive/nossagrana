@@ -1,9 +1,11 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { categorias, snapshotsMensais, transacoes, users } from '../../db/schema.js';
 import type {
   HistoricoRepository,
+  ResultadoSnapshot,
   SnapshotInsertInput,
   SnapshotRow,
   TransacaoCategoriaSumaRow,
@@ -104,7 +106,12 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
       );
       if (!t) return { mesReferencia, totalReceitas: '0.00', totalDespesas: '0.00', saldo: '0.00' };
       const saldo = (parseFloat(t.totalReceitas) - parseFloat(t.totalDespesas)).toFixed(2);
-      return { mesReferencia, totalReceitas: t.totalReceitas, totalDespesas: t.totalDespesas, saldo };
+      return {
+        mesReferencia,
+        totalReceitas: t.totalReceitas,
+        totalDespesas: t.totalDespesas,
+        saldo,
+      };
     });
   }
 
@@ -126,7 +133,9 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
     if (snap) snap.divergente = true;
   }
 
-  async insertSnapshot(input: SnapshotInsertInput): Promise<SnapshotRow> {
+  async insertSnapshot(input: SnapshotInsertInput): Promise<ResultadoSnapshot> {
+    const existente = await this.findSnapshot(input.familiaId, input.mesReferencia);
+    if (existente) return { snapshot: existente, criado: false };
     const row: SnapshotRow = {
       id: crypto.randomUUID(),
       familiaId: input.familiaId,
@@ -140,7 +149,7 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
       geradoEm: new Date(),
     };
     this._snapshots.push(row);
-    return row;
+    return { snapshot: row, criado: true };
   }
 
   async getTransacoesPorCategoria(
@@ -160,11 +169,28 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
   }
 }
 
+function mapSnapshotRow(row: typeof snapshotsMensais.$inferSelect): SnapshotRow {
+  return {
+    id: row.id,
+    familiaId: row.familiaId,
+    mesReferencia: row.mesReferencia,
+    totalReceitas: row.totalReceitas,
+    totalDespesas: row.totalDespesas,
+    saldo: row.saldo,
+    dadosCategorias: row.dadosCategorias as SnapshotRow['dadosCategorias'],
+    dadosUsuarios: row.dadosUsuarios as SnapshotRow['dadosUsuarios'],
+    divergente: row.divergente,
+    geradoEm: row.geradoEm,
+  };
+}
+
 // ─── Drizzle ──────────────────────────────────────────────────────────────────
 
 export class DrizzleHistoricoRepository implements HistoricoRepository {
+  constructor(private readonly executor: ExecutorDrizzle = db) {}
+
   async listSnapshots(familiaId: string): Promise<SnapshotRow[]> {
-    const rows = await db
+    const rows = await this.executor
       .select()
       .from(snapshotsMensais)
       .where(eq(snapshotsMensais.familiaId, familiaId))
@@ -185,7 +211,7 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
   }
 
   async findSnapshot(familiaId: string, mesReferencia: string): Promise<SnapshotRow | null> {
-    const [row] = await db
+    const [row] = await this.executor
       .select()
       .from(snapshotsMensais)
       .where(
@@ -215,7 +241,7 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     familiaId: string,
     mesReferencia: string,
   ): Promise<TransacaoResumoRow> {
-    const [row] = await db
+    const [row] = await this.executor
       .select({
         totalReceitas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'receita' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
         totalDespesas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'despesa' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
@@ -235,19 +261,14 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
   ): Promise<TransacaoResumoRow[]> {
     if (meses.length === 0) return [];
 
-    const rows = await db
+    const rows = await this.executor
       .select({
         mesReferencia: transacoes.mesReferencia,
         totalReceitas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'receita' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
         totalDespesas: sql<string>`coalesce(sum(case when ${transacoes.tipo} = 'despesa' then ${transacoes.valor}::numeric else 0 end), 0)::text`,
       })
       .from(transacoes)
-      .where(
-        and(
-          eq(transacoes.familiaId, familiaId),
-          inArray(transacoes.mesReferencia, meses),
-        ),
-      )
+      .where(and(eq(transacoes.familiaId, familiaId), inArray(transacoes.mesReferencia, meses)))
       .groupBy(transacoes.mesReferencia);
 
     const rowMap = new Map(rows.map((r) => [r.mesReferencia, r]));
@@ -263,11 +284,11 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
 
   async getMesesComTransacoes(familiaId: string): Promise<string[]> {
     const [transacoesMeses, snapshotMeses] = await Promise.all([
-      db
+      this.executor
         .selectDistinct({ mesReferencia: transacoes.mesReferencia })
         .from(transacoes)
         .where(eq(transacoes.familiaId, familiaId)),
-      db
+      this.executor
         .select({ mesReferencia: snapshotsMensais.mesReferencia })
         .from(snapshotsMensais)
         .where(eq(snapshotsMensais.familiaId, familiaId)),
@@ -281,7 +302,7 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
   }
 
   async marcarDivergente(familiaId: string, mesReferencia: string): Promise<void> {
-    await db
+    await this.executor
       .update(snapshotsMensais)
       .set({ divergente: true })
       .where(
@@ -292,39 +313,40 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
       );
   }
 
-  async insertSnapshot(input: SnapshotInsertInput): Promise<SnapshotRow> {
-    const [row] = await db
+  /**
+   * Criação idempotente: `ON CONFLICT DO NOTHING` sobre o índice único
+   * (familia_id, mes_referencia). Sem linha retornada, outro processo já criou
+   * o snapshot; devolvemos o existente sem alterá-lo (original é imutável).
+   */
+  async insertSnapshot(input: SnapshotInsertInput): Promise<ResultadoSnapshot> {
+    const [row] = await this.executor
       .insert(snapshotsMensais)
-      .values({
-        familiaId: input.familiaId,
-        mesReferencia: input.mesReferencia,
-        totalReceitas: input.totalReceitas,
-        totalDespesas: input.totalDespesas,
-        saldo: input.saldo,
-        dadosCategorias: input.dadosCategorias,
-        dadosUsuarios: input.dadosUsuarios,
+      .values(input)
+      .onConflictDoNothing({
+        target: [snapshotsMensais.familiaId, snapshotsMensais.mesReferencia],
       })
       .returning();
+    if (row) return { snapshot: mapSnapshotRow(row), criado: true };
+    return this.buscarExistenteAposConflito(input);
+  }
 
-    return {
-      id: row.id,
-      familiaId: row.familiaId,
-      mesReferencia: row.mesReferencia,
-      totalReceitas: row.totalReceitas,
-      totalDespesas: row.totalDespesas,
-      saldo: row.saldo,
-      dadosCategorias: row.dadosCategorias as SnapshotRow['dadosCategorias'],
-      dadosUsuarios: row.dadosUsuarios as SnapshotRow['dadosUsuarios'],
-      divergente: row.divergente,
-      geradoEm: row.geradoEm,
-    };
+  private async buscarExistenteAposConflito(
+    input: SnapshotInsertInput,
+  ): Promise<ResultadoSnapshot> {
+    const existente = await this.findSnapshot(input.familiaId, input.mesReferencia);
+    if (!existente) {
+      throw new Error(
+        `Snapshot em conflito mas não encontrado: familia ${input.familiaId}, mês "${input.mesReferencia}" (removido entre o INSERT e a busca?)`,
+      );
+    }
+    return { snapshot: existente, criado: false };
   }
 
   async getTransacoesPorCategoria(
     familiaId: string,
     mesReferencia: string,
   ): Promise<TransacaoCategoriaSumaRow[]> {
-    const rows = await db
+    const rows = await this.executor
       .select({
         categoriaId: transacoes.categoriaId,
         categoriaNome: categorias.nome,
@@ -353,7 +375,7 @@ export class DrizzleHistoricoRepository implements HistoricoRepository {
     familiaId: string,
     mesReferencia: string,
   ): Promise<TransacaoUsuarioSumaRow[]> {
-    const rows = await db
+    const rows = await this.executor
       .select({
         usuarioId: transacoes.usuarioRegistrouId,
         usuarioNome: users.nome,

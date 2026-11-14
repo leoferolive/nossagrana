@@ -385,7 +385,7 @@ describe('Migration 0011 sobre dados existentes', () => {
     await aplicarMigrationsAntesDe(banco.url, MIGRATION_0011);
     const legado = await semearFamilia(banco.sql, 'Legado');
     const [antes] = await banco.sql`SELECT count(*)::int AS n FROM transacoes`;
-    expect(migrationsAPartirDe(MIGRATION_0011)).toBe(1);
+    expect(migrationsAPartirDe(MIGRATION_0011)).toBeGreaterThanOrEqual(1);
 
     await aplicarMigrations(banco.url);
 

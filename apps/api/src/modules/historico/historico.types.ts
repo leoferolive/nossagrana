@@ -44,6 +44,16 @@ export interface SnapshotInsertInput {
   dadosUsuarios: SnapshotDadosUsuario[];
 }
 
+/**
+ * Resultado estável da criação idempotente: `criado=false` significa que o
+ * snapshot já existia (conflito em familia_id+mes_referencia) e foi devolvido
+ * intacto.
+ */
+export interface ResultadoSnapshot {
+  snapshot: SnapshotRow;
+  criado: boolean;
+}
+
 export interface HistoricoRepository {
   listSnapshots(familiaId: string): Promise<SnapshotRow[]>;
   findSnapshot(familiaId: string, mesReferencia: string): Promise<SnapshotRow | null>;
@@ -51,7 +61,7 @@ export interface HistoricoRepository {
   getResumoTransacoesBatch(familiaId: string, meses: string[]): Promise<TransacaoResumoRow[]>;
   getMesesComTransacoes(familiaId: string): Promise<string[]>;
   marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
-  insertSnapshot(input: SnapshotInsertInput): Promise<SnapshotRow>;
+  insertSnapshot(input: SnapshotInsertInput): Promise<ResultadoSnapshot>;
   getTransacoesPorCategoria(
     familiaId: string,
     mesReferencia: string,

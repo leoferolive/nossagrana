@@ -264,9 +264,27 @@ export const snapshotsMensais = pgTable(
   (table) => [
     index('snapshots_mensais_familia_id_idx').on(table.familiaId),
     index('snapshots_mensais_mes_referencia_idx').on(table.mesReferencia),
-    index('snapshots_mensais_familia_mes_idx').on(table.familiaId, table.mesReferencia),
+    // #69: um snapshot por família e mês. Substitui o antigo índice composto
+    // não único (mesmas colunas), que ficaria redundante.
+    uniqueIndex('snapshots_mensais_familia_mes_uq').on(table.familiaId, table.mesReferencia),
   ],
 );
+
+// Auditoria da deduplicação da migration 0012: duplicatas legadas são movidas
+// para cá (nunca apagadas). Sem FK/índices: é arquivo morto de consulta manual.
+export const snapshotsMensaisDuplicados = pgTable('snapshots_mensais_duplicados', {
+  id: uuid('id').primaryKey(),
+  familiaId: uuid('familia_id').notNull(),
+  mesReferencia: text('mes_referencia').notNull(),
+  totalReceitas: numeric('total_receitas', { precision: 14, scale: 2 }).notNull(),
+  totalDespesas: numeric('total_despesas', { precision: 14, scale: 2 }).notNull(),
+  saldo: numeric('saldo', { precision: 14, scale: 2 }).notNull(),
+  dadosCategorias: jsonb('dados_categorias').notNull(),
+  dadosUsuarios: jsonb('dados_usuarios').notNull(),
+  divergente: boolean('divergente').notNull(),
+  geradoEm: timestamp('gerado_em', { withTimezone: true }).notNull(),
+  movidoEm: timestamp('movido_em', { withTimezone: true }).defaultNow().notNull(),
+});
 
 export const cofrinhoStatus = pgEnum('cofrinho_status', ['ativo', 'encerrado']);
 export const movimentacaoCofrinhoTipo = pgEnum('movimentacao_cofrinho_tipo', [

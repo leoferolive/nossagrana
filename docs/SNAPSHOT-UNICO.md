@@ -16,13 +16,13 @@ existente nunca é recalculado nem alterado.
 
 ```bash
 kubectl exec -i -n database deploy/postgres -- sh -c \
-  'psql -U "$POSTGRES_USER" -d nossagrana_prod' \
+  'psql -U "$POSTGRES_USER" -d nossagrana_prod -v ON_ERROR_STOP=1' \
   < apps/api/src/db/diagnostics/auditoria-snapshots-duplicados.sql
 ```
 
 `linhas_a_mover` indica quantas linhas irão para a auditoria. Depois do deploy,
-`grupos_duplicados` deve ser 0 (a segunda consulta, de auditoria, só funciona
-após a migration).
+`grupos_duplicados` deve ser 0. A segunda consulta (auditoria) avisa via NOTICE
+quando a tabela ainda não existe, sem gerar erro.
 
 ## Risco de deploy: janela de backup
 
@@ -56,5 +56,23 @@ FROM snapshots_mensais_duplicados;
 COMMIT;
 ```
 
-Depois, remova a entrada `0012_snapshot_unico` de `drizzle.__drizzle_migrations`
-se for reaplicar a migration. `snapshots_mensais_duplicados` pode ser mantida.
+### Reaplicar a 0012 depois do rollback
+
+Só funciona se a 0012 for a **última** migration aplicada: o migrator do Drizzle
+compara apenas com o `created_at` mais recente registrado. Como o `CREATE TABLE`
+da 0012 não usa `IF NOT EXISTS`, a tabela de auditoria precisa sair do caminho
+antes (senão: `relation "snapshots_mensais_duplicados" already exists` e
+crashloop do pod):
+
+```sql
+BEGIN;
+-- Preserva o arquivo morto (ou exporte e dê DROP).
+ALTER TABLE snapshots_mensais_duplicados
+  RENAME TO snapshots_mensais_duplicados_AAAAMMDD;
+-- created_at = "when" da 0012 em apps/api/src/db/migrations/meta/_journal.json.
+DELETE FROM drizzle.__drizzle_migrations WHERE created_at = 1794335929572;
+COMMIT;
+```
+
+Confira o valor no journal antes de executar. Em seguida reinicie a API para o
+`runMigrations` reaplicar a 0012.

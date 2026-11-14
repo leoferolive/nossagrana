@@ -10,8 +10,8 @@
 -- "linhas_a_mover" mostram quantas linhas a migration vai mover para
 -- snapshots_mensais_duplicados (o canônico, o mais antigo, permanece).
 -- DEPOIS do deploy: "grupos_duplicados" deve ser 0 e "movidas_para_auditoria"
--- é o total arquivado. Antes do deploy a tabela de auditoria ainda não existe e
--- a segunda consulta falha (esperado): a primeira já trouxe o que importa.
+-- é o total arquivado (reportado via NOTICE; antes do deploy avisa que a tabela
+-- ainda não existe).
 BEGIN TRANSACTION READ ONLY;
 
 SELECT
@@ -24,10 +24,21 @@ FROM (
   HAVING count(*) > 1
 ) d;
 
--- Só existe depois da 0012.
-SELECT count(*)::int AS movidas_para_auditoria,
-  count(DISTINCT (familia_id, mes_referencia))::int AS meses_afetados,
-  min(movido_em) AS primeira_movida_em
-FROM snapshots_mensais_duplicados;
+-- Só existe depois da 0012: antes dela, avisa por NOTICE em vez de falhar
+-- (plpgsql só resolve a tabela se o ramo for executado).
+DO $$
+DECLARE
+  movidas int;
+  meses int;
+BEGIN
+  IF to_regclass('snapshots_mensais_duplicados') IS NULL THEN
+    RAISE NOTICE 'snapshots_mensais_duplicados: tabela ainda não existe (0012 não aplicada)';
+    RETURN;
+  END IF;
+  SELECT count(*)::int, count(DISTINCT (familia_id, mes_referencia))::int
+    INTO movidas, meses FROM snapshots_mensais_duplicados;
+  RAISE NOTICE 'movidas_para_auditoria=%, meses_afetados=%', movidas, meses;
+END
+$$;
 
 ROLLBACK;

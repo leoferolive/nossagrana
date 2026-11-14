@@ -163,10 +163,31 @@ describe('InMemoryHistoricoRepository', () => {
       dadosCategorias: [],
       dadosUsuarios: [],
     };
-    const result = await repo.insertSnapshot(input);
+    const { snapshot: result, criado } = await repo.insertSnapshot(input);
+    expect(criado).toBe(true);
     expect(result.familiaId).toBe('f1');
     expect(result.mesReferencia).toBe('2026-03');
     expect(result.divergente).toBe(false);
+  });
+
+  it('insertSnapshot em conflito devolve o existente sem alterá-lo (semântica ON CONFLICT)', async () => {
+    const base = {
+      familiaId: 'f1',
+      mesReferencia: '2026-03',
+      totalReceitas: '1000.00',
+      totalDespesas: '500.00',
+      saldo: '500.00',
+      dadosCategorias: [],
+      dadosUsuarios: [],
+    };
+    const primeiro = await repo.insertSnapshot(base);
+    const segundo = await repo.insertSnapshot({ ...base, totalReceitas: '9.00' });
+    const outraFamilia = await repo.insertSnapshot({ ...base, familiaId: 'f2' });
+
+    expect(segundo.criado).toBe(false);
+    expect(segundo.snapshot).toBe(primeiro.snapshot);
+    expect(segundo.snapshot.totalReceitas).toBe('1000.00');
+    expect(outraFamilia.criado).toBe(true);
   });
 
   it('getTransacoesPorCategoria returns empty when no snapshot data', async () => {
@@ -311,11 +332,12 @@ describe('DrizzleHistoricoRepository', () => {
   it('insertSnapshot inserts and returns mapped row', async () => {
     const row = makeSnapshotRow();
     const returningMock = vi.fn().mockResolvedValue([row]);
-    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const conflictMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoNothing: conflictMock });
     mockDb.insert.mockReturnValue({ values: valuesMock });
 
     const repo = new DrizzleHistoricoRepository();
-    const result = await repo.insertSnapshot({
+    const { snapshot: result, criado } = await repo.insertSnapshot({
       familiaId: 'f1',
       mesReferencia: '2026-03',
       totalReceitas: '1000.00',
@@ -324,7 +346,45 @@ describe('DrizzleHistoricoRepository', () => {
       dadosCategorias: [],
       dadosUsuarios: [],
     });
+    expect(criado).toBe(true);
     expect(result.mesReferencia).toBe('2026-03');
+  });
+
+  describe('insertSnapshot em conflito (INSERT sem linha retornada)', () => {
+    const entradaConflito = {
+      familiaId: 'f1',
+      mesReferencia: '2026-03',
+      totalReceitas: '1.00',
+      totalDespesas: '0.00',
+      saldo: '1.00',
+      dadosCategorias: [],
+      dadosUsuarios: [],
+    };
+
+    function simularConflito(existente: unknown[]) {
+      const returningMock = vi.fn().mockResolvedValue([]);
+      const conflictMock = vi.fn().mockReturnValue({ returning: returningMock });
+      mockDb.insert.mockReturnValue({
+        values: vi.fn().mockReturnValue({ onConflictDoNothing: conflictMock }),
+      });
+      const limitMock = vi.fn().mockResolvedValue(existente);
+      const whereMock = vi.fn().mockReturnValue({ limit: limitMock });
+      mockDb.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where: whereMock }) });
+    }
+
+    it('devolve o snapshot existente com criado=false', async () => {
+      simularConflito([makeSnapshotRow({ totalReceitas: '1000.00' })]);
+      const resultado = await new DrizzleHistoricoRepository().insertSnapshot(entradaConflito);
+      expect(resultado.criado).toBe(false);
+      expect(resultado.snapshot.totalReceitas).toBe('1000.00');
+    });
+
+    it('lança erro claro se o existente sumiu entre o INSERT e a busca', async () => {
+      simularConflito([]);
+      await expect(
+        new DrizzleHistoricoRepository().insertSnapshot(entradaConflito),
+      ).rejects.toThrow(/em conflito mas não encontrado: familia f1, mês "2026-03"/);
+    });
   });
 
   it('getTransacoesPorCategoria returns mapped rows', async () => {

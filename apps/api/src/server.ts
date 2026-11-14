@@ -23,7 +23,7 @@ const start = async () => {
       host: '0.0.0.0',
       port: env.PORT,
     });
-    iniciarSnapshotJob();
+    iniciarSnapshotJob(app.log);
     iniciarRevokedTokenCleanupJob();
     iniciarLimpezaIdempotenciaJob(app.log);
   } catch (error) {

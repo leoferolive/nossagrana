@@ -8,7 +8,7 @@
  */
 import type { Page } from '@playwright/test';
 
-const API_URL = process.env.API_URL ?? 'http://localhost:3000';
+export const API_URL = process.env.API_URL ?? 'http://localhost:3000';
 const CSRF_HEADER = { 'x-nossagrana-csrf': '1' };
 const TOURS = ['dashboard', 'extrato', 'historico', 'orcamento', 'configuracoes', 'perfil'];
 
@@ -38,15 +38,18 @@ export async function abrirAppAutenticado(
   familiaId = '',
 ): Promise<void> {
   await loginNoContexto(page, credenciais);
-  await page.goto('/');
-  await page.evaluate(
+  // Roda antes do app em cada carga; só semeia a família se ainda não houver uma (não sobrescreve
+  // a escolha feita durante o teste). Um único goto: o bootstrap faz o refresh uma vez.
+  await page.addInitScript(
     ([fid, tours]) => {
-      if (fid) localStorage.setItem('nossagrana.familia-ativa', fid);
+      if (fid && !localStorage.getItem('nossagrana.familia-ativa')) {
+        localStorage.setItem('nossagrana.familia-ativa', fid);
+      }
       for (const key of tours) localStorage.setItem(`tour-${key}`, 'true');
     },
     [familiaId, TOURS] as const,
   );
-  await page.reload();
+  await page.goto('/');
 }
 
 /** Garante que nenhum segredo foi parar no storage do navegador. */

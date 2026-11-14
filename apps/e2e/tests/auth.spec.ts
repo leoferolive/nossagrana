@@ -8,7 +8,7 @@
  */
 
 import { expect, test } from '../fixtures/base.js';
-import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
+import { abrirAppAutenticado, API_URL, storageSemToken } from '../helpers/session.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -111,7 +111,7 @@ test.describe('Autenticação', () => {
     expect(await storageSemToken(page)).toBe(true);
 
     // Logout revoga o refresh e limpa o cookie; o reload não restaura mais a sessão.
-    const resposta = await page.request.post('http://localhost:3000/api/auth/logout', {
+    const resposta = await page.request.post(`${API_URL}/api/auth/logout`, {
       headers: { 'x-nossagrana-csrf': '1' },
     });
     expect(resposta.ok()).toBe(true);

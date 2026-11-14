@@ -58,24 +58,41 @@ describe('useAuthSessionStore (#117)', () => {
     expect(localStorage.getItem('nossagrana.familia-ativa')).toBeNull();
   });
 
-  it('concluirBootstrap(true) restaura a família persistida (id não secreto)', () => {
+  it("concluirBootstrap('ok') restaura a família persistida (id não secreto)", () => {
     localStorage.setItem('nossagrana.familia-ativa', 'f9');
     estado().atualizarAccessToken('a-do-refresh');
-    estado().concluirBootstrap(true);
+    estado().concluirBootstrap('ok');
 
     expect(estado().status).toBe('autenticado');
     expect(estado().familiaIdAtiva).toBe('f9');
   });
 
-  it('concluirBootstrap(false) vira anônimo', () => {
-    estado().concluirBootstrap(false);
+  it("concluirBootstrap('sem-sessao') vira anônimo", () => {
+    estado().concluirBootstrap('sem-sessao');
+    expect(estado().status).toBe('anonimo');
+  });
+
+  it("concluirBootstrap('indisponivel') não vira anônimo: guarda o estado para o retry", () => {
+    estado().concluirBootstrap('indisponivel');
+
+    expect(estado().status).toBe('indisponivel');
+    expect(estado().accessToken).toBeNull();
+  });
+
+  it('tentarNovamente volta a carregando só a partir de indisponivel', () => {
+    estado().concluirBootstrap('indisponivel');
+    estado().tentarNovamente();
+    expect(estado().status).toBe('carregando');
+
+    estado().concluirBootstrap('sem-sessao');
+    estado().tentarNovamente();
     expect(estado().status).toBe('anonimo');
   });
 
   it('concluirBootstrap não ressuscita uma sessão encerrada durante o bootstrap', () => {
     estado().atualizarAccessToken('a');
     estado().encerrarSessao();
-    estado().concluirBootstrap(true);
+    estado().concluirBootstrap('ok');
 
     expect(estado().status).toBe('anonimo');
     expect(estado().accessToken).toBeNull();

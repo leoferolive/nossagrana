@@ -7,6 +7,8 @@ import {
   metodoPagamentoService,
   transacaoService,
 } from './core-financeiro.service';
+import { FakeLockManager } from '../test/fake-lock-manager';
+
 import { AuthService, FamiliaService } from './auth.service';
 
 const buildApiClient = (
@@ -81,6 +83,42 @@ describe('AuthService', () => {
     expect(init).toMatchObject({ method: 'POST', credentials: 'include' });
     expect(init.body).toBeUndefined();
     expect(new Headers(init.headers).get(CSRF_HEADER_NAME)).toBe(CSRF_HEADER_VALUE);
+  });
+});
+
+describe('AuthService x lock entre abas (#117)', () => {
+  const esperar = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('logout só sai quando outra aba libera o lock de refresh', async () => {
+    const locks = new FakeLockManager();
+    const apiClient = buildApiClient({
+      request: vi.fn(async () => undefined) as ApiClient['request'],
+    });
+    const liberar = locks.segurar();
+
+    const logout = new AuthService(apiClient, locks).logout();
+    await esperar();
+    expect(apiClient.request).not.toHaveBeenCalled();
+
+    liberar();
+    await logout;
+    expect(apiClient.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('login só sai quando outra aba libera o lock de refresh', async () => {
+    const locks = new FakeLockManager();
+    const apiClient = buildApiClient({
+      request: vi.fn(async () => ({ accessToken: 'at' })) as ApiClient['request'],
+    });
+    const liberar = locks.segurar();
+
+    const login = new AuthService(apiClient, locks).login({ email: 'a@b.c', senha: 'senha12345' });
+    await esperar();
+    expect(apiClient.request).not.toHaveBeenCalled();
+
+    liberar();
+    await login;
+    expect(apiClient.request).toHaveBeenCalledTimes(1);
   });
 });
 

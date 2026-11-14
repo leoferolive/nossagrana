@@ -1,7 +1,8 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthSessionStore } from '../stores/auth-session.store';
+import { FakeLockManager } from '../test/fake-lock-manager';
 
 import { ApiClient, ApiError } from './api-client';
 
@@ -567,7 +568,7 @@ describe('ApiClient com o store de sessão em memória (#117)', () => {
 
     const [a, b] = await Promise.all([client.restaurarSessao(), client.restaurarSessao()]);
 
-    expect([a, b]).toEqual([true, true]);
+    expect([a, b]).toEqual(['ok', 'ok']);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(init.credentials).toBe('include');
@@ -575,13 +576,93 @@ describe('ApiClient com o store de sessão em memória (#117)', () => {
     expect(useAuthSessionStore.getState().accessToken).toBe('restaurado');
   });
 
-  it('restaurarSessao com 401 limpa a sessão e retorna false', async () => {
-    useAuthSessionStore.setState({ status: 'carregando', accessToken: null, familiaIdAtiva: null });
-    const fetch401 = vi.fn(async () => new Response(null, { status: 401 }));
-    await expect(criarClient(fetch401 as unknown as typeof fetch).restaurarSessao()).resolves.toBe(
-      false,
-    );
-    expect(useAuthSessionStore.getState().status).toBe('anonimo');
+  it.each([401, 403])(
+    'restaurarSessao com %i limpa a sessão e retorna sem-sessao',
+    async (status) => {
+      useAuthSessionStore.setState({
+        status: 'carregando',
+        accessToken: null,
+        familiaIdAtiva: null,
+      });
+      const fetchNegado = vi.fn(async () => new Response(null, { status }));
+
+      await expect(
+        criarClient(fetchNegado as unknown as typeof fetch).restaurarSessao(),
+      ).resolves.toBe('sem-sessao');
+      expect(useAuthSessionStore.getState().status).toBe('anonimo');
+    },
+  );
+
+  it.each([500, 503, 429])(
+    'restaurarSessao com %i é indisponível e não limpa a sessão',
+    async (status) => {
+      useAuthSessionStore.setState({
+        status: 'carregando',
+        accessToken: null,
+        familiaIdAtiva: null,
+      });
+      const clearSession = vi.fn();
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: (async () => new Response(null, { status })) as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession,
+      });
+
+      await expect(client.restaurarSessao()).resolves.toBe('indisponivel');
+      expect(clearSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rede offline (fetch rejeita) é indisponível, sem clearSession', async () => {
+    const clearSession = vi.fn();
+    const client = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetchFn: (async () => {
+        throw new TypeError('Failed to fetch');
+      }) as unknown as typeof fetch,
+      getAccessToken: () => null,
+      setAccessToken: vi.fn(),
+      clearSession,
+    });
+
+    await expect(client.restaurarSessao()).resolves.toBe('indisponivel');
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  describe('timeout do refresh (I1)', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('fetch de refresh que nunca resolve é abortado após 10 s: indisponível, lock liberado, sem clearSession', async () => {
+      vi.useFakeTimers();
+      const clearSession = vi.fn();
+      const fetchPendurado = vi.fn(
+        (_url: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(new DOMException('abort', 'AbortError')),
+            );
+          }),
+      );
+      const locks = new FakeLockManager();
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetchFn: fetchPendurado as unknown as typeof fetch,
+        getAccessToken: () => null,
+        setAccessToken: vi.fn(),
+        clearSession,
+        locks,
+      });
+
+      const resultado = client.restaurarSessao();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(resultado).resolves.toBe('indisponivel');
+      expect(clearSession).not.toHaveBeenCalled();
+      // O lock foi liberado: um segundo uso do lock não trava.
+      await expect(locks.request('nossagrana-refresh', async () => 'livre')).resolves.toBe('livre');
+    });
   });
 
   it('logout (encerrarSessao) limpa a memória e um refresh tardio não recria a sessão', async () => {

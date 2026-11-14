@@ -1,16 +1,17 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ResultadoRefresh } from '../services/api-client';
 import { useAuthSessionStore } from '../stores/auth-session.store';
 
 import { AuthProvider } from './auth-context';
 import { useAuth } from './use-auth';
 
 class FakeApiClient {
-  resolver: (ok: boolean) => void = () => undefined;
+  resolver: (resultado: ResultadoRefresh) => void = () => undefined;
   restaurarSessao = vi.fn(
     () =>
-      new Promise<boolean>((resolve) => {
+      new Promise<ResultadoRefresh>((resolve) => {
         this.resolver = resolve;
       }),
   );
@@ -22,6 +23,10 @@ vi.mock('../services/core-financeiro.service', () => ({
   get lazyApiClient() {
     return fakeApi.atual;
   },
+}));
+
+vi.mock('../services/auth.service', () => ({
+  familiaService: { listarMinhas: async () => ({ familias: [] }) },
 }));
 
 vi.mock('../stores/websocket.store', () => ({
@@ -86,7 +91,7 @@ describe('AuthProvider (#117)', () => {
     act(() => {
       useAuthSessionStore.getState().atualizarAccessToken('access-do-refresh');
     });
-    await act(async () => api.resolver(true));
+    await act(async () => api.resolver('ok'));
 
     await waitFor(() => expect(screen.getByText('authenticated: yes')).toBeInTheDocument());
     expect(screen.getByText('accessToken: access-do-refresh')).toBeInTheDocument();
@@ -95,15 +100,39 @@ describe('AuthProvider (#117)', () => {
 
   it('bootstrap 401/403: libera o app deslogado (login)', async () => {
     renderizar();
-    await act(async () => api.resolver(false));
+    await act(async () => api.resolver('sem-sessao'));
 
     await waitFor(() => expect(screen.getByText('authenticated: no')).toBeInTheDocument());
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
+  it('servidor indisponível: role=alert com "Tentar novamente", sem cair no login', async () => {
+    renderizar();
+    await act(async () => api.resolver('indisponivel'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível conectar ao servidor',
+    );
+    expect(screen.queryByText(/authenticated:/)).not.toBeInTheDocument();
+  });
+
+  it('"Tentar novamente" refaz o bootstrap e restaura a sessão', async () => {
+    renderizar();
+    await act(async () => api.resolver('indisponivel'));
+
+    fireEvent.click(await screen.findByRole('button', { name: /tentar novamente/i }));
+    expect(await screen.findByRole('status', { name: /carregando sessão/i })).toBeInTheDocument();
+    expect(api.restaurarSessao).toHaveBeenCalledTimes(2);
+
+    act(() => useAuthSessionStore.getState().atualizarAccessToken('a-retry'));
+    await act(async () => api.resolver('ok'));
+
+    await waitFor(() => expect(screen.getByText('accessToken: a-retry')).toBeInTheDocument());
+  });
+
   it('login mantém o token só em memória; logout limpa a memória', async () => {
     renderizar();
-    await act(async () => api.resolver(false));
+    await act(async () => api.resolver('sem-sessao'));
 
     fireEvent.click(await screen.findByRole('button', { name: 'login' }));
     expect(screen.getByText('accessToken: access-1')).toBeInTheDocument();

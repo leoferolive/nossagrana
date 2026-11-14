@@ -9,7 +9,11 @@ import { PrivateRoute } from './private-route';
 
 // Bootstrap sem sessão (refresh recusado): evita rede real no AuthProvider.
 vi.mock('@/services/core-financeiro.service', () => ({
-  lazyApiClient: { restaurarSessao: async () => false },
+  lazyApiClient: { restaurarSessao: async () => 'sem-sessao' },
+}));
+
+vi.mock('@/services/auth.service', () => ({
+  familiaService: { listarMinhas: async () => ({ familias: [] }) },
 }));
 
 afterEach(() => {

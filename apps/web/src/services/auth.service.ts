@@ -18,6 +18,7 @@ import type {
 
 import { ApiClient, cookieAuthInit } from './api-client';
 import { lazyApiClient } from './core-financeiro.service';
+import { comLockDeRefresh, type LockManagerLike } from './refresh-lock';
 
 const familiaHeader = (familiaId: string): Record<string, string> => ({
   'X-Familia-Id': familiaId,
@@ -33,17 +34,29 @@ export class AuthService {
    */
   private logoutEmAndamento: Promise<void> | null = null;
 
-  constructor(private readonly api: ApiClient) {}
+  /**
+   * `locks` (padrão `navigator.locks`): login e logout rotacionam/revogam o cookie de refresh e
+   * por isso entram no mesmo lock do refresh, senão outra aba refrescaria com um token que
+   * acabou de ser revogado (TOKEN_REUSE_DETECTED) ou receberia um Set-Cookie após o clear.
+   */
+  constructor(
+    private readonly api: ApiClient,
+    private readonly locks?: LockManagerLike,
+  ) {}
 
   async login(payload: AuthLoginRequest): Promise<AuthLoginResponse> {
     // Falha do logout pendente não pode impedir o login.
     await this.logoutEmAndamento?.catch(() => undefined);
-    const resposta = await this.api.request<AuthLoginResponse>('/api/auth/login', {
-      ...cookieAuthInit({ 'Content-Type': 'application/json' }),
-      method: 'POST',
-      body: JSON.stringify(payload),
-      skipAuthRetry: true,
-    });
+    const resposta = await comLockDeRefresh(
+      () =>
+        this.api.request<AuthLoginResponse>('/api/auth/login', {
+          ...cookieAuthInit({ 'Content-Type': 'application/json' }),
+          method: 'POST',
+          body: JSON.stringify(payload),
+          skipAuthRetry: true,
+        }),
+      this.locks,
+    );
     this.api.retomarSessao();
     return resposta;
   }
@@ -70,11 +83,15 @@ export class AuthService {
   private async enviarLogout(): Promise<void> {
     // Um refresh em voo rotaciona o cookie: revogar antes dele deixaria o novo cookie vivo.
     await this.api.aguardarRefresh();
-    return this.api.request<void>('/api/auth/logout', {
-      ...cookieAuthInit(),
-      method: 'POST',
-      skipAuthRetry: true,
-    });
+    return comLockDeRefresh(
+      () =>
+        this.api.request<void>('/api/auth/logout', {
+          ...cookieAuthInit(),
+          method: 'POST',
+          skipAuthRetry: true,
+        }),
+      this.locks,
+    );
   }
 }
 

@@ -1,18 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { comLockDeRefresh, type LockManagerLike } from './refresh-lock';
+import { FakeLockManager } from '../test/fake-lock-manager';
 
-class FakeLockManager implements LockManagerLike {
-  nomes: string[] = [];
-  private fila: Promise<unknown> = Promise.resolve();
-
-  request<T>(name: string, callback: () => Promise<T>): Promise<T> {
-    this.nomes.push(name);
-    const execucao = this.fila.then(callback);
-    this.fila = execucao.catch(() => undefined);
-    return execucao;
-  }
-}
+import { comLockDeRefresh } from './refresh-lock';
 
 describe('comLockDeRefresh (#117)', () => {
   it('serializa execuções sob o lock nossagrana-refresh', async () => {

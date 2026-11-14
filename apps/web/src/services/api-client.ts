@@ -1,7 +1,7 @@
 import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from '@nossagrana/types';
 import type { AuthRefreshResponse } from '@nossagrana/types';
 
-import { comLockDeRefresh } from './refresh-lock';
+import { comLockDeRefresh, type LockManagerLike } from './refresh-lock';
 
 export class ApiError extends Error {
   constructor(
@@ -21,7 +21,18 @@ function lerRetryAfterMs(response: Response): number | undefined {
   return Number.isFinite(segundos) && segundos > 0 ? Math.round(segundos * 1000) : undefined;
 }
 
+/**
+ * Desfecho de uma renovação: `ok`; `sem-sessao` (401/403: cookie inválido); `indisponivel`
+ * (5xx, 429, offline ou timeout: o cookie pode seguir válido).
+ */
+export type ResultadoRefresh = 'ok' | 'sem-sessao' | 'indisponivel';
+
+/** Sem timeout, um refresh pendurado seguraria o lock entre abas e travaria todos os bootstraps. */
+const REFRESH_TIMEOUT_MS = 10_000;
+
 interface ApiClientOptions {
+  /** Gerenciador de locks entre abas (padrão: `navigator.locks`). */
+  locks?: LockManagerLike;
   baseUrl: string;
   fetchFn?: typeof fetch;
   getAccessToken: () => string | null;
@@ -55,7 +66,8 @@ export class ApiClient {
    * compartilham a mesma promise. Dois refreshes com o mesmo refresh token
    * disparam a detecção de reuso no servidor e revogam todas as sessões.
    */
-  private refreshInFlight: Promise<boolean> | null = null;
+  private refreshInFlight: Promise<ResultadoRefresh> | null = null;
+  private readonly locks: LockManagerLike | undefined;
   /**
    * Logout em curso/concluído: nenhum refresh novo pode começar. Um 401 atrasado de uma
    * requisição enviada antes do logout dispararia um refresh cujo `Set-Cookie` restauraria
@@ -69,6 +81,7 @@ export class ApiClient {
     this.getAccessToken = options.getAccessToken;
     this.setAccessToken = options.setAccessToken;
     this.clearSession = options.clearSession;
+    this.locks = options.locks;
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -83,7 +96,7 @@ export class ApiClient {
     // Sem access token não há sessão a renovar (ex.: 401 de credenciais erradas no login).
     if (response.status === 401 && accessToken && !skipAuthRetry && path !== '/api/auth/refresh') {
       const refreshed = await this.renewSession(accessToken);
-      if (refreshed) {
+      if (refreshed === 'ok') {
         return this.request<T>(path, { ...options, skipAuthRetry: true });
       }
     }
@@ -122,16 +135,18 @@ export class ApiClient {
    * Bootstrap/reload: sem access token em memória, renova pelo cookie (mesmo single-flight e
    * lock entre abas das renovações por 401). `false` = sem sessão (ou servidor indisponível).
    */
-  restaurarSessao(): Promise<boolean> {
-    if (this.sessaoEncerrada) return Promise.resolve(false);
+  restaurarSessao(): Promise<ResultadoRefresh> {
+    if (this.sessaoEncerrada) return Promise.resolve('sem-sessao');
     return this.iniciarRefresh();
   }
 
-  private iniciarRefresh(): Promise<boolean> {
+  private iniciarRefresh(): Promise<ResultadoRefresh> {
     if (this.refreshInFlight) return this.refreshInFlight;
-    this.refreshInFlight = comLockDeRefresh(() => this.refreshAccessToken()).finally(() => {
-      this.refreshInFlight = null;
-    });
+    this.refreshInFlight = comLockDeRefresh(() => this.refreshAccessToken(), this.locks).finally(
+      () => {
+        this.refreshInFlight = null;
+      },
+    );
     return this.refreshInFlight;
   }
 
@@ -139,32 +154,45 @@ export class ApiClient {
    * Se o access token já mudou desde que a requisição foi enviada, outra
    * requisição concluiu o refresh enquanto esta esperava: basta re-tentar.
    */
-  private renewSession(tokenUsed: string | null): Promise<boolean> {
+  private renewSession(tokenUsed: string | null): Promise<ResultadoRefresh> {
     // O token atual (não o capturado no envio) diz se ainda há sessão: sem ela, não há o que renovar.
     const current = this.getAccessToken();
-    if (this.sessaoEncerrada || !current) return Promise.resolve(false);
+    if (this.sessaoEncerrada || !current) return Promise.resolve('sem-sessao');
     if (this.refreshInFlight) return this.refreshInFlight;
-    if (current !== tokenUsed) return Promise.resolve(true);
+    if (current !== tokenUsed) return Promise.resolve('ok');
     return this.iniciarRefresh();
   }
 
-  private async refreshAccessToken(): Promise<boolean> {
-    // O refresh token vai (e volta) no cookie HttpOnly: o JS nunca o vê.
-    const response = await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
-      ...cookieAuthInit({ 'Content-Type': 'application/json' }),
-      method: 'POST',
-      body: '{}',
-    });
-
-    if (!response.ok) {
-      // Só 401/403 significam sessão perdida; 5xx é oscilação do servidor e o cookie segue válido.
-      if (response.status === 401 || response.status === 403) this.clearSession();
-      return false;
+  private async refreshAccessToken(): Promise<ResultadoRefresh> {
+    const response = await this.enviarRefresh();
+    if (!response) return 'indisponivel';
+    if (response.status === 401 || response.status === 403) {
+      this.clearSession();
+      return 'sem-sessao';
     }
+    if (!response.ok) return 'indisponivel';
 
     const body = (await response.json()) as AuthRefreshResponse;
     this.setAccessToken(body.accessToken);
-    return true;
+    return 'ok';
+  }
+
+  /** O refresh token vai (e volta) no cookie HttpOnly. `null` = rede/timeout (transitório). */
+  private async enviarRefresh(): Promise<Response | null> {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), REFRESH_TIMEOUT_MS);
+    try {
+      return await this.fetchFn(`${this.baseUrl}/api/auth/refresh`, {
+        ...cookieAuthInit({ 'Content-Type': 'application/json' }),
+        method: 'POST',
+        body: '{}',
+        signal: abort.signal,
+      });
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   private withAuthHeader(

@@ -2,7 +2,10 @@ import { create } from 'zustand';
 
 import { gravarFamiliaAtiva, lerFamiliaAtiva } from '../services/familia-ativa-storage';
 
-type SessaoStatus = 'carregando' | 'autenticado' | 'anonimo';
+import type { ResultadoRefresh } from '../services/api-client';
+
+/** `indisponivel`: o bootstrap não alcançou o servidor (o cookie pode estar válido); não é logout. */
+type SessaoStatus = 'carregando' | 'autenticado' | 'anonimo' | 'indisponivel';
 
 interface AuthSessionStore {
   status: SessaoStatus;
@@ -12,7 +15,8 @@ interface AuthSessionStore {
   iniciarSessao(accessToken: string, familiaIdAtiva: string): void;
   atualizarAccessToken(accessToken: string): void;
   definirFamiliaAtiva(familiaId: string): void;
-  concluirBootstrap(restaurou: boolean): void;
+  concluirBootstrap(resultado: ResultadoRefresh): void;
+  tentarNovamente(): void;
   encerrarSessao(): void;
 }
 
@@ -41,14 +45,22 @@ export const useAuthSessionStore = create<AuthSessionStore>((set, get) => ({
     set({ familiaIdAtiva: familiaId || null });
   },
 
-  concluirBootstrap(restaurou) {
+  concluirBootstrap(resultado) {
     // Logout (ou 401 no refresh) durante o bootstrap já decidiu: não ressuscitar.
     if (get().status !== 'carregando') return;
-    if (!restaurou || !get().accessToken) {
+    if (resultado === 'indisponivel') {
+      set({ status: 'indisponivel', accessToken: null });
+      return;
+    }
+    if (resultado === 'sem-sessao' || !get().accessToken) {
       set({ status: 'anonimo', accessToken: null });
       return;
     }
     set({ status: 'autenticado', familiaIdAtiva: lerFamiliaAtiva() });
+  },
+
+  tentarNovamente() {
+    if (get().status === 'indisponivel') set({ status: 'carregando' });
   },
 
   encerrarSessao() {

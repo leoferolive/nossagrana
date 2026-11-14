@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 
+import { familiaService } from '../services/auth.service';
 import { lazyApiClient } from '../services/core-financeiro.service';
 import { bootstrapSessao } from '../services/sessao-bootstrap';
 import { useAuthSessionStore } from '../stores/auth-session.store';
@@ -22,14 +23,38 @@ const SessaoCarregando = () => (
   </div>
 );
 
+const listarFamiliaIds = async (): Promise<string[]> =>
+  (await familiaService.listarMinhas()).familias.map((familia) => familia.id);
+
+const iniciarBootstrap = (): void => {
+  void bootstrapSessao(lazyApiClient, listarFamiliaIds);
+};
+
+/** Servidor inalcançável no bootstrap: o cookie pode estar válido, então não mostramos o login. */
+const SessaoIndisponivel = () => (
+  <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg p-4 text-text">
+    <p role="alert" className="text-center">
+      Não foi possível conectar ao servidor
+    </p>
+    <button
+      type="button"
+      className="rounded-lg border border-border bg-panel px-4 py-2 text-text hover:bg-surface"
+      onClick={() => {
+        useAuthSessionStore.getState().tentarNovamente();
+        iniciarBootstrap();
+      }}
+    >
+      Tentar novamente
+    </button>
+  </div>
+);
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const status = useAuthSessionStore((s) => s.status);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
   const familiaIdAtiva = useAuthSessionStore((s) => s.familiaIdAtiva);
 
-  useEffect(() => {
-    void bootstrapSessao(lazyApiClient);
-  }, []);
+  useEffect(iniciarBootstrap, []);
 
   const login = useCallback((s: { accessToken: string; familiaIdAtiva: string }) => {
     useAuthSessionStore.getState().iniciarSessao(s.accessToken, s.familiaIdAtiva);
@@ -69,5 +94,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [status, familiaIdAtiva, wsConnect, wsDisconnect, logout]);
 
   if (status === 'carregando') return <SessaoCarregando />;
+  if (status === 'indisponivel') return <SessaoIndisponivel />;
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

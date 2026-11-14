@@ -12,8 +12,10 @@
   (local-path, disco do nó `elitedesk`).
 - `k8s/postgres/statefulset.yaml` deste repositório é **legado** e não é o banco de
   produção (a evidência citada na issue #44 está desatualizada nesse ponto).
-- Volume medido em 2026-09-22: dump `pg_dumpall` comprimido de **2,9 MB** para o
-  cluster inteiro; restore isolado do `nossagrana_prod` em **3 s**.
+- Volume: 2,9 MB comprimidos em 2026-09-22; em 2026-11-14 já eram cerca de
+  **419 MB** (439276374 bytes), porque o `pg_dumpall` cobre o cluster
+  compartilhado inteiro, não só o `nossagrana_prod`. Restore isolado do
+  `nossagrana_prod` medido em 3 s em 2026-09-22 (ver RTO em 3).
 
 ## 2. Pipeline de backup
 
@@ -54,6 +56,10 @@ restore a partir dele ser exercitado e registrado.
   complexidade no nó único).
 - **RTO** medido na restauração isolada: 12 s de Job (3 s de restore). Os alvos
   acima incluem diagnóstico, decisão e troca de banco com a API parada.
+- O cenário de perda do nó/site foi exercitado em 2026-11-14 com um drill a
+  partir da cópia offsite (restic no Google Drive): restore em ~3,5 min (Job
+  total 3 min 24 s), sem contar o tempo de reconstruir o cluster. Ver runbook,
+  "Drill offsite (Google Drive)".
 
 ## 4. Integridade e checksum
 
@@ -118,7 +124,9 @@ causa e duração na seção "Registro de exercícios e incidentes" do runbook.
 
 - O restore drill valida a cópia **local** (PVC). A cópia externa (Google Drive)
   depende do `restic backup` sem `restic check --read-data-subset` periódico nem
-  restore automatizado a partir dela — próximo passo recomendado.
+  restore automatizado a partir dela — próximo passo recomendado. Há um drill
+  offsite manual (`k8s/backup/offsite-restore-drill-job.yaml`), exercitado em
+  2026-11-14, mas sem agendamento.
 - O restore drill diário ainda valida só o dump local (`pg_dumpall` do PVC). O
   artefato do `pg-dump-external` é verificado no upload (integridade e TOC), mas
   o restore completo a partir dele é manual (runbook) até um drill dedicado —

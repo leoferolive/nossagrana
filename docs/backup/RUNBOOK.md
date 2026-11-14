@@ -414,9 +414,38 @@ custom não precisa do `extract-database.sh` (que é só para o `pg_dumpall`).
    `created_at` posterior à rotação (`rclone cat <remoto>:<pasta>/<artefato>.meta.json`),
    ou remova/recifre os artefatos antigos antes de apagar a chave.
 
+## Drill offsite (Google Drive)
+
+O restore drill diário só prova o dump do PVC (mesmo disco do banco). Para provar
+o cenário de perda do nó/site, rode à mão o Job
+`k8s/backup/offsite-restore-drill-job.yaml`: baixa o `pg-all-*.sql.gz` mais
+recente do repositório restic no Google Drive e o restaura no PostgreSQL
+descartável com o mesmo `restore-drill.sh`. Não faz parte do `kustomization.yaml`.
+
+```bash
+# O ConfigMap do script tem hash no nome; o CronJob aplicado é a fonte da verdade.
+CM=$(kubectl get cronjob nossagrana-restore-drill -n database -o \
+  jsonpath='{.spec.jobTemplate.spec.template.spec.volumes[?(@.name=="drill-script")].configMap.name}')
+sed "s/__DRILL_SCRIPT_CONFIGMAP__/$CM/" k8s/backup/offsite-restore-drill-job.yaml |
+  kubectl create -f -
+kubectl logs -n database -f job/<nome impresso> -c restore-drill   # relatório JSON na última linha
+```
+
+Pontos de atenção:
+
+- Pré-requisito: Secret `restic-backup-secrets` (`restic-password`, `rclone.conf`).
+- O init `copy-rclone` existe porque o pod roda como uid 999 e `apk add` falha.
+- `restic ls SNAP /data` não é recursivo; o init lista o snapshot inteiro e filtra.
+- `backup_age_hours` sai ~0 porque o mtime vem do restore; a idade real é a data
+  do snapshot ou do nome do arquivo (`pg-all-AAAA-MM-DD`).
+- O Job some após 24 h (`ttlSecondsAfterFinished`); registre o resultado abaixo.
+- Rode após mudanças no restic/rclone, na rotação de credenciais do Drive e
+  periodicamente (sugestão: trimestral).
+
 ## Registro de exercícios e incidentes
 
-| Data       | Tipo                 | Artefato                   | Resultado | Duração                | Notas                                                                                                                                          |
-| ---------- | -------------------- | -------------------------- | --------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-22 | drill manual #1      | `pg-all-2026-09-22.sql.gz` | falha     | —                      | `stage=restore`: `GRANT CONNECT ON DATABASE nossagrana_prod TO grafana_ro` citava o nome original. Corrigido em `extract-database.sh` + teste. |
-| 2026-09-22 | drill manual #2 a #5 | `pg-all-2026-09-22.sql.gz` | sucesso   | Job 12 s (restore 3 s) | 9 migrations, 12 tabelas obrigatórias, `users`/`familias` não vazias. Agendamento diário habilitado após 4 sucessos consecutivos.              |
+| Data       | Tipo                 | Artefato                                                                                                                                            | Resultado | Duração                                                                                                           | Notas                                                                                                                                                                                                                                                       |
+| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-22 | drill manual #1      | `pg-all-2026-09-22.sql.gz`                                                                                                                          | falha     | —                                                                                                                 | `stage=restore`: `GRANT CONNECT ON DATABASE nossagrana_prod TO grafana_ro` citava o nome original. Corrigido em `extract-database.sh` + teste.                                                                                                              |
+| 2026-09-22 | drill manual #2 a #5 | `pg-all-2026-09-22.sql.gz`                                                                                                                          | sucesso   | Job 12 s (restore 3 s)                                                                                            | 9 migrations, 12 tabelas obrigatórias, `users`/`familias` não vazias. Agendamento diário habilitado após 4 sucessos consecutivos.                                                                                                                           |
+| 2026-11-14 | drill offsite #1     | `pg-all-2026-11-14.sql.gz` (snapshot restic `59a6454d`, 439276374 bytes, sha256 `deccdd9d1f603ce050c1785c279d5a21d34b262a67edb403fa5b8aba09a486dc`) | sucesso   | Job `nossagrana-offsite-drill-202611142001` ~3 min 24 s (download+restore restic 27 s; restore e validação 136 s) | 12 migrations; `row_counts`: users 3, familias 3, usuario_familia 4, transacoes 4, snapshots_mensais 18, categorias 46, templates 19. Problemas: `apk` sem root (init `copy-rclone`) e `restic ls` não recursivo. `backup_age_hours` ~0 (mtime do restore). |

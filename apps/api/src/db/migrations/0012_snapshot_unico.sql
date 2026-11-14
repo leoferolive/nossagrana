@@ -19,7 +19,13 @@
 --   - o índice composto não único antigo é removido: o único o substitui.
 SET LOCAL lock_timeout = '5s';
 --> statement-breakpoint
-LOCK TABLE "snapshots_mensais" IN ACCESS EXCLUSIVE MODE;
+DO $$
+BEGIN
+  -- Dentro de DO porque o LOCK TABLE só vale em bloco de transação, e o
+  -- restore drill (k8s/backup/tests) aplica cada .sql via psql em autocommit.
+  -- No migrator do Drizzle (transação única) o lock vale até o fim da migration.
+  LOCK TABLE "snapshots_mensais" IN ACCESS EXCLUSIVE MODE;
+END $$;
 --> statement-breakpoint
 CREATE TABLE "snapshots_mensais_duplicados" (
 	"id" uuid PRIMARY KEY NOT NULL,

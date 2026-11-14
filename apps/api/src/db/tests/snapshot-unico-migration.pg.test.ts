@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   aplicarMigrations,
+  conectar,
   aplicarMigrationsAntesDe,
   criarBancoDescartavel,
   type BancoDescartavel,
@@ -109,5 +110,40 @@ describe('migration 0012: snapshot único por família e mês (pg)', () => {
     const [movido] = await banco.sql`SELECT id FROM snapshots_mensais_duplicados`;
     expect(mantido!.id).toBe(ids[0]);
     expect(movido!.id).toBe(ids[1]);
+  });
+
+  it('falha rápido por lock_timeout (55P03) com rollback total se outra sessão lê a tabela', async () => {
+    banco = await criarBancoDescartavel();
+    await aplicarMigrationsAntesDe(banco.url, MIGRATION);
+    const concorrente = conectar(banco.url);
+    let liberarLock = () => {};
+    let sinalizar = () => {};
+    const travada = new Promise<void>((resolve) => (sinalizar = resolve));
+    const segurandoLock = concorrente.begin(async (tx) => {
+      // Imita o pg_dump do backup: ACCESS SHARE conflita com o ACCESS EXCLUSIVE do DROP INDEX.
+      await tx.unsafe('LOCK TABLE snapshots_mensais IN ACCESS SHARE MODE');
+      sinalizar();
+      await new Promise<void>((resolve) => (liberarLock = resolve));
+    });
+    await travada;
+
+    const inicio = Date.now();
+    const erro = await aplicarMigrations(banco.url).then(
+      () => null,
+      (e: Error) => (e.cause as { code?: string } | undefined) ?? e,
+    );
+    const duracaoMs = Date.now() - inicio;
+    liberarLock();
+    await segurandoLock;
+    await concorrente.end();
+
+    expect(erro).toMatchObject({ code: '55P03' });
+    expect(duracaoMs).toBeLessThan(15_000);
+    const [auditoria] = await banco.sql`SELECT to_regclass('snapshots_mensais_duplicados') AS t`;
+    expect(auditoria!.t).toBeNull();
+    expect(await existeIndiceUnico(banco.sql)).toBe(false);
+    const [antigo] = await banco.sql`SELECT count(*)::int AS n FROM pg_indexes
+      WHERE indexname = 'snapshots_mensais_familia_mes_idx'`;
+    expect(antigo!.n).toBe(1);
   });
 });

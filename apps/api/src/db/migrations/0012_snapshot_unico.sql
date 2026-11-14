@@ -3,8 +3,12 @@
 --   - lock_timeout: em produção a migration roda no startup do pod
 --     (runMigrations), numa transação única do migrator; se a tabela estiver
 --     travada, falha rápido e o pod tenta de novo. SET LOCAL vale só nela.
---   - LOCK ... SHARE ROW EXCLUSIVE: impede que um pod antigo (rolling deploy)
---     insira uma duplicata entre a deduplicação e a criação do índice.
+--   - LOCK ... ACCESS EXCLUSIVE logo no início (mesmo padrão da 0010): o
+--     DROP INDEX exige ACCESS EXCLUSIVE; pegar um lock menor primeiro e elevá-lo
+--     no meio da transação abre espaço para deadlock/espera. O deploy é
+--     `Recreate` com 1 réplica (sem pod antigo concorrente); os concorrentes
+--     reais são o backup (pg_dump segura ACCESS SHARE) ou uma sessão externa:
+--     nesse caso o lock_timeout falha a migration em 5s, sem estado parcial.
 --   - deduplicação NÃO destrutiva: o canônico é o mais antigo (menor
 --     gerado_em; empate pelo menor id) e permanece intacto — snapshot original
 --     nunca é recalculado nem alterado. As demais linhas são MOVIDAS para
@@ -15,7 +19,7 @@
 --   - o índice composto não único antigo é removido: o único o substitui.
 SET LOCAL lock_timeout = '5s';
 --> statement-breakpoint
-LOCK TABLE "snapshots_mensais" IN SHARE ROW EXCLUSIVE MODE;
+LOCK TABLE "snapshots_mensais" IN ACCESS EXCLUSIVE MODE;
 --> statement-breakpoint
 CREATE TABLE "snapshots_mensais_duplicados" (
 	"id" uuid PRIMARY KEY NOT NULL,

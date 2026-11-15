@@ -52,7 +52,7 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — Primeira parcela com o valor da parcela, corrigindo também
       os parcelamentos já gravados
 - [x] 2026-11-15 — "Vigente desde" do orçamento no mês certo
-- [ ] Gráfico de pizza com uma única categoria
+- [x] 2026-11-15 — Gráfico de pizza com uma única categoria
 - [ ] Acentos nas categorias padrão e nos textos
 - [ ] Tokens com os valores novos e os tokens adicionais
 - [ ] Manrope carregada pelo próprio app
@@ -114,6 +114,8 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 - 2026-11-15 — "Vigente desde" do orçamento e a data fim do aporte recorrente
   do cofrinho deixam de voltar um dia por causa do fuso (`formatMesCurto`,
   `formatDataBR`).
+- 2026-11-15 — Gráfico de pizza desenha o anel completo quando há uma única
+  categoria e deixa de listar categorias zeradas.
 
 ## Decisões fechadas
 

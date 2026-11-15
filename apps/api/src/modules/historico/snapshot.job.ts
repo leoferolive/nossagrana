@@ -7,6 +7,7 @@ import {
   SNAPSHOT_BACKOFF_BASE_MS,
   SNAPSHOT_BATCH_SIZE,
   SNAPSHOT_MAX_TENTATIVAS,
+  descreverErro,
   executarSnapshotsEmLote,
   type LogDoJobSnapshot,
   type RelatorioSnapshot,
@@ -40,6 +41,25 @@ function dependenciasPadrao(log?: LogDoJobSnapshot): DependenciasDoJob {
   };
 }
 
+const FORMATO_MES_REFERENCIA = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/** Mês informado precisa ser `YYYY-MM` válido e não posterior ao mês que está fechando agora. */
+function resolverMesReferencia(informado: string | undefined, agora: Date): string {
+  const atual = getMesReferencia(agora, FUSO_FECHAMENTO);
+  if (informado === undefined) return atual;
+  if (!FORMATO_MES_REFERENCIA.test(informado)) {
+    throw new Error(
+      `mesReferencia inválido: recebido "${informado}", esperado formato YYYY-MM (ex.: ${atual})`,
+    );
+  }
+  if (informado > atual) {
+    throw new Error(
+      `mesReferencia posterior ao mês corrente: recebido "${informado}", esperado no máximo ${atual} (YYYY-MM)`,
+    );
+  }
+  return informado;
+}
+
 /**
  * Gera snapshots das famílias ativas e devolve o relatório (`falhou` = qualquer
  * família sem snapshot após os retries). Snapshot existente nunca é recalculado.
@@ -49,7 +69,7 @@ export async function gerarSnapshotsParaTodasFamilias(
   deps: DependenciasDoJob = dependenciasPadrao(),
 ): Promise<RelatorioSnapshot> {
   const log = deps.log ?? LOG_NAO_OPERACIONAL;
-  const mesReferencia = opcoes.mesReferencia ?? getMesReferencia(deps.agora(), FUSO_FECHAMENTO);
+  const mesReferencia = resolverMesReferencia(opcoes.mesReferencia, deps.agora());
   const familiaIds = await deps.repo.listFamiliaIdsAtivas();
   return executarSnapshotsEmLote(familiaIds, mesReferencia, {
     gerador: new SnapshotService(deps.repo, log),
@@ -68,20 +88,25 @@ export async function gerarSnapshotsParaTodasFamilias(
 export async function executarCicloMensal(
   deps: DependenciasDoJob,
 ): Promise<RelatorioSnapshot | null> {
-  if (!ehUltimoDiaDoMes(deps.agora(), FUSO_FECHAMENTO)) return null;
+  const agora = deps.agora();
+  if (!ehUltimoDiaDoMes(agora, FUSO_FECHAMENTO)) return null;
   try {
-    return await gerarSnapshotsParaTodasFamilias({}, deps);
+    const mesReferencia = getMesReferencia(agora, FUSO_FECHAMENTO);
+    return await gerarSnapshotsParaTodasFamilias(
+      { mesReferencia },
+      { ...deps, agora: () => agora },
+    );
   } catch (erro) {
-    const mensagem = erro instanceof Error ? (erro.message.split('\n')[0] ?? '') : String(erro);
     (deps.log ?? LOG_NAO_OPERACIONAL).error(
-      { erro: mensagem.slice(0, 200) },
+      { erro: descreverErro(erro) },
       'Job de snapshot mensal abortado antes de processar as famílias',
     );
     return null;
   }
 }
 
-// 23:55 BRT dos dias 28-31; a checagem do último dia é feita no fuso de Brasília, não no do pod (UTC).
+// 23:55 BRT dos dias 28-31. DST: Intl e node-cron dependem do tzdata do Node; se as regras
+// de horário de verão mudarem, basta atualizar a imagem/Node. A checagem do último dia é feita no fuso de Brasília, não no do pod (UTC).
 export function iniciarSnapshotJob(log?: LogDoJobSnapshot): void {
   cron.schedule(
     '55 23 28-31 * *',

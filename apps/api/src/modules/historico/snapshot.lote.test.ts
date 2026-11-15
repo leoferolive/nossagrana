@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  LIMITE_MENSAGEM_ERRO,
   executarSnapshotsEmLote,
   type DependenciasDoLote,
   type GeradorDeSnapshot,
@@ -112,6 +113,14 @@ describe('executarSnapshotsEmLote', () => {
       erro: 'Failed query: select x from y',
     });
     expect(JSON.stringify(log.erros)).not.toContain('token-secreto');
+  });
+
+  it('trunca em 200 caracteres a mensagem de erro de 300', async () => {
+    const erro = new Error('x'.repeat(300));
+    const { deps } = montar({ f1: [erro, erro, erro] });
+    const r = await executarSnapshotsEmLote(['f1'], '2026-03', deps);
+    expect(r.falhas[0]!.erro).toBe('x'.repeat(LIMITE_MENSAGEM_ERRO));
+    expect(LIMITE_MENSAGEM_ERRO).toBe(200);
   });
 
   it('log final em error resume o job falho; sem falha não loga error', async () => {

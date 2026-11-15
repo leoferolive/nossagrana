@@ -7,7 +7,8 @@ export const SNAPSHOT_BATCH_SIZE = 50;
 export const SNAPSHOT_MAX_TENTATIVAS = 3;
 /** Backoff exponencial entre tentativas: base * 2^(tentativa-1) => 500ms, 1000ms. */
 export const SNAPSHOT_BACKOFF_BASE_MS = 500;
-const LIMITE_MENSAGEM_ERRO = 200;
+/** Limite da mensagem de erro logada/reportada. */
+export const LIMITE_MENSAGEM_ERRO = 200;
 
 /** Logger do job: subconjunto do logger do Fastify (`app.log`). */
 export interface LogDoJobSnapshot extends LogDoSnapshot {
@@ -54,9 +55,29 @@ export interface DependenciasDoLote {
 }
 
 /** Só a 1ª linha, truncada: erros do driver trazem os parâmetros da query (valores financeiros) nas linhas seguintes. */
-function descreverErro(erro: unknown): string {
+export function descreverErro(erro: unknown): string {
   const mensagem = erro instanceof Error ? erro.message : String(erro);
   return (mensagem.split('\n')[0] ?? '').slice(0, LIMITE_MENSAGEM_ERRO);
+}
+
+/** Uma tentativa: devolve o resultado em caso de sucesso ou a mensagem do erro. */
+async function tentarUmaVez(
+  familiaId: string,
+  mesReferencia: string,
+  tentativa: number,
+  gerador: GeradorDeSnapshot,
+): Promise<ResultadoFamilia | string> {
+  try {
+    const { criado } = await gerador.gerarSnapshot(familiaId, mesReferencia);
+    return { familiaId, status: criado ? 'criado' : 'existente', tentativas: tentativa };
+  } catch (erro) {
+    return descreverErro(erro);
+  }
+}
+
+async function esperarSeHouverProxima(tentativa: number, deps: DependenciasDoLote): Promise<void> {
+  if (tentativa >= deps.tentativasMaximas) return;
+  await deps.aguardar(deps.backoffBaseMs * 2 ** (tentativa - 1));
 }
 
 async function processarFamilia(
@@ -66,15 +87,10 @@ async function processarFamilia(
 ): Promise<ResultadoFamilia> {
   let ultimoErro = '';
   for (let tentativa = 1; tentativa <= deps.tentativasMaximas; tentativa++) {
-    try {
-      const { criado } = await deps.gerador.gerarSnapshot(familiaId, mesReferencia);
-      return { familiaId, status: criado ? 'criado' : 'existente', tentativas: tentativa };
-    } catch (erro) {
-      ultimoErro = descreverErro(erro);
-      if (tentativa < deps.tentativasMaximas) {
-        await deps.aguardar(deps.backoffBaseMs * 2 ** (tentativa - 1));
-      }
-    }
+    const saida = await tentarUmaVez(familiaId, mesReferencia, tentativa, deps.gerador);
+    if (typeof saida !== 'string') return saida;
+    ultimoErro = saida;
+    await esperarSeHouverProxima(tentativa, deps);
   }
   return { familiaId, status: 'falhou', tentativas: deps.tentativasMaximas, erro: ultimoErro };
 }

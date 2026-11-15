@@ -69,6 +69,35 @@ describe('gerarSnapshotsParaTodasFamilias', () => {
   });
 });
 
+describe('validação de mesReferencia', () => {
+  it.each(['2026-13', '2026-00', '26-05', '2026-5', 'abc', '2026-05-01'])(
+    'recusa formato inválido %s com erro acionável',
+    async (mes) => {
+      const { deps } = montar(new Date('2026-09-10T12:00:00Z'));
+      await expect(gerarSnapshotsParaTodasFamilias({ mesReferencia: mes }, deps)).rejects.toThrow(
+        new RegExp(`recebido "${mes}".*YYYY-MM`),
+      );
+    },
+  );
+
+  it('recusa mês posterior ao mês que está fechando agora', async () => {
+    const { deps } = montar(new Date('2026-09-10T12:00:00Z'));
+    await expect(
+      gerarSnapshotsParaTodasFamilias({ mesReferencia: '2026-10' }, deps),
+    ).rejects.toThrow(/posterior.*recebido "2026-10".*2026-09/);
+  });
+
+  it('aceita o mês atual e meses passados', async () => {
+    const { deps } = montar(new Date('2026-09-10T12:00:00Z'));
+    await expect(
+      gerarSnapshotsParaTodasFamilias({ mesReferencia: '2026-09' }, deps),
+    ).resolves.toBeDefined();
+    await expect(
+      gerarSnapshotsParaTodasFamilias({ mesReferencia: '2026-05' }, deps),
+    ).resolves.toBeDefined();
+  });
+});
+
 describe('executarCicloMensal', () => {
   it('não gera snapshot em 30/03 23:55 BRT (02:55Z do dia 31)', async () => {
     const { repo, deps } = montar(new Date('2026-03-31T02:55:00Z'));

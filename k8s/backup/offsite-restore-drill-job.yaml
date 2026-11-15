@@ -1,0 +1,232 @@
+# Drill MANUAL de restore a partir da cópia OFFSITE (restic no Google Drive).
+# Issue #44. Ver docs/backup/RUNBOOK.md ("Drill offsite (Google Drive)").
+#
+# Por que existe: o CronJob `nossagrana-restore-drill` restaura só o dump do PVC
+# `postgres-backup`, que fica no mesmo disco do banco. Este Job prova que o
+# cenário "perda do nó/site" funciona de fato: baixa o dump mais recente do
+# repositório restic remoto, restaura-o no mesmo PostgreSQL descartável e roda o
+# mesmo `restore-drill.sh`. Não é CronJob e NÃO está no kustomization.yaml
+# (`kubectl apply -k k8s/backup` nunca o cria).
+#
+# Como rodar (o ConfigMap do script tem hash no nome; a fonte da verdade é o que
+# o CronJob aplicado no cluster referencia, então o nome é lido de lá):
+#
+#   CM=$(kubectl get cronjob nossagrana-restore-drill -n database -o \
+#     jsonpath='{.spec.jobTemplate.spec.template.spec.volumes[?(@.name=="drill-script")].configMap.name}')
+#   sed "s/__DRILL_SCRIPT_CONFIGMAP__/$CM/" k8s/backup/offsite-restore-drill-job.yaml |
+#     kubectl create -f -
+#   kubectl logs -n database -f job/<nome impresso> -c restore-drill
+#
+# `create` (não `apply`) porque o nome é gerado (generateName): cada execução é
+# um Job novo e fica como evidência por 24 h (ttlSecondsAfterFinished).
+#
+# Pré-requisito: Secret `restic-backup-secrets` no ns `database` (chaves
+# `restic-password` e `rclone.conf`), o mesmo usado pelo CronJob `restic-backup`.
+# Esse Secret é do restic offsite, não do Postgres de produção: o pod continua
+# sem nenhuma credencial do Postgres.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: nossagrana-offsite-drill-
+  namespace: database
+  labels:
+    app.kubernetes.io/name: nossagrana-offsite-drill
+    app.kubernetes.io/part-of: nossagrana-backup
+spec:
+  # Sem retry: um drill que falha é evidência.
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nossagrana-offsite-drill
+        app.kubernetes.io/part-of: nossagrana-backup
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # O pod roda como uid 999, então `apk add rclone` na imagem do restic
+        # falha. Copiar o binário estático do rclone para um emptyDir contorna.
+        - name: copy-rclone
+          image: rclone/rclone:1.68
+          command:
+            ['/bin/sh', '-c', 'cp /usr/local/bin/rclone /tools/rclone && chmod 755 /tools/rclone']
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+          volumeMounts:
+            - name: rclone-bin
+              mountPath: /tools
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+        # `latest` de propósito: o repositório é escrito pelo restic do cluster
+        # (também sem pin); ler com versão >= a que escreveu é o lado seguro.
+        - name: fetch-offsite
+          image: restic/restic:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              export PATH=/tools:$PATH HOME=/cache RCLONE_CONFIG=/cache/rclone.conf
+              cp /secrets/rclone.conf /cache/rclone.conf
+              # O token do Drive não pode sobrar no disco do nó até o TTL do Job.
+              trap 'rm -f /cache/rclone.conf' EXIT
+              export RESTIC_PASSWORD_FILE=/secrets/restic-password
+              export RESTIC_REPOSITORY=rclone:gdrive:backups/elitedesk-restic-repo
+              export RESTIC_CACHE_DIR=/cache
+              SNAP=$(restic --retry-lock 15m snapshots --tag database --host database --latest 1 --json | sed -E 's/.*"short_id":"([0-9a-f]+)".*/\1/')
+              echo "snapshot offsite: $SNAP"
+              # `restic ls SNAP /data` não é recursivo: listar tudo e filtrar.
+              LATEST=$(restic --retry-lock 15m ls "$SNAP" | grep -E '/pg-all-[0-9-]+\.sql\.gz$' | sort | tail -1)
+              echo "dump escolhido: $LATEST"
+              [ -n "$LATEST" ] || { echo "nenhum pg-all no snapshot"; restic --retry-lock 15m ls "$SNAP" | head -20; exit 3; }
+              T0=$(date +%s)
+              restic --retry-lock 15m restore "$SNAP" --target /tmp/r --include "$LATEST" --include "$LATEST.sha256" >/dev/null
+              # -p preserva o mtime gravado pelo restic (hora do dump original): é ele que
+              # faz o restore-drill.sh calcular a idade real e disparar MAX_BACKUP_AGE_HOURS.
+              cp -p "/tmp/r$LATEST" /backup/
+              if [ -f "/tmp/r$LATEST.sha256" ]; then cp -p "/tmp/r$LATEST.sha256" /backup/; fi
+              ls -la /backup
+              echo "download+restore restic: $(( $(date +%s) - T0 ))s"
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: restic-secrets
+              mountPath: /secrets
+              readOnly: true
+            - name: restic-cache
+              mountPath: /cache
+            - name: rclone-bin
+              mountPath: /tools
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+        # Sidecar nativo, idêntico ao do CronJob do drill diário.
+        - name: scratch-postgres
+          image: pgvector/pgvector:pg17
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          args:
+            - -c
+            - listen_addresses=127.0.0.1
+            - -c
+            - fsync=off
+            - -c
+            - synchronous_commit=off
+            - -c
+            - full_page_writes=off
+            - -c
+            - shared_buffers=32MB
+          env:
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          startupProbe:
+            exec:
+              command: ['pg_isready', '-h', '127.0.0.1', '-U', 'postgres']
+            periodSeconds: 2
+            failureThreshold: 60
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+          volumeMounts:
+            - name: scratch-data
+              mountPath: /var/lib/postgresql/data
+            - name: scratch-run
+              mountPath: /var/run/postgresql
+      containers:
+        - name: restore-drill
+          image: pgvector/pgvector:pg17
+          imagePullPolicy: IfNotPresent
+          command: ['sh', '/drill/restore-drill.sh']
+          env:
+            - name: PGHOST
+              value: 127.0.0.1
+            - name: PGUSER
+              value: postgres
+            - name: BACKUP_DIR
+              value: /backup
+            - name: SOURCE_DB_NAME
+              value: nossagrana_prod
+            - name: MAX_BACKUP_AGE_HOURS
+              value: '26'
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+            - name: drill-script
+              mountPath: /drill
+              readOnly: true
+            - name: drill-tmp
+              mountPath: /tmp
+      volumes:
+        - name: backup
+          emptyDir: {}
+        - name: drill-script
+          configMap:
+            # Substituído no `kubectl create` (ver cabeçalho).
+            name: __DRILL_SCRIPT_CONFIGMAP__
+        - name: scratch-data
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: scratch-run
+          emptyDir:
+            sizeLimit: 16Mi
+        - name: drill-tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: restic-secrets
+          secret:
+            secretName: restic-backup-secrets
+            # 288 decimal = 0440 octal: legível pelo grupo (fsGroup 999), pois o pod não é root.
+            defaultMode: 288
+        - name: restic-cache
+          emptyDir: {}
+        - name: rclone-bin
+          emptyDir: {}

@@ -85,19 +85,23 @@ spec:
               set -eu
               export PATH=/tools:$PATH HOME=/cache RCLONE_CONFIG=/cache/rclone.conf
               cp /secrets/rclone.conf /cache/rclone.conf
+              # O token do Drive não pode sobrar no disco do nó até o TTL do Job.
+              trap 'rm -f /cache/rclone.conf' EXIT
               export RESTIC_PASSWORD_FILE=/secrets/restic-password
               export RESTIC_REPOSITORY=rclone:gdrive:backups/elitedesk-restic-repo
               export RESTIC_CACHE_DIR=/cache
-              SNAP=$(restic snapshots --tag database --host database --latest 1 --json | sed -E 's/.*"short_id":"([0-9a-f]+)".*/\1/')
+              SNAP=$(restic --retry-lock 15m snapshots --tag database --host database --latest 1 --json | sed -E 's/.*"short_id":"([0-9a-f]+)".*/\1/')
               echo "snapshot offsite: $SNAP"
               # `restic ls SNAP /data` não é recursivo: listar tudo e filtrar.
-              LATEST=$(restic ls "$SNAP" | grep -E '/pg-all-[0-9-]+\.sql\.gz$' | sort | tail -1)
+              LATEST=$(restic --retry-lock 15m ls "$SNAP" | grep -E '/pg-all-[0-9-]+\.sql\.gz$' | sort | tail -1)
               echo "dump escolhido: $LATEST"
-              [ -n "$LATEST" ] || { echo "nenhum pg-all no snapshot"; restic ls "$SNAP" | head -20; exit 3; }
+              [ -n "$LATEST" ] || { echo "nenhum pg-all no snapshot"; restic --retry-lock 15m ls "$SNAP" | head -20; exit 3; }
               T0=$(date +%s)
-              restic restore "$SNAP" --target /tmp/r --include "$LATEST" --include "$LATEST.sha256" >/dev/null
-              cp "/tmp/r$LATEST" /backup/
-              if [ -f "/tmp/r$LATEST.sha256" ]; then cp "/tmp/r$LATEST.sha256" /backup/; fi
+              restic --retry-lock 15m restore "$SNAP" --target /tmp/r --include "$LATEST" --include "$LATEST.sha256" >/dev/null
+              # -p preserva o mtime gravado pelo restic (hora do dump original): é ele que
+              # faz o restore-drill.sh calcular a idade real e disparar MAX_BACKUP_AGE_HOURS.
+              cp -p "/tmp/r$LATEST" /backup/
+              if [ -f "/tmp/r$LATEST.sha256" ]; then cp -p "/tmp/r$LATEST.sha256" /backup/; fi
               ls -la /backup
               echo "download+restore restic: $(( $(date +%s) - T0 ))s"
           volumeMounts:

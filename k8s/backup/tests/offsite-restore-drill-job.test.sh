@@ -7,7 +7,8 @@
 # Uso: bash k8s/backup/tests/offsite-restore-drill-job.test.sh (requer jq e python3 com PyYAML)
 set -euo pipefail
 
-JOB_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/offsite-restore-drill-job.yaml"
+# JOB_FILE pode ser sobrescrito para testes de mutação.
+JOB_FILE="${JOB_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/offsite-restore-drill-job.yaml}"
 JOB_JSON="$(python3 -c 'import sys,json,yaml; print(json.dumps(yaml.safe_load(open(sys.argv[1]))))' "$JOB_FILE")"
 POD='.spec.template.spec'
 PASSED=0
@@ -42,6 +43,13 @@ only_restic_secret() {
   job_is "[$POD.volumes[] | select(.secret != null) | .secret.secretName] == [\"restic-backup-secrets\"]" &&
     ! grep -Eq 'secretKeyRef|secretRef|PGPASSWORD|PGPASSFILE' "$JOB_FILE"
 }
+# Só o fetch-offsite pode montar o Secret e o cache (com rclone.conf).
+only_fetch_offsite_mounts_restic() {
+  job_is "[$POD.initContainers[], $POD.containers[] | select(any(.volumeMounts[]?; .name == \"restic-secrets\" or .name == \"restic-cache\")) | .name] == [\"fetch-offsite\"]"
+}
+restic_commands_wait_for_lock() {
+  ! grep -E '^[^#]*restic (snapshots|ls|restore)' "$JOB_FILE" | grep -v -- '--retry-lock' | grep -q .
+}
 restic_secret_is_group_readable_only() { job_is "$POD.volumes[] | select(.secret != null) | .secret.defaultMode == 288"; }
 pghost_is_loopback_only() {
   job_is "$POD.containers[0].env[] | select(.name == \"PGHOST\") | .value == \"127.0.0.1\"" &&
@@ -65,6 +73,8 @@ check "sem token de ServiceAccount no pod" no_service_account_token
 check "todos os containers sem escalada e sem capabilities" all_containers_drop_caps
 check "container do drill com rootfs somente leitura" main_container_is_read_only_fs
 check "único Secret é o do restic offsite, sem credencial do Postgres" only_restic_secret
+check "só o fetch-offsite monta o Secret e o cache do restic" only_fetch_offsite_mounts_restic
+check "comandos restic usam --retry-lock" restic_commands_wait_for_lock
 check "Secret do restic com modo 0440" restic_secret_is_group_readable_only
 check "PGHOST do drill é só o loopback do sidecar" pghost_is_loopback_only
 check "volume backup é emptyDir e montado somente leitura no drill" backup_is_scratch_and_read_only

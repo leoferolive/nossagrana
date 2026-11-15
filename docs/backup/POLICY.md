@@ -59,7 +59,10 @@ restore a partir dele ser exercitado e registrado.
 - O cenário de perda do nó/site foi exercitado em 2026-11-14 com um drill a
   partir da cópia offsite (restic no Google Drive): restore em ~3,5 min (Job
   total 3 min 24 s), sem contar o tempo de reconstruir o cluster. Ver runbook,
-  "Drill offsite (Google Drive)".
+  "Drill offsite (Google Drive)". Atenção: o drill usou o Secret
+  `restic-backup-secrets` de dentro do cluster. Num cenário real de perda do
+  site, a recuperação depende da senha do restic e do `rclone.conf` guardados
+  **fora** do cluster; essa cópia não foi exercitada.
 
 ## 4. Integridade e checksum
 

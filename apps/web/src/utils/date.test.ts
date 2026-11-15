@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { formatMesLabel, getCurrentMonth, getTodayLocalISO, shiftMonth } from './date';
+import {
+  formatDataBR,
+  formatMesCurto,
+  formatMesLabel,
+  getCurrentMonth,
+  getTodayLocalISO,
+  shiftMonth,
+} from './date';
 
 describe('getCurrentMonth', () => {
   afterEach(() => {
@@ -99,5 +106,28 @@ describe('getTodayLocalISO', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-05T15:00:00Z'));
     expect(getTodayLocalISO()).toBe('2026-03-05');
+  });
+});
+
+describe('formatMesCurto', () => {
+  // Regressão: new Date("2026-11-01") é UTC; em São Paulo vira 31/10 e o
+  // orçamento criado em novembro aparecia como "out. de 2026".
+  it('retorna "nov. de 2026" para "2026-11"', () => {
+    expect(formatMesCurto('2026-11')).toBe('nov. de 2026');
+  });
+
+  it('retorna "jan. de 2026" para "2026-01"', () => {
+    expect(formatMesCurto('2026-01')).toBe('jan. de 2026');
+  });
+});
+
+describe('formatDataBR', () => {
+  // Regressão: new Date("2026-12-31") é UTC; em São Paulo vira 30/12.
+  it('retorna "31/12/2026" para "2026-12-31"', () => {
+    expect(formatDataBR('2026-12-31')).toBe('31/12/2026');
+  });
+
+  it('retorna "01/03/2026" para "2026-03-01"', () => {
+    expect(formatDataBR('2026-03-01')).toBe('01/03/2026');
   });
 });

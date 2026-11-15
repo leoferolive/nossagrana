@@ -51,7 +51,7 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — Data padrão do lançamento em horário local
 - [x] 2026-11-15 — Primeira parcela com o valor da parcela, corrigindo também
       os parcelamentos já gravados
-- [ ] "Vigente desde" do orçamento no mês certo
+- [x] 2026-11-15 — "Vigente desde" do orçamento no mês certo
 - [ ] Gráfico de pizza com uma única categoria
 - [ ] Acentos nas categorias padrão e nos textos
 - [ ] Tokens com os valores novos e os tokens adicionais
@@ -111,6 +111,9 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 - 2026-11-15 — O pai de um parcelamento passa a valer a parcela; a migration
   `0013_parcela_pai_valor` corrige os já gravados e marca como divergentes os
   snapshots dos meses afetados.
+- 2026-11-15 — "Vigente desde" do orçamento e a data fim do aporte recorrente
+  do cofrinho deixam de voltar um dia por causa do fuso (`formatMesCurto`,
+  `formatDataBR`).
 
 ## Decisões fechadas
 

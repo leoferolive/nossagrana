@@ -5,7 +5,7 @@ import { Target } from 'lucide-react';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
-import { getCurrentMonth } from '../utils/date';
+import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
 
 interface OrcamentoItem {
@@ -169,11 +169,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
           <h1 className="text-xl font-bold text-text">Orçamento Mensal</h1>
           {orcamentos.length > 0 && orcamentos[0].vigenciaInicio && (
             <p className="text-xs text-text-muted">
-              Vigente desde{' '}
-              {new Date(orcamentos[0].vigenciaInicio + '-01').toLocaleDateString('pt-BR', {
-                month: 'short',
-                year: 'numeric',
-              })}
+              Vigente desde {formatMesCurto(orcamentos[0].vigenciaInicio)}
             </p>
           )}
         </div>

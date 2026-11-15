@@ -8,6 +8,7 @@ import { CofrinhoRetiradaModal } from '../components/cofrinho-retirada-modal';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { novaChaveIdempotencia } from '../services/idempotencia';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
+import { formatDataBR } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
 
 interface CofrinhoDetalhePageProps {
@@ -195,7 +196,7 @@ export function CofrinhoDetalhePage({
                 <p>
                   Ate:{' '}
                   <span className="font-semibold text-text">
-                    {new Date(aporteRecorrenteAtivo.dataFimRecorrencia).toLocaleDateString('pt-BR')}
+                    {formatDataBR(aporteRecorrenteAtivo.dataFimRecorrencia)}
                   </span>
                 </p>
               )}

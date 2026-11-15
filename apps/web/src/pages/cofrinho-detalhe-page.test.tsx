@@ -427,7 +427,7 @@ describe('CofrinhoDetalhePage', () => {
           transacaoPaiId: 'tx-rec-1',
           valor: '200.00',
           frequencia: 'mensal',
-          dataFimRecorrencia: '2026-12-31T12:00:00.000Z',
+          dataFimRecorrencia: '2026-12-31', // formato real da API: coluna `date`, sem hora
         },
       },
     });

@@ -1,6 +1,6 @@
 # Nova UI — Entrega 1: base e tema claro
 
-**Estado:** aguardando aprovação do usuário. **Data:** 2026-11-15.
+**Estado:** aprovado pelo usuário em 2026-11-15. **Data:** 2026-11-15.
 Direção e sistema visual: [`docs/nova-ui/README.md`](../../nova-ui/README.md).
 Evidências dos problemas: [`docs/nova-ui/auditoria.md`](../../nova-ui/auditoria.md).
 

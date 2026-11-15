@@ -26,11 +26,11 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-15:** direção aprovada, ordem das entregas confirmada e
-desenho da Entrega 1 escrito; nenhuma linha de código do redesenho escrita.
-**Próximo passo:** o usuário aprovar o
-[desenho da Entrega 1](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md);
-em seguida, o plano em `docs/superpowers/plans/`.
+**Estado em 2026-11-15:** direção aprovada, ordem das entregas confirmada, desenho
+da Entrega 1 aprovado e plano do PR 1 escrito; nenhuma linha de código do
+redesenho escrita. **Próximo passo:** executar o
+[plano do PR 1 (Correções)](../superpowers/plans/2026-11-15-nova-ui-entrega-1-pr1-correcoes.md).
+O PR 2 (Base visual) ganha plano próprio depois do merge do PR 1.
 
 ### Descoberta
 
@@ -47,7 +47,7 @@ Sai em dois PRs em sequência: correções (as cinco primeiras tarefas) e base
 visual (as demais). Desenho em
 [`2026-11-15-nova-ui-entrega-1-design.md`](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
 
-- [ ] Desenho da Entrega 1 aprovado pelo usuário
+- [x] 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário
 - [ ] Data padrão do lançamento em horário local
 - [ ] Primeira parcela com o valor da parcela, corrigindo também os
       parcelamentos já gravados
@@ -104,6 +104,8 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 - 2026-11-15 — O usuário delegou as respostas das perguntas em aberto; ordem das
   entregas, tema, primeira parcela e fonte decididas (decisões 13 a 16). Desenho
   da Entrega 1 escrito, aguardando aprovação.
+- 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário. Plano do PR 1
+  (Correções) escrito.
 
 ## Decisões fechadas
 

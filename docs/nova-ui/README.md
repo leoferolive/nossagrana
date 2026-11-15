@@ -48,7 +48,7 @@ visual (as demais). Desenho em
 [`2026-11-15-nova-ui-entrega-1-design.md`](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
 
 - [x] 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário
-- [ ] Data padrão do lançamento em horário local
+- [x] 2026-11-15 — Data padrão do lançamento em horário local
 - [ ] Primeira parcela com o valor da parcela, corrigindo também os
       parcelamentos já gravados
 - [ ] "Vigente desde" do orçamento no mês certo
@@ -106,6 +106,8 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
   da Entrega 1 escrito, aguardando aprovação.
 - 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário. Plano do PR 1
   (Correções) escrito.
+- 2026-11-15 — Data padrão do lançamento passa a usar o dia local
+  (`getTodayLocalISO`); os testes do Web rodam com o fuso fixo em São Paulo.
 
 ## Decisões fechadas
 

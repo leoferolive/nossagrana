@@ -2,6 +2,12 @@ import path from 'node:path';
 
 import { defineConfig } from 'vitest/config';
 
+// Testes de data precisam dar o mesmo resultado em qualquer máquina. Com o fuso
+// em UTC (caso do CI) os bugs de "dia seguinte depois das 21h" não aparecem,
+// então o fuso fica fixo no da família. O pool é `forks`: os processos filhos
+// herdam a variável.
+process.env.TZ = 'America/Sao_Paulo';
+
 export default defineConfig({
   resolve: {
     alias: {

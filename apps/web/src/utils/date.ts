@@ -7,6 +7,19 @@ export function getCurrentMonth(): string {
 }
 
 /**
+ * Returns today's date in the device's timezone, in YYYY-MM-DD format.
+ *
+ * Uses the local getters because `toISOString()` returns the UTC date; after
+ * 21h in America/Sao_Paulo (GMT-3) that is already the next day.
+ */
+export function getTodayLocalISO(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/**
  * Shifts a month reference (YYYY-MM) by a given delta (positive = forward, negative = backward).
  */
 export function shiftMonth(mesReferencia: string, delta: number): string {

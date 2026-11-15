@@ -91,7 +91,7 @@ export const CofrinhoAporteModal = ({
           </label>
 
           {/* Info */}
-          <p className="text-xs text-text-muted">Sera registrado como saida no mes atual.</p>
+          <p className="text-xs text-text-muted">Será registrado como saída no mês atual.</p>
         </div>
 
         {/* Ações */}

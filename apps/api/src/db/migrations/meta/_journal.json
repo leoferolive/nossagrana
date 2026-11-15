@@ -99,6 +99,13 @@
       "when": 1794775705549,
       "tag": "0013_parcela_pai_valor",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794776506322,
+      "tag": "0014_categorias_padrao_acentos",
+      "breakpoints": true
     }
   ]
 }

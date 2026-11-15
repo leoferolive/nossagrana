@@ -110,14 +110,14 @@ describe('database schema', () => {
   });
 
   it('defines categorias padrao for seed', () => {
-    expect(CATEGORIAS_PADRAO_RECEITA).toEqual(['Salario', 'Bonus', 'Investimentos', 'Outros']);
+    expect(CATEGORIAS_PADRAO_RECEITA).toEqual(['Salário', 'Bônus', 'Investimentos', 'Outros']);
     expect(CATEGORIAS_PADRAO_DESPESA).toEqual([
       'Moradia',
-      'Alimentacao',
+      'Alimentação',
       'Transporte',
-      'Saude',
+      'Saúde',
       'Lazer',
-      'Educacao',
+      'Educação',
       'Assinaturas',
       'Compras',
       'Outros',

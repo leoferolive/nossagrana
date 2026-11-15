@@ -14,7 +14,7 @@ interface TemplatePadrao {
 
 export const TEMPLATES_PADRAO: TemplatePadrao[] = [
   // --- Receitas ---
-  { nome: 'Salário', tipo: 'receita', categoria: 'Salario', ordem: 0 },
+  { nome: 'Salário', tipo: 'receita', categoria: 'Salário', ordem: 0 },
   { nome: 'Renda Extra', tipo: 'receita', categoria: 'Outros', ordem: 1 },
 
   // --- Moradia ---
@@ -26,7 +26,7 @@ export const TEMPLATES_PADRAO: TemplatePadrao[] = [
   { nome: 'Internet', tipo: 'despesa', categoria: 'Moradia', ordem: 7 },
 
   // --- Alimentação ---
-  { nome: 'Supermercado', tipo: 'despesa', categoria: 'Alimentacao', ordem: 8 },
+  { nome: 'Supermercado', tipo: 'despesa', categoria: 'Alimentação', ordem: 8 },
 
   // --- Transporte ---
   { nome: 'Combustível', tipo: 'despesa', categoria: 'Transporte', ordem: 9 },
@@ -34,11 +34,11 @@ export const TEMPLATES_PADRAO: TemplatePadrao[] = [
   { nome: 'Estacionamento', tipo: 'despesa', categoria: 'Transporte', ordem: 11 },
 
   // --- Saúde ---
-  { nome: 'Plano de Saúde', tipo: 'despesa', categoria: 'Saude', ordem: 12 },
-  { nome: 'Medicamentos', tipo: 'despesa', categoria: 'Saude', ordem: 13 },
+  { nome: 'Plano de Saúde', tipo: 'despesa', categoria: 'Saúde', ordem: 12 },
+  { nome: 'Medicamentos', tipo: 'despesa', categoria: 'Saúde', ordem: 13 },
 
   // --- Educação ---
-  { nome: 'Escola / Faculdade', tipo: 'despesa', categoria: 'Educacao', ordem: 14 },
+  { nome: 'Escola / Faculdade', tipo: 'despesa', categoria: 'Educação', ordem: 14 },
 
   // --- Assinaturas ---
   { nome: 'Celular', tipo: 'despesa', categoria: 'Assinaturas', ordem: 15 },

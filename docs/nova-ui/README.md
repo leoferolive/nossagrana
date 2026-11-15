@@ -53,7 +53,7 @@ visual (as demais). Desenho em
       os parcelamentos já gravados
 - [x] 2026-11-15 — "Vigente desde" do orçamento no mês certo
 - [x] 2026-11-15 — Gráfico de pizza com uma única categoria
-- [ ] Acentos nas categorias padrão e nos textos
+- [x] 2026-11-15 — Acentos nas categorias padrão e nos textos
 - [ ] Tokens com os valores novos e os tokens adicionais
 - [ ] Manrope carregada pelo próprio app
 - [ ] Fundo do `body`, `theme-color` e manifest na paleta nova
@@ -116,6 +116,9 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
   `formatDataBR`).
 - 2026-11-15 — Gráfico de pizza desenha o anel completo quando há uma única
   categoria e deixa de listar categorias zeradas.
+- 2026-11-15 — Categorias padrão com acento (seed e migration
+  `0014_categorias_padrao_acentos` para as famílias existentes) e textos de
+  cofrinho e onboarding acentuados.
 
 ## Decisões fechadas
 

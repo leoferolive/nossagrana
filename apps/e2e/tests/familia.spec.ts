@@ -91,15 +91,15 @@ test.describe('Família', () => {
   }) => {
     await gotoOnboarding(page, authContext);
 
-    // "Criar familia" is the default mode.
-    await expect(page.getByRole('form', { name: 'Criar familia' })).toBeVisible({
+    // "Criar família" is the default mode.
+    await expect(page.getByRole('form', { name: 'Criar família' })).toBeVisible({
       timeout: 10_000,
     });
 
     await page.getByLabel('Nome da familia').fill('Família E2E Criação');
     await page
-      .getByRole('form', { name: 'Criar familia' })
-      .getByRole('button', { name: 'Criar familia' })
+      .getByRole('form', { name: 'Criar família' })
+      .getByRole('button', { name: 'Criar família' })
       .click();
 
     // After creating, the app moves to FamilySettingsPage.

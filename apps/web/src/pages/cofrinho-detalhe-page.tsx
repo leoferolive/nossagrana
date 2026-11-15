@@ -194,7 +194,7 @@ export function CofrinhoDetalhePage({
               </p>
               {aporteRecorrenteAtivo.dataFimRecorrencia && (
                 <p>
-                  Ate:{' '}
+                  Até:{' '}
                   <span className="font-semibold text-text">
                     {formatDataBR(aporteRecorrenteAtivo.dataFimRecorrencia)}
                   </span>
@@ -203,20 +203,20 @@ export function CofrinhoDetalhePage({
             </div>
             <button
               type="button"
-              aria-label="Cancelar recorrencia"
+              aria-label="Cancelar recorrência"
               onClick={() => void handleCancelarRecorrente()}
               className="mt-3 rounded-lg border border-danger px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/10"
             >
-              Cancelar recorrencia
+              Cancelar recorrência
             </button>
           </div>
         )}
 
         {/* Movimentacoes list */}
         <div>
-          <h2 className="mb-3 text-sm font-bold text-text">Movimentacoes</h2>
+          <h2 className="mb-3 text-sm font-bold text-text">Movimentações</h2>
           {movimentacoes.length === 0 ? (
-            <p className="text-sm text-text-muted">Nenhuma movimentacao registrada.</p>
+            <p className="text-sm text-text-muted">Nenhuma movimentação registrada.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {movimentacoes.map((mov) => {

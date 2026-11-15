@@ -416,7 +416,7 @@ describe('CofrinhoDetalhePage', () => {
       />,
     );
 
-    expect(screen.getByText(/nenhuma movimentacao/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhuma movimentação/i)).toBeInTheDocument();
   });
 
   it('exibe dataFimRecorrencia quando presente', () => {
@@ -505,6 +505,83 @@ describe('CofrinhoDetalhePage', () => {
       expect(chaves[0]).toMatch(/^[0-9a-f-]{36}$/);
       expect(chaves[1]).toMatch(/^[0-9a-f-]{36}$/);
       expect(chaves[0]).not.toBe(chaves[1]);
+    });
+  });
+
+  // Nova UI, Entrega 1: textos da tela e dos modais de cofrinho estavam sem acento.
+  describe('textos com acento', () => {
+    const renderPagina = () =>
+      render(
+        <CofrinhoDetalhePage
+          familiaId={familiaId}
+          cofrinhoId={cofrinhoId}
+          onBack={vi.fn()}
+          onNavigate={vi.fn()}
+        />,
+      );
+
+    const abrirModal = (botao: RegExp) => {
+      fireEvent.click(screen.getByRole('button', { name: botao }));
+      return screen.findByRole('dialog');
+    };
+
+    it('título e estado vazio das movimentações', () => {
+      setupStore({ cofrinhoSelecionado: { ...baseCofrinhoDetalhe, movimentacoes: [] } });
+      renderPagina();
+
+      expect(screen.getByRole('heading', { name: 'Movimentações' })).toBeInTheDocument();
+      expect(screen.getByText('Nenhuma movimentação registrada.')).toBeInTheDocument();
+    });
+
+    it('aporte recorrente mostra "Até" e "Cancelar recorrência"', () => {
+      setupStore({
+        cofrinhoSelecionado: {
+          ...baseCofrinhoDetalhe,
+          aporteRecorrenteAtivo: {
+            transacaoPaiId: 'tx-rec-1',
+            valor: '200.00',
+            frequencia: 'mensal',
+            dataFimRecorrencia: '2026-12-31',
+          },
+        },
+      });
+      renderPagina();
+
+      expect(screen.getByText(/Até:/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Cancelar recorrência' })).toBeInTheDocument();
+    });
+
+    it('modal de aporte', async () => {
+      setupStore();
+      renderPagina();
+      const dialog = await abrirModal(/^aportar$/i);
+
+      expect(
+        within(dialog).getByText('Será registrado como saída no mês atual.'),
+      ).toBeInTheDocument();
+    });
+
+    it('modal de retirada', async () => {
+      setupStore();
+      renderPagina();
+      const dialog = await abrirModal(/^retirar$/i);
+
+      expect(within(dialog).getByText('Descrição (opcional)')).toBeInTheDocument();
+      expect(
+        within(dialog).getByText('O valor retorna como receita no mês atual.'),
+      ).toBeInTheDocument();
+      fireEvent.change(within(dialog).getByLabelText('Valor'), { target: { value: '99999999' } });
+      expect(within(dialog).getByText('Valor excede o saldo disponível.')).toBeInTheDocument();
+    });
+
+    it('modal de encerrar', async () => {
+      setupStore();
+      renderPagina();
+      const dialog = await abrirModal(/encerrar/i);
+
+      expect(
+        within(dialog).getByText('O valor retorna como receita no mês atual.'),
+      ).toBeInTheDocument();
     });
   });
 });

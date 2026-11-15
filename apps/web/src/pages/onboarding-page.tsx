@@ -181,7 +181,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
 
       {mode === 'create' && (
         <form
-          aria-label="Criar familia"
+          aria-label="Criar família"
           onSubmit={(e) => {
             void handleCreate(e);
           }}
@@ -226,7 +226,7 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
       {mode === 'request' && (
         <>
           <form
-            aria-label="Buscar familia"
+            aria-label="Buscar família"
             onSubmit={(e) => {
               void handleBuscar(e);
             }}

@@ -81,7 +81,7 @@ export const CofrinhoEncerrarModal = ({
                 <span className="text-sm text-text">Voltar ao saldo</span>
               </label>
               <p className="ml-6 text-xs text-text-muted">
-                O valor retorna como receita no mes atual.
+                O valor retorna como receita no mês atual.
               </p>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

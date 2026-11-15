@@ -26,11 +26,13 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-15:** direção aprovada, ordem das entregas confirmada, desenho
-da Entrega 1 aprovado e plano do PR 1 escrito; nenhuma linha de código do
-redesenho escrita. **Próximo passo:** executar o
-[plano do PR 1 (Correções)](../superpowers/plans/2026-11-15-nova-ui-entrega-1-pr1-correcoes.md).
-O PR 2 (Base visual) ganha plano próprio depois do merge do PR 1.
+**Estado em 2026-11-15:** PR 1 da Entrega 1 (Correções) implementado e validado na
+branch `feat/nova-ui-e1-correcoes`: os cinco bugs funcionais da auditoria estão
+corrigidos, com duas migrations de dados (`0013` e `0014`). Nada da base visual
+foi escrito ainda. **Próximo passo:** o usuário revisar e mergear o PR 1; em
+seguida, escrever o plano do PR 2 (Base visual) em `docs/superpowers/plans/`,
+a partir do
+[desenho da Entrega 1](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
 
 ### Descoberta
 
@@ -119,6 +121,12 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 - 2026-11-15 — Categorias padrão com acento (seed e migration
   `0014_categorias_padrao_acentos` para as famílias existentes) e textos de
   cofrinho e onboarding acentuados.
+- 2026-11-15 — PR 1 validado no navegador em 390×844 (dashboard, orçamento,
+  categorias, cofrinho, extrato e formulário de lançamento). Os specs E2E de
+  onboarding, família e transações não serviram de validação: já estão
+  desatualizados na `main` (esperam o texto "Como deseja entrar", que não existe
+  mais no app, e usam `selectOption` num seletor que deixou de ser `<select>`).
+  O acerto fica para a tarefa "E2E ajustados à nova navegação" da Entrega 2.
 
 ## Decisões fechadas
 
@@ -286,6 +294,18 @@ pnpm --filter @nossagrana/e2e setup:db
 DATABASE_URL="postgresql://nossagrana_e2e:nossagrana_e2e@localhost:5433/nossagrana_e2e" pnpm --filter api dev
 VITE_API_URL="" VITE_WS_URL="" pnpm --filter web exec vite --host 0.0.0.0 --port 5180 --strictPort
 ```
+
+Numa worktree não existe `apps/api/.env`: passe também `JWT_SECRET`,
+`REFRESH_TOKEN_SECRET` e `ADMIN_SECRET` (32 caracteres ou mais; valores
+descartáveis servem), `REFRESH_COOKIE_SECURE=false` e
+`CORS_ORIGIN=http://localhost:5180` no comando da API. A API responde em
+`/api/health`.
+
+Para rodar o E2E contra esse ambiente, use `BASE_URL=http://localhost:5180` e
+`API_URL=http://localhost:3000`. O servidor não sobe com `NODE_ENV=test`, então o
+limite de requisições fica ligado (3 cadastros e 5 logins por minuto): rode um
+teste por vez, com cerca de 30 segundos entre eles; em lote, os logins passam a
+falhar.
 
 Ao terminar, encerre os processos e rode
 `docker compose -f apps/e2e/docker-compose.e2e.yml down -v`.

@@ -247,3 +247,4 @@ Ao fazer push na branch `main`, o workflow:
 - Casos de uso: `docs/USE_CASES.md`
 - Decisões técnicas: `docs/DECISIONS.md`
 - Backlog de tasks: `docs/TASKS.md`
+- Nova UI (redesenho do frontend): `docs/nova-ui/README.md` — direção, sistema visual e checkpoint; leia antes de alterar tela, componente ou token de `apps/web`

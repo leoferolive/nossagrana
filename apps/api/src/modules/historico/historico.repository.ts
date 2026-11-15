@@ -1,8 +1,8 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import type { ExecutorDrizzle } from '../../db/executor.types.js';
-import { categorias, snapshotsMensais, transacoes, users } from '../../db/schema.js';
+import { categorias, familias, snapshotsMensais, transacoes, users } from '../../db/schema.js';
 import type {
   HistoricoRepository,
   ResultadoSnapshot,
@@ -33,6 +33,15 @@ export class InMemoryHistoricoRepository implements HistoricoRepository {
   private _snapshots: (SnapshotRow & { id: string })[] = [];
   private _transacoesResumo: InMemoryTransacaoResumo[] = [];
   private _snapshotData = new Map<string, InMemoryTransacaoSnapshotData>();
+  private _familias: { id: string; excluida: boolean }[] = [];
+
+  seedFamilia(id: string, opcoes: { excluida?: boolean } = {}): void {
+    this._familias.push({ id, excluida: opcoes.excluida ?? false });
+  }
+
+  async listFamiliaIdsAtivas(): Promise<string[]> {
+    return this._familias.filter((f) => !f.excluida).map((f) => f.id);
+  }
 
   seedTransacao(t: {
     familiaId: string;
@@ -188,6 +197,14 @@ function mapSnapshotRow(row: typeof snapshotsMensais.$inferSelect): SnapshotRow 
 
 export class DrizzleHistoricoRepository implements HistoricoRepository {
   constructor(private readonly executor: ExecutorDrizzle = db) {}
+
+  async listFamiliaIdsAtivas(): Promise<string[]> {
+    const rows = await this.executor
+      .select({ id: familias.id })
+      .from(familias)
+      .where(isNull(familias.deletedAt));
+    return rows.map((r) => r.id);
+  }
 
   async listSnapshots(familiaId: string): Promise<SnapshotRow[]> {
     const rows = await this.executor

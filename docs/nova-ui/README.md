@@ -49,8 +49,8 @@ visual (as demais). Desenho em
 
 - [x] 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário
 - [x] 2026-11-15 — Data padrão do lançamento em horário local
-- [ ] Primeira parcela com o valor da parcela, corrigindo também os
-      parcelamentos já gravados
+- [x] 2026-11-15 — Primeira parcela com o valor da parcela, corrigindo também
+      os parcelamentos já gravados
 - [ ] "Vigente desde" do orçamento no mês certo
 - [ ] Gráfico de pizza com uma única categoria
 - [ ] Acentos nas categorias padrão e nos textos
@@ -108,6 +108,9 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
   (Correções) escrito.
 - 2026-11-15 — Data padrão do lançamento passa a usar o dia local
   (`getTodayLocalISO`); os testes do Web rodam com o fuso fixo em São Paulo.
+- 2026-11-15 — O pai de um parcelamento passa a valer a parcela; a migration
+  `0013_parcela_pai_valor` corrige os já gravados e marca como divergentes os
+  snapshots dos meses afetados.
 
 ## Decisões fechadas
 

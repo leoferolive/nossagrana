@@ -98,6 +98,35 @@ describe('TransacaoService', () => {
       // Parcela 3: maio
       expect(todas[1]?.mesReferencia).toBe('2026-05');
     });
+
+    // Regressão (nova UI, Entrega 1): o pai ficava com o valor total e só as
+    // filhas com o valor da parcela; como os totais somam `valor`, a compra
+    // pesava total + (N-1) parcelas ao longo dos meses.
+    it('o pai é a parcela 1 e vale a parcela, não o total da compra', async () => {
+      const { repository, service } = buildService();
+
+      const pai = await service.registrar({
+        familiaId: 'f1',
+        tipo: 'despesa',
+        valor: '300.00',
+        categoriaId: 'cat1',
+        data: '2026-03-10',
+        metodoPagamentoId: 'mp1',
+        metodoPagamentoTipo: 'credito',
+        dataFechamento: 15,
+        usuarioRegistrouId: 'u1',
+        parcelado: true,
+        numeroParcelas: 3,
+      });
+
+      expect(pai.valor).toBe('100.00');
+      expect(pai.valorParcela).toBe('100.00');
+      expect(pai.valorTotal).toBe('300.00');
+
+      const filhas = await repository.listByPaiId({ transacaoPaiId: pai.id, familiaId: 'f1' });
+      const soma = [pai, ...filhas].reduce((total, t) => total + Number(t.valor), 0);
+      expect(soma).toBeCloseTo(300, 2);
+    });
   });
 
   describe('UC08/UC30 — Registrar transação recorrente', () => {

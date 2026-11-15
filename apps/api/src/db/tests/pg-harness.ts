@@ -107,3 +107,15 @@ export async function aplicarMigrationsAntesDe(url: string, tag: string): Promis
     rmSync(pasta, { recursive: true, force: true });
   }
 }
+
+/**
+ * Executa de novo o SQL de uma migration já aplicada, numa transação única
+ * (como o migrator faz), para provar que ela pode rodar duas vezes sem mudar o
+ * resultado.
+ */
+export async function reaplicarMigration(sql: postgres.Sql, tag: string): Promise<void> {
+  const conteudo = readFileSync(path.join(MIGRATIONS_DIR, `${tag}.sql`), 'utf8');
+  await sql.begin(async (tx) => {
+    for (const comando of conteudo.split('--> statement-breakpoint')) await tx.unsafe(comando);
+  });
+}

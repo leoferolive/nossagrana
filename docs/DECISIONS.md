@@ -143,6 +143,8 @@ else:
 
 - `valor_parcela = valor_total / numero_parcelas`
 - Cada parcela tem `transacao_pai_id` apontando para a transação original
+- A transação original é a parcela 1 e também vale `valor_parcela`; o total da
+  compra fica em `valor_total`
 - Mês de referência de cada parcela é calculado individualmente (regra de crédito)
 
 ### Recorrências

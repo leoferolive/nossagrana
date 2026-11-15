@@ -62,6 +62,8 @@ export interface HistoricoRepository {
   getMesesComTransacoes(familiaId: string): Promise<string[]>;
   marcarDivergente(familiaId: string, mesReferencia: string): Promise<void>;
   insertSnapshot(input: SnapshotInsertInput): Promise<ResultadoSnapshot>;
+  /** IDs das famílias não excluídas (`deleted_at IS NULL`): universo do fechamento mensal. */
+  listFamiliaIdsAtivas(): Promise<string[]>;
   getTransacoesPorCategoria(
     familiaId: string,
     mesReferencia: string,

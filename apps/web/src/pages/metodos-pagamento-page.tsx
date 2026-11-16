@@ -6,7 +6,7 @@ import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 
 import type { MetodoPagamentoCreateRequest } from '@nossagrana/types';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconCartao, IconDinheiro, IconPix, IconVoltar } from '../components/icons';
+import { IconAdicionar, IconCartao, IconDinheiro, IconPix, IconVoltar } from '../components/icons';
 
 interface MetodosPagamentoPageProps {
   familiaId: string;
@@ -289,9 +289,10 @@ export const MetodosPagamentoPage = ({
         <button
           type="button"
           onClick={() => setFormOpen(true)}
-          className="mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong md:hidden"
+          className="inline-flex items-center justify-center gap-2 mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong md:hidden"
         >
-          + Novo Método
+          <IconAdicionar size={16} aria-hidden="true" />
+          Novo Método
         </button>
       </div>
     </div>

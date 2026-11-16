@@ -4,7 +4,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconVoltar } from '../components/icons';
+import { IconAdicionar, IconVoltar } from '../components/icons';
 
 interface CategoriasPageProps {
   familiaId: string;
@@ -255,9 +255,10 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong"
+            className="inline-flex items-center justify-center gap-2 mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong"
           >
-            + Nova Categoria
+            <IconAdicionar size={16} aria-hidden="true" />
+            Nova Categoria
           </button>
         </div>
       </div>

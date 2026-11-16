@@ -215,7 +215,9 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     // Click "Nova Transação" button (top bar or FAB)
     const novaButtons = screen.getAllByRole('button', { name: /nova/i });
     fireEvent.click(novaButtons[0]);
-    await waitFor(() => expect(screen.getByText('Nova Transação')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Nova Transação' })).toBeInTheDocument(),
+    );
 
     // Fill required fields and submit
     const valorInput = screen.getByLabelText(/valor/i);

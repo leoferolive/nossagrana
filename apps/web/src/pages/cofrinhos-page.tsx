@@ -7,7 +7,7 @@ import { FirstTimeTour } from '../components/first-time-tour';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatBRL } from '../utils/formatting';
-import { IconCofrinho } from '../components/icons';
+import { IconAdicionar, IconCofrinho } from '../components/icons';
 
 interface CofrinhosPageProps {
   familiaId: string;
@@ -78,9 +78,10 @@ export function CofrinhosPage({
             type="button"
             aria-label="Novo Cofrinho"
             onClick={() => setModalOpen(true)}
-            className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
           >
-            + Novo Cofrinho
+            <IconAdicionar size={16} aria-hidden="true" />
+            Novo Cofrinho
           </button>
         )}
       </header>

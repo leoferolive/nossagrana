@@ -8,7 +8,13 @@ import { coreFinanceiroService, categoriaService } from '../services/core-financ
 import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
 import { CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconEditar, IconOrcamento, IconRelatorio, IconVoltar } from '../components/icons';
+import {
+  IconAdicionar,
+  IconEditar,
+  IconOrcamento,
+  IconRelatorio,
+  IconVoltar,
+} from '../components/icons';
 
 interface OrcamentoItem {
   id: string;
@@ -265,9 +271,10 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
               <button
                 type="button"
                 onClick={handleOpenAddForm}
-                className="self-start rounded-lg border border-dashed border-border px-4 py-2 text-sm text-text-muted transition hover:border-success hover:text-success"
+                className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-dashed border-border px-4 py-2 text-sm text-text-muted transition hover:border-success hover:text-success"
               >
-                + Adicionar Categoria
+                <IconAdicionar size={16} aria-hidden="true" />
+                Adicionar Categoria
               </button>
             )}
             {/* Mobile: cards com BudgetBar */}

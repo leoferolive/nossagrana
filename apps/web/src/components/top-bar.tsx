@@ -1,3 +1,5 @@
+import { IconAdicionar } from './icons';
+
 type Screen = string;
 
 interface TopBarProps {
@@ -30,7 +32,8 @@ export const TopBar = ({ currentScreen, onNovaTransacao }: TopBarProps) => (
       onClick={onNovaTransacao}
       className="flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white hover:bg-success-strong"
     >
-      + Nova Transação
+      <IconAdicionar size={16} aria-hidden="true" />
+      Nova Transação
     </button>
   </header>
 );

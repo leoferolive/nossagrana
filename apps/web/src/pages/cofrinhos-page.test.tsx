@@ -170,7 +170,7 @@ describe('CofrinhosPage', () => {
     expect(defaultProps.onVerDetalhe).toHaveBeenCalledWith('1');
   });
 
-  it('abre modal de criar ao clicar botão "+ Novo Cofrinho"', () => {
+  it('abre modal de criar ao clicar botão "Novo Cofrinho"', () => {
     useCofrinhoStore.setState({
       cofrinhos: [COFRINHO_VIAGEM],
       carregando: false,

@@ -11,6 +11,8 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 // \uD83C-\uD83E cobrem os emojis acima do plano básico sem depender da flag `u`.
 const SIMBOLO_DE_TEXTO =
   '[\\u00D7\\u2190-\\u21FF\\u25A0-\\u25FF\\u2600-\\u27BF\\u2B00-\\u2BFF\\uFE0F]|[\\uD83C-\\uD83E][\\uDC00-\\uDFFF]';
+// "+ Nova Categoria": o "+" no começo do texto de um botão também faz papel de ícone (Plus).
+const MAIS_COMO_ICONE = '^\\s*\\+ [A-Za-z\\u00C0-\\u00FF]';
 const MENSAGEM_SEM_EMOJI =
   'Use um ícone de lucide-react; a interface não usa emoji nem símbolo de texto como ícone';
 
@@ -85,6 +87,10 @@ export default tseslint.config(
         'error',
         {
           selector: `JSXText[value=/${SIMBOLO_DE_TEXTO}/]`,
+          message: MENSAGEM_SEM_EMOJI,
+        },
+        {
+          selector: `JSXText[value=/${MAIS_COMO_ICONE}/]`,
           message: MENSAGEM_SEM_EMOJI,
         },
         {

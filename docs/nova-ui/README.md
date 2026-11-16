@@ -26,13 +26,15 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2 em
-andamento: o PR 1 dela (#188, Rotas com URL) deu endereço a toda tela, e o voltar
-do Android, recarregar e link direto já funcionam; a barra, a tela Configurações
-e os cabeçalhos ainda são os antigos. **Próximo passo:** executar o
-[plano do PR 2 da Entrega 2](../superpowers/plans/2026-11-16-nova-ui-entrega-2-pr2-navegacao.md)
-(barra de cinco, Mais, Planejar, cabeçalhos únicos e tour) na branch
-`feat/nova-ui-e2-navegacao`. Depois, o PR 3 (E2E).
+**Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2 quase
+concluída: o PR 1 (#188) deu endereço a toda tela, e o PR 2 trocou a navegação
+visível do celular (barra de cinco com o "+" dentro, tela Mais no lugar de
+Configurações, tela Planejar como entrada, cabeçalhos únicos e um só tour). O
+miolo de Extrato, Lançar e Início ainda é o antigo. **Próximo passo:** o PR 3 da
+Entrega 2: ajustar os seis specs do E2E à navegação nova (endereços, nomes da
+barra, botão "Lançar") e ao que já estava quebrado neles; escrever o plano em
+`docs/superpowers/plans/` e executar. Depois, o desenho da Entrega 3 (Extrato e
+Lançar), para aprovação do usuário.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -117,6 +119,17 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
 parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
 R$ 99,99). A sobra deveria ir para a parcela 1.
+
+Pontos menores que ficaram do PR 2 da Entrega 2 (validação no navegador):
+
+- O detalhe do cofrinho fica a três toques da barra (Planejar › Cofrinhos ›
+  cofrinho).
+- O seletor de família (`/familias`) não tem botão de voltar.
+- No desktop em 1280×800, Perfil e Ajuda ficam abaixo da dobra do menu lateral.
+- No Extrato, "Exportar CSV" ocupa uma linha própria.
+- Em Planejar, "Contas do mês" mostra só a quantidade de modelos: o app não
+  registra qual modelo já foi lançado no mês. A linha da fatura mostra os dias
+  de fechamento e vencimento cadastrados, sem calcular a data.
 
 Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 

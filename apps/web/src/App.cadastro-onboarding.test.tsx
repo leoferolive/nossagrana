@@ -1,31 +1,16 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { fillSignUpForm, resetAppMocks } from '@/test/app-mocks';
-
-import { App } from './App';
-import { useAuth } from './contexts/use-auth';
+import { fillSignUpForm, mockSessaoQueEntraAoLogar, resetAppMocks } from '@/test/app-mocks';
+import { renderApp } from '@/test/render-app';
 
 afterEach(resetAppMocks);
 
 describe('App > fluxo não autenticado > cadastro e onboarding', () => {
-  beforeEach(() => {
-    let currentFamiliaId: string | null = null;
-    vi.mocked(useAuth).mockImplementation(() => ({
-      isAuthenticated: false as const,
-      accessToken: null,
-      familiaIdAtiva: currentFamiliaId,
-      login: vi.fn(),
-      logout: vi.fn(),
-      setAccessToken: vi.fn(),
-      updateFamiliaIdAtiva: vi.fn((id: string) => {
-        currentFamiliaId = id;
-      }),
-    }));
-  });
+  beforeEach(mockSessaoQueEntraAoLogar);
 
   it('renders login screen', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getByText('NossaGrana')).toBeInTheDocument();
     expect(screen.getByText(/finanças da família/i)).toBeInTheDocument();
@@ -37,7 +22,7 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
   });
 
   it('navigates to sign up screen', () => {
-    render(<App />);
+    renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
 
@@ -50,7 +35,7 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
   });
 
   it('opens onboarding flow after sign up submit', async () => {
-    render(<App />);
+    renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
     fillSignUpForm();
@@ -65,7 +50,7 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
   });
 
   it('opens family settings screen from onboarding via criar familia', async () => {
-    render(<App />);
+    renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
     fillSignUpForm();
@@ -89,7 +74,7 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
     'lists members and allows removing a member in family settings',
     { timeout: 15000 },
     async () => {
-      render(<App />);
+      renderApp();
 
       fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
       fillSignUpForm();

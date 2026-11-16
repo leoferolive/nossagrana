@@ -45,6 +45,9 @@ export default defineConfig({
       workbox: {
         // Só o subconjunto latino da fonte entra no cache offline; os demais o navegador nem baixa em pt-BR.
         globPatterns: ['**/*.{js,css,html,svg,png,ico}', '**/manrope-latin-wght-normal-*.woff2'],
+        // Endereços internos (/mais/categorias, /planejar/...) caem no index.html pelo service worker, para
+        // abrir offline. /api e /health são do servidor: nunca podem responder como navegação.
+        navigateFallbackDenylist: [/^\/api\//, /^\/health/],
       },
     }),
   ],

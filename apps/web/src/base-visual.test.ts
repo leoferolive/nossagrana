@@ -229,3 +229,15 @@ describe('alvo de toque de 44px garantido pela regra base', () => {
     expect(base).not.toMatch(/display:/);
   });
 });
+
+describe('service worker com endereços internos', () => {
+  const denylist = /navigateFallbackDenylist:\s*\[([^\]]*)\]/.exec(viteConfig)?.[1] ?? '';
+
+  it('o retorno de navegação para index.html deixa /api/ de fora', () => {
+    expect(denylist).toMatch(/\^\\\/api\\\//);
+  });
+
+  it('o retorno de navegação para index.html deixa /health de fora', () => {
+    expect(denylist).toMatch(/\^\\\/health/);
+  });
+});

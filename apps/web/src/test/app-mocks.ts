@@ -24,6 +24,12 @@ vi.mock('../services/core-financeiro.service', () => ({
     getRelatorioTendencias: vi.fn().mockResolvedValue({ meses: [] }),
     getPerfil: vi.fn().mockResolvedValue({ nome: 'Demo', email: 'demo@example.com' }),
     getHistorico: vi.fn().mockResolvedValue({ meses: [] }),
+    getFatura: vi.fn().mockResolvedValue({
+      metodoPagamentoId: 'm1',
+      mesReferencia: '2026-11',
+      total: '0.00',
+      transacoes: [],
+    }),
   },
   metodoPagamentoService: {
     listar: vi.fn().mockResolvedValue({ metodosPagamento: [] }),
@@ -100,14 +106,18 @@ vi.mock('../contexts/use-auth', () => ({
 // gera um loop infinito de render que trava o event loop nos testes.
 const dashboardFetchAll = vi.fn();
 vi.mock('../stores/dashboard.store', () => ({
-  useDashboardStore: vi.fn(() => ({
-    resumo: null,
-    graficos: null,
-    orcamento: [],
-    loading: false,
-    error: null,
-    fetchAll: dashboardFetchAll,
-  })),
+  // `setState` existe porque limparDadosDaFamilia zera a store real ao trocar de família ou sair.
+  useDashboardStore: Object.assign(
+    vi.fn(() => ({
+      resumo: null,
+      graficos: null,
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: dashboardFetchAll,
+    })),
+    { setState: vi.fn() },
+  ),
 }));
 
 const websocketConnect = vi.fn();
@@ -159,6 +169,40 @@ export const resetAppMocks = () => {
     updateFamiliaIdAtiva: vi.fn(),
   }));
 };
+
+interface OpcoesSessao {
+  autenticado?: boolean;
+  familiaAtiva?: string | null;
+}
+
+/**
+ * Sessão com estado, como a real: `login` autentica, `logout` encerra e
+ * `updateFamiliaIdAtiva` escolhe a família. Por padrão nasce anônima. Sem estado, o
+ * cadastro e o login não sairiam do lugar, porque as guardas de rota barram quem não
+ * tem sessão em qualquer endereço que não seja o de entrada.
+ */
+export const mockSessao = ({ autenticado = false, familiaAtiva = null }: OpcoesSessao = {}) => {
+  let estaAutenticado = autenticado;
+  let familia = familiaAtiva;
+  vi.mocked(useAuth).mockImplementation(() => ({
+    isAuthenticated: estaAutenticado,
+    accessToken: estaAutenticado ? 'token' : null,
+    familiaIdAtiva: familia,
+    login: vi.fn(() => {
+      estaAutenticado = true;
+    }),
+    logout: vi.fn(() => {
+      estaAutenticado = false;
+      familia = null;
+    }),
+    setAccessToken: vi.fn(),
+    updateFamiliaIdAtiva: vi.fn((id: string) => {
+      familia = id;
+    }),
+  }));
+};
+
+export const mockSessaoQueEntraAoLogar = () => mockSessao();
 
 export const fillSignUpForm = () => {
   fireEvent.change(screen.getByLabelText(/nome/i), {

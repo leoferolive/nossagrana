@@ -91,7 +91,7 @@ export function FaturaPage({
       )}
 
       <div className="rounded-xl border border-border bg-panel p-4">
-        {!fatura || fatura.transacoes.length === 0 ? (
+        {error ? null : !fatura || fatura.transacoes.length === 0 ? (
           <p className="text-center text-sm text-text-muted">Nenhuma transação nesta fatura.</p>
         ) : (
           <ul className="flex flex-col gap-3">

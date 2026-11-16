@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, resetAppMocks } from '@/test/app-mocks';
+import { renderApp } from '@/test/render-app';
 
-import { App } from './App';
 import { useAuth } from './contexts/use-auth';
 import { categoriaService } from './services/core-financeiro.service';
 import { useCategoriaStore } from './stores/categoria.store';
@@ -16,7 +16,7 @@ afterEach(() => {
 
 describe('App > fluxo autenticado com familia > configurações e transações', () => {
   it('navega para AjudaPage a partir das configurações', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     const main = screen.getByRole('main');
@@ -39,7 +39,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
     const { authService } = await import('./services/auth.service');
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
 
@@ -52,7 +52,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
   });
 
   it('navega para FamilySettingsPage a partir das configurações', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     const main = screen.getByRole('main');
@@ -74,7 +74,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
       updateFamiliaIdAtiva: vi.fn(),
     });
 
-    render(<App />);
+    renderApp();
 
     // Com isAuthenticated=true e familiaIdAtiva, App inicia direto no dashboard
     await waitFor(() =>
@@ -92,7 +92,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
       transacoes: [makeTransacao({ id: 'tx-edit-1', descricao: 'Mercado' })],
     });
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
 
@@ -115,7 +115,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
       ],
     });
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
 
@@ -147,7 +147,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
       ],
     });
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
 
@@ -177,7 +177,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
       ],
     });
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
 
@@ -207,7 +207,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
       ],
     });
 
-    render(<App />);
+    renderApp();
     await waitFor(() =>
       expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
     );

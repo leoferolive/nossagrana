@@ -128,6 +128,14 @@ test.describe('Orçamento', () => {
     await cartao.getByLabel('Novo limite').fill('800');
     await cartao.getByRole('button', { name: 'Salvar', exact: true }).click();
 
+    // Primeiro espera a gravação e a recarga: o limite novo na tela. Antes disso a contagem já é
+    // um (o cartão original) e a afirmação passaria sem o defeito corrigido.
+    await expect(
+      page
+        .getByText(/R\$\s*0,00\/R\$\s*800,00/)
+        .locator('visible=true')
+        .first(),
+    ).toBeVisible({ timeout: 10_000 });
     await expect(
       page.getByText('Duplicada Orçamento E2E', { exact: true }).locator('visible=true'),
     ).toHaveCount(1);

@@ -15,6 +15,10 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     serviceWorkers: 'block',
+    // Mesmo fuso do auxiliar `hojeEmSaoPaulo` (helpers/data.ts): o app calcula o mês corrente com
+    // o fuso do navegador, e numa máquina em UTC a virada do mês chegaria 3 h antes da semeada.
+    timezoneId: 'America/Sao_Paulo',
+    locale: 'pt-BR',
   },
   projects: [
     {

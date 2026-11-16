@@ -12,8 +12,8 @@ export const useNavegacao = () => {
   const navigate = useNavigate();
   const { pathname, search, key } = useLocation();
 
-  const irParaCaminho = (destino: string) => {
-    void navigate(destino, { replace: destino === `${pathname}${search}` });
+  const irParaCaminho = (destino: string, state?: unknown) => {
+    void navigate(destino, { replace: destino === `${pathname}${search}`, state });
   };
   const irPara = (tela: string) => irParaCaminho(caminhoDaTela(tela));
 

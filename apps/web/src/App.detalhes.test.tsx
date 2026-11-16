@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { mockSessao, resetAppMocks } from '@/test/app-mocks';
@@ -88,7 +88,7 @@ describe('App > cofrinho no endereço', () => {
     renderApp('/planejar/cofrinhos/de-outra-familia');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/erro ao carregar detalhe/i);
-    expect(screen.queryByText(/viagem europa/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /viagem europa/i })).not.toBeInTheDocument();
   });
 
   it('voltar do detalhe leva à lista de cofrinhos', async () => {
@@ -149,7 +149,53 @@ describe('App > fatura no endereço', () => {
 });
 
 describe('App > troca de família com id no endereço', () => {
-  it('trocar de família estando num endereço com id leva ao Início', async () => {
+  const FAMILIAS = [
+    { id: 'fam-test', nome: 'Casa', dataEntrada: '2026-01-01', role: 'admin' as const },
+    { id: 'fam-outra', nome: 'Praia', dataEntrada: '2026-01-02', role: 'membro' as const },
+  ];
+
+  const abrirCofrinhoETrocarDeFamilia = async () => {
+    const { familiaService } = await import('./services/auth.service');
+    vi.mocked(familiaService.listarMinhas).mockResolvedValue({ familias: FAMILIAS });
+    renderApp(['/', '/planejar/cofrinhos']);
+    fireEvent.click(await screen.findByRole('button', { name: /viagem europa/i }));
+    await waitFor(() => tituloNoConteudo(/viagem europa/i));
+
+    fireEvent.click(screen.getByRole('button', { name: /alternar família/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
+    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+  };
+
+  it('trocar de família pela interface leva ao Início', async () => {
+    await abrirCofrinhoETrocarDeFamilia();
+
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
+  });
+
+  it('depois da troca, voltar no histórico não mostra o cofrinho da família anterior', async () => {
+    await abrirCofrinhoETrocarDeFamilia();
+
+    fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
+
+    // O voltar passa pela entrada antiga e é corrigido num efeito: espera o assentamento.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 80)));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
+    expect(screen.queryByRole('heading', { name: /viagem europa/i })).not.toBeInTheDocument();
+  });
+
+  it('a troca de família limpa os métodos de pagamento da família anterior', async () => {
+    useMetodoPagamentoStore.setState({ metodos: [cartao] });
+    const { familiaService } = await import('./services/auth.service');
+    vi.mocked(familiaService.listarMinhas).mockResolvedValue({ familias: FAMILIAS });
+    renderApp('/familias');
+
+    fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
+
+    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    expect(useMetodoPagamentoStore.getState().metodos).toEqual([]);
+  });
+
+  it('com o mesmo id de cofrinho na URL, trocar a família ativa no lugar também leva ao Início', async () => {
     const { reavaliarSessao } = renderApp('/planejar/cofrinhos/c1');
     await waitFor(() => tituloNoConteudo(/viagem europa/i));
 

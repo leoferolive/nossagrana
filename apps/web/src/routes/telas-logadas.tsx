@@ -65,7 +65,7 @@ export const CofrinhosRota = () => {
     <CofrinhosPage
       familiaId={familiaId}
       onNavigate={irPara}
-      onVerDetalhe={(id) => irParaCaminho(caminhoDoCofrinho(id))}
+      onVerDetalhe={(id) => irParaCaminho(caminhoDoCofrinho(id), { familiaId })}
     />
   );
 };
@@ -162,7 +162,7 @@ export const MetodosPagamentoRota = () => {
     <MetodosPagamentoPage
       familiaId={familiaId}
       onBack={() => voltarPara(CAMINHOS.mais)}
-      onVerFatura={(id, _nome, mes) => irParaCaminho(caminhoDaFatura(id, mes))}
+      onVerFatura={(id, _nome, mes) => irParaCaminho(caminhoDaFatura(id, mes), { familiaId })}
     />
   );
 };

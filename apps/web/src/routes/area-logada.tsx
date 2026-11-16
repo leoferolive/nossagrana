@@ -5,6 +5,7 @@ import { AppShell } from '@/components/app-shell';
 import { TransacaoModal } from '@/components/transacao-modal';
 import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
+import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useLancamento } from '@/hooks/use-lancamento';
 import { useLancarPorVoz } from '@/hooks/use-lancar-por-voz';
 import type { FluxoSessao } from '@/hooks/use-fluxo-sessao';
@@ -18,19 +19,30 @@ interface AreaLogadaProps {
   fluxo: FluxoSessao;
 }
 
+/** Família em que a entrada de histórico com id foi aberta, gravada por `irParaCaminho`. */
+const familiaDaEntrada = (state: unknown): string | null => {
+  if (typeof state !== 'object' || state === null || !('familiaId' in state)) return null;
+  return typeof state.familiaId === 'string' ? state.familiaId : null;
+};
+
 /**
  * Ids de cofrinho e de método no endereço pertencem à família em que foram abertos. Se a
- * família ativa muda com a pessoa num desses endereços, volta ao Início com a família nova.
+ * família ativa muda com a pessoa num desses endereços, ou se o voltar do navegador chega a uma
+ * entrada aberta em outra família, vai ao Início (substituindo a entrada) com a família atual.
  */
 const useVoltarAoInicioNaTrocaDeFamilia = (familiaId: string) => {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
   const familiaAnterior = useRef(familiaId);
   useEffect(() => {
     const trocou = familiaAnterior.current !== familiaId;
     familiaAnterior.current = familiaId;
-    if (trocou && ehEnderecoComId(pathname)) void navigate(CAMINHOS.inicio, { replace: true });
-  }, [familiaId, pathname, navigate]);
+    if (trocou) useMetodoPagamentoStore.setState({ metodos: [] });
+    const daOutraFamilia = (familiaDaEntrada(state) ?? familiaId) !== familiaId;
+    if ((trocou || daOutraFamilia) && ehEnderecoComId(pathname)) {
+      void navigate(CAMINHOS.inicio, { replace: true });
+    }
+  }, [familiaId, pathname, state, navigate]);
 };
 
 const useLancar = (familiaId: string) => {

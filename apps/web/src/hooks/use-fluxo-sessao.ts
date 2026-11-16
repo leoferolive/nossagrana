@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/contexts/use-auth';
 import { CAMINHOS } from '@/routes/caminhos';
 import { enderecoPedido } from '@/routes/guardas';
+import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { authService, familiaService } from '@/services/auth.service';
 
 /** Entrada, escolha de família e saída da sessão, e a navegação que cada uma provoca. */
@@ -34,6 +35,8 @@ export const useFluxoSessao = () => {
   };
 
   const aoEscolherFamilia = (familiaId: string) => {
+    // A store é global: sem limpar, o nome do cartão da família anterior apareceria na fatura.
+    useMetodoPagamentoStore.setState({ metodos: [] });
     updateFamiliaIdAtiva(familiaId);
     void navigate(enderecoPedido(state) ?? CAMINHOS.inicio, { replace: true });
   };

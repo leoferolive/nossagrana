@@ -184,7 +184,7 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
                       <p className="font-semibold text-text">{item.usuarioNome}</p>
                       <p className="text-xs text-text-muted">{item.percentual}% do total</p>
                     </div>
-                    <p className="ml-auto font-bold text-danger tabular-nums">
+                    <p className="ml-auto font-bold text-text tabular-nums">
                       {formatBRL(item.total)}
                     </p>
                   </div>
@@ -207,11 +207,11 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
                 <MiniChart data={receitas} height={56} color={COR_RECEITA} labels={tendLabels} />
               </div>
               <div className="rounded-xl border border-border bg-panel p-4">
-                <p className="mb-2 text-xs font-semibold text-danger">Despesas</p>
+                <p className="mb-2 text-xs font-semibold text-text-muted">Despesas</p>
                 <MiniChart data={despesas} height={56} color={COR_DESPESA} labels={tendLabels} />
               </div>
               <div className="rounded-xl border border-border bg-panel p-4">
-                <p className="mb-2 text-xs font-semibold text-primary">Saldo</p>
+                <p className="mb-2 text-xs font-semibold text-text-muted">Saldo</p>
                 <MiniChart data={saldos} height={56} color={COR_SALDO} labels={tendLabels} />
               </div>
             </>

@@ -142,14 +142,14 @@ export const FamilySettingsPage = ({
           onClick={() => {
             void generateInviteCode();
           }}
-          className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-info transition hover:border-info"
+          className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-success transition hover:border-success"
         >
           Gerar código de convite
         </button>
 
         {inviteCode && (
           <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-bg px-4 py-3">
-            <code className="text-sm font-semibold tracking-wider text-info">{inviteCode}</code>
+            <code className="text-sm font-semibold tracking-wider text-text">{inviteCode}</code>
             <button
               type="button"
               onClick={() => {

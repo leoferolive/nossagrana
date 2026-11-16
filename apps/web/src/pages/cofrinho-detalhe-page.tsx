@@ -152,7 +152,7 @@ export function CofrinhoDetalhePage({
             aria-label="Retirar"
             onClick={() => setModalAberto('retirada')}
             disabled={isEncerrado}
-            className="rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg border border-border-strong bg-panel px-4 py-2 text-sm font-semibold text-text transition hover:bg-surface disabled:opacity-50"
           >
             Retirar
           </button>
@@ -229,7 +229,7 @@ export function CofrinhoDetalhePage({
                     className="flex items-center gap-3 rounded-lg border border-border bg-panel px-4 py-3"
                   >
                     <span
-                      className={`text-lg font-bold ${isAporte ? 'text-success' : 'text-danger'}`}
+                      className={`text-lg font-bold ${isAporte ? 'text-success' : 'text-text'}`}
                     >
                       {isAporte ? (
                         <IconEntrada size={18} aria-hidden="true" />

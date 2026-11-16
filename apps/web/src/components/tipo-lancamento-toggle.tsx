@@ -11,7 +11,7 @@ interface TipoLancamentoToggleProps {
 
 const BOTOES: { tipo: TipoLancamento; nome: string; icone: LucideIcon; ativo: string }[] = [
   { tipo: 'receita', nome: 'Receita', icone: IconEntrada, ativo: 'bg-success text-white' },
-  { tipo: 'despesa', nome: 'Despesa', icone: IconSaida, ativo: 'bg-danger text-white' },
+  { tipo: 'despesa', nome: 'Despesa', icone: IconSaida, ativo: 'bg-success text-white' },
 ];
 
 /** Toggle Receita/Despesa do formulário de lançamento. */

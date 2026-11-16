@@ -158,7 +158,7 @@ export const CofrinhoRetiradaModal = ({
             type="button"
             onClick={handleSubmit}
             disabled={!valorValido}
-            className="flex-1 rounded-lg bg-warning py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong disabled:opacity-50"
           >
             Retirar
           </button>

@@ -161,11 +161,11 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 <MiniChart data={receitas} height={48} color={COR_RECEITA} labels={labels} />
               </div>
               <div>
-                <p className="mb-1 text-xs text-danger">Despesas</p>
+                <p className="mb-1 text-xs text-text-muted">Despesas</p>
                 <MiniChart data={despesas} height={48} color={COR_DESPESA} labels={labels} />
               </div>
               <div>
-                <p className="mb-1 text-xs text-primary">Saldo</p>
+                <p className="mb-1 text-xs text-text-muted">Saldo</p>
                 <MiniChart data={saldos} height={48} color={COR_SALDO} labels={labels} />
               </div>
             </div>
@@ -206,7 +206,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       </div>
                       <div className="text-right text-sm">
                         <div className="text-success">+{formatBRL(mes.totalReceitas)}</div>
-                        <div className="text-danger">-{formatBRL(mes.totalDespesas)}</div>
+                        <div className="text-text">-{formatBRL(mes.totalDespesas)}</div>
                         <div
                           className={
                             parseFloat(mes.saldo) >= 0
@@ -262,7 +262,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       <td className="py-3 pr-4 text-right tabular-nums text-success">
                         +{formatBRL(mes.totalReceitas)}
                       </td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-danger">
+                      <td className="py-3 pr-4 text-right tabular-nums text-text">
                         -{formatBRL(mes.totalDespesas)}
                       </td>
                       <td
@@ -350,7 +350,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       </div>
                       <div>
                         <p className="text-text-muted">Despesas</p>
-                        <p className="font-semibold text-danger">
+                        <p className="font-semibold text-text">
                           {formatBRL(detalhe.atual.totalDespesas)}
                         </p>
                       </div>
@@ -387,7 +387,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                         </div>
                         <div>
                           <p className="text-text-muted">Despesas</p>
-                          <p className="font-semibold text-danger">
+                          <p className="font-semibold text-text">
                             {formatBRL(detalhe.snapshot.totalDespesas)}
                           </p>
                         </div>
@@ -410,7 +410,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                             {detalhe.snapshot.dadosCategorias.map((cat) => (
                               <div key={cat.categoriaId} className="flex justify-between text-sm">
                                 <span>{cat.categoriaNome}</span>
-                                <span className="text-danger">{formatBRL(cat.total)}</span>
+                                <span className="text-text">{formatBRL(cat.total)}</span>
                               </div>
                             ))}
                           </div>

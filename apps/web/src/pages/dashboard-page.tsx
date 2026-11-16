@@ -177,8 +177,8 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* Saldo em largura total para o valor não ser cortado em 390px; no desktop volta a 3 colunas */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <div className="col-span-2 rounded-xl border-l-2 border-primary bg-panel p-3 shadow-sm shadow-black/20 md:order-3 md:col-span-1">
-            <p className="text-xs font-semibold text-primary">
+          <div className="col-span-2 rounded-xl border-l-2 border-border-strong bg-panel p-3 shadow-sm shadow-black/20 md:order-3 md:col-span-1">
+            <p className="text-xs font-semibold text-text-muted">
               Saldo
               <TrendBadge variacao={varSaldo} />
             </p>
@@ -195,8 +195,8 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
               {formatBRL(resumo?.totalReceitas ?? '0')}
             </p>
           </div>
-          <div className="rounded-xl border-l-2 border-danger bg-panel p-3 shadow-sm shadow-black/20 md:order-2">
-            <p className="text-xs font-semibold text-danger">
+          <div className="rounded-xl border-l-2 border-border-strong bg-panel p-3 shadow-sm shadow-black/20 md:order-2">
+            <p className="text-xs font-semibold text-text-muted">
               Despesas
               <TrendBadge variacao={varDespesas} invertColor />
             </p>

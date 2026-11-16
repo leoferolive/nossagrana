@@ -262,7 +262,7 @@ export const ExtratoPage = ({
             onClick={() => setFiltroTipo('todos')}
             className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'todos'
-                ? 'bg-text text-bg'
+                ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
             }`}
           >
@@ -274,7 +274,7 @@ export const ExtratoPage = ({
             onClick={() => setFiltroTipo(filtroTipo === 'despesa' ? 'todos' : 'despesa')}
             className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'despesa'
-                ? 'bg-danger text-white'
+                ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
             }`}
           >
@@ -334,9 +334,7 @@ export const ExtratoPage = ({
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <span
-                  className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
-                >
+                <span className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-text'}`}>
                   {t.tipo === 'receita' ? (
                     <IconEntrada size={14} aria-hidden="true" />
                   ) : (
@@ -345,7 +343,7 @@ export const ExtratoPage = ({
                 </span>
                 <span
                   className={`text-sm font-semibold tabular-nums ${
-                    t.tipo === 'receita' ? 'text-success' : 'text-danger'
+                    t.tipo === 'receita' ? 'text-success' : 'text-text'
                   }`}
                 >
                   {formatValor(t.valor, t.tipo)}
@@ -391,7 +389,7 @@ export const ExtratoPage = ({
                       {getMetodoNome(t.metodoPagamentoId)}
                     </td>
                     <td
-                      className={`py-3.5 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
+                      className={`py-3.5 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-text'}`}
                     >
                       {formatValor(t.valor, t.tipo)}
                     </td>

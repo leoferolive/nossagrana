@@ -267,7 +267,7 @@ export const MetodosPagamentoPage = ({
                       onVerFatura(m.id, m.nome, mes);
                     }}
                     aria-label={`Ver fatura de ${m.nome}`}
-                    className="rounded-lg px-3 py-1 text-xs text-info transition hover:bg-info/10"
+                    className="rounded-lg px-3 py-1 text-xs text-success transition hover:bg-accent-soft"
                   >
                     Ver fatura
                   </button>

@@ -64,3 +64,7 @@ export const telaDoCaminho = (pathname: string): string => {
   if (pathname.startsWith(PREFIXO_FATURA)) return 'fatura';
   return TELA_POR_CAMINHO[pathname] ?? 'dashboard';
 };
+
+/** Endereços que carregam id de outro registro (cofrinho, método de pagamento) no caminho. */
+export const ehEnderecoComId = (pathname: string): boolean =>
+  pathname.startsWith(PREFIXO_COFRINHO) || pathname.startsWith(PREFIXO_FATURA);

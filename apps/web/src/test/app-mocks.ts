@@ -24,6 +24,12 @@ vi.mock('../services/core-financeiro.service', () => ({
     getRelatorioTendencias: vi.fn().mockResolvedValue({ meses: [] }),
     getPerfil: vi.fn().mockResolvedValue({ nome: 'Demo', email: 'demo@example.com' }),
     getHistorico: vi.fn().mockResolvedValue({ meses: [] }),
+    getFatura: vi.fn().mockResolvedValue({
+      metodoPagamentoId: 'm1',
+      mesReferencia: '2026-11',
+      total: '0.00',
+      transacoes: [],
+    }),
   },
   metodoPagamentoService: {
     listar: vi.fn().mockResolvedValue({ metodosPagamento: [] }),

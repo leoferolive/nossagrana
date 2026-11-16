@@ -9,17 +9,6 @@ export interface ContextoLogado {
   onNovaTransacao: () => void;
   onEditarTransacao: (transacao: Transacao) => void;
   onLogout: () => void;
-  detalhe: SelecaoDetalhe;
-}
-
-/** Cofrinho e fatura escolhidos. Passam para o endereço na tarefa "Cofrinho e fatura no endereço". */
-export interface SelecaoDetalhe {
-  cofrinhoId: string;
-  faturaMetodoId: string | null;
-  faturaMetodoNome: string;
-  faturaMes: string;
-  escolherCofrinho: (id: string) => void;
-  escolherFatura: (id: string, nome: string, mes: string) => void;
 }
 
 export const useContextoLogado = () => useOutletContext<ContextoLogado>();

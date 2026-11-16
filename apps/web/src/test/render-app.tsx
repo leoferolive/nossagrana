@@ -28,10 +28,14 @@ const SondaDeRota = () => {
  */
 export const renderApp = (entradas: InitialEntry | InitialEntry[] = '/') => {
   const lista = Array.isArray(entradas) ? entradas : [entradas];
-  return render(
+  // Função, e não elemento: um elemento idêntico faria o React pular o novo render.
+  const arvore = () => (
     <MemoryRouter initialEntries={lista} initialIndex={lista.length - 1}>
       <App />
       <SondaDeRota />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
+  const resultado = render(arvore());
+  // Renderiza de novo a mesma árvore, sem perder estado, para o App reler a sessão mockada.
+  return { ...resultado, reavaliarSessao: () => resultado.rerender(arvore()) };
 };

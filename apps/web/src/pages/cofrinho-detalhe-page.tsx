@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
+import { ErrorBanner } from '../components/error-banner';
 import { CofrinhoAporteModal } from '../components/cofrinho-aporte-modal';
 import { CofrinhoEncerrarModal } from '../components/cofrinho-encerrar-modal';
 import { CofrinhoModal } from '../components/cofrinho-modal';
@@ -27,13 +28,39 @@ export function CofrinhoDetalhePage({
   onBack,
   onNavigate: _onNavigate,
 }: CofrinhoDetalhePageProps) {
-  const { cofrinhoSelecionado, carregando, fetchDetalhe } = useCofrinhoStore();
+  const { cofrinhoSelecionado: ultimoDetalhe, carregando, erro, fetchDetalhe } = useCofrinhoStore();
+  // O id vem do endereço: o detalhe guardado na store pode ser de outro cofrinho.
+  const cofrinhoSelecionado = ultimoDetalhe?.cofrinho.id === cofrinhoId ? ultimoDetalhe : null;
   const [modalAberto, setModalAberto] = useState<ModalAberto>(null);
 
   useEffect(() => {
     void fetchDetalhe(familiaId, cofrinhoId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familiaId, cofrinhoId]);
+
+  // Back button, também usado no estado de erro
+  const botaoVoltar = (
+    <div className="border-b border-border px-4 py-3">
+      <button
+        type="button"
+        aria-label="Voltar"
+        onClick={onBack}
+        className="inline-flex items-center gap-1 text-sm font-medium text-primary transition hover:opacity-80"
+      >
+        <IconVoltar size={16} aria-hidden="true" />
+        Voltar
+      </button>
+    </div>
+  );
+
+  if (!carregando && erro && !cofrinhoSelecionado) {
+    return (
+      <div className="flex min-h-full flex-col bg-bg">
+        {botaoVoltar}
+        <ErrorBanner error={erro} />
+      </div>
+    );
+  }
 
   if (carregando || !cofrinhoSelecionado) {
     return (
@@ -97,18 +124,7 @@ export function CofrinhoDetalhePage({
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      {/* Back button */}
-      <div className="border-b border-border px-4 py-3">
-        <button
-          type="button"
-          aria-label="Voltar"
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-sm font-medium text-primary transition hover:opacity-80"
-        >
-          <IconVoltar size={16} aria-hidden="true" />
-          Voltar
-        </button>
-      </div>
+      {botaoVoltar}
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         {/* Header: emoji + nome + saldo + meta */}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { AppShell } from '@/components/app-shell';
 import { TransacaoModal } from '@/components/transacao-modal';
@@ -9,8 +9,8 @@ import { useLancamento } from '@/hooks/use-lancamento';
 import { useLancarPorVoz } from '@/hooks/use-lancar-por-voz';
 import type { FluxoSessao } from '@/hooks/use-fluxo-sessao';
 
-import { caminhoDaFatura, caminhoDoCofrinho, telaDoCaminho } from './caminhos';
-import type { ContextoLogado, SelecaoDetalhe } from './contexto-logado';
+import { CAMINHOS, ehEnderecoComId, telaDoCaminho } from './caminhos';
+import type { ContextoLogado } from './contexto-logado';
 import { RotaComFamilia } from './guardas';
 import { useNavegacao } from './use-navegacao';
 
@@ -18,30 +18,25 @@ interface AreaLogadaProps {
   fluxo: FluxoSessao;
 }
 
-const useSelecaoDetalhe = (): SelecaoDetalhe => {
-  const { irParaCaminho } = useNavegacao();
-  const [cofrinhoId, setCofrinhoId] = useState('');
-  const [fatura, setFatura] = useState({ metodoId: null as string | null, nome: '', mes: '' });
-  return {
-    cofrinhoId,
-    faturaMetodoId: fatura.metodoId,
-    faturaMetodoNome: fatura.nome,
-    faturaMes: fatura.mes,
-    escolherCofrinho: (id) => {
-      setCofrinhoId(id);
-      irParaCaminho(caminhoDoCofrinho(id));
-    },
-    escolherFatura: (id, nome, mes) => {
-      setFatura({ metodoId: id, nome, mes });
-      irParaCaminho(caminhoDaFatura(id, mes));
-    },
-  };
+/**
+ * Ids de cofrinho e de método no endereço pertencem à família em que foram abertos. Se a
+ * família ativa muda com a pessoa num desses endereços, volta ao Início com a família nova.
+ */
+const useVoltarAoInicioNaTrocaDeFamilia = (familiaId: string) => {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const familiaAnterior = useRef(familiaId);
+  useEffect(() => {
+    const trocou = familiaAnterior.current !== familiaId;
+    familiaAnterior.current = familiaId;
+    if (trocou && ehEnderecoComId(pathname)) void navigate(CAMINHOS.inicio, { replace: true });
+  }, [familiaId, pathname, navigate]);
 };
 
 const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId: string }) => {
   const { pathname } = useLocation();
   const { irPara } = useNavegacao();
-  const detalhe = useSelecaoDetalhe();
+  useVoltarAoInicioNaTrocaDeFamilia(familiaId);
   const lancamento = useLancamento(familiaId);
   const voz = useLancarPorVoz({ familiaId, abrirPainel: lancamento.abrirNova });
   const familiaNome = fluxo.familiasDoUsuario.find((f) => f.id === familiaId)?.nome;
@@ -51,7 +46,6 @@ const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId:
     onNovaTransacao: lancamento.abrirNova,
     onEditarTransacao: lancamento.abrirEdicao,
     onLogout: fluxo.aoSair,
-    detalhe,
   };
 
   return (

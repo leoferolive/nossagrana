@@ -36,7 +36,12 @@ export const useCofrinhoStore = create<CofrinhoStore>((set) => ({
       const data = await cofrinhoService.detalhe(familiaId, cofrinhoId);
       set({ cofrinhoSelecionado: data, carregando: false });
     } catch {
-      set({ erro: 'Erro ao carregar detalhe do cofrinho', carregando: false });
+      // Limpa o selecionado: com o id vindo do endereço, o anterior seria de outro cofrinho.
+      set({
+        cofrinhoSelecionado: null,
+        erro: 'Erro ao carregar detalhe do cofrinho',
+        carregando: false,
+      });
     }
   },
 

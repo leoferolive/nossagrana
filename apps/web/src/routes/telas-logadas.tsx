@@ -1,3 +1,6 @@
+import { useParams, useSearchParams } from 'react-router';
+
+import { useNomeDoMetodo } from '@/hooks/use-nome-do-metodo';
 import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
 import { CofrinhoDetalhePage } from '@/pages/cofrinho-detalhe-page';
@@ -13,7 +16,9 @@ import { MetodosPagamentoPage } from '@/pages/metodos-pagamento-page';
 import { OrcamentoPage } from '@/pages/orcamento-page';
 import { PerfilPage } from '@/pages/perfil-page';
 import { RelatoriosPage } from '@/pages/relatorios-page';
+import { getCurrentMonth } from '@/utils/date';
 
+import { caminhoDaFatura, caminhoDoCofrinho } from './caminhos';
 import { useContextoLogado } from './contexto-logado';
 import { useNavegacao } from './use-navegacao';
 
@@ -54,40 +59,47 @@ export const LimitesRota = () => {
 };
 
 export const CofrinhosRota = () => {
-  const { familiaId, detalhe } = useContextoLogado();
-  const { irPara } = useNavegacao();
+  const { familiaId } = useContextoLogado();
+  const { irPara, irParaCaminho } = useNavegacao();
   return (
     <CofrinhosPage
       familiaId={familiaId}
       onNavigate={irPara}
-      onVerDetalhe={detalhe.escolherCofrinho}
+      onVerDetalhe={(id) => irParaCaminho(caminhoDoCofrinho(id))}
     />
   );
 };
 
 export const CofrinhoDetalheRota = () => {
-  const { familiaId, detalhe } = useContextoLogado();
+  const { familiaId } = useContextoLogado();
+  const { cofrinhoId = '' } = useParams();
   const { irPara } = useNavegacao();
   return (
     <CofrinhoDetalhePage
       familiaId={familiaId}
-      cofrinhoId={detalhe.cofrinhoId}
+      cofrinhoId={cofrinhoId}
       onBack={() => irPara('cofrinhos')}
       onNavigate={irPara}
     />
   );
 };
 
+/** `mes` do endereço só vale no formato AAAA-MM com mês de 01 a 12; senão a fatura é a do mês corrente. */
+const mesDaFatura = (mes: string | null): string =>
+  mes !== null && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) ? mes : getCurrentMonth();
+
 export const FaturaRota = () => {
-  const { familiaId, detalhe } = useContextoLogado();
+  const { familiaId } = useContextoLogado();
+  const { metodoId = '' } = useParams();
+  const [params] = useSearchParams();
+  const nome = useNomeDoMetodo(familiaId, metodoId);
   const { irPara } = useNavegacao();
-  if (!detalhe.faturaMetodoId) return null;
   return (
     <FaturaPage
       familiaId={familiaId}
-      metodoPagamentoId={detalhe.faturaMetodoId}
-      metodoPagamentoNome={detalhe.faturaMetodoNome}
-      mesReferencia={detalhe.faturaMes}
+      metodoPagamentoId={metodoId}
+      metodoPagamentoNome={nome ?? 'Cartão'}
+      mesReferencia={mesDaFatura(params.get('mes'))}
       onBack={() => irPara('metodos-pagamento')}
     />
   );
@@ -144,13 +156,13 @@ export const CategoriasRota = () => {
 };
 
 export const MetodosPagamentoRota = () => {
-  const { familiaId, detalhe } = useContextoLogado();
-  const { irPara } = useNavegacao();
+  const { familiaId } = useContextoLogado();
+  const { irPara, irParaCaminho } = useNavegacao();
   return (
     <MetodosPagamentoPage
       familiaId={familiaId}
       onBack={() => irPara('configuracoes')}
-      onVerFatura={detalhe.escolherFatura}
+      onVerFatura={(id, _nome, mes) => irParaCaminho(caminhoDaFatura(id, mes))}
     />
   );
 };

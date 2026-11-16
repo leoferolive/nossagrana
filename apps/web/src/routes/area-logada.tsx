@@ -33,21 +33,44 @@ const useVoltarAoInicioNaTrocaDeFamilia = (familiaId: string) => {
   }, [familiaId, pathname, navigate]);
 };
 
+const useLancar = (familiaId: string) => {
+  const lancamento = useLancamento(familiaId);
+  const voz = useLancarPorVoz({ familiaId, abrirPainel: lancamento.abrirNova });
+  return { lancamento, voz };
+};
+
+type Lancar = ReturnType<typeof useLancar>;
+
+const PaineisDeLancar = ({ lancamento, voz }: Lancar) => (
+  <>
+    <TransacaoModal
+      {...lancamento.modal}
+      onClose={() => {
+        lancamento.modal.onClose();
+        voz.limparDados();
+      }}
+      onSubmit={async (payload) => {
+        await lancamento.modal.onSubmit(payload);
+        voz.limparDados();
+      }}
+      dadosVoz={voz.dadosVoz}
+      onVoiceActivate={voz.ativar}
+    />
+    <VoiceRecordingSheet {...voz.folha} />
+  </>
+);
+
 const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId: string }) => {
   const { pathname } = useLocation();
   const { irPara } = useNavegacao();
   useVoltarAoInicioNaTrocaDeFamilia(familiaId);
-  const lancamento = useLancamento(familiaId);
-  const voz = useLancarPorVoz({ familiaId, abrirPainel: lancamento.abrirNova });
-  const familiaNome = fluxo.familiasDoUsuario.find((f) => f.id === familiaId)?.nome;
-
+  const { lancamento, voz } = useLancar(familiaId);
   const contexto: ContextoLogado = {
     familiaId,
     onNovaTransacao: lancamento.abrirNova,
     onEditarTransacao: lancamento.abrirEdicao,
     onLogout: fluxo.aoSair,
   };
-
   return (
     <>
       <AppShell
@@ -56,24 +79,11 @@ const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId:
         onNovaTransacao={lancamento.abrirNova}
         onVoiceActivate={voz.ativar}
         onLogout={fluxo.aoSair}
-        familiaNome={familiaNome}
+        familiaNome={fluxo.familiasDoUsuario.find((f) => f.id === familiaId)?.nome}
       >
         <Outlet context={contexto} />
       </AppShell>
-      <TransacaoModal
-        {...lancamento.modal}
-        onClose={() => {
-          lancamento.modal.onClose();
-          voz.limparDados();
-        }}
-        onSubmit={async (payload) => {
-          await lancamento.modal.onSubmit(payload);
-          voz.limparDados();
-        }}
-        dadosVoz={voz.dadosVoz}
-        onVoiceActivate={voz.ativar}
-      />
-      <VoiceRecordingSheet {...voz.folha} />
+      <PaineisDeLancar lancamento={lancamento} voz={voz} />
     </>
   );
 };

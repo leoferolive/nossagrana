@@ -25,23 +25,23 @@ const buscaCom = (search: string, destino: string | null): string => {
   return resultado ? `?${resultado}` : '';
 };
 
-/**
- * O painel de lançar vive no endereço (`?lancar=nova` ou `?lancar=<id da transação>`), então o
- * voltar do navegador fecha só o painel e a tela de baixo não muda.
- */
-export const usePainelLancar = () => {
+const useAbrirPainel = (aberto: boolean) => {
   const navigate = useNavigate();
-  const { pathname, search, state, key } = useLocation();
-  const { aberto, transacaoId } = lerPainel(search);
-  const entradaEncerrada = useRef<string | null>(null);
-
-  const abrir = (destino: string) => {
-    // Com o painel aberto troca a entrada: abrir de novo (ex.: voz) não empilha outro passo.
+  const { pathname, search, state } = useLocation();
+  // Com o painel aberto troca a entrada: abrir de novo (ex.: voz) não empilha outro passo.
+  return (destino: string) => {
     void navigate(
       { pathname, search: buscaCom(search, destino) },
       { replace: aberto, state: aberto ? state : MARCA_DE_ABERTURA },
     );
   };
+};
+
+/** `fechar` estável que sempre usa o último render e anda no histórico no máximo uma vez por abertura. */
+const useFecharPainel = (aberto: boolean) => {
+  const navigate = useNavigate();
+  const { pathname, search, state, key } = useLocation();
+  const entradaEncerrada = useRef<string | null>(null);
 
   const fecharAgora = () => {
     if (!aberto) return;
@@ -50,32 +50,35 @@ export const usePainelLancar = () => {
       void navigate({ pathname, search: buscaCom(search, null) }, { replace: true });
       return;
     }
-    // Idempotente por entrada: voltar só uma vez por abertura. Fechar e depois reagir ao
-    // fechamento (envio que termina, toque duplo, efeito do StrictMode) chega aqui de novo
-    // enquanto o endereço ainda é o do painel, e não pode voltar uma segunda entrada.
+    // Idempotente por entrada: fechar e depois reagir ao fechamento (envio que termina, toque
+    // duplo, efeito do StrictMode) chega aqui de novo enquanto o endereço ainda é o do painel.
     if (entradaEncerrada.current === key) return;
     entradaEncerrada.current = key;
     void navigate(-1);
   };
 
-  // `fechar` fica estável e sempre usa o último render: um envio que termina depois de a
-  // pessoa já ter fechado o painel pelo voltar não pode voltar mais uma entrada.
   // Painel fechado de verdade: o mesmo registro de histórico pode reabrir (avançar do navegador).
   useEffect(() => {
     if (!aberto) entradaEncerrada.current = null;
   }, [aberto]);
 
+  // Um envio que termina depois de a pessoa já ter fechado o painel pelo voltar não pode voltar
+  // mais uma entrada: por isso o fechar chamado é sempre o do último render.
   const ultimoFechar = useRef(fecharAgora);
   useEffect(() => {
     ultimoFechar.current = fecharAgora;
   });
-  const fechar = useCallback(() => ultimoFechar.current(), []);
+  return useCallback(() => ultimoFechar.current(), []);
+};
 
-  return {
-    aberto,
-    transacaoId,
-    abrirNova: () => abrir(NOVA),
-    abrirEdicao: (id: string) => abrir(id),
-    fechar,
-  };
+/**
+ * O painel de lançar vive no endereço (`?lancar=nova` ou `?lancar=<id da transação>`), então o
+ * voltar do navegador fecha só o painel e a tela de baixo não muda.
+ */
+export const usePainelLancar = () => {
+  const { search } = useLocation();
+  const { aberto, transacaoId } = lerPainel(search);
+  const abrir = useAbrirPainel(aberto);
+  const fechar = useFecharPainel(aberto);
+  return { aberto, transacaoId, abrirNova: () => abrir(NOVA), abrirEdicao: abrir, fechar };
 };

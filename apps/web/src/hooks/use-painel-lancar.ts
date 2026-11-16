@@ -16,7 +16,8 @@ const abertoPorNavegacao = (state: unknown): boolean =>
  */
 export const usePainelLancar = () => {
   const navigate = useNavigate();
-  const { pathname, search, state } = useLocation();
+  const { pathname, search, state, key } = useLocation();
+  const entradaDescartada = useRef<string | null>(null);
   const valor = new URLSearchParams(search).get(PARAMETRO);
   const aberto = valor !== null && valor !== '';
   const transacaoId = aberto && valor !== NOVA ? valor : null;
@@ -35,6 +36,15 @@ export const usePainelLancar = () => {
   // (efeito rodando duas vezes) e uma recarga sem o que editar exigem, ao contrário de voltar.
   const descartarAgora = () => {
     if (!aberto) return;
+    // Entrada aberta pelo app (marca no history.state, que sobrevive à recarga): a anterior é a
+    // mesma tela sem o parâmetro, então voltar evita deixar duas entradas iguais em sequência.
+    // Uma vez por entrada: o StrictMode roda o efeito duas vezes.
+    if (abertoPorNavegacao(state)) {
+      if (entradaDescartada.current === key) return;
+      entradaDescartada.current = key;
+      void navigate(-1);
+      return;
+    }
     const parametros = new URLSearchParams(search);
     parametros.delete(PARAMETRO);
     const restante = parametros.toString();

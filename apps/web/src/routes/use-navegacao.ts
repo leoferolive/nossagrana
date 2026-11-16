@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router';
 
 import { caminhoDaTela } from './caminhos';
+import { temEntradaAnteriorDoApp } from './historico-do-app';
 
 /**
  * Ponte entre o vocabulário de telas que as páginas e o AppShell ainda usam
@@ -16,10 +17,9 @@ export const useNavegacao = () => {
   };
   const irPara = (tela: string) => irParaCaminho(caminhoDaTela(tela));
 
-  // `key === 'default'` é a primeira entrada do histórico: a tela foi aberta por link direto
-  // ou recarga numa nova aba, e não há tela anterior do app para a qual voltar.
+  // Sem entrada anterior do app (link direto, recarga em nova aba) vai à origem do mapa.
   const voltarPara = (caminhoDeOrigem: string) => {
-    if (key !== 'default') void navigate(-1);
+    if (temEntradaAnteriorDoApp(key)) void navigate(-1);
     else void navigate(caminhoDeOrigem, { replace: true });
   };
 

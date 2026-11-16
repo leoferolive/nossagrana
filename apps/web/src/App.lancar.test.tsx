@@ -131,7 +131,7 @@ describe('App > painel de lançar no endereço', () => {
     renderApp(
       [
         '/',
-        '/mais',
+        '/extrato',
         { pathname: '/extrato', search: '?lancar=desconhecida', state: { painelLancar: true } },
       ],
       { strict: true },
@@ -139,8 +139,9 @@ describe('App > painel de lançar no endereço', () => {
 
     await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
     expect(tituloNoConteudo(/^extrato$/i)).toBeInTheDocument();
+    // Um único voltar sai do Extrato: não sobra uma segunda entrada /extrato no histórico.
     voltar();
-    await waitFor(() => expect(local()).toHaveTextContent(/^\/mais$/));
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/$/));
   });
 
   it('link direto com ?lancar=nova abre o painel sobre a tela', async () => {

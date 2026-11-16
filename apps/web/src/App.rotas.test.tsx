@@ -251,3 +251,25 @@ describe('App > o "Voltar" da tela e o voltar do navegador', () => {
     expect(local()).toHaveTextContent(/^\/mais$/);
   });
 });
+
+describe('App > "Voltar" depois de link direto com login', () => {
+  it('link direto sem login, login e "Voltar": vai a /mais e a entrada de /entrar não fica no histórico', async () => {
+    mockSessao();
+    renderApp('/mais/categorias', { navegador: true });
+    await screen.findByRole('form', { name: /login/i });
+    const { familiaService } = await import('./services/auth.service');
+    vi.mocked(familiaService.listarMinhas).mockResolvedValue({
+      familias: [{ id: 'fam-1', nome: 'Casa', dataEntrada: '2026-01-01', role: 'admin' }],
+    });
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+    await waitFor(() => tituloNoConteudo(/^categorias$/i));
+
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: /^voltar$/i }));
+
+    await waitFor(() => expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/));
+    fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
+    expect(screen.queryByRole('form', { name: /login/i })).not.toBeInTheDocument();
+  });
+});

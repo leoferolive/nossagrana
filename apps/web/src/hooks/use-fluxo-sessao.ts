@@ -17,22 +17,25 @@ export const useFluxoSessao = () => {
   const aoEntrar = (familias: FamiliaMinhasItem[]) => {
     setFamiliasDoUsuario(familias);
     if (familias.length === 0) {
-      void navigate(CAMINHOS.boasVindas);
+      void navigate(CAMINHOS.boasVindas, { replace: true });
       return;
     }
     // O endereço pedido só vale com a família já ativa; com várias, segue junto até a escolha.
     const pedido = enderecoPedido(state);
     if (familias.length > 1) {
-      void navigate(CAMINHOS.familias, { state: pedido ? { de: pedido } : undefined });
+      void navigate(CAMINHOS.familias, {
+        replace: true,
+        state: pedido ? { de: pedido } : undefined,
+      });
       return;
     }
     updateFamiliaIdAtiva(familias[0].id);
-    void navigate(pedido ?? CAMINHOS.inicio);
+    void navigate(pedido ?? CAMINHOS.inicio, { replace: true });
   };
 
   const aoEscolherFamilia = (familiaId: string) => {
     updateFamiliaIdAtiva(familiaId);
-    void navigate(enderecoPedido(state) ?? CAMINHOS.inicio);
+    void navigate(enderecoPedido(state) ?? CAMINHOS.inicio, { replace: true });
   };
 
   const aoSair = () => {

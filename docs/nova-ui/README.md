@@ -77,7 +77,7 @@ cabeçalhos e tour; E2E. Desenho em
 [`2026-11-16-nova-ui-entrega-2-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md).
 
 - [x] 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário
-- [ ] Rotas com URL (voltar do Android, recarregar mantém a tela, link direto)
+- [x] 2026-11-16 — Rotas com URL (voltar do Android, recarregar mantém a tela, link direto)
 - [ ] Barra de cinco posições com o "+" dentro
 - [ ] Cabeçalho único de aba e de passo/detalhe
 - [ ] Tela Mais
@@ -186,6 +186,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 2, PR 1: guardas de rota (`routes/guardas.tsx`). Sem login, endereço protegido leva a `/entrar` guardando o endereço pedido no `state` da entrada de histórico; depois do login o app volta a ele (só endereço interno: `//` e `/\` são descartados). Sair substitui a entrada do histórico e não deixa a tela deixada como endereço pedido.
 - 2026-11-16 — Entrega 2, PR 1: cofrinho e fatura passam a ser identificados pelo endereço (`useParams`/`useSearchParams`); `mes` fora de AAAA-MM vale como ausente (mês corrente) e o nome do cartão vem da store de métodos (`useNomeDoMetodo`). O detalhe do cofrinho ganhou estado de erro e não mostra mais o detalhe guardado de outro cofrinho. Trocar de família num endereço com id leva ao Início.
 - 2026-11-16 — Entrega 2, PR 1: o painel de lançar passa a viver no endereço (`?lancar=nova` ou `?lancar=<id>`, hook `usePainelLancar`). Abrir acrescenta um passo ao histórico, então o voltar do navegador fecha só o painel e a tela de baixo não muda; fechar pelo botão desfaz esse passo; link direto ou recarga só removem o parâmetro. Transação em edição que não está em memória (recarga) fecha o painel em vez de abrir vazio.
+- 2026-11-16 — Entrega 2, PR 1: `navigateFallbackDenylist` no service worker deixa `/api/` e `/health` fora do retorno de navegação para `index.html` (conferido no build: `dist/sw.js` registra `NavigationRoute` com `denylist:[/^\/api\//,/^\/health/]`). Rotas com URL fechadas; falta a validação no navegador.
 
 ## Decisões fechadas
 

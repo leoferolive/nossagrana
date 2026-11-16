@@ -3,7 +3,6 @@ import { Search } from 'lucide-react';
 
 import { CabecalhoAba } from '../components/cabecalho-aba';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
 import {
   transacaoService,
   metodoPagamentoService,
@@ -15,14 +14,7 @@ import { useTransacaoStore } from '@/stores/transacao.store';
 import { getCurrentMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import {
-  IconBusca,
-  IconEditar,
-  IconEntrada,
-  IconExportar,
-  IconExtrato,
-  IconSaida,
-} from '../components/icons';
+import { IconEntrada, IconSaida } from '../components/icons';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
@@ -186,33 +178,6 @@ export const ExtratoPage = ({
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={erro} />
-      <FirstTimeTour
-        tourKey="extrato"
-        steps={[
-          {
-            icon: IconExtrato,
-            title: 'Seu extrato',
-            description:
-              'Veja todas as transações do mês. Use as setas ao lado do mês para navegar entre meses.',
-          },
-          {
-            icon: IconBusca,
-            title: 'Filtros e busca',
-            description:
-              'Filtre por receitas ou despesas com os chips. Use a barra de busca para encontrar uma transação específica.',
-          },
-          {
-            icon: IconEditar,
-            title: 'Editar transação',
-            description: 'Toque em qualquer transação para editá-la ou excluí-la.',
-          },
-          {
-            icon: IconExportar,
-            title: 'Exportar CSV',
-            description: 'Use o botão "Exportar CSV" para baixar suas transações em planilha.',
-          },
-        ]}
-      />
 
       <CabecalhoAba titulo="Extrato" mes={mesReferencia} onMesChange={setMesReferencia} />
 

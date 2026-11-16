@@ -8,10 +8,6 @@ import { useTransacaoStore } from '@/stores/transacao.store';
 import { ExtratoPage } from './extrato-page';
 import { renderPagina } from '../test/render-pagina';
 
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
-
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -135,11 +131,6 @@ describe('ExtratoPage', () => {
     renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Mercado')[0]);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('exibe o tour de extrato', () => {
-    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
-    expect(screen.getByTestId('tour-extrato')).toBeInTheDocument();
   });
 });
 

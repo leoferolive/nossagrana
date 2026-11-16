@@ -46,6 +46,7 @@ describe('DashboardPage', () => {
 
   afterEach(() => {
     cleanup();
+    localStorage.clear();
   });
 
   it('exibe loading state', () => {
@@ -287,5 +288,23 @@ describe('DashboardPage', () => {
     renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /ver todos/i }));
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar\/cofrinhos$/);
+  });
+
+  it('abre o tour de boas-vindas no primeiro acesso e não de novo depois de concluído', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({ cofrinhos: [], fetchAll: vi.fn() });
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /pular/i }));
+    cleanup();
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

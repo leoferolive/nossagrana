@@ -6,21 +6,19 @@ import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { CabecalhoAba } from '../components/cabecalho-aba';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
+
 import {
-  IconAdicionar,
   IconAvancar,
-  IconBoasVindas,
   IconCofrinho,
   IconEntrada,
   IconOrcamento,
   IconRelatorio,
   IconSaida,
-  IconSaldo,
 } from '../components/icons';
 import { CAMINHOS } from '../routes/caminhos';
 import { useNavegacao } from '../routes/use-navegacao';
 import { getCurrentMonth } from '../utils/date';
+import { TourBoasVindas } from '../components/tour-boas-vindas';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { useDashboardStore } from '../stores/dashboard.store';
 import { formatBRL } from '../utils/formatting';
@@ -118,37 +116,10 @@ export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps
   const temTransacoes =
     resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
 
-  const dashboardTourSteps = [
-    {
-      icon: IconBoasVindas,
-      title: 'Bem-vindo ao NossaGrana!',
-      description:
-        'Aqui é o seu painel financeiro. Você vê receitas, despesas e saldo do mês de forma rápida.',
-    },
-    {
-      icon: IconSaldo,
-      title: 'Cards de resumo',
-      description:
-        'Os três cards no topo mostram o total de receitas, despesas e o saldo. As setas indicam se subiu ou caiu em relação ao mês anterior.',
-    },
-    {
-      icon: IconAdicionar,
-      title: 'Registrar transação',
-      description:
-        'Toque no botão "+" (mobile) ou "Nova Transação" (desktop) para registrar uma receita ou despesa.',
-    },
-    {
-      icon: IconRelatorio,
-      title: 'Gráficos e orçamento',
-      description:
-        'Acompanhe despesas por categoria, evolução diária e limites de orçamento — tudo nesta mesma tela.',
-    },
-  ];
-
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={error} />
-      <FirstTimeTour tourKey="dashboard" steps={dashboardTourSteps} />
+      <TourBoasVindas />
 
       <CabecalhoAba titulo="Início" mes={mesReferencia} onMesChange={setMesReferencia} />
 

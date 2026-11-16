@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { CAMINHOS } from '../routes/caminhos';
 import { useNavegacao } from '../routes/use-navegacao';
+import { TOUR_DE_BOAS_VINDAS, reabrirTour } from '../utils/tour';
 
 const FAQ = [
   {
@@ -96,16 +97,6 @@ const FAQ = [
   },
 ];
 
-const TOUR_KEYS = [
-  'dashboard',
-  'extrato',
-  'relatorios',
-  'orcamento',
-  'historico',
-  'configuracoes',
-  'perfil',
-];
-
 export const AjudaPage = () => {
   const { irParaCaminho } = useNavegacao();
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -114,9 +105,7 @@ export const AjudaPage = () => {
   const toggle = (key: string) => setOpenKey(openKey === key ? null : key);
 
   const resetTours = () => {
-    for (const key of TOUR_KEYS) {
-      localStorage.removeItem(`tour-${key}`);
-    }
+    reabrirTour(TOUR_DE_BOAS_VINDAS);
     setTourReset(true);
     irParaCaminho(CAMINHOS.inicio);
   };

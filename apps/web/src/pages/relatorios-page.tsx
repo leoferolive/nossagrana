@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
 import { MonthNav } from '../components/month-nav';
 import { CAMINHOS } from '../routes/caminhos';
 import { getCurrentMonth, shiftMonth } from '../utils/date';
@@ -18,7 +17,6 @@ import type {
 } from '@nossagrana/types';
 
 import { formatBRL } from '../utils/formatting';
-import { IconRecorrente, IconRelatorio } from '../components/icons';
 
 type Tab = 'distribuicao' | 'por-membro' | 'tendencias';
 
@@ -92,23 +90,6 @@ export const RelatoriosPage = ({ familiaId }: RelatoriosPageProps) => {
 
   return (
     <div className="min-h-full bg-bg">
-      <FirstTimeTour
-        tourKey="relatorios"
-        steps={[
-          {
-            icon: IconRelatorio,
-            title: 'Relatórios',
-            description:
-              'Analise seus gastos de diferentes ângulos: distribuição por categoria, comparação entre membros e tendências ao longo dos meses.',
-          },
-          {
-            icon: IconRecorrente,
-            title: 'Abas de visualização',
-            description:
-              'Alterne entre Distribuição, Por Membro e Tendências usando as abas no topo.',
-          },
-        ]}
-      />
       <CabecalhoDetalhe titulo="Relatórios" origem={CAMINHOS.mais} />
       <ErrorBanner error={erro} />
 

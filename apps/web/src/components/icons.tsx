@@ -6,6 +6,7 @@ export {
   // Navegação
   House as IconInicio,
   ClipboardList as IconPlanejar,
+  Ellipsis as IconMais,
   ArrowLeft as IconVoltar,
   ArrowRight as IconAvancar,
   ChevronLeft as IconMesAnterior,

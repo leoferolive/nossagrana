@@ -4,7 +4,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { AjudaPage } from './ajuda-page';
 import { renderPagina } from '../test/render-pagina';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 describe('AjudaPage', () => {
   it('renderiza título e subtítulo', () => {
@@ -88,5 +91,13 @@ describe('AjudaPage', () => {
     expect(items[0].className).toContain('border-b');
     expect(items[1].className).toContain('border-b');
     expect(items[2].className).not.toContain('border-b');
+  });
+
+  it('"Rever tutorial" reabre o tour de boas-vindas e leva ao Início', () => {
+    localStorage.setItem('tour-boas-vindas', 'true');
+    renderPagina(<AjudaPage />, '/mais/ajuda');
+    fireEvent.click(screen.getByRole('button', { name: /rever tutorial/i }));
+    expect(localStorage.getItem('tour-boas-vindas')).toBeNull();
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
   });
 });

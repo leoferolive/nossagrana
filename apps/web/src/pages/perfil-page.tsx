@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
-import { FirstTimeTour } from '../components/first-time-tour';
-import { IconPerfil } from '../components/icons';
 import { useAuth } from '@/contexts/use-auth';
 
 import { CAMINHOS } from '../routes/caminhos';
@@ -80,18 +78,6 @@ export const PerfilPage = () => {
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      <FirstTimeTour
-        tourKey="perfil"
-        steps={[
-          {
-            icon: IconPerfil,
-            title: 'Seu perfil',
-            description:
-              'Atualize seu nome de exibição e altere sua senha. Seu e-mail é usado para login e não pode ser alterado.',
-          },
-        ]}
-      />
-
       <CabecalhoDetalhe titulo="Perfil" origem={CAMINHOS.mais} />
 
       <div className="flex-1 space-y-6 p-4">

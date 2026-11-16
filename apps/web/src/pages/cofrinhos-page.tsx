@@ -4,7 +4,6 @@ import { BudgetBar } from '../components/charts/budget-bar';
 import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { CofrinhoModal } from '../components/cofrinho-modal';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
 import { CAMINHOS, caminhoDoCofrinho } from '../routes/caminhos';
 import { useNavegacao } from '../routes/use-navegacao';
 import { cofrinhoService } from '../services/cofrinho.service';
@@ -45,29 +44,8 @@ export function CofrinhosPage({ familiaId }: CofrinhosPageProps) {
     );
   }
 
-  const cofrinhosTourSteps = [
-    {
-      title: 'Bem-vindo aos Cofrinhos!',
-      description: 'Aqui você cria reservas para guardar dinheiro da família.',
-    },
-    {
-      title: 'Metas',
-      description: 'Defina uma meta opcional para acompanhar o progresso de cada cofrinho.',
-    },
-    {
-      title: 'Aportes',
-      description: 'Faça aportes manuais ou configure aportes automáticos mensais.',
-    },
-    {
-      title: 'Retiradas',
-      description: 'Retire quando precisar — você escolhe se o valor volta ao saldo ou não.',
-    },
-  ];
-
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      <FirstTimeTour tourKey="cofrinhos" steps={cofrinhosTourSteps} />
-
       <CabecalhoDetalhe
         titulo="Cofrinhos"
         origem={CAMINHOS.planejar}

@@ -11,10 +11,6 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
-
 import { HistoricoPage } from './historico-page';
 import { renderPagina } from '../test/render-pagina';
 
@@ -142,11 +138,6 @@ describe('HistoricoPage', () => {
     mockService.getHistorico.mockRejectedValue(new Error('network'));
     renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
-  });
-
-  it('exibe o tour de histórico', async () => {
-    renderPagina(<HistoricoPage familiaId={familiaId} />);
-    await waitFor(() => expect(screen.getByTestId('tour-historico')).toBeInTheDocument());
   });
 
   it('exibe botão "Gerar Snapshot" para meses abertos (sem snapshot)', async () => {

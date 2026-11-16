@@ -4,13 +4,12 @@ import { Target } from 'lucide-react';
 
 import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
 import { CAMINHOS } from '../routes/caminhos';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
 import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
 import { CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconAdicionar, IconEditar, IconOrcamento, IconRelatorio } from '../components/icons';
+import { IconAdicionar } from '../components/icons';
 
 interface OrcamentoItem {
   id: string;
@@ -136,29 +135,6 @@ export const OrcamentoPage = ({ familiaId }: OrcamentoPageProps) => {
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      <FirstTimeTour
-        tourKey="orcamento"
-        steps={[
-          {
-            icon: IconOrcamento,
-            title: 'Orçamento mensal',
-            description:
-              'Defina quanto deseja gastar no máximo por categoria. O controle ajuda a evitar surpresas no fim do mês.',
-          },
-          {
-            icon: IconRelatorio,
-            title: 'Barra de progresso',
-            description:
-              'A barra muda de cor: verde = dentro do limite, amarelo = 80% usado, vermelho = estourou.',
-          },
-          {
-            icon: IconEditar,
-            title: 'Ajustar limites',
-            description:
-              'Toque em "Editar limite" para alterar o valor. A mudança vale a partir de agora e o histórico anterior é preservado.',
-          },
-        ]}
-      />
       <CabecalhoDetalhe
         titulo="Orçamento Mensal"
         origem={CAMINHOS.planejar}

@@ -15,10 +15,6 @@ vi.mock('../services/core-financeiro.service', () => ({
   categoriaService: mockCategoriaService,
 }));
 
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
-
 import { OrcamentoPage } from './orcamento-page';
 import { renderPagina } from '../test/render-pagina';
 
@@ -143,11 +139,6 @@ describe('OrcamentoPage', () => {
         expect.objectContaining({ valorLimite: '800' }),
       ),
     );
-  });
-
-  it('exibe o tour de orçamento', async () => {
-    renderPagina(<OrcamentoPage familiaId={familiaId} />);
-    await waitFor(() => expect(screen.getByTestId('tour-orcamento')).toBeInTheDocument());
   });
 
   it('exibe empty state melhorado com CTA quando não há orçamentos', async () => {

@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
+import { jaViuTour, marcarTourComoVisto } from '../utils/tour';
+
 import { IconAvancar, IconVoltar } from './icons';
 
 interface TourStep {
@@ -14,30 +16,12 @@ interface FirstTimeTourProps {
   steps: TourStep[];
 }
 
-const STORAGE_PREFIX = 'tour-';
-
-function hasSeen(tourKey: string): boolean {
-  try {
-    return localStorage.getItem(`${STORAGE_PREFIX}${tourKey}`) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function markSeen(tourKey: string): void {
-  try {
-    localStorage.setItem(`${STORAGE_PREFIX}${tourKey}`, 'true');
-  } catch {
-    // ignore
-  }
-}
-
 export const FirstTimeTour = ({ tourKey, steps }: FirstTimeTourProps) => {
-  const [visible, setVisible] = useState(() => !hasSeen(tourKey));
+  const [visible, setVisible] = useState(() => !jaViuTour(tourKey));
   const [step, setStep] = useState(0);
 
   const close = useCallback(() => {
-    markSeen(tourKey);
+    marcarTourComoVisto(tourKey);
     setVisible(false);
   }, [tourKey]);
 

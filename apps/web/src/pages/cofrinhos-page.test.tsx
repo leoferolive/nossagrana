@@ -85,7 +85,6 @@ afterEach(() => {
 
 describe('CofrinhosPage', () => {
   beforeEach(() => {
-    localStorage.setItem('tour-cofrinhos', 'true');
     useCofrinhoStore.setState({
       cofrinhos: [],
       carregando: false,

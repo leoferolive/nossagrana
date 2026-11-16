@@ -1,82 +1,42 @@
 /**
- * E2E tests for the relatórios (reports) and historico (history) flows.
+ * E2E de relatórios, fatura do cartão e histórico.
  *
- * The NossaGrana frontend is a single-page application with state-based
- * navigation — the URL always stays at "/". These tests verify:
- *  - The distribuição (distribution) chart renders after seeding transactions.
- *  - The "Por Membro" tab renders user spending data.
- *  - The fatura (credit-card statement) screen renders transactions for a month.
- *  - The histórico (monthly history) screen lists snapshots / month summaries.
+ * As telas vivem em Mais (Relatórios, Histórico, Métodos de pagamento); a fatura abre a partir do
+ * cartão. Verifica:
+ *  - a distribuição por categoria (gráfico de pizza em SVG, sem canvas) e a legenda;
+ *  - a aba "Por Membro";
+ *  - a fatura do cartão com os lançamentos do mês;
+ *  - o histórico, com a lista de meses e o detalhe de um mês.
  *
- * Strategy:
- *  - Set up: register a user, create a familia, inject the session (including
- *    familiaIdAtiva) into localStorage so the app lands on the dashboard.
- *  - Seed categories, methods and transactions via the API client.
- *  - Navigate to the target screen via the dashboard nav buttons.
- *  - For charts (Doughnut / Line rendered with chart.js inside a <canvas>),
- *    assert the presence of the canvas element — not its pixel content.
+ * Estratégia: categorias, cartão e lançamentos de apoio são criados pela API antes de abrir o app.
  */
 
 import { expect, test } from '../fixtures/base.js';
-import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 import * as api from '../helpers/api-client.js';
+import { abrirInicio, abrirLinha, esperarTela, irParaAba } from '../helpers/navegacao.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Minimal shape of the authContext fixture used in navigation helpers. */
-interface AuthCtx {
-  accessToken: string;
-  password: string;
-  user: { id: string; nome: string; email: string };
-}
+/** Data de hoje (AAAA-MM-DD) no fuso do app: a fatura e o mês corrente usam São Paulo. */
+const hojeEmSaoPaulo = (): string =>
+  new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 
-/**
- * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session, reloads the page
- * so the App.tsx lazy initializer reads the session and navigates directly to
- * screen = 'dashboard'.
- */
-async function gotoDashboard(
-  page: import('@playwright/test').Page,
-  ctx: AuthCtx,
-  familiaId: string,
-) {
-  await abrirAppAutenticado(page, { email: ctx.user.email, password: ctx.password }, familiaId);
-  await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
-    timeout: 15_000,
-  });
-}
-
-/**
- * Opens the Relatórios screen from the dashboard nav.
- */
-async function gotoRelatorios(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: 'Ver relatórios' }).click();
-  await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible({
-    timeout: 10_000,
-  });
-}
-
-/**
- * Opens the Histórico screen from the dashboard nav.
- */
-async function gotoHistorico(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: 'Ver histórico' }).click();
-  await expect(page.getByRole('heading', { name: 'Histórico', level: 1 })).toBeVisible({
-    timeout: 10_000,
-  });
+/** Abre uma tela de segundo nível de Mais pelo nome da linha. */
+async function gotoDeMais(page: import('@playwright/test').Page, rotulo: string, titulo: string) {
+  await irParaAba(page, 'Mais');
+  await abrirLinha(page, rotulo, titulo);
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 test.describe('Relatórios', () => {
   // ── 1. Relatório de distribuição por categoria → gráfico renderizado ───────
-  test('relatório de distribuição por categoria exibe gráfico canvas', async ({
+  test('relatório de distribuição por categoria exibe gráfico de pizza', async ({
     page,
     authContext,
     familiaId,
   }) => {
-    // Seed: create a category and a transaction so the distribuição endpoint
-    // returns at least one item (otherwise the chart is not rendered).
+    // Uma categoria e um lançamento: sem dados a distribuição não desenha o gráfico.
     const categoria = await api.criarCategoria(authContext.accessToken, familiaId, {
       nome: 'Alimentação Relatorio E2E',
       tipo: 'despesa',
@@ -87,25 +47,33 @@ test.describe('Relatórios', () => {
       valor: '250.00',
       categoriaId: categoria.id,
       descricao: 'Mercado Relatorio E2E',
-      data: new Date().toISOString().slice(0, 10),
+      data: hojeEmSaoPaulo(),
     });
 
-    await gotoDashboard(page, authContext, familiaId);
-    await gotoRelatorios(page);
+    await abrirInicio(page, authContext, familiaId);
+    await gotoDeMais(page, 'Relatórios', 'Relatórios');
 
-    // The "Distribuição" tab is active by default.
-    // When there is data, a Doughnut chart is rendered inside a <canvas>.
-    const canvas = page.locator('canvas').first();
-    await expect(canvas).toBeVisible({ timeout: 10_000 });
+    // "Distribuição" é a aba aberta. O gráfico é um SVG (`PieChart`, 120px) escondido dos
+    // leitores de tela; o nome acessível dele é a legenda, que lista categoria e valor. Com uma
+    // categoria só, a pizza é um anel (`circle`).
+    await expect(page.getByRole('tab', { name: 'Distribuição', selected: true })).toBeVisible();
+    const grafico = page.locator('svg[width="120"][height="120"]');
+    await expect(grafico).toBeVisible({ timeout: 10_000 });
+    await expect(grafico.locator('circle')).toHaveCount(1);
 
-    // The category name should also appear in the legend list below the chart.
-    await expect(page.getByText('Alimentação Relatorio E2E')).toBeVisible({ timeout: 10_000 });
+    // A categoria aparece na legenda, com o valor e a fatia de 100%.
+    const legenda = page
+      .getByRole('listitem')
+      .filter({ hasText: 'Alimentação Relatorio E2E' })
+      .first();
+    await expect(legenda).toBeVisible({ timeout: 10_000 });
+    await expect(legenda).toContainText(/R\$\s*250,00/);
+    await expect(legenda).toContainText('100%');
   });
 
   // ── 2. Relatório por usuário (membro) exibe dados ─────────────────────────
   test('relatório por membro exibe dados do usuário', async ({ page, authContext, familiaId }) => {
-    // Seed: create a category and a transaction registered by the authenticated
-    // user so the por-usuario endpoint returns at least one item.
+    // Um lançamento registrado pelo usuário autenticado: sem ele a aba fica vazia.
     const categoria = await api.criarCategoria(authContext.accessToken, familiaId, {
       nome: 'Transporte Relatorio E2E',
       tipo: 'despesa',
@@ -116,28 +84,29 @@ test.describe('Relatórios', () => {
       valor: '80.00',
       categoriaId: categoria.id,
       descricao: 'Uber Relatorio E2E',
-      data: new Date().toISOString().slice(0, 10),
+      data: hojeEmSaoPaulo(),
     });
 
-    await gotoDashboard(page, authContext, familiaId);
-    await gotoRelatorios(page);
+    await abrirInicio(page, authContext, familiaId);
+    await gotoDeMais(page, 'Relatórios', 'Relatórios');
 
-    // Switch to "Por Membro" tab.
     await page.getByRole('tab', { name: 'Por Membro' }).click();
 
-    // When data is available, the list should show the user's name and a total.
-    // The authenticated user's name is "Usuário E2E" (set in fixtures/base.ts).
-    await expect(page.getByText('Usuário E2E')).toBeVisible({ timeout: 10_000 });
+    // A lista mostra o nome do usuário (definido em fixtures/base.ts) e o total dele.
+    const cartao = page.locator('div.rounded-xl').filter({ hasText: 'Usuário E2E' });
+    await expect(cartao).toBeVisible({ timeout: 10_000 });
+    await expect(cartao).toContainText(/R\$\s*80,00/);
   });
 
   // ── 3. Fatura do cartão → transações do mês exibidas ─────────────────────
   test('fatura do cartão exibe transações do mês', async ({ page, authContext, familiaId }) => {
-    // Seed: create a credit card method.
+    // Fechamento no dia 31: qualquer dia do mês é "até o fechamento", então o lançamento de hoje
+    // cai sempre na fatura do mês corrente, em qualquer dia em que a suíte rode.
     const cartao = await api.criarMetodoPagamento(authContext.accessToken, familiaId, {
       nome: 'Visa Fatura E2E',
       tipo: 'credito',
-      dataFechamento: 20,
-      dataVencimento: 27,
+      dataFechamento: 31,
+      dataVencimento: 10,
     });
 
     const categoria = await api.criarCategoria(authContext.accessToken, familiaId, {
@@ -145,59 +114,39 @@ test.describe('Relatórios', () => {
       tipo: 'despesa',
     });
 
-    const today = new Date();
-    const mesReferencia = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-
+    const hoje = hojeEmSaoPaulo();
     await api.criarTransacao(authContext.accessToken, familiaId, {
       tipo: 'despesa',
       valor: '399.90',
       categoriaId: categoria.id,
       metodoPagamentoId: cartao.id,
       descricao: 'Fone Bluetooth Fatura E2E',
-      data: today.toISOString().slice(0, 10),
+      data: hoje,
     });
 
-    await gotoDashboard(page, authContext, familiaId);
+    await abrirInicio(page, authContext, familiaId);
+    await gotoDeMais(page, 'Métodos de pagamento', 'Métodos de pagamento');
 
-    // Navigate to Métodos de Pagamento (Cartões) to access the fatura.
-    await page.getByRole('button', { name: 'Ver métodos de pagamento' }).click();
-    await expect(page.getByRole('heading', { name: /Cartões e Métodos/i })).toBeVisible({
-      timeout: 10_000,
-    });
-
-    // The credit card should be listed.
+    // O cartão cadastrado aparece, com o botão que abre a fatura dele.
     await expect(page.getByText('Visa Fatura E2E')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Ver fatura de Visa Fatura E2E' }).click();
 
-    // Click the "Ver fatura" button for this credit card.
-    // The MetodosPagamentoPage renders an aria-label="Ver fatura de <nome>" button
-    // per card. We match by the card name we seeded.
-    const verFaturaBtn = page.getByRole('button', { name: /Ver fatura de Visa Fatura E2E/i });
-    await expect(verFaturaBtn).toBeVisible({ timeout: 10_000 });
-    await verFaturaBtn.click();
+    // A fatura do mês corrente: título com o cartão, o mês no subtítulo, o lançamento e o total.
+    await esperarTela(page, 'Fatura — Visa Fatura E2E');
+    await expect(page.getByText(hoje.slice(0, 7), { exact: true })).toBeVisible({ timeout: 5_000 });
 
-    // The FaturaPage heading should include the card name.
-    await expect(page.getByText(/Visa Fatura E2E/)).toBeVisible({ timeout: 10_000 });
-
-    // The transaction seeded above should appear in the fatura list.
-    // Note: depending on the closing-date logic (mesReferencia), the transaction
-    // may appear in the current or the next month's fatura. We assert the page
-    // loaded without an error banner and shows either the transaction or the
-    // empty state message — not an unhandled crash.
-    const hasTransaction = await page.getByText('Fone Bluetooth Fatura E2E').isVisible();
-    const hasEmptyState = await page.getByText('Nenhuma transação nesta fatura.').isVisible();
-    expect(hasTransaction || hasEmptyState).toBe(true);
-
-    // The total row is always rendered once the fatura data is loaded.
-    await expect(page.getByText('Total')).toBeVisible({ timeout: 5_000 });
-
-    // Sanity: the month reference rendered in the subtitle matches the expected format.
-    await expect(page.getByText(mesReferencia, { exact: true })).toBeVisible({ timeout: 5_000 });
+    const linha = page.getByRole('listitem').filter({ hasText: 'Fone Bluetooth Fatura E2E' });
+    await expect(linha).toBeVisible({ timeout: 10_000 });
+    await expect(linha).toContainText(/R\$\s*399,90/);
+    await expect(page.getByText('Total', { exact: true })).toBeVisible();
+    await expect(page.getByText('Total', { exact: true }).locator('xpath=..')).toContainText(
+      /R\$\s*399,90/,
+    );
   });
 
   // ── 4. Histórico de meses → lista de meses exibida ────────────────────────
   test('histórico de meses lista resumos mensais', async ({ page, authContext, familiaId }) => {
-    // Seed: create a category and a transaction so the historico endpoint has
-    // at least one month entry to list.
+    // Um lançamento do mês corrente: sem ele o histórico mostraria só o estado vazio.
     const categoria = await api.criarCategoria(authContext.accessToken, familiaId, {
       nome: 'Salário Historico E2E',
       tipo: 'receita',
@@ -208,43 +157,28 @@ test.describe('Relatórios', () => {
       valor: '3000.00',
       categoriaId: categoria.id,
       descricao: 'Salário Historico E2E',
-      data: new Date().toISOString().slice(0, 10),
+      data: hojeEmSaoPaulo(),
     });
 
-    await gotoDashboard(page, authContext, familiaId);
-    await gotoHistorico(page);
+    await abrirInicio(page, authContext, familiaId);
+    await gotoDeMais(page, 'Histórico', 'Histórico');
 
-    // The HistoricoPage shows the heading and either a list of months or an
-    // empty-state message. Both are valid — we verify that the page loaded.
-    const hasMeses =
-      (await page
-        .locator('button.w-full')
-        .filter({ hasText: /jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez/i })
-        .count()) > 0;
+    // O mês do lançamento aparece na lista (botão com o mês e o ano), com a receita lançada.
+    const mes = page.getByRole('button', { name: /\d{4}/ }).first();
+    await expect(mes).toBeVisible({ timeout: 10_000 });
+    await expect(mes).toContainText(/R\$\s*3\.000,00/);
 
-    const hasEmptyState = await page.getByText('Nenhum histórico disponível ainda.').isVisible();
+    // Abrir o mês mostra o detalhe.
+    await mes.click();
+    await expect(page.getByRole('heading', { name: /Detalhe —/ })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText('Valores Atuais')).toBeVisible({ timeout: 5_000 });
 
-    // The page must have rendered one of the two states — not a crash.
-    expect(hasMeses || hasEmptyState).toBe(true);
-
-    if (hasMeses) {
-      // When months are listed, clicking on one should open the detail modal.
-      const firstMes = page
-        .locator('button.w-full')
-        .filter({ hasText: /jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez/i })
-        .first();
-
-      await firstMes.click();
-
-      // The modal heading "Detalhe —" should appear.
-      await expect(page.getByText(/Detalhe —/)).toBeVisible({ timeout: 10_000 });
-
-      // The modal shows current-period values.
-      await expect(page.getByText('Valores Atuais')).toBeVisible({ timeout: 5_000 });
-
-      // Close the modal.
-      await page.getByRole('button', { name: 'Fechar detalhe' }).click();
-      await expect(page.getByText(/Detalhe —/)).not.toBeVisible({ timeout: 5_000 });
-    }
+    // Fechar o detalhe.
+    await page.getByRole('button', { name: 'Fechar detalhe' }).click();
+    await expect(page.getByRole('heading', { name: /Detalhe —/ })).toHaveCount(0, {
+      timeout: 5_000,
+    });
   });
 });

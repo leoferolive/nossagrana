@@ -1,7 +1,7 @@
 # E2E (Playwright)
 
-Os testes E2E não rodam no CI: rodam à mão, contra um ambiente isolado. São 29 testes em seis
-specs (`tests/`): `auth`, `onboarding`, `familia`, `transacoes`, `orcamento` e `relatorios`.
+Os testes E2E não rodam no CI: rodam à mão, contra um ambiente isolado. São 30 testes em seis
+specs (`tests/`), 28 rodando e 2 em `test.fixme` (defeitos do app, comentados em cada um): `auth`, `onboarding`, `familia`, `transacoes`, `orcamento` e `relatorios`.
 
 ## Subir o ambiente
 
@@ -20,7 +20,7 @@ navegador". Em resumo:
 Dentro de `apps/e2e`:
 
 ```bash
-# Tudo, em sequência (leva cerca de 11 minutos, veja "Por que demora")
+# Tudo, em sequência (leva cerca de 10 minutos, veja "Por que demora")
 BASE_URL=http://localhost:5180 API_URL=http://localhost:3000 pnpm exec playwright test --reporter=list
 
 # Um spec
@@ -45,8 +45,9 @@ Estourar o limite não dá um 429 limpo (o login devolve 500; é defeito conheci
 
 Cada teste é independente e cria o próprio usuário, então gasta **1 cadastro e 1 login**. Os
 testes de família criam um segundo usuário (mais 1 cadastro e 1 login), e os de `auth` que passam
-pelos formulários gastam as vagas deles. A suíte inteira faz 30 cadastros e 33 logins por
-execução, o que, a 3 cadastros por minuto, dá no mínimo 10 minutos.
+pelos formulários gastam as vagas deles. Uma execução completa mede 29 cadastros, 31 logins e 29
+refreshes (cerca de 570 requisições no total), o que, a 3 cadastros por minuto, dá no mínimo
+9 minutos; na prática, cerca de 10. Sem 429 nem 500.
 
 Como o ritmo é cumprido:
 
@@ -77,3 +78,5 @@ Como o ritmo é cumprido:
   (`helpers/navegacao.ts`).
 - O refresh do login é rotativo: `abrirAppAutenticado` roda uma vez por teste; depois use
   `page.goto`/`reload`, que levam o cookie já rotacionado.
+- A API não tem rota de exclusão de conta: os usuários dos testes ficam no banco isolado (e-mails
+  únicos, sem colisão) e somem com `docker compose down -v`.

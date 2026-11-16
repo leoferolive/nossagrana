@@ -31,9 +31,24 @@ describe('App > alcance pela barra do celular', () => {
     await waitFor(() => expect(screen.getByTestId('sonda-local')).toHaveTextContent(endereco));
   });
 
+  const DESTINOS_DE_PLANEJAR: Array<[string, RegExp]> = [
+    ['Contas do mês', /^\/planejar\/contas$/],
+    ['Limites por categoria', /^\/planejar\/limites$/],
+    ['Cofrinhos', /^\/planejar\/cofrinhos$/],
+  ];
+
+  it.each(DESTINOS_DE_PLANEJAR)('Planejar › %s em dois toques', async (item, endereco) => {
+    renderApp('/');
+    fireEvent.click(await barraInferior().findByRole('link', { name: 'Planejar' }));
+    const main = await waitFor(() => screen.getByRole('main'));
+    fireEvent.click(await within(main).findByRole('link', { name: new RegExp(item, 'i') }));
+    await waitFor(() => expect(screen.getByTestId('sonda-local')).toHaveTextContent(endereco));
+  });
+
   it.each([
     ['Início', /^\/$/],
     ['Extrato', /^\/extrato$/],
+    ['Planejar', /^\/planejar$/],
     ['Mais', /^\/mais$/],
   ])('a aba %s abre em um toque', async (aba, endereco) => {
     renderApp('/mais/perfil');

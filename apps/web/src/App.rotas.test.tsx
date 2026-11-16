@@ -13,6 +13,7 @@ const tituloNoConteudo = (nome: RegExp) =>
 const TELAS_POR_ENDERECO: Array<[string, RegExp]> = [
   ['/', /^início$/i],
   ['/extrato', /^extrato$/i],
+  ['/planejar', /^planejar$/i],
   ['/planejar/contas', /lançamentos do mês/i],
   ['/planejar/limites', /orçamento mensal/i],
   ['/planejar/cofrinhos', /^cofrinhos$/i],
@@ -62,11 +63,11 @@ describe('App > rotas > a tela vem do endereço', () => {
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
   });
 
-  it('/planejar mostra Lançamentos até a tela Planejar existir', async () => {
+  it('/planejar mostra a tela Planejar, sem redirecionar', async () => {
     renderApp('/planejar');
 
-    expect(await waitFor(() => tituloNoConteudo(/lançamentos do mês/i))).toBeInTheDocument();
-    expect(screen.getByTestId('sonda-local')).toHaveTextContent('/planejar/contas');
+    expect(await waitFor(() => tituloNoConteudo(/^planejar$/i))).toBeInTheDocument();
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });
 });
 

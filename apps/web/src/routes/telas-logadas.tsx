@@ -15,6 +15,7 @@ import { MaisPage } from '@/pages/mais-page';
 import { MetodosPagamentoPage } from '@/pages/metodos-pagamento-page';
 import { OrcamentoPage } from '@/pages/orcamento-page';
 import { PerfilPage } from '@/pages/perfil-page';
+import { PlanejarPage } from '@/pages/planejar-page';
 import { RelatoriosPage } from '@/pages/relatorios-page';
 import { getCurrentMonth } from '@/utils/date';
 
@@ -37,6 +38,11 @@ export const ExtratoRota = () => {
       onEditarTransacao={onEditarTransacao}
     />
   );
+};
+
+export const PlanejarRota = () => {
+  const { familiaId } = useContextoLogado();
+  return <PlanejarPage familiaId={familiaId} />;
 };
 
 export const ContasRota = () => {

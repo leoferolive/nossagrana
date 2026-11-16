@@ -20,6 +20,7 @@ import {
   MaisRota,
   MetodosPagamentoRota,
   PerfilRota,
+  PlanejarRota,
   RelatoriosRota,
 } from './telas-logadas';
 import { BoasVindasRota, CadastroRota, EntrarRota, FamiliasRota } from './telas-publicas';
@@ -68,8 +69,7 @@ export const AppRotas = ({ fluxo }: AppRotasProps) => (
     <Route element={<AreaLogada fluxo={fluxo} />}>
       <Route path={CAMINHOS.inicio} element={<InicioRota />} />
       <Route path={CAMINHOS.extrato} element={<ExtratoRota />} />
-      {/* Até a tela Planejar existir (PR seguinte), /planejar abre as contas do mês. */}
-      <Route path={CAMINHOS.planejar} element={<Navigate to={CAMINHOS.contas} replace />} />
+      <Route path={CAMINHOS.planejar} element={<PlanejarRota />} />
       <Route path={CAMINHOS.contas} element={<ContasRota />} />
       <Route path={CAMINHOS.limites} element={<LimitesRota />} />
       <Route path={CAMINHOS.cofrinhos} element={<CofrinhosRota />} />

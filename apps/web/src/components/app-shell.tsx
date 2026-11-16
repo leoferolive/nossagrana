@@ -91,7 +91,9 @@ export const AppShell = ({
         </div>
 
         {/* Conteúdo — padding-bottom no mobile para não ficar atrás da BottomNav */}
-        <main className="flex-1 overflow-y-auto pb-[68px] md:pb-0">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-[calc(68px+env(safe-area-inset-bottom))] md:pb-0">
+          {children}
+        </main>
 
         {/* BottomNav: visível apenas no mobile */}
         <div className="md:hidden">
@@ -118,7 +120,7 @@ export const AppShell = ({
           onNovaTransacao();
         }}
         onContextMenu={(e) => e.preventDefault()}
-        className="fixed bottom-20 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-success text-2xl font-bold text-white shadow-lg hover:bg-success-strong md:hidden"
+        className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-success text-2xl font-bold text-white shadow-lg hover:bg-success-strong md:hidden"
       >
         +
       </button>

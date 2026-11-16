@@ -23,8 +23,8 @@ export default defineConfig({
         name: 'NossaGrana',
         short_name: 'NossaGrana',
         description: 'PWA de gestão financeira familiar',
-        theme_color: '#0f766e',
-        background_color: '#f8fafc',
+        theme_color: '#F2F4EF',
+        background_color: '#F2F4EF',
         display: 'standalone',
         start_url: '/',
         icons: [

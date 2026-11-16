@@ -44,7 +44,7 @@ const TransacaoDetalheModal = ({
     onClick={onClose}
   >
     <div
-      className="w-full max-w-lg rounded-t-2xl bg-panel p-5 shadow-soft sm:rounded-2xl"
+      className="w-full max-w-lg rounded-t-2xl bg-panel p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft sm:rounded-2xl sm:pb-5"
       onClick={(e) => e.stopPropagation()}
     >
       <h2 className="mb-4 text-base font-bold text-text">{transacao.descricao ?? 'Transação'}</h2>

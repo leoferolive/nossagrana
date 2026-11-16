@@ -28,6 +28,10 @@ const config: Config = {
         'border-strong': 'rgb(var(--color-border-strong) / <alpha-value>)',
         'border-soft': 'rgb(var(--color-border-soft) / <alpha-value>)',
       },
+      // Faz `pb-safe` (usada na BottomNav) existir; sem `viewport-fit=cover` o valor é 0.
+      spacing: {
+        safe: 'env(safe-area-inset-bottom)',
+      },
       fontFamily: {
         sans: ['Manrope Variable', 'Segoe UI', 'sans-serif'],
       },

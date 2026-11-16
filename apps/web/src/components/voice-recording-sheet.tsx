@@ -32,7 +32,7 @@ export function VoiceRecordingSheet({
       <div
         role="dialog"
         aria-modal="true"
-        className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-bg px-6 pb-8 pt-6 shadow-soft"
+        className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-bg px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-6 shadow-soft"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Waveform bars — only animate when listening */}

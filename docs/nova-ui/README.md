@@ -60,9 +60,9 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — Acentos nas categorias padrão e nos textos
 - [x] 2026-11-15 — Tokens com os valores novos e os tokens adicionais
 - [x] 2026-11-15 — Manrope carregada pelo próprio app
-- [ ] Fundo do `body`, `theme-color` e manifest na paleta nova
+- [x] 2026-11-15 — Fundo do `body`, `theme-color` e manifest na paleta nova
 - [ ] Altura do shell sem rolagem fantasma
-- [ ] Área segura do iPhone na barra inferior
+- [x] 2026-11-15 — Área segura do iPhone na barra inferior
 - [ ] Campos em 16px e alvos de toque com 44px
 - [ ] Escala de z-index: barra, "+", painel/modal, aviso
 - [ ] Valores do dashboard sem corte em 390px
@@ -140,6 +140,8 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
   e mergeado. Plano do PR 2 (Base visual) escrito.
 - 2026-11-15 — Paleta clara aplicada nos tokens (tema escuro removido), seis tokens novos (`accent-soft`, `danger-soft`, `warning-soft`, `warning-fill`, `border-strong`, `border-soft`), `shadow-soft` vira anel de 1px e as cores de gráfico passam para `chart-colors.ts`; teste de contraste dos tokens.
 - 2026-11-15 — Manrope vem do pacote `@fontsource-variable/manrope` (importada em `main.tsx`), com números tabulares no `body`; só o subconjunto latino entra no precache do service worker (conferido no build: `sw.js` lista o `woff2`).
+- 2026-11-15 — `<body>` sem o fundo slate, `theme-color` e manifest em `#F2F4EF`, `viewport-fit=cover`.
+- 2026-11-15 — `pb-safe` passa a existir (`spacing.safe`); o `<main>`, o "+" e o rodapé dos painéis de baixo para cima somam `env(safe-area-inset-bottom)`.
 
 ## Decisões fechadas
 

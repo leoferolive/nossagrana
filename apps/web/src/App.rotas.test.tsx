@@ -220,3 +220,34 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
     await waitFor(() => expect(local()).toHaveTextContent(/^\/$/));
   });
 });
+
+describe('App > o "Voltar" da tela e o voltar do navegador', () => {
+  const local = () => screen.getByTestId('sonda-local');
+  const voltarDoNavegador = () =>
+    fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
+
+  it('Início, Config, Categorias e "Voltar" da tela: o voltar do navegador termina no Início', async () => {
+    renderApp('/');
+    fireEvent.click(await screen.findByRole('button', { name: /ver configurações/i }));
+    const main = screen.getByRole('main');
+    fireEvent.click(await within(main).findByRole('button', { name: /categorias/i }));
+    await waitFor(() => tituloNoConteudo(/^categorias$/i));
+
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: /^voltar$/i }));
+
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/mais$/));
+    voltarDoNavegador();
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/$/));
+  });
+
+  it('aberta por link direto, o "Voltar" da tela vai à origem do mapa e não deixa Categorias para trás', async () => {
+    renderApp('/mais/categorias');
+    await waitFor(() => tituloNoConteudo(/^categorias$/i));
+
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: /^voltar$/i }));
+
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/mais$/));
+    voltarDoNavegador();
+    expect(local()).toHaveTextContent(/^\/mais$/);
+  });
+});

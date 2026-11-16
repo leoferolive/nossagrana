@@ -18,7 +18,7 @@ import { PerfilPage } from '@/pages/perfil-page';
 import { RelatoriosPage } from '@/pages/relatorios-page';
 import { getCurrentMonth } from '@/utils/date';
 
-import { caminhoDaFatura, caminhoDoCofrinho } from './caminhos';
+import { CAMINHOS, caminhoDaFatura, caminhoDoCofrinho } from './caminhos';
 import { useContextoLogado } from './contexto-logado';
 import { useNavegacao } from './use-navegacao';
 
@@ -35,11 +35,11 @@ export const InicioRota = () => {
 
 export const ExtratoRota = () => {
   const { familiaId, onNovaTransacao, onEditarTransacao } = useContextoLogado();
-  const { irPara } = useNavegacao();
+  const { voltarPara } = useNavegacao();
   return (
     <ExtratoPage
       familiaId={familiaId}
-      onBack={() => irPara('dashboard')}
+      onBack={() => voltarPara(CAMINHOS.inicio)}
       onNovaTransacao={onNovaTransacao}
       onEditarTransacao={onEditarTransacao}
     />
@@ -54,8 +54,8 @@ export const ContasRota = () => {
 
 export const LimitesRota = () => {
   const { familiaId } = useContextoLogado();
-  const { irPara } = useNavegacao();
-  return <OrcamentoPage familiaId={familiaId} onBack={() => irPara('configuracoes')} />;
+  const { voltarPara } = useNavegacao();
+  return <OrcamentoPage familiaId={familiaId} onBack={() => voltarPara(CAMINHOS.mais)} />;
 };
 
 export const CofrinhosRota = () => {
@@ -73,12 +73,12 @@ export const CofrinhosRota = () => {
 export const CofrinhoDetalheRota = () => {
   const { familiaId } = useContextoLogado();
   const { cofrinhoId = '' } = useParams();
-  const { irPara } = useNavegacao();
+  const { irPara, voltarPara } = useNavegacao();
   return (
     <CofrinhoDetalhePage
       familiaId={familiaId}
       cofrinhoId={cofrinhoId}
-      onBack={() => irPara('cofrinhos')}
+      onBack={() => voltarPara(CAMINHOS.cofrinhos)}
       onNavigate={irPara}
     />
   );
@@ -93,24 +93,24 @@ export const FaturaRota = () => {
   const { metodoId = '' } = useParams();
   const [params] = useSearchParams();
   const nome = useNomeDoMetodo(familiaId, metodoId);
-  const { irPara } = useNavegacao();
+  const { voltarPara } = useNavegacao();
   return (
     <FaturaPage
       familiaId={familiaId}
       metodoPagamentoId={metodoId}
       metodoPagamentoNome={nome ?? 'Cartão'}
       mesReferencia={mesDaFatura(params.get('mes'))}
-      onBack={() => irPara('metodos-pagamento')}
+      onBack={() => voltarPara(CAMINHOS.metodosPagamento)}
     />
   );
 };
 
 export const MaisRota = () => {
   const { onLogout } = useContextoLogado();
-  const { irPara } = useNavegacao();
+  const { irPara, voltarPara } = useNavegacao();
   return (
     <ConfiguracoesPage
-      onBack={() => irPara('dashboard')}
+      onBack={() => voltarPara(CAMINHOS.inicio)}
       onGoToCategorias={() => irPara('categorias')}
       onGoToMetodosPagamento={() => irPara('metodos-pagamento')}
       onGoToOrcamento={() => irPara('orcamento')}
@@ -126,24 +126,24 @@ export const MaisRota = () => {
 
 export const RelatoriosRota = () => {
   const { familiaId } = useContextoLogado();
-  const { irPara } = useNavegacao();
-  return <RelatoriosPage familiaId={familiaId} onBack={() => irPara('dashboard')} />;
+  const { voltarPara } = useNavegacao();
+  return <RelatoriosPage familiaId={familiaId} onBack={() => voltarPara(CAMINHOS.inicio)} />;
 };
 
 export const HistoricoRota = () => {
   const { familiaId } = useContextoLogado();
-  const { irPara } = useNavegacao();
-  return <HistoricoPage familiaId={familiaId} onBack={() => irPara('configuracoes')} />;
+  const { voltarPara } = useNavegacao();
+  return <HistoricoPage familiaId={familiaId} onBack={() => voltarPara(CAMINHOS.mais)} />;
 };
 
 export const FamiliaRota = () => {
   const { familiaId } = useContextoLogado();
-  const { irPara } = useNavegacao();
+  const { irPara, voltarPara } = useNavegacao();
   return (
     <FamilySettingsPage
       onBackToOnboarding={() => irPara('configuracoes')}
       onGoToDashboard={() => irPara('dashboard')}
-      onBack={() => irPara('configuracoes')}
+      onBack={() => voltarPara(CAMINHOS.mais)}
       familiaId={familiaId}
     />
   );
@@ -151,28 +151,28 @@ export const FamiliaRota = () => {
 
 export const CategoriasRota = () => {
   const { familiaId } = useContextoLogado();
-  const { irPara } = useNavegacao();
-  return <CategoriasPage familiaId={familiaId} onBack={() => irPara('configuracoes')} />;
+  const { voltarPara } = useNavegacao();
+  return <CategoriasPage familiaId={familiaId} onBack={() => voltarPara(CAMINHOS.mais)} />;
 };
 
 export const MetodosPagamentoRota = () => {
   const { familiaId } = useContextoLogado();
-  const { irPara, irParaCaminho } = useNavegacao();
+  const { irParaCaminho, voltarPara } = useNavegacao();
   return (
     <MetodosPagamentoPage
       familiaId={familiaId}
-      onBack={() => irPara('configuracoes')}
+      onBack={() => voltarPara(CAMINHOS.mais)}
       onVerFatura={(id, _nome, mes) => irParaCaminho(caminhoDaFatura(id, mes))}
     />
   );
 };
 
 export const PerfilRota = () => {
-  const { irPara } = useNavegacao();
-  return <PerfilPage onBack={() => irPara('configuracoes')} />;
+  const { voltarPara } = useNavegacao();
+  return <PerfilPage onBack={() => voltarPara(CAMINHOS.mais)} />;
 };
 
 export const AjudaRota = () => {
-  const { irPara } = useNavegacao();
-  return <AjudaPage onBack={() => irPara('configuracoes')} onNavigate={irPara} />;
+  const { irPara, voltarPara } = useNavegacao();
+  return <AjudaPage onBack={() => voltarPara(CAMINHOS.mais)} onNavigate={irPara} />;
 };

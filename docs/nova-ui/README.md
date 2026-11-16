@@ -183,6 +183,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
   Plano do PR 1 da entrega (Rotas com URL) escrito.
 - 2026-11-16 — Entrega 2, PR 1: entra o mapa de endereços das telas em `apps/web/src/routes/caminhos.ts`, com a tradução nos dois sentidos entre os identificadores de tela de hoje e o endereço.
 - 2026-11-16 — Entrega 2, PR 1: entra o `react-router` 7 (modo declarativo) e a tela passa a vir do endereço. O `App.tsx` (454 linhas) vira uma casca de 10 linhas; a árvore de rotas fica em `apps/web/src/routes/` e o fluxo de sessão, o lançar e a voz em hooks. As páginas e o `AppShell` seguem com as mesmas propriedades de navegação. Os quatro testes do `App` passam a usar `renderApp` (roteador em memória) com os mesmos cenários.
+- 2026-11-16 — Entrega 2, PR 1: guardas de rota (`routes/guardas.tsx`). Sem login, endereço protegido leva a `/entrar` guardando o endereço pedido no `state` da entrada de histórico; depois do login o app volta a ele (só endereço interno: `//` e `/\` são descartados). Sair substitui a entrada do histórico e não deixa a tela deixada como endereço pedido.
 
 ## Decisões fechadas
 

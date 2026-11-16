@@ -4,7 +4,7 @@ import type { FluxoSessao } from '@/hooks/use-fluxo-sessao';
 
 import { AreaLogada } from './area-logada';
 import { CAMINHOS } from './caminhos';
-import { RotaAutenticada } from './guardas';
+import { RotaAutenticada, RotaDeEntrada } from './guardas';
 import {
   AjudaRota,
   CategoriasRota,
@@ -33,8 +33,22 @@ const irParaInicio = <Navigate to={CAMINHOS.inicio} replace />;
 /** A árvore de endereços do app. A tabela dos caminhos está em `caminhos.ts`. */
 export const AppRotas = ({ fluxo }: AppRotasProps) => (
   <Routes>
-    <Route path={CAMINHOS.entrar} element={<EntrarRota fluxo={fluxo} />} />
-    <Route path={CAMINHOS.cadastro} element={<CadastroRota />} />
+    <Route
+      path={CAMINHOS.entrar}
+      element={
+        <RotaDeEntrada>
+          <EntrarRota fluxo={fluxo} />
+        </RotaDeEntrada>
+      }
+    />
+    <Route
+      path={CAMINHOS.cadastro}
+      element={
+        <RotaDeEntrada>
+          <CadastroRota />
+        </RotaDeEntrada>
+      }
+    />
     <Route
       path={CAMINHOS.boasVindas}
       element={

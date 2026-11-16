@@ -160,31 +160,39 @@ export const resetAppMocks = () => {
   }));
 };
 
+interface OpcoesSessao {
+  autenticado?: boolean;
+  familiaAtiva?: string | null;
+}
+
 /**
- * Sessão que nasce anônima e, como a real, passa a autenticada quando a tela chama `login`.
- * Sem isso o cadastro e o login não sairiam do lugar: as guardas de rota barram quem não
+ * Sessão com estado, como a real: `login` autentica, `logout` encerra e
+ * `updateFamiliaIdAtiva` escolhe a família. Por padrão nasce anônima. Sem estado, o
+ * cadastro e o login não sairiam do lugar, porque as guardas de rota barram quem não
  * tem sessão em qualquer endereço que não seja o de entrada.
  */
-export const mockSessaoQueEntraAoLogar = () => {
-  let autenticado = false;
-  let familiaAtiva: string | null = null;
+export const mockSessao = ({ autenticado = false, familiaAtiva = null }: OpcoesSessao = {}) => {
+  let estaAutenticado = autenticado;
+  let familia = familiaAtiva;
   vi.mocked(useAuth).mockImplementation(() => ({
-    isAuthenticated: autenticado,
-    accessToken: autenticado ? 'token' : null,
-    familiaIdAtiva: familiaAtiva,
+    isAuthenticated: estaAutenticado,
+    accessToken: estaAutenticado ? 'token' : null,
+    familiaIdAtiva: familia,
     login: vi.fn(() => {
-      autenticado = true;
+      estaAutenticado = true;
     }),
     logout: vi.fn(() => {
-      autenticado = false;
-      familiaAtiva = null;
+      estaAutenticado = false;
+      familia = null;
     }),
     setAccessToken: vi.fn(),
     updateFamiliaIdAtiva: vi.fn((id: string) => {
-      familiaAtiva = id;
+      familia = id;
     }),
   }));
 };
+
+export const mockSessaoQueEntraAoLogar = () => mockSessao();
 
 export const fillSignUpForm = () => {
   fireEvent.change(screen.getByLabelText(/nome/i), {

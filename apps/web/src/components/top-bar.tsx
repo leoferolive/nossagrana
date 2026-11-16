@@ -23,7 +23,7 @@ const screenTitles: Record<string, string> = {
 };
 
 export const TopBar = ({ currentScreen, onNovaTransacao }: TopBarProps) => (
-  <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-bg px-8 py-3">
+  <header className="sticky top-0 z-barra flex items-center justify-between border-b border-border bg-bg px-8 py-3">
     <h2 className="text-lg font-bold text-text">{screenTitles[currentScreen] ?? 'NossaGrana'}</h2>
     <button
       type="button"

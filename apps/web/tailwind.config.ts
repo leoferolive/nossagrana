@@ -35,6 +35,14 @@ const config: Config = {
       fontFamily: {
         sans: ['Manrope Variable', 'Segoe UI', 'sans-serif'],
       },
+      // Ordem de empilhamento: barra < "+" < painel/modal < aviso. O "+" fica abaixo
+      // dos painéis para não cobrir botões de modal. `aviso` é reservado (Entrega 3).
+      zIndex: {
+        barra: '40',
+        lancar: '45',
+        painel: '50',
+        aviso: '60',
+      },
       boxShadow: {
         // Sem sombra projetada: profundidade vem da troca de superfície mais um anel de 1px.
         soft: '0 0 0 1px rgb(var(--color-border))',

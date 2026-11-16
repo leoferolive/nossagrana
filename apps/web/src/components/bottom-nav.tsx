@@ -20,7 +20,7 @@ const tabs = [
 ];
 
 export const BottomNav = ({ active, onNavigate }: BottomNavProps) => (
-  <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-border bg-panel pb-safe pt-2">
+  <nav className="fixed bottom-0 left-0 right-0 z-barra flex justify-around border-t border-border bg-panel pb-safe pt-2">
     {tabs.map(({ id, icon: Icon, label, ariaLabel }) => (
       <button
         key={id}

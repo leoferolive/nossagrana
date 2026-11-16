@@ -25,7 +25,7 @@ export function VoiceRecordingSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60"
+      className="fixed inset-0 z-painel bg-black/60"
       data-testid="voice-sheet-backdrop"
       onClick={onClose}
     >

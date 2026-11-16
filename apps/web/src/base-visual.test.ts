@@ -161,3 +161,26 @@ describe('campos em 16px e alvos de toque com 44px', () => {
     expect(fonte(caminho)).toContain('ALVO_TOQUE_CLASSES');
   });
 });
+
+describe('escala de z-index', () => {
+  it('o Tailwind define os quatro níveis nomeados, em ordem crescente', () => {
+    const zIndex = tailwindConfig.theme?.extend?.zIndex as Record<string, string> | undefined;
+    expect(zIndex).toEqual({ barra: '40', lancar: '45', painel: '50', aviso: '60' });
+  });
+
+  it.each(Object.keys(fontes).filter((caminho) => !caminho.endsWith('.test.tsx')))(
+    '%s não usa z-index numérico nem arbitrário',
+    (caminho) => {
+      expect(fonte(caminho)).not.toMatch(/\bz-(\d|\[)/);
+    },
+  );
+
+  it('o "+" do AppShell fica abaixo dos painéis e acima da barra', () => {
+    const botao = appShell.slice(appShell.indexOf('aria-label={onVoiceActivate'));
+    expect(botao).toContain('z-lancar');
+  });
+
+  it('a barra inferior usa z-barra', () => {
+    expect(fonte('./components/bottom-nav.tsx')).toContain('z-barra');
+  });
+});

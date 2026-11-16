@@ -304,7 +304,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
 
         {/* Modal de detalhe */}
         {mesSelecionado && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-painel flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-panel p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-bold capitalize">

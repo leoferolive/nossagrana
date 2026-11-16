@@ -180,7 +180,7 @@ export const TransacaoModal = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
+      className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

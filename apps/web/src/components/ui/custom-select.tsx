@@ -117,7 +117,7 @@ export const CustomSelect = ({
           <ul
             ref={listboxRef}
             role="listbox"
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-panel shadow-lg"
+            className="absolute left-0 right-0 top-full z-painel mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-panel shadow-lg"
           >
             {options.map((option, idx) => (
               <li

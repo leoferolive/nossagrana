@@ -26,13 +26,15 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-15:** PR 1 da Entrega 1 (Correções) implementado e validado na
-branch `feat/nova-ui-e1-correcoes`: os cinco bugs funcionais da auditoria estão
-corrigidos, com duas migrations de dados (`0013` e `0014`). Nada da base visual
-foi escrito ainda. **Próximo passo:** o usuário revisar e mergear o PR 1; em
-seguida, escrever o plano do PR 2 (Base visual) em `docs/superpowers/plans/`,
-a partir do
-[desenho da Entrega 1](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
+**Estado em 2026-11-15:** PR 1 da Entrega 1 (Correções) mergeado (#183): os cinco
+bugs funcionais da auditoria estão corrigidos. O PR 2 (Base visual) tem plano
+escrito e nenhuma linha de código ainda. **Próximo passo:** executar o
+[plano do PR 2](../superpowers/plans/2026-11-15-nova-ui-entrega-1-pr2-base-visual.md)
+na branch `feat/nova-ui-e1-base-visual`.
+
+A partir do PR 2, cada PR segue este fluxo: um subagente desenvolve, outro testa
+e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
+verde, o PR é mergeado e vai para dev.
 
 ### Descoberta
 
@@ -74,7 +76,10 @@ visual (as demais). Desenho em
 - [ ] Tela Mais
 - [ ] Planejar como entrada para orçamento, cartões, cofrinhos e contas do mês
 - [ ] Um único tour de boas-vindas
-- [ ] E2E ajustados à nova navegação
+- [ ] E2E ajustados à nova navegação. Hoje os specs de onboarding, família e
+      transações já estão quebrados: esperam o texto "Como deseja entrar", usam
+      `getByLabel('Nome da familia')` sem acento e `selectOption` num seletor
+      que deixou de ser `<select>`
 
 ### Entrega 3 — Extrato e Lançar
 
@@ -99,6 +104,10 @@ visual (as demais). Desenho em
 
 Telas ainda sem desenho (lista em `telas.md`), desktop, Análises (Relatórios +
 Histórico em uma tela) e ícones PNG/maskable do PWA.
+
+Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
+parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
+R$ 99,99). A sobra deveria ir para a parcela 1.
 
 ### Diário
 
@@ -127,6 +136,8 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
   desatualizados na `main` (esperam o texto "Como deseja entrar", que não existe
   mais no app, e usam `selectOption` num seletor que deixou de ser `<select>`).
   O acerto fica para a tarefa "E2E ajustados à nova navegação" da Entrega 2.
+- 2026-11-15 — PR 1 (#183) revisado por subagente e pelo Codex, sem pendências,
+  e mergeado. Plano do PR 2 (Base visual) escrito.
 
 ## Decisões fechadas
 

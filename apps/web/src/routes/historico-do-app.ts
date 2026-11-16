@@ -5,13 +5,21 @@
  * A `key` da location não basta: `replace` (o redirecionamento para o endereço pedido depois do
  * login, por exemplo) troca a key da primeira entrada, e ela deixa de ser "default" sem que haja
  * tela anterior. O `BrowserRouter` grava `idx` em `window.history.state`, que continua 0 na
- * primeira entrada do app mesmo substituída. Sem `idx` (o `MemoryRouter` dos testes), vale a key.
+ * primeira entrada do app mesmo substituída. Sem `idx` (o `MemoryRouter` dos testes), vale a key,
+ * exceto se o `state` traz `semEntradaAnterior`: a marca que a guarda de família grava ao carimbar
+ * a primeira entrada (a substituição troca a key, mas não a posição).
  */
-export const temEntradaAnteriorDoApp = (key: string): boolean => {
+export const marcaDePrimeiraEntrada = (state: unknown): boolean =>
+  typeof state === 'object' &&
+  state !== null &&
+  'semEntradaAnterior' in state &&
+  state.semEntradaAnterior === true;
+
+export const temEntradaAnteriorDoApp = (key: string, state?: unknown): boolean => {
   const estado: unknown = window.history.state;
   if (typeof estado === 'object' && estado !== null && 'idx' in estado) {
     const { idx } = estado;
     if (typeof idx === 'number') return idx > 0;
   }
-  return key !== 'default';
+  return key !== 'default' && !marcaDePrimeiraEntrada(state);
 };

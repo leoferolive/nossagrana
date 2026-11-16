@@ -95,7 +95,7 @@ export function CofrinhosPage({ familiaId }: CofrinhosPageProps) {
                 <button
                   key={cofrinho.id}
                   type="button"
-                  onClick={() => irParaCaminho(caminhoDoCofrinho(cofrinho.id), { familiaId })}
+                  onClick={() => irParaCaminho(caminhoDoCofrinho(cofrinho.id))}
                   className="flex flex-col gap-2 rounded-xl border border-border bg-panel p-4 text-left transition hover:border-primary/40 hover:shadow-soft"
                 >
                   {/* Emoji + Nome */}

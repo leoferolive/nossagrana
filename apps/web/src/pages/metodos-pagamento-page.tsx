@@ -257,9 +257,7 @@ export const MetodosPagamentoPage = ({ familiaId }: MetodosPagamentoPageProps) =
                 {m.tipo === 'credito' && (
                   <button
                     type="button"
-                    onClick={() =>
-                      irParaCaminho(caminhoDaFatura(m.id, mesCorrenteEmSaoPaulo()), { familiaId })
-                    }
+                    onClick={() => irParaCaminho(caminhoDaFatura(m.id, mesCorrenteEmSaoPaulo()))}
                     aria-label={`Ver fatura de ${m.nome}`}
                     className="rounded-lg px-3 py-1 text-xs text-success transition hover:bg-accent-soft"
                   >

@@ -28,6 +28,9 @@ const config: Config = {
         'border-strong': 'rgb(var(--color-border-strong) / <alpha-value>)',
         'border-soft': 'rgb(var(--color-border-soft) / <alpha-value>)',
       },
+      fontFamily: {
+        sans: ['Manrope Variable', 'Segoe UI', 'sans-serif'],
+      },
       boxShadow: {
         // Sem sombra projetada: profundidade vem da troca de superfície mais um anel de 1px.
         soft: '0 0 0 1px rgb(var(--color-border))',

@@ -53,6 +53,14 @@ describe('tokens da paleta clara', () => {
     expect(token(nome).join(' ')).toBe(valor);
   });
 
+  it("usa a família 'Manrope Variable', registrada pelo pacote da fonte", () => {
+    expect(css).toMatch(/font-family:\s*'Manrope Variable'/);
+  });
+
+  it('usa números tabulares no body', () => {
+    expect(css).toMatch(/font-variant-numeric:\s*tabular-nums/);
+  });
+
   it('não define tema escuro nem variante dark', () => {
     expect(css).not.toMatch(/dark/i);
   });

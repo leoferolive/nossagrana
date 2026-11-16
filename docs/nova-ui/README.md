@@ -59,7 +59,7 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — Gráfico de pizza com uma única categoria
 - [x] 2026-11-15 — Acentos nas categorias padrão e nos textos
 - [x] 2026-11-15 — Tokens com os valores novos e os tokens adicionais
-- [ ] Manrope carregada pelo próprio app
+- [x] 2026-11-15 — Manrope carregada pelo próprio app
 - [ ] Fundo do `body`, `theme-color` e manifest na paleta nova
 - [ ] Altura do shell sem rolagem fantasma
 - [ ] Área segura do iPhone na barra inferior
@@ -139,6 +139,7 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
 - 2026-11-15 — PR 1 (#183) revisado por subagente e pelo Codex, sem pendências,
   e mergeado. Plano do PR 2 (Base visual) escrito.
 - 2026-11-15 — Paleta clara aplicada nos tokens (tema escuro removido), seis tokens novos (`accent-soft`, `danger-soft`, `warning-soft`, `warning-fill`, `border-strong`, `border-soft`), `shadow-soft` vira anel de 1px e as cores de gráfico passam para `chart-colors.ts`; teste de contraste dos tokens.
+- 2026-11-15 — Manrope vem do pacote `@fontsource-variable/manrope` (importada em `main.tsx`), com números tabulares no `body`; só o subconjunto latino entra no precache do service worker (conferido no build: `sw.js` lista o `woff2`).
 
 ## Decisões fechadas
 

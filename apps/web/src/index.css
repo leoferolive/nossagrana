@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-family: 'Manrope Variable', 'Segoe UI', sans-serif;
   --color-bg: 242 244 239;
   --color-panel: 255 255 255;
   --color-sidebar: 242 244 239;
@@ -30,4 +30,5 @@
 
 body {
   @apply bg-bg text-text;
+  font-variant-numeric: tabular-nums;
 }

@@ -43,7 +43,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Só o subconjunto latino da fonte entra no cache offline; os demais o navegador nem baixa em pt-BR.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}', '**/manrope-latin-wght-normal-*.woff2'],
       },
     }),
   ],

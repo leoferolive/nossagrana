@@ -49,7 +49,6 @@ describe('área segura do iPhone', () => {
 
   it('o AppShell reserva a barra mais a área segura e sobe o "+" na mesma medida', () => {
     // 144px = barra (68px) + "+" (56px) + folga, para o último item rolar acima do "+".
-    // 144px = barra (68px) + "+" (56px) + folga, para o último item rolar acima do "+".
     expect(appShell).toContain('pb-[calc(144px+env(safe-area-inset-bottom))]');
     expect(appShell).toContain('bottom-[calc(80px+env(safe-area-inset-bottom))]');
   });
@@ -143,6 +142,21 @@ describe('campos em 16px e alvos de toque com 44px', () => {
     expect(CAMPO_CLASSES).toContain('text-base');
     expect(CAMPO_CLASSES).toContain('min-h-11');
     expect(CAMPO_CLASSES).toContain('focus:ring-2 focus:ring-success');
+  });
+
+  it('CAMPO_CLASSES tem estilo de desabilitado e padding vertical (textarea)', () => {
+    expect(CAMPO_CLASSES).toContain('disabled:cursor-not-allowed');
+    expect(CAMPO_CLASSES).toContain('disabled:bg-surface-hover');
+    expect(CAMPO_CLASSES).toContain('disabled:text-text-muted');
+    expect(CAMPO_CLASSES).toContain('py-2.5');
+  });
+
+  it('as setas de mês de Lançamentos usam ALVO_TOQUE_CLASSES', () => {
+    expect(fonte('./pages/lancamentos-page.tsx')).toContain('ALVO_TOQUE_CLASSES');
+  });
+
+  it('o fundo decorativo do auth-shell usa opacidade que existe na escala (/10)', () => {
+    expect(authShell).not.toContain('bg-info/8');
   });
 
   it('ALVO_TOQUE_CLASSES garante 44x44', () => {

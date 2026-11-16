@@ -148,6 +148,7 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
 - 2026-11-15 — Dashboard com Saldo em cartão de largura total e Receitas/Despesas em duas colunas abaixo (`grid-cols-2`; no desktop volta a três colunas na ordem antiga); valores com `tabular-nums` e sem `truncate`.
 - 2026-11-15 — Emojis e símbolos de texto (✕ ◀ ▶ ← → ↑ ↓ ⚠) viram ícones de `lucide-react` com `aria-hidden`, e o botão que era só símbolo mantém nome acessível; o tour passa a receber ícones; regra `no-restricted-syntax` no ESLint (`eslint.config.mjs`) barra emoji e esses símbolos em texto de interface; o emoji escolhido pelo usuário no cofrinho segue como está.
 - 2026-11-16 — Rodada de correção do PR 2 após validação no navegador: regra base de 44px para botão, aba, select e rádio; "+" não cobre mais o fim da rolagem; saída em texto neutro e verde como única cor de ação; o "+" de texto dos botões virou ícone `Plus` (a regra de lint também barra isso).
+- 2026-11-16 — Ajustes da revisão do PR 2: selo de variação do dashboard com nome acessível ("subiu/caiu N%"), campo desabilitado e `py-2.5` em `CAMPO_CLASSES`, mês em "Novembro de 2026" e alvo de toque nas setas de Lançamentos, `bg-info/10` no `auth-shell`.
 
 ## Decisões fechadas
 

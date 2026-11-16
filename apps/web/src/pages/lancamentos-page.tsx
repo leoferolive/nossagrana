@@ -4,19 +4,14 @@ import { IconConfiguracoes } from '@/components/icons';
 import { LancamentosResumo } from '@/components/lancamentos-resumo';
 import { TemplateGrupo } from '@/components/template-grupo';
 import { TemplatesGerenciarModal } from '@/components/templates-gerenciar-modal';
+import { ALVO_TOQUE_CLASSES } from '@/components/ui/campo-classes';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
+import { formatMesTitulo } from '@/utils/date';
 import { IconMesAnterior, IconProximoMes, IconTemplates } from '../components/icons';
 
 interface LancamentosPageProps {
   familiaId: string;
   onNavigate: (screen: string) => void;
-}
-
-const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-function formatMesLabel(mes: string): string {
-  const [ano, mesNum] = mes.split('-');
-  return `${MESES[parseInt(mesNum, 10) - 1]} ${ano}`;
 }
 
 function addMonths(mes: string, delta: number): string {
@@ -116,16 +111,16 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
             type="button"
             aria-label="Mês anterior"
             onClick={() => setMesReferencia(addMonths(mesReferencia, -1))}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} rounded-full text-text-muted transition hover:bg-surface hover:text-text`}
           >
             <IconMesAnterior size={18} aria-hidden="true" />
           </button>
-          <span className="text-sm font-semibold text-text">{formatMesLabel(mesReferencia)}</span>
+          <span className="text-sm font-semibold text-text">{formatMesTitulo(mesReferencia)}</span>
           <button
             type="button"
             aria-label="Próximo mês"
             onClick={() => setMesReferencia(addMonths(mesReferencia, 1))}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} rounded-full text-text-muted transition hover:bg-surface hover:text-text`}
           >
             <IconProximoMes size={18} aria-hidden="true" />
           </button>

@@ -103,6 +103,24 @@ describe('DashboardPage', () => {
     }
   });
 
+  it('o selo de variação diz se subiu ou caiu, e não só o número', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: {
+        ...resumoBase,
+        mesAnterior: { totalReceitas: '4000.00', totalDespesas: '4000.00', saldo: '0.00' },
+      },
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    render(<DashboardPage familiaId="f1" />);
+
+    expect(screen.getByLabelText('subiu 30%')).toBeInTheDocument();
+    expect(screen.getByLabelText('caiu 5%')).toBeInTheDocument();
+  });
+
   it('exibe mensagem de estado vazio sem transações', () => {
     mockUseDashboard.mockReturnValue({
       resumo: { ...resumoBase, totalReceitas: '0.00', totalDespesas: '0.00', saldo: '0.00' },

@@ -43,6 +43,8 @@ function TrendBadge({ variacao, invertColor }: { variacao: number | null; invert
       : 'text-danger';
   return (
     <span
+      role="img"
+      aria-label={`${isUp ? 'subiu' : 'caiu'} ${Math.abs(variacao).toFixed(0)}%`}
       className={`ml-1 inline-flex items-center gap-0.5 text-[10px] font-semibold ${colorClass}`}
     >
       <Seta size={10} aria-hidden="true" />

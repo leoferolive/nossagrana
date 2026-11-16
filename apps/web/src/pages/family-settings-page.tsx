@@ -203,7 +203,7 @@ export const FamilySettingsPage = ({
 
   if (isInApp) {
     return (
-      <div className="flex min-h-screen flex-col bg-bg">
+      <div className="flex min-h-full flex-col bg-bg">
         <header className="flex items-center gap-3 border-b border-border px-4 py-4">
           <button
             type="button"

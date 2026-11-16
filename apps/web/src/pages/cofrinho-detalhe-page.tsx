@@ -36,7 +36,7 @@ export function CofrinhoDetalhePage({
 
   if (carregando || !cofrinhoSelecionado) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -95,7 +95,7 @@ export function CofrinhoDetalhePage({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       {/* Back button */}
       <div className="border-b border-border px-4 py-3">
         <button

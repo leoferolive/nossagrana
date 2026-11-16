@@ -59,14 +59,14 @@ export function FaturaPage({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg p-4">
+    <div className="min-h-full bg-bg p-4">
       <div className="mb-6 flex items-center gap-4">
         <button
           type="button"

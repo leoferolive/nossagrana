@@ -97,7 +97,7 @@ export const ConfiguracoesPage = ({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <FirstTimeTour
         tourKey="configuracoes"
         steps={[

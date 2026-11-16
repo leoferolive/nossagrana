@@ -72,7 +72,7 @@ export const AppShell = ({
   };
 
   return (
-    <div className="flex min-h-screen md:h-screen">
+    <div className="flex h-dvh overflow-hidden">
       {/* Sidebar: visível apenas no desktop */}
       <div className="hidden md:flex">
         <Sidebar

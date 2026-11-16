@@ -61,7 +61,7 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — Tokens com os valores novos e os tokens adicionais
 - [x] 2026-11-15 — Manrope carregada pelo próprio app
 - [x] 2026-11-15 — Fundo do `body`, `theme-color` e manifest na paleta nova
-- [ ] Altura do shell sem rolagem fantasma
+- [x] 2026-11-15 — Altura do shell sem rolagem fantasma
 - [x] 2026-11-15 — Área segura do iPhone na barra inferior
 - [ ] Campos em 16px e alvos de toque com 44px
 - [ ] Escala de z-index: barra, "+", painel/modal, aviso
@@ -142,6 +142,7 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
 - 2026-11-15 — Manrope vem do pacote `@fontsource-variable/manrope` (importada em `main.tsx`), com números tabulares no `body`; só o subconjunto latino entra no precache do service worker (conferido no build: `sw.js` lista o `woff2`).
 - 2026-11-15 — `<body>` sem o fundo slate, `theme-color` e manifest em `#F2F4EF`, `viewport-fit=cover`.
 - 2026-11-15 — `pb-safe` passa a existir (`spacing.safe`); o `<main>`, o "+" e o rodapé dos painéis de baixo para cima somam `env(safe-area-inset-bottom)`.
+- 2026-11-15 — `AppShell` em `h-dvh` com `overflow-hidden` (o `<main>` é a única área que rola); páginas do shell trocam `min-h-screen` por `min-h-full` e as telas de autenticação usam `min-h-dvh`.
 
 ## Decisões fechadas
 

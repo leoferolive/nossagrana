@@ -64,7 +64,7 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
 
   if (carregando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -84,7 +84,7 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
   }, {});
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <h1 className="text-xl font-bold text-text">Lançamentos do Mês</h1>

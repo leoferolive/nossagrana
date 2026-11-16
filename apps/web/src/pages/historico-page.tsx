@@ -91,7 +91,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
   const labels = mesesOrdenados.map((m) => formatMes(m.mesReferencia).slice(0, 3));
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-full bg-bg text-text">
       <FirstTimeTour
         tourKey="historico"
         steps={[

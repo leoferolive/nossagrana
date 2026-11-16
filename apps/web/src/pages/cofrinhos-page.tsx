@@ -40,7 +40,7 @@ export function CofrinhosPage({
 
   if (carregando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -66,7 +66,7 @@ export function CofrinhosPage({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <FirstTimeTour tourKey="cofrinhos" steps={cofrinhosTourSteps} />
 
       {/* Header */}

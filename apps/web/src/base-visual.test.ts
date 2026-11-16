@@ -5,6 +5,8 @@ import tailwindConfig from '../tailwind.config';
 import viteConfig from '../vite.config.ts?raw';
 
 import appShell from './components/app-shell.tsx?raw';
+import authShell from './components/ui/auth-shell.tsx?raw';
+import authContext from './contexts/auth-context.tsx?raw';
 
 const fontes = import.meta.glob<string>(['./components/**/*.tsx', './pages/*.tsx'], {
   query: '?raw',
@@ -58,5 +60,43 @@ describe('área segura do iPhone', () => {
     './components/templates-gerenciar-modal.tsx',
   ])('o painel de baixo para cima %s soma a área segura ao padding inferior', (caminho) => {
     expect(fonte(caminho)).toContain('env(safe-area-inset-bottom)');
+  });
+});
+
+describe('altura do shell', () => {
+  const PAGINAS_FORA_DO_SHELL = [
+    './pages/login-page.tsx',
+    './pages/sign-up-page.tsx',
+    './pages/onboarding-page.tsx',
+    './pages/familia-selector-page.tsx',
+  ];
+  const paginasDoShell = Object.keys(fontes).filter(
+    (caminho) =>
+      caminho.startsWith('./pages/') &&
+      !caminho.endsWith('.test.tsx') &&
+      !PAGINAS_FORA_DO_SHELL.includes(caminho),
+  );
+
+  it('encontra as páginas do shell', () => {
+    expect(paginasDoShell.length).toBeGreaterThanOrEqual(15);
+  });
+
+  it.each(paginasDoShell)(
+    '%s não usa min-h-screen (soma a barra e cria rolagem fantasma)',
+    (caminho) => {
+      expect(fonte(caminho)).not.toContain('min-h-screen');
+    },
+  );
+
+  it('o AppShell ocupa a altura visível e só o <main> rola', () => {
+    expect(appShell).toMatch(/className="flex h-dvh overflow-hidden/);
+    expect(appShell).toMatch(/<main className="[^"]*overflow-y-auto/);
+  });
+
+  it('telas fora do shell usam a altura visível (dvh), não a do layout (vh)', () => {
+    for (const conteudo of [authShell, authContext]) {
+      expect(conteudo).toContain('min-h-dvh');
+      expect(conteudo).not.toContain('min-h-screen');
+    }
   });
 });

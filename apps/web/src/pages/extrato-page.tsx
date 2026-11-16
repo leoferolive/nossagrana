@@ -182,7 +182,7 @@ export const ExtratoPage = ({
   }, [transacoesFiltradas, mesReferencia, getCategoriaNome, getMetodoNome]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={erro} />
       <FirstTimeTour
         tourKey="extrato"

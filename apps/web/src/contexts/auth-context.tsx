@@ -17,7 +17,7 @@ const SessaoCarregando = () => (
   <div
     role="status"
     aria-label="Carregando sessão"
-    className="flex min-h-screen items-center justify-center bg-bg text-text-muted"
+    className="flex min-h-dvh items-center justify-center bg-bg text-text-muted"
   >
     Carregando...
   </div>
@@ -32,7 +32,7 @@ const iniciarBootstrap = (): void => {
 
 /** Servidor inalcançável no bootstrap: o cookie pode estar válido, então não mostramos o login. */
 const SessaoIndisponivel = () => (
-  <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg p-4 text-text">
+  <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-bg p-4 text-text">
     <p role="alert" className="text-center">
       Não foi possível conectar ao servidor
     </p>

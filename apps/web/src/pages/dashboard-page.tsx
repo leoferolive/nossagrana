@@ -95,7 +95,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -134,7 +134,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={error} />
       <FirstTimeTour tourKey="dashboard" steps={dashboardTourSteps} />
 

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../stores/dashboard.store', () => ({
@@ -15,6 +15,7 @@ vi.mock('react-chartjs-2', () => ({
 import { DashboardPage } from './dashboard-page';
 import { useDashboardStore } from '../stores/dashboard.store';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
+import { renderPagina } from '../test/render-pagina';
 
 const mockUseDashboard = useDashboardStore as unknown as ReturnType<typeof vi.fn>;
 const mockUseCofrinhoStore = useCofrinhoStore as unknown as ReturnType<typeof vi.fn>;
@@ -45,6 +46,7 @@ describe('DashboardPage', () => {
 
   afterEach(() => {
     cleanup();
+    localStorage.clear();
   });
 
   it('exibe loading state', () => {
@@ -56,7 +58,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
@@ -69,7 +71,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/5\.200,00/)).toBeInTheDocument();
     expect(screen.getByText(/3\.800,00/)).toBeInTheDocument();
     expect(screen.getByText(/1\.400,00/)).toBeInTheDocument();
@@ -84,7 +86,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
 
     const cartaoSaldo = screen.getByText(/^Saldo/, { selector: 'p' }).parentElement as HTMLElement;
     const grade = cartaoSaldo.parentElement as HTMLElement;
@@ -115,7 +117,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
 
     expect(screen.getByLabelText('subiu 30%')).toBeInTheDocument();
     expect(screen.getByLabelText('caiu 5%')).toBeInTheDocument();
@@ -130,7 +132,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/nenhuma despesa registrada neste mês/i)).toBeInTheDocument();
   });
 
@@ -148,7 +150,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
     expect(screen.getByText(/nenhum orçamento configurado/i)).toBeInTheDocument();
   });
 
@@ -186,7 +188,7 @@ describe('DashboardPage', () => {
       error: null,
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" />);
+    renderPagina(<DashboardPage familiaId="f1" />);
     expect(screen.getByText('Alimentação')).toBeInTheDocument();
     expect(screen.getByText('60%')).toBeInTheDocument();
     expect(screen.getByText('Lazer')).toBeInTheDocument();
@@ -209,9 +211,7 @@ describe('DashboardPage', () => {
       ],
       fetchAll: vi.fn(),
     });
-    const { container } = render(
-      <DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />,
-    );
+    const { container } = renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
     expect(screen.getByText('Viagem')).toBeInTheDocument();
     expect(screen.getByText('✈️')).toBeInTheDocument();
@@ -234,9 +234,77 @@ describe('DashboardPage', () => {
       cofrinhos: [],
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
     expect(screen.getByText('Sua família ainda não tem cofrinhos.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /ver todos/i })).not.toBeInTheDocument();
+  });
+  it('mostra o título Início como cabeçalho de aba e a pílula de mês', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({ cofrinhos: [], fetchAll: vi.fn() });
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Início' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voltar' })).not.toBeInTheDocument();
+  });
+
+  it('"Configurar orçamento" abre Limites por categoria no endereço', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({ cofrinhos: [], fetchAll: vi.fn() });
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /configurar orçamento/i }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar\/limites$/);
+  });
+
+  it('"Ver todos" abre Cofrinhos no endereço', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({
+      cofrinhos: [
+        { id: 'cof1', nome: 'Viagem', emoji: null, saldoAtual: '10.00', status: 'ativo' },
+      ],
+      fetchAll: vi.fn(),
+    });
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /ver todos/i }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar\/cofrinhos$/);
+  });
+
+  it('abre o tour de boas-vindas no primeiro acesso e não de novo depois de concluído', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: resumoBase,
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    mockUseCofrinhoStore.mockReturnValue({ cofrinhos: [], fetchAll: vi.fn() });
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /pular/i }));
+    cleanup();
+    renderPagina(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

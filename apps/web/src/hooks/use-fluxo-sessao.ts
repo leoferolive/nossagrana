@@ -10,10 +10,11 @@ import { authService, familiaService } from '@/services/auth.service';
 
 /** Entrada, escolha de família e saída da sessão, e a navegação que cada uma provoca. */
 export const useFluxoSessao = () => {
-  const { isAuthenticated, logout, updateFamiliaIdAtiva } = useAuth();
+  const { isAuthenticated, familiaIdAtiva, logout, updateFamiliaIdAtiva } = useAuth();
   const navigate = useNavigate();
   const { pathname, state } = useLocation();
   const [familiasDoUsuario, setFamiliasDoUsuario] = useState<FamiliaMinhasItem[]>([]);
+  const [erroFamilias, setErroFamilias] = useState<string | null>(null);
 
   const aoEntrar = (familias: FamiliaMinhasItem[]) => {
     // Sessão que expirou sem passar por "sair" deixaria dados da conta anterior nas stores.
@@ -54,13 +55,19 @@ export const useFluxoSessao = () => {
   const naTelaDeFamilias = pathname === CAMINHOS.familias;
   useEffect(() => {
     if (!naTelaDeFamilias || !isAuthenticated || familiasDoUsuario.length > 0) return;
+    // Cada tentativa começa sem o aviso da anterior.
+    setErroFamilias(null);
     familiaService
       .listarMinhas()
       .then((res) => setFamiliasDoUsuario(res.familias))
-      .catch(() => void navigate(CAMINHOS.boasVindas));
-  }, [naTelaDeFamilias, isAuthenticated, familiasDoUsuario.length, navigate]);
+      .catch(() => {
+        // Quem já tem família ativa não é um caso de onboarding: fica no seletor, com o aviso.
+        if (familiaIdAtiva) setErroFamilias('Não foi possível carregar suas famílias.');
+        else void navigate(CAMINHOS.boasVindas);
+      });
+  }, [naTelaDeFamilias, isAuthenticated, familiasDoUsuario.length, familiaIdAtiva, navigate]);
 
-  return { familiasDoUsuario, aoEntrar, aoEscolherFamilia, aoSair };
+  return { familiasDoUsuario, erroFamilias, familiaIdAtiva, aoEntrar, aoEscolherFamilia, aoSair };
 };
 
 export type FluxoSessao = ReturnType<typeof useFluxoSessao>;

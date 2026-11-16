@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { mockSessao, resetAppMocks } from '@/test/app-mocks';
+import { barraInferior } from '@/test/barra-inferior';
 import { renderApp } from '@/test/render-app';
 
 import { useAuth } from './contexts/use-auth';
@@ -164,9 +165,9 @@ describe('App > troca de família com id no endereço', () => {
     fireEvent.click(await screen.findByRole('button', { name: /viagem europa/i }));
     await waitFor(() => tituloNoConteudo(/viagem europa/i));
 
-    fireEvent.click(screen.getByRole('button', { name: /alternar família/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Alternar família' }));
     fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
-    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    await waitFor(() => tituloNoConteudo(/^início$/i));
   };
 
   it('trocar de família pela interface leva ao Início', async () => {
@@ -196,16 +197,14 @@ describe('App > troca de família com id no endereço', () => {
     const { familiaService } = await import('./services/auth.service');
     renderApp('/');
     expect(await screen.findByText(/viagem europa/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(
-      await within(screen.getByRole('main')).findByRole('button', { name: /sair da conta/i }),
-    );
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Sair' }));
     await screen.findByRole('form', { name: /login/i });
     vi.mocked(familiaService.listarMinhas).mockResolvedValue({ familias: [FAMILIAS[1]] });
 
     fireEvent.submit(screen.getByRole('form', { name: /login/i }));
 
-    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    await waitFor(() => tituloNoConteudo(/^início$/i));
     expect(screen.queryByText(/viagem europa/i)).not.toBeInTheDocument();
   });
 
@@ -217,7 +216,7 @@ describe('App > troca de família com id no endereço', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
 
-    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    await waitFor(() => tituloNoConteudo(/^início$/i));
     expect(useMetodoPagamentoStore.getState().metodos).toEqual([]);
   });
 
@@ -236,7 +235,76 @@ describe('App > troca de família com id no endereço', () => {
     }));
     reavaliarSessao();
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
+  });
+
+  describe('voltar no histórico depois de trocar de família, qualquer que seja o caminho até a tela', () => {
+    const voltarDuasVezes = async () => {
+      for (let i = 0; i < 2; i += 1) {
+        fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
+        // O voltar passa pela entrada antiga e é corrigido num efeito: espera o assentamento.
+        await act(() => new Promise((resolve) => setTimeout(resolve, 80)));
+      }
+    };
+
+    const trocarParaPraia = async () => {
+      fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
+      fireEvent.click(
+        await within(screen.getByRole('main')).findByRole('link', { name: 'Alternar família' }),
+      );
+      fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
+      await waitFor(() => tituloNoConteudo(/^início$/i));
+    };
+
+    const prepararFamilias = async () => {
+      const { familiaService } = await import('./services/auth.service');
+      vi.mocked(familiaService.listarMinhas).mockResolvedValue({ familias: FAMILIAS });
+    };
+
+    const esperarInicio = () => {
+      expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
+      expect(screen.queryByRole('heading', { name: /fatura — nubank/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /viagem europa/i })).not.toBeInTheDocument();
+    };
+
+    it('fatura aberta por Planejar', async () => {
+      await prepararFamilias();
+      renderApp('/');
+      fireEvent.click(await barraInferior().findByRole('link', { name: 'Planejar' }));
+      fireEvent.click(await screen.findByRole('link', { name: /fatura nubank/i }));
+      await screen.findByRole('heading', { name: /fatura — nubank/i });
+      await trocarParaPraia();
+      await voltarDuasVezes();
+      esperarInicio();
+    });
+
+    it('fatura aberta por Métodos de pagamento', async () => {
+      await prepararFamilias();
+      renderApp(['/', '/mais/metodos-pagamento']);
+      fireEvent.click(await screen.findByRole('button', { name: /ver fatura de nubank/i }));
+      await screen.findByRole('heading', { name: /fatura — nubank/i });
+      await trocarParaPraia();
+      await voltarDuasVezes();
+      esperarInicio();
+    });
+
+    it('cofrinho aberto pela lista', async () => {
+      await prepararFamilias();
+      renderApp(['/', '/planejar/cofrinhos']);
+      fireEvent.click(await screen.findByRole('button', { name: /viagem europa/i }));
+      await waitFor(() => tituloNoConteudo(/viagem europa/i));
+      await trocarParaPraia();
+      await voltarDuasVezes();
+      esperarInicio();
+    });
+
+    it('link direto para a fatura continua abrindo, na família atual', async () => {
+      renderApp('/planejar/fatura/m1?mes=2026-11');
+      expect(await screen.findByRole('heading', { name: /fatura — nubank/i })).toBeInTheDocument();
+      expect(screen.getByTestId('sonda-local')).toHaveTextContent(
+        /^\/planejar\/fatura\/m1\?mes=2026-11$/,
+      );
+    });
   });
 });

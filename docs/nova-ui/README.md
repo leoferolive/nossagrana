@@ -26,14 +26,15 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2 em
-andamento: o PR 1 dela (#188, Rotas com URL) deu endereço a toda tela, e o voltar
-do Android, recarregar e link direto já funcionam; a barra, a tela Configurações
-e os cabeçalhos ainda são os antigos. **Próximo passo:** escrever o plano do PR 2
-da Entrega 2 (barra de cinco, Mais, Planejar, cabeçalhos únicos e tour) em
-`docs/superpowers/plans/`, a partir do
-[desenho da Entrega 2](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md),
-e executá-lo. Depois, o PR 3 (E2E).
+**Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2 quase
+concluída: o PR 1 (#188) deu endereço a toda tela, e o PR 2 trocou a navegação
+visível do celular (barra de cinco com o "+" dentro, tela Mais no lugar de
+Configurações, tela Planejar como entrada, cabeçalhos únicos e um só tour). O
+miolo de Extrato, Lançar e Início ainda é o antigo. **Próximo passo:** o PR 3 da
+Entrega 2: ajustar os seis specs do E2E à navegação nova (endereços, nomes da
+barra, botão "Lançar") e ao que já estava quebrado neles; escrever o plano em
+`docs/superpowers/plans/` e executar. Depois, o desenho da Entrega 3 (Extrato e
+Lançar), para aprovação do usuário.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -79,11 +80,11 @@ cabeçalhos e tour; E2E. Desenho em
 
 - [x] 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário
 - [x] 2026-11-16 — Rotas com URL (voltar do Android, recarregar mantém a tela, link direto)
-- [ ] Barra de cinco posições com o "+" dentro
-- [ ] Cabeçalho único de aba e de passo/detalhe
-- [ ] Tela Mais
-- [ ] Planejar como entrada para orçamento, cartões, cofrinhos e contas do mês
-- [ ] Um único tour de boas-vindas
+- [x] 2026-11-16 — Barra de cinco posições com o "+" dentro
+- [x] 2026-11-16 — Cabeçalho único de aba e de passo/detalhe
+- [x] 2026-11-16 — Tela Mais
+- [x] 2026-11-16 — Planejar como entrada para orçamento, cartões, cofrinhos e contas do mês
+- [x] 2026-11-16 — Um único tour de boas-vindas
 - [ ] E2E ajustados à nova navegação. Hoje os specs de onboarding, família e
       transações já estão quebrados: esperam o texto "Como deseja entrar", usam
       `getByLabel('Nome da familia')` sem acento e `selectOption` num seletor
@@ -118,6 +119,17 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
 parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
 R$ 99,99). A sobra deveria ir para a parcela 1.
+
+Pontos menores que ficaram do PR 2 da Entrega 2 (validação no navegador):
+
+- O detalhe do cofrinho fica a três toques da barra (Planejar › Cofrinhos ›
+  cofrinho).
+- O seletor de família (`/familias`) não tem botão de voltar.
+- No desktop em 1280×800, Perfil e Ajuda ficam abaixo da dobra do menu lateral.
+- No Extrato, "Exportar CSV" ocupa uma linha própria.
+- Em Planejar, "Contas do mês" mostra só a quantidade de modelos: o app não
+  registra qual modelo já foi lançado no mês. A linha da fatura mostra os dias
+  de fechamento e vencimento cadastrados, sem calcular a data.
 
 Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 
@@ -195,6 +207,16 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 2, PR 1, correções da revisão de código: encerrar o painel de lançar (X, salvar, excluir, envio que termina, toque duplo) anda no histórico uma só vez por abertura; `usePainelLancar` e a área logada em funções menores; a escolha de família limpa a store de métodos de pagamento, e entradas de cofrinho/fatura guardam a família em que foram abertas (`state.familiaId`), então voltar do navegador a uma delas, já em outra família, vai ao Início.
 - 2026-11-16 — Entrega 2, PR 1: `limparDadosDaFamilia` (`stores/limpar-dados-da-familia.ts`) zera as stores globais com dado de família (categorias, cofrinhos, dashboard, métodos, modelos e transações) na escolha de família, ao sair e ao entrar; sessão e websocket ficam de fora. Antes o Início mostrava o cofrinho da família ou conta anterior até a nova resposta chegar.
 - 2026-11-16 — Entrega 2, PR 1, achado do Codex: o rascunho de voz agora é descartado sempre que o painel de lançar passa a fechado (inclusive pelo voltar do histórico), e não só nos callbacks do modal; antes ele sobrescrevia o lançamento seguinte.
+- 2026-11-16 — PR 1 da Entrega 2 (#188) mergeado. Plano do PR 2 (barra de cinco,
+  Mais, Planejar, cabeçalhos e tour) escrito.
+- 2026-11-16 — Entrega 2, PR 2, barra de cinco: `BottomNav` com Início, Extrato, "+", Planejar e Mais (links; `abaDoCaminho` marca a aba também em telas de segundo nível), "+" de 58px dentro da barra em `z-lancar`; o botão flutuante saiu do `AppShell` e o toque longo para voz virou o hook `useToqueLongo`, que agora também solta a marca do toque longo se o dedo sai do botão sem clique (antes o próximo toque era engolido). Reserva do `<main>` passou a 112px mais a área segura.
+- 2026-11-16 — Entrega 2, PR 2, cabeçalhos únicos: `CabecalhoAba` (Início, Extrato; título 26/800 que some no desktop, pílula de mês à direita) e `CabecalhoDetalhe` (voltar 44×44 por `voltarPara(origem)`, título 20/800, subtítulo e ação opcionais) substituem os cabeçalhos próprios; `MonthNav` virou a pílula de mês. As páginas deixam de receber `onBack`/`onNavigate`/`onVerDetalhe`/`onVerFatura` e falam com o roteador por `useNavegacao`. `FamilySettingsPage` perdeu o ramo `AuthShell` (a única rota que a monta é `/mais/familia`, sempre dentro da casca). Em Relatórios e Lançamentos do mês a pílula fica numa linha abaixo do cabeçalho, porque no celular não cabe ao lado do título. Início passa a se chamar "Início" no cabeçalho (era "NossaGrana"). Testes de página usam `renderPagina` (`src/test/render-pagina.tsx`).
+- 2026-11-16 — Entrega 2, PR 2, tela Mais: `MaisPage` (Análises, Família, Cadastros, Conta, com Sair em `danger`) no lugar de `ConfiguracoesPage`, que foi apagada. Os grupos vivem em `components/grupos-de-mais.ts` e o menu lateral do desktop lê a mesma lista, mais um grupo Planejar (Contas do mês, Limites por categoria, Cofrinhos); o menu e o `AppShell` deixaram de receber `currentScreen`/`onNavigate` (itens viraram links, marcados pelo endereço). Id de tela `configuracoes` virou `mais` e entrou `planejar` em `caminhos.ts`.
+- 2026-11-16 — Entrega 2, PR 2, tela Planejar: `PlanejarPage` com Contas do mês, Limites por categoria, uma linha de fatura por cartão de crédito ativo e Cofrinhos; o redirecionamento de `/planejar` para as contas saiu. Resumos por `usePlanejar`, sem chamada nova à API: contas "lançadas" são os modelos cujo nome aparece como descrição de transação do mês (é como a API grava o que "Salvar Lançamentos" cria; não existe marca persistida), limites "estourados" vêm de `getDashboardOrcamento` do mês, o vencimento sai de `vencimentoDaFatura` (vencimento no dia do fechamento ou antes cai no mês seguinte) e cofrinhos "ativos" de `cofrinhoService.listar`. Falha de um resumo deixa só aquela linha sem resumo e mostra um aviso; as linhas navegam sempre.
+- 2026-11-16 — Entrega 2, PR 2, tour único: `TourBoasVindas` (quatro passos: Início, Lançar, Planejar, Mais) montado só no Início, com a chave nova `tour-boas-vindas` (`utils/tour.ts`); quem só tem as marcas dos oito tours antigos vê o novo uma vez. Os tours de Extrato, Relatórios, Orçamento, Histórico, Cofrinhos e Perfil saíram (o de Configurações foi junto com a página), e "Rever tutorial", em Ajuda, apaga a marca nova e leva ao Início. Um teste de guarda (`sem-tour-por-tela.test.ts`) impede que outra página volte a montar tour.
+- 2026-11-16 — Entrega 2, PR 2, ajuste em Planejar: saíram duas regras que eu tinha inventado. A fatura mostra os dias cadastrados no cartão ("fecha dia X · vence dia Y", só o que existir; `vencimentoDaFatura` foi apagada, a conversão em data é decisão da Entrega 4) e Contas do mês mostra só "M contas no mês", porque a tela Lançamentos do mês não calcula quais modelos já foram lançados (casar transação com modelo pelo nome não é confiável).
+- 2026-11-16 — Entrega 2, PR 2, correções da validação no navegador: o "+" agora sobe 28px acima da barra (a coluna dele estava sem altura e o `-top-7` contava a partir do meio da barra; ganhou `self-stretch`); `CabecalhoDetalhe` não corta mais o título (quebra em duas linhas) e Cartões e Pagamentos virou "Métodos de pagamento"; se a lista de famílias falha, quem tem família ativa fica no seletor com aviso (antes ia ao onboarding), e o seletor marca a família "Atual"; Planejar não mostra "0 de 0" em mês sem orçamento e mantém o título da linha em uma linha, com o resumo descendo quando não couber.
+- 2026-11-16 — Entrega 2, PR 2, correções da revisão de código: a área logada passou a carimbar a família em toda entrada de histórico com id (fatura aberta por Planejar escapava; os chamadores deixaram de passar `state`), com `semEntradaAnterior` no state para o Voltar de link direto; o aviso de falha da lista de famílias some ao tentar de novo; títulos alinhados à navegação ("Contas do mês", "Limites por categoria") e a Ajuda descreve o "+" da barra; no desktop o título da aba fica na TopBar e o de detalhe no próprio cabeçalho (a TopBar não o repete), e o menu lateral ganhou o link Planejar; nome de cartão comprido quebra linha em Planejar.
 
 ## Decisões fechadas
 

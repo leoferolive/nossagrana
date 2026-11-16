@@ -1,28 +1,21 @@
 import { useEffect, useState } from 'react';
 
+import { CabecalhoDetalhe } from '@/components/cabecalho-detalhe';
 import { IconConfiguracoes } from '@/components/icons';
 import { LancamentosResumo } from '@/components/lancamentos-resumo';
 import { TemplateGrupo } from '@/components/template-grupo';
+import { MonthNav } from '@/components/month-nav';
 import { TemplatesGerenciarModal } from '@/components/templates-gerenciar-modal';
-import { ALVO_TOQUE_CLASSES } from '@/components/ui/campo-classes';
+import { CAMINHOS } from '@/routes/caminhos';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
-import { formatMesTitulo } from '@/utils/date';
-import { IconMesAnterior, IconProximoMes, IconTemplates } from '../components/icons';
+import { shiftMonth } from '@/utils/date';
+import { IconTemplates } from '../components/icons';
 
 interface LancamentosPageProps {
   familiaId: string;
-  onNavigate: (screen: string) => void;
 }
 
-function addMonths(mes: string, delta: number): string {
-  const [ano, mesNum] = mes.split('-').map(Number);
-  const date = new Date(ano, mesNum - 1 + delta, 1);
-  const novoAno = date.getFullYear();
-  const novoMes = String(date.getMonth() + 1).padStart(2, '0');
-  return `${novoAno}-${novoMes}`;
-}
-
-export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: LancamentosPageProps) {
+export function LancamentosPage({ familiaId }: LancamentosPageProps) {
   const templates = useTemplateTransacaoStore((s) => s.templates);
   const valores = useTemplateTransacaoStore((s) => s.valores);
   const mesReferencia = useTemplateTransacaoStore((s) => s.mesReferencia);
@@ -81,19 +74,21 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-border px-4 py-4">
-        <h1 className="text-xl font-bold text-text">Lançamentos do Mês</h1>
-        <button
-          type="button"
-          aria-label="Gerenciar templates"
-          onClick={() => setGerenciarAberto(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted transition hover:text-text"
-        >
-          <IconConfiguracoes size={14} />
-          Gerenciar
-        </button>
-      </header>
+      <CabecalhoDetalhe
+        titulo="Contas do mês"
+        origem={CAMINHOS.planejar}
+        acao={
+          <button
+            type="button"
+            aria-label="Gerenciar templates"
+            onClick={() => setGerenciarAberto(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted transition hover:text-text"
+          >
+            <IconConfiguracoes size={14} />
+            Gerenciar
+          </button>
+        }
+      />
 
       <TemplatesGerenciarModal
         open={gerenciarAberto}
@@ -105,25 +100,14 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
       />
 
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* Month selector */}
-        <div className="flex items-center justify-between rounded-xl border border-border bg-panel px-4 py-3">
-          <button
-            type="button"
-            aria-label="Mês anterior"
-            onClick={() => setMesReferencia(addMonths(mesReferencia, -1))}
-            className={`${ALVO_TOQUE_CLASSES} rounded-full text-text-muted transition hover:bg-surface hover:text-text`}
-          >
-            <IconMesAnterior size={18} aria-hidden="true" />
-          </button>
-          <span className="text-sm font-semibold text-text">{formatMesTitulo(mesReferencia)}</span>
-          <button
-            type="button"
-            aria-label="Próximo mês"
-            onClick={() => setMesReferencia(addMonths(mesReferencia, 1))}
-            className={`${ALVO_TOQUE_CLASSES} rounded-full text-text-muted transition hover:bg-surface hover:text-text`}
-          >
-            <IconProximoMes size={18} aria-hidden="true" />
-          </button>
+        {/* Os modelos valem também para o mês seguinte, então a seta para frente não trava no corrente. */}
+        <div>
+          <MonthNav
+            mesReferencia={mesReferencia}
+            onMesAnterior={() => setMesReferencia(shiftMonth(mesReferencia, -1))}
+            onMesProximo={() => setMesReferencia(shiftMonth(mesReferencia, 1))}
+            isCurrentMonth={false}
+          />
         </div>
 
         {templates.length === 0 ? (

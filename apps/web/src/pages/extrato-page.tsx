@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 
+import { CabecalhoAba } from '../components/cabecalho-aba';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
 import {
   transacaoService,
   metodoPagamentoService,
@@ -11,25 +11,15 @@ import {
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
-import { formatMesTitulo, getCurrentMonth, shiftMonth } from '@/utils/date';
+import { getCurrentMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import {
-  IconBusca,
-  IconEditar,
-  IconEntrada,
-  IconExportar,
-  IconExtrato,
-  IconMesAnterior,
-  IconProximoMes,
-  IconSaida,
-} from '../components/icons';
+import { IconEntrada, IconSaida } from '../components/icons';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
 interface ExtratoPageProps {
   familiaId: string;
-  onBack: () => void;
   onNovaTransacao: () => void;
   onEditarTransacao?: (transacao: Transacao) => void;
 }
@@ -91,7 +81,6 @@ const TransacaoBadges = ({ t }: { t: Transacao }) => (
 
 export const ExtratoPage = ({
   familiaId,
-  onBack: _onBack,
   onNovaTransacao: _onNovaTransacao,
   onEditarTransacao,
 }: ExtratoPageProps) => {
@@ -144,12 +133,6 @@ export const ExtratoPage = ({
       .finally(() => setCarregando(false));
   }, [familiaId, mesReferencia, setCarregando, setTransacoes]);
 
-  const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
-  const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
-
-  const mesLabel = formatMesTitulo(mesReferencia);
-  const isCurrentMonth = mesReferencia === getCurrentMonth();
-
   const transacoesFiltradas = useMemo(
     () =>
       transacoes.filter((t) => {
@@ -195,68 +178,12 @@ export const ExtratoPage = ({
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={erro} />
-      <FirstTimeTour
-        tourKey="extrato"
-        steps={[
-          {
-            icon: IconExtrato,
-            title: 'Seu extrato',
-            description:
-              'Veja todas as transações do mês. Use as setas ao lado do mês para navegar entre meses.',
-          },
-          {
-            icon: IconBusca,
-            title: 'Filtros e busca',
-            description:
-              'Filtre por receitas ou despesas com os chips. Use a barra de busca para encontrar uma transação específica.',
-          },
-          {
-            icon: IconEditar,
-            title: 'Editar transação',
-            description: 'Toque em qualquer transação para editá-la ou excluí-la.',
-          },
-          {
-            icon: IconExportar,
-            title: 'Exportar CSV',
-            description: 'Use o botão "Exportar CSV" para baixar suas transações em planilha.',
-          },
-        ]}
-      />
 
-      {/* Header — título + mês + filtros */}
-      <header className="border-b border-border px-4 py-4 md:px-6">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg font-bold text-text md:hidden">Extrato</h1>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleMesAnterior}
-              className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text`}
-              aria-label="Mês anterior"
-            >
-              <IconMesAnterior size={18} aria-hidden="true" />
-            </button>
-            <span className="min-w-[120px] text-center text-sm text-text-muted">{mesLabel}</span>
-            <button
-              type="button"
-              onClick={handleMesProximo}
-              disabled={isCurrentMonth}
-              className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed`}
-              aria-label="Próximo mês"
-            >
-              <IconProximoMes size={18} aria-hidden="true" />
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={exportarCSV}
-            className={`${ALVO_TOQUE_CLASSES} shrink-0 whitespace-nowrap rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
-            aria-label="Exportar CSV"
-          >
-            Exportar CSV
-          </button>
-        </div>
-        <div className="flex gap-2">
+      <CabecalhoAba titulo="Extrato" mes={mesReferencia} onMesChange={setMesReferencia} />
+
+      {/* Filtros e busca */}
+      <div className="border-b border-border px-4 pb-4 md:px-6">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setFiltroTipo('todos')}
@@ -292,6 +219,14 @@ export const ExtratoPage = ({
           >
             Receitas
           </button>
+          <button
+            type="button"
+            onClick={exportarCSV}
+            className={`${ALVO_TOQUE_CLASSES} ml-auto shrink-0 whitespace-nowrap rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
+            aria-label="Exportar CSV"
+          >
+            Exportar CSV
+          </button>
         </div>
         <div className="mt-3">
           <div className="relative">
@@ -305,7 +240,7 @@ export const ExtratoPage = ({
             />
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Conteúdo */}
       <div className="flex-1 p-4 md:px-6">

@@ -30,4 +30,16 @@ describe('temEntradaAnteriorDoApp', () => {
 
     expect(temEntradaAnteriorDoApp('k1')).toBe(true);
   });
+
+  it('sem idx, entrada substituída que era a primeira (marca no state) continua sem anterior', () => {
+    simularEstado(null);
+
+    expect(temEntradaAnteriorDoApp('k2', { semEntradaAnterior: true })).toBe(false);
+  });
+
+  it('com idx, a marca do state não manda: vale a posição', () => {
+    simularEstado({ idx: 3 });
+
+    expect(temEntradaAnteriorDoApp('k2', { semEntradaAnterior: true })).toBe(true);
+  });
 });

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockService = vi.hoisted(() => ({
@@ -15,11 +15,8 @@ vi.mock('../services/core-financeiro.service', () => ({
   categoriaService: mockCategoriaService,
 }));
 
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
-
 import { OrcamentoPage } from './orcamento-page';
+import { renderPagina } from '../test/render-pagina';
 
 const familiaId = 'fam-1';
 
@@ -41,15 +38,15 @@ beforeEach(() => {
 
 describe('OrcamentoPage', () => {
   it('renders heading', async () => {
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /orçamento mensal/i })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: /^limites por categoria$/i })).toBeInTheDocument(),
     );
   });
 
   it('shows loading state', () => {
     mockService.getOrcamentos.mockReturnValue(new Promise(() => {}));
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
@@ -70,7 +67,7 @@ describe('OrcamentoPage', () => {
         },
       ],
     });
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
 
     expect(await screen.findByText('Vigente desde mar. de 2026')).toBeInTheDocument();
   });
@@ -91,18 +88,20 @@ describe('OrcamentoPage', () => {
         },
       ],
     });
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0));
     expect(screen.getAllByText(/500/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/50%/).length).toBeGreaterThan(0);
   });
 
-  it('calls onBack when back button clicked', async () => {
-    const onBack = vi.fn();
-    render(<OrcamentoPage familiaId={familiaId} onBack={onBack} />);
-    await waitFor(() => screen.getByRole('button', { name: /voltar/i }));
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
+  it('mostra o título como heading de nível 1 e o Voltar leva a Planejar (link direto)', async () => {
+    renderPagina(<OrcamentoPage familiaId={familiaId} />, '/planejar/limites');
+    await waitFor(() => screen.getByRole('button', { name: 'Voltar' }));
+    expect(
+      screen.getByRole('heading', { level: 1, name: /^limites por categoria$/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });
 
   it('opens edit form and submits new limit', async () => {
@@ -125,7 +124,7 @@ describe('OrcamentoPage', () => {
       .mockResolvedValue({ orcamentos: [] });
     mockService.setOrcamento.mockResolvedValue({ orcamento: {} });
 
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0));
     const editButtons = screen.getAllByRole('button', { name: /editar limite/i });
     fireEvent.click(editButtons[0]);
@@ -144,13 +143,8 @@ describe('OrcamentoPage', () => {
     );
   });
 
-  it('exibe o tour de orçamento', async () => {
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => expect(screen.getByTestId('tour-orcamento')).toBeInTheDocument());
-  });
-
   it('exibe empty state melhorado com CTA quando não há orçamentos', async () => {
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() =>
       expect(screen.getByText(/nenhum orçamento configurado/i)).toBeInTheDocument(),
     );
@@ -159,7 +153,7 @@ describe('OrcamentoPage', () => {
   });
 
   it('exibe formulário de adicionar categoria ao clicar no botão', async () => {
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() => screen.getByRole('button', { name: /configurar orçamento/i }));
     fireEvent.click(screen.getByRole('button', { name: /configurar orçamento/i }));
     await waitFor(() => expect(screen.getByLabelText(/categoria/i)).toBeInTheDocument());
@@ -182,7 +176,7 @@ describe('OrcamentoPage', () => {
         },
       ],
     });
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole('button', { name: /adicionar categoria/i }));
     await waitFor(() => screen.getByLabelText(/categoria/i));
@@ -197,7 +191,7 @@ describe('OrcamentoPage', () => {
   it('exibe erro ao falhar carregamento de categorias disponiveis', async () => {
     mockService.getOrcamentos.mockResolvedValue({ orcamentos: [] });
     mockCategoriaService.listar.mockRejectedValue(new Error('Falha'));
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(/erro ao carregar categorias/i);
     });
@@ -205,7 +199,7 @@ describe('OrcamentoPage', () => {
 
   it('salva novo orçamento de categoria', async () => {
     mockService.setOrcamento.mockResolvedValue({ orcamento: {} });
-    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() => screen.getByRole('button', { name: /configurar orçamento/i }));
     fireEvent.click(screen.getByRole('button', { name: /configurar orçamento/i }));
     await waitFor(() => screen.getByLabelText(/categoria/i));

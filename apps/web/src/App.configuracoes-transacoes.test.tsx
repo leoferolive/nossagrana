@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, resetAppMocks } from '@/test/app-mocks';
+import { barraInferior } from '@/test/barra-inferior';
 import { renderApp } from '@/test/render-app';
 
 import { useAuth } from './contexts/use-auth';
@@ -17,11 +18,11 @@ afterEach(() => {
 describe('App > fluxo autenticado com familia > configurações e transações', () => {
   it('navega para AjudaPage a partir das configurações', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
-    await waitFor(() => within(main).getByRole('button', { name: /^ajuda$/i }));
-    fireEvent.click(within(main).getByRole('button', { name: /^ajuda$/i }));
+    await waitFor(() => within(main).getByRole('link', { name: 'Ajuda' }));
+    fireEvent.click(within(main).getByRole('link', { name: 'Ajuda' }));
     expect(screen.getAllByRole('heading', { name: /ajuda/i }).length).toBeGreaterThan(0);
   });
 
@@ -40,12 +41,12 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     const { authService } = await import('./services/auth.service');
 
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
 
     const main = screen.getByRole('main');
-    await waitFor(() => within(main).getByRole('button', { name: /sair da conta/i }));
-    fireEvent.click(within(main).getByRole('button', { name: /sair da conta/i }));
+    await waitFor(() => within(main).getByRole('button', { name: 'Sair' }));
+    fireEvent.click(within(main).getByRole('button', { name: 'Sair' }));
 
     expect(authService.logout).toHaveBeenCalledWith();
     expect(logoutMock).toHaveBeenCalled();
@@ -53,11 +54,11 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
   it('navega para FamilySettingsPage a partir das configurações', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
-    await waitFor(() => within(main).getByRole('button', { name: /família/i }));
-    fireEvent.click(within(main).getByRole('button', { name: /família/i }));
+    await waitFor(() => within(main).getByRole('link', { name: 'Família' }));
+    fireEvent.click(within(main).getByRole('link', { name: 'Família' }));
     await waitFor(() =>
       expect(screen.getAllByRole('heading', { name: /família/i }).length).toBeGreaterThan(0),
     );
@@ -78,11 +79,13 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
     // Com isAuthenticated=true e familiaIdAtiva, App inicia direto no dashboard
     await waitFor(() =>
-      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+      expect(screen.getAllByRole('heading', { name: /início|nossagrana/i }).length).toBeGreaterThan(
+        0,
+      ),
     );
 
     // Navigate via BottomNav to extrato to verify familiaId propagation
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Extrato' }));
     expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
   });
 
@@ -93,8 +96,8 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     });
 
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => barraInferior().getByRole('link', { name: 'Extrato' }));
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Extrato' }));
 
     await waitFor(() => expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByText('Mercado')[0]);
@@ -116,8 +119,8 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     });
 
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => barraInferior().getByRole('link', { name: 'Extrato' }));
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Extrato' }));
 
     await waitFor(() => expect(screen.getAllByText('Farmácia').length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByText('Farmácia')[0]);
@@ -148,8 +151,8 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     });
 
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => barraInferior().getByRole('link', { name: 'Extrato' }));
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Extrato' }));
 
     await waitFor(() => expect(screen.getAllByText('Salário').length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByText('Salário')[0]);
@@ -178,8 +181,8 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     });
 
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => barraInferior().getByRole('link', { name: 'Extrato' }));
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Extrato' }));
 
     await waitFor(() => expect(screen.getAllByText('Café').length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByText('Café')[0]);
@@ -209,7 +212,9 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
     renderApp();
     await waitFor(() =>
-      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+      expect(screen.getAllByRole('heading', { name: /início|nossagrana/i }).length).toBeGreaterThan(
+        0,
+      ),
     );
 
     // Click "Nova Transação" button (top bar or FAB)

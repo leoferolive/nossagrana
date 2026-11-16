@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { transacaoService } from '@/services/core-financeiro.service';
@@ -6,10 +6,7 @@ import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
 import { ExtratoPage } from './extrato-page';
-
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
+import { renderPagina } from '../test/render-pagina';
 
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: () => ({
@@ -81,14 +78,21 @@ describe('ExtratoPage', () => {
     });
   });
 
+  it('usa o cabeçalho de aba: título de nível 1, pílula de mês e nenhum Voltar', () => {
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Extrato' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voltar' })).not.toBeInTheDocument();
+  });
+
   it('exibe lista de transações', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Salario').length).toBeGreaterThan(0);
   });
 
   it('exibe valores formatados com sinal', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getAllByText(/- R\$\s*150,00/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/\+ R\$\s*5\.000,00/).length).toBeGreaterThan(0);
   });
@@ -102,7 +106,7 @@ describe('ExtratoPage', () => {
       erro: null,
       filtros: {},
     });
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getAllByText('Parcela 2/6').length).toBeGreaterThan(0);
   });
 
@@ -113,25 +117,20 @@ describe('ExtratoPage', () => {
       erro: null,
       filtros: {},
     });
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getAllByText(/recorrente/i).length).toBeGreaterThan(0);
   });
 
   it('filtro de tipo filtra visualmente', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /filtrar despesas/i }));
     expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0);
   });
 
   it('abre modal de detalhe ao clicar na transação', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Mercado')[0]);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('exibe o tour de extrato', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
-    expect(screen.getByTestId('tour-extrato')).toBeInTheDocument();
   });
 });
 
@@ -181,12 +180,12 @@ describe('ExtratoPage — exibe nomes de categoria e metodo do store', () => {
   });
 
   it('exibe nome da categoria do store', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getAllByText('Alimentacao').length).toBeGreaterThan(0);
   });
 
   it('exibe nome do metodo de pagamento do store', () => {
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getAllByText('Cartao Nubank').length).toBeGreaterThan(0);
   });
 });
@@ -199,7 +198,7 @@ describe('ExtratoPage — carregamento via API', () => {
 
   it('chama transacaoService.listar ao montar com familiaId', async () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
       expect(transacaoService.listar).toHaveBeenCalledWith(
         expect.objectContaining({ mesReferencia: expect.any(String) }),
@@ -210,7 +209,7 @@ describe('ExtratoPage — carregamento via API', () => {
 
   it('não chama transacaoService.listar quando familiaId está vazio', async () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
-    render(<ExtratoPage familiaId="" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="" onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
       expect(transacaoService.listar).not.toHaveBeenCalled();
     });
@@ -220,7 +219,7 @@ describe('ExtratoPage — carregamento via API', () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({
       transacoes: [T({ id: 'api1', descricao: 'Jantar API', valor: '80.00', tipo: 'despesa' })],
     });
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
       expect(screen.getAllByText('Jantar API').length).toBeGreaterThan(0);
     });
@@ -234,14 +233,14 @@ describe('ExtratoPage — carregamento via API', () => {
           resolve = res;
         }),
     );
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     expect(screen.getByText('Carregando...')).toBeInTheDocument();
     resolve!({ transacoes: [] });
   });
 
   it('exibe "Nenhuma transação encontrada." quando lista está vazia', async () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
       expect(screen.getByText('Nenhuma transação encontrada.')).toBeInTheDocument();
     });
@@ -249,7 +248,7 @@ describe('ExtratoPage — carregamento via API', () => {
 
   it('exibe "Nenhuma transação encontrada." quando a API falha', async () => {
     vi.mocked(transacaoService.listar).mockRejectedValue(new Error('Erro de rede'));
-    render(<ExtratoPage familiaId="f1" onBack={vi.fn()} onNovaTransacao={vi.fn()} />);
+    renderPagina(<ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} />);
     await waitFor(() => {
       expect(screen.getByText('Nenhuma transação encontrada.')).toBeInTheDocument();
     });

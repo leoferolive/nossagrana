@@ -2,19 +2,14 @@ import { useEffect, useState } from 'react';
 
 import { Target } from 'lucide-react';
 
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
+import { CAMINHOS } from '../routes/caminhos';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
 import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
 import { CAMPO_CLASSES } from '../components/ui/campo-classes';
-import {
-  IconAdicionar,
-  IconEditar,
-  IconOrcamento,
-  IconRelatorio,
-  IconVoltar,
-} from '../components/icons';
+import { IconAdicionar } from '../components/icons';
 
 interface OrcamentoItem {
   id: string;
@@ -30,7 +25,6 @@ interface OrcamentoItem {
 
 interface OrcamentoPageProps {
   familiaId: string;
-  onBack: () => void;
 }
 
 const statusColor: Record<string, string> = {
@@ -45,7 +39,7 @@ const statusTextColor: Record<string, string> = {
   exceeded: 'text-danger',
 };
 
-export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
+export const OrcamentoPage = ({ familiaId }: OrcamentoPageProps) => {
   const [orcamentos, setOrcamentos] = useState<OrcamentoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -141,48 +135,15 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      <FirstTimeTour
-        tourKey="orcamento"
-        steps={[
-          {
-            icon: IconOrcamento,
-            title: 'Orçamento mensal',
-            description:
-              'Defina quanto deseja gastar no máximo por categoria. O controle ajuda a evitar surpresas no fim do mês.',
-          },
-          {
-            icon: IconRelatorio,
-            title: 'Barra de progresso',
-            description:
-              'A barra muda de cor: verde = dentro do limite, amarelo = 80% usado, vermelho = estourou.',
-          },
-          {
-            icon: IconEditar,
-            title: 'Ajustar limites',
-            description:
-              'Toque em "Editar limite" para alterar o valor. A mudança vale a partir de agora e o histórico anterior é preservado.',
-          },
-        ]}
+      <CabecalhoDetalhe
+        titulo="Limites por categoria"
+        origem={CAMINHOS.planejar}
+        subtitulo={
+          orcamentos.length > 0 && orcamentos[0].vigenciaInicio
+            ? `Vigente desde ${formatMesCurto(orcamentos[0].vigenciaInicio)}`
+            : undefined
+        }
       />
-      <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <button
-          type="button"
-          aria-label="Voltar"
-          onClick={onBack}
-          className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-surface"
-        >
-          <IconVoltar size={16} aria-hidden="true" />
-          Voltar
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-text">Orçamento Mensal</h1>
-          {orcamentos.length > 0 && orcamentos[0].vigenciaInicio && (
-            <p className="text-xs text-text-muted">
-              Vigente desde {formatMesCurto(orcamentos[0].vigenciaInicio)}
-            </p>
-          )}
-        </div>
-      </header>
 
       <ErrorBanner error={erro} />
       <div className="flex flex-1 flex-col gap-4 p-4">

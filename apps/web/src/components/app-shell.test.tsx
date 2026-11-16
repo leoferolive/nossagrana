@@ -1,13 +1,23 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { AppShell } from './app-shell';
 
-function getFab(label: string): HTMLElement {
-  const buttons = screen.getAllByLabelText(label);
-  const fab = buttons.find((btn) => btn.classList.contains('fixed'));
-  if (!fab) throw new Error(`FAB with label "${label}" not found`);
-  return fab;
-}
+const renderShell = (
+  props: { caminho?: string; onNovaTransacao?: () => void; onVoiceActivate?: () => void } = {},
+) =>
+  render(
+    <MemoryRouter initialEntries={[props.caminho ?? '/']}>
+      <AppShell
+        onNovaTransacao={props.onNovaTransacao ?? vi.fn()}
+        onVoiceActivate={props.onVoiceActivate}
+        onLogout={vi.fn()}
+      >
+        <div>content</div>
+      </AppShell>
+    </MemoryRouter>,
+  );
 
 describe('AppShell', () => {
   afterEach(() => {
@@ -16,89 +26,40 @@ describe('AppShell', () => {
     cleanup();
   });
 
-  describe('FAB long press', () => {
-    it('calls onNovaTransacao on short click', () => {
-      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-      const onNovaTransacao = vi.fn();
+  it('não renderiza mais o botão flutuante: o único "Lançar" mora na barra', () => {
+    renderShell({ onVoiceActivate: vi.fn() });
+    const botoes = screen.getAllByRole('button', { name: /lançar|nova transação/i });
+    const flutuantes = botoes.filter((b) => b.classList.contains('fixed'));
+    expect(flutuantes).toHaveLength(0);
+    const barra = screen.getByRole('navigation', { name: 'Navegação principal' });
+    expect(within(barra).getByRole('button', { name: 'Lançar' })).toBeInTheDocument();
+  });
 
-      render(
-        <AppShell
-          currentScreen="dashboard"
-          onNavigate={vi.fn()}
-          onNovaTransacao={onNovaTransacao}
-          onVoiceActivate={vi.fn()}
-          onLogout={vi.fn()}
-        >
-          <div>content</div>
-        </AppShell>,
-      );
+  it('marca a aba pelo endereço, inclusive em tela de segundo nível', () => {
+    renderShell({ caminho: '/mais/categorias' });
+    const barra = screen.getByRole('navigation', { name: 'Navegação principal' });
+    expect(within(barra).getByRole('link', { name: 'Mais' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
 
-      const fab = getFab('Nova transação. Segure para usar voz');
-      fireEvent.click(fab);
-      expect(onNovaTransacao).toHaveBeenCalledOnce();
+  it('toque curto no "+" chama onNovaTransacao', () => {
+    const onNovaTransacao = vi.fn();
+    renderShell({ onNovaTransacao });
+    fireEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(onNovaTransacao).toHaveBeenCalledOnce();
+  });
+
+  it('toque longo no "+" chama onVoiceActivate', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const onVoiceActivate = vi.fn();
+    renderShell({ onVoiceActivate });
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Lançar' }), {
+      clientX: 100,
+      clientY: 100,
     });
-
-    it('calls onVoiceActivate on long press (500ms)', () => {
-      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-      const onVoiceActivate = vi.fn();
-
-      render(
-        <AppShell
-          currentScreen="dashboard"
-          onNavigate={vi.fn()}
-          onNovaTransacao={vi.fn()}
-          onVoiceActivate={onVoiceActivate}
-          onLogout={vi.fn()}
-        >
-          <div>content</div>
-        </AppShell>,
-      );
-
-      const fab = getFab('Nova transação. Segure para usar voz');
-      fireEvent.mouseDown(fab, { clientX: 100, clientY: 100 });
-      vi.advanceTimersByTime(500);
-
-      expect(onVoiceActivate).toHaveBeenCalledOnce();
-    });
-
-    it('does not call onVoiceActivate when pointer moves > 10px', () => {
-      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-      const onVoiceActivate = vi.fn();
-
-      render(
-        <AppShell
-          currentScreen="dashboard"
-          onNavigate={vi.fn()}
-          onNovaTransacao={vi.fn()}
-          onVoiceActivate={onVoiceActivate}
-          onLogout={vi.fn()}
-        >
-          <div>content</div>
-        </AppShell>,
-      );
-
-      const fab = getFab('Nova transação. Segure para usar voz');
-      fireEvent.mouseDown(fab, { clientX: 100, clientY: 100 });
-      fireEvent.mouseMove(fab, { clientX: 120, clientY: 100 });
-      vi.advanceTimersByTime(500);
-
-      expect(onVoiceActivate).not.toHaveBeenCalled();
-    });
-
-    it('uses simple aria-label when onVoiceActivate not provided', () => {
-      render(
-        <AppShell
-          currentScreen="dashboard"
-          onNavigate={vi.fn()}
-          onNovaTransacao={vi.fn()}
-          onLogout={vi.fn()}
-        >
-          <div>content</div>
-        </AppShell>,
-      );
-
-      const fab = getFab('Nova transação');
-      expect(fab).toBeInTheDocument();
-    });
+    vi.advanceTimersByTime(500);
+    expect(onVoiceActivate).toHaveBeenCalledOnce();
   });
 });

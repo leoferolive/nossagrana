@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { cleanup, screen, waitFor, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockService = vi.hoisted(() => ({
@@ -11,11 +11,8 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
-
 import { HistoricoPage } from './historico-page';
+import { renderPagina } from '../test/render-pagina';
 
 const familiaId = 'fam-1';
 
@@ -30,7 +27,7 @@ beforeEach(() => {
 
 describe('HistoricoPage', () => {
   it('renderiza o título', async () => {
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /histórico/i })).toBeInTheDocument(),
     );
@@ -38,12 +35,12 @@ describe('HistoricoPage', () => {
 
   it('mostra estado de carregamento', () => {
     mockService.getHistorico.mockReturnValue(new Promise(() => {}));
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
   it('mostra mensagem de empty state quando não há meses', async () => {
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getByText(/nenhum histórico/i)).toBeInTheDocument());
   });
 
@@ -70,7 +67,7 @@ describe('HistoricoPage', () => {
         },
       ],
     });
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0));
     expect(screen.getAllByText(/jan.*2026/i).length).toBeGreaterThan(0);
   });
@@ -89,16 +86,16 @@ describe('HistoricoPage', () => {
         },
       ],
     });
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText(/divergente/i).length).toBeGreaterThan(0));
   });
 
-  it('chama onBack ao clicar em voltar', async () => {
-    const onBack = vi.fn();
-    render(<HistoricoPage familiaId={familiaId} onBack={onBack} />);
-    await waitFor(() => screen.getByRole('button', { name: /voltar/i }));
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
+  it('mostra o título como heading de nível 1 e o Voltar leva a Mais (link direto)', async () => {
+    renderPagina(<HistoricoPage familiaId={familiaId} />, '/mais/historico');
+    await waitFor(() => screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Histórico' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
   });
 
   it('abre detalhe do mês ao clicar', async () => {
@@ -129,7 +126,7 @@ describe('HistoricoPage', () => {
       },
     });
 
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByText(/fev.*2026/i)[0]);
 
@@ -139,13 +136,8 @@ describe('HistoricoPage', () => {
 
   it('exibe banner de erro quando a requisição falha', async () => {
     mockService.getHistorico.mockRejectedValue(new Error('network'));
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
-  });
-
-  it('exibe o tour de histórico', async () => {
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
-    await waitFor(() => expect(screen.getByTestId('tour-historico')).toBeInTheDocument());
   });
 
   it('exibe botão "Gerar Snapshot" para meses abertos (sem snapshot)', async () => {
@@ -162,7 +154,7 @@ describe('HistoricoPage', () => {
         },
       ],
     });
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() =>
       expect(screen.getAllByRole('button', { name: /gerar snapshot/i }).length).toBeGreaterThan(0),
     );
@@ -182,7 +174,7 @@ describe('HistoricoPage', () => {
         },
       ],
     });
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getAllByText(/fev.*2026/i).length).toBeGreaterThan(0));
     expect(screen.queryByRole('button', { name: /gerar snapshot/i })).not.toBeInTheDocument();
   });
@@ -222,7 +214,7 @@ describe('HistoricoPage', () => {
       saldo: '900.00',
       geradoEm: '2026-03-19T00:00:00.000Z',
     });
-    render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<HistoricoPage familiaId={familiaId} />);
     await waitFor(() =>
       expect(screen.getAllByRole('button', { name: /gerar snapshot/i }).length).toBeGreaterThan(0),
     );
@@ -266,20 +258,20 @@ describe('HistoricoPage', () => {
 
     it('renderiza o gráfico de tendência quando há 2 ou mais meses', async () => {
       mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
-      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      renderPagina(<HistoricoPage familiaId={familiaId} />);
       await waitFor(() => expect(screen.getAllByText(/tendência/i).length).toBeGreaterThan(0));
     });
 
     it('não renderiza o gráfico quando há menos de 2 meses', async () => {
       mockService.getHistorico.mockResolvedValue({ meses: [mesesComDados[0]] });
-      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      renderPagina(<HistoricoPage familiaId={familiaId} />);
       await waitFor(() => screen.getAllByText(/mar.*2026/i));
       expect(screen.queryByText(/tendência/i)).not.toBeInTheDocument();
     });
 
     it('o gráfico inclui as séries de receitas, despesas e saldo', async () => {
       mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
-      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      renderPagina(<HistoricoPage familiaId={familiaId} />);
       await waitFor(() => screen.getAllByText(/tendência/i));
       expect(screen.getAllByText(/receitas/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/despesas/i).length).toBeGreaterThan(0);
@@ -288,7 +280,7 @@ describe('HistoricoPage', () => {
 
     it('os labels do gráfico estão em ordem cronológica crescente', async () => {
       mockService.getHistorico.mockResolvedValue({ meses: mesesComDados });
-      render(<HistoricoPage familiaId={familiaId} onBack={vi.fn()} />);
+      renderPagina(<HistoricoPage familiaId={familiaId} />);
       // Os meses são ordenados cronologicamente (mesesOrdenados = [...meses].reverse())
       // meses vêm do mais recente para o mais antigo, então reversed = jan, fev, mar
       await waitFor(() => screen.getAllByText(/tendência/i));

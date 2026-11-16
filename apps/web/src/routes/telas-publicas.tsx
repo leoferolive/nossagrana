@@ -38,6 +38,8 @@ export const FamiliasRota = ({ fluxo }: TelaDeFluxoProps) => {
     <FamiliaSelectorPage
       familias={fluxo.familiasDoUsuario}
       onSelect={fluxo.aoEscolherFamilia}
+      familiaIdAtiva={fluxo.familiaIdAtiva}
+      erro={fluxo.erroFamilias}
       onGoToOnboarding={() => irPara('onboarding')}
     />
   );

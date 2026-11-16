@@ -10,39 +10,61 @@ import { useLancamento } from '@/hooks/use-lancamento';
 import { useLancarPorVoz } from '@/hooks/use-lancar-por-voz';
 import type { FluxoSessao } from '@/hooks/use-fluxo-sessao';
 
-import { CAMINHOS, ehEnderecoComId, telaDoCaminho } from './caminhos';
+import { CAMINHOS, ehEnderecoComId } from './caminhos';
 import type { ContextoLogado } from './contexto-logado';
 import { RotaComFamilia } from './guardas';
-import { useNavegacao } from './use-navegacao';
+import { temEntradaAnteriorDoApp } from './historico-do-app';
 
 interface AreaLogadaProps {
   fluxo: FluxoSessao;
 }
 
-/** Família em que a entrada de histórico com id foi aberta, gravada por `irParaCaminho`. */
+/** Família em que a entrada de histórico com id foi aberta, carimbada pela própria área logada. */
 const familiaDaEntrada = (state: unknown): string | null => {
   if (typeof state !== 'object' || state === null || !('familiaId' in state)) return null;
   return typeof state.familiaId === 'string' ? state.familiaId : null;
 };
 
+const objetoOuVazio = (state: unknown): object =>
+  typeof state === 'object' && state !== null ? state : {};
+
 /**
  * Ids de cofrinho e de método no endereço pertencem à família em que foram abertos. Se a
  * família ativa muda com a pessoa num desses endereços, ou se o voltar do navegador chega a uma
  * entrada aberta em outra família, vai ao Início (substituindo a entrada) com a família atual.
+ *
+ * Quem carimba a entrada é esta guarda, não quem navega: uma entrada que chega sem carimbo (por
+ * qualquer link ou chamada) é substituída, no primeiro render, pelo mesmo endereço com a família
+ * da sessão. Depender de cada chamador lembrar do `state` deixou um furo antes.
  */
 const useVoltarAoInicioNaTrocaDeFamilia = (familiaId: string) => {
   const navigate = useNavigate();
-  const { pathname, state } = useLocation();
+  const { pathname, search, state, key } = useLocation();
   const familiaAnterior = useRef(familiaId);
   useEffect(() => {
     const trocou = familiaAnterior.current !== familiaId;
     familiaAnterior.current = familiaId;
     if (trocou) limparDadosDaFamilia();
-    const daOutraFamilia = (familiaDaEntrada(state) ?? familiaId) !== familiaId;
-    if ((trocou || daOutraFamilia) && ehEnderecoComId(pathname)) {
+    if (!ehEnderecoComId(pathname)) return;
+    const carimbada = familiaDaEntrada(state);
+    if (carimbada === null && !trocou) {
+      void navigate(
+        { pathname, search },
+        {
+          replace: true,
+          state: {
+            ...objetoOuVazio(state),
+            familiaId,
+            semEntradaAnterior: !temEntradaAnteriorDoApp(key, state),
+          },
+        },
+      );
+      return;
+    }
+    if (trocou || (carimbada ?? familiaId) !== familiaId) {
       void navigate(CAMINHOS.inicio, { replace: true });
     }
-  }, [familiaId, pathname, state, navigate]);
+  }, [familiaId, pathname, search, state, key, navigate]);
 };
 
 const useLancar = (familiaId: string) => {
@@ -80,8 +102,6 @@ const PaineisDeLancar = ({ lancamento, voz }: Lancar) => (
 );
 
 const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId: string }) => {
-  const { pathname } = useLocation();
-  const { irPara } = useNavegacao();
   useVoltarAoInicioNaTrocaDeFamilia(familiaId);
   const { lancamento, voz } = useLancar(familiaId);
   const contexto: ContextoLogado = {
@@ -93,8 +113,6 @@ const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId:
   return (
     <>
       <AppShell
-        currentScreen={telaDoCaminho(pathname)}
-        onNavigate={irPara}
         onNovaTransacao={lancamento.abrirNova}
         onVoiceActivate={voz.ativar}
         onLogout={fluxo.aoSair}

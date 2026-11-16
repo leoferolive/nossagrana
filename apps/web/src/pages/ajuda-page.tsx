@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-interface AjudaPageProps {
-  onBack?: () => void;
-  onNavigate?: (screen: string) => void;
-}
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
+import { CAMINHOS } from '../routes/caminhos';
+import { useNavegacao } from '../routes/use-navegacao';
+import { TOUR_DE_BOAS_VINDAS, reabrirTour } from '../utils/tour';
 
 const FAQ = [
   {
@@ -12,7 +12,7 @@ const FAQ = [
       {
         pergunta: 'Como cadastrar uma transação?',
         resposta:
-          "Clique no botão 'Nova Transação' no canto superior direito. Preencha valor, categoria, descrição e método de pagamento. Clique em 'Salvar'.",
+          "Toque no botão + (Lançar) da barra inferior. No computador, use 'Nova Transação' no topo da tela. Preencha valor, categoria, descrição e método de pagamento. Clique em 'Salvar'.",
       },
       {
         pergunta: 'Como funciona o parcelamento?',
@@ -97,48 +97,24 @@ const FAQ = [
   },
 ];
 
-const TOUR_KEYS = [
-  'dashboard',
-  'extrato',
-  'relatorios',
-  'orcamento',
-  'historico',
-  'configuracoes',
-  'perfil',
-];
-
-export const AjudaPage = ({ onBack, onNavigate }: AjudaPageProps) => {
+export const AjudaPage = () => {
+  const { irParaCaminho } = useNavegacao();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [tourReset, setTourReset] = useState(false);
 
   const toggle = (key: string) => setOpenKey(openKey === key ? null : key);
 
   const resetTours = () => {
-    for (const key of TOUR_KEYS) {
-      localStorage.removeItem(`tour-${key}`);
-    }
+    reabrirTour(TOUR_DE_BOAS_VINDAS);
     setTourReset(true);
-    if (onNavigate) {
-      onNavigate('dashboard');
-    }
+    irParaCaminho(CAMINHOS.inicio);
   };
 
   return (
-    <div className="min-h-full bg-bg text-text p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-5">
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="mb-2 px-3 py-1.5 rounded-lg bg-surface text-text-muted hover:bg-surface/80 text-sm"
-            >
-              Voltar
-            </button>
-          )}
-          <h1 className="text-2xl font-bold">Ajuda</h1>
-          <p className="text-sm text-text-muted mt-1">Perguntas frequentes sobre o NossaGrana</p>
-        </div>
+    <div className="min-h-full bg-bg text-text">
+      <CabecalhoDetalhe titulo="Ajuda" origem={CAMINHOS.mais} />
+      <div className="mx-auto max-w-2xl p-4">
+        <p className="mb-5 text-sm text-text-muted">Perguntas frequentes sobre o NossaGrana</p>
 
         {/* Card de tutorial */}
         <div className="mb-4 rounded-xl border border-border bg-panel p-4">

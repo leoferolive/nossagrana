@@ -1,10 +1,13 @@
 import type { FamiliaMinhasItem } from '@nossagrana/types';
 
+import { ErrorBanner } from '@/components/error-banner';
 import { AuthShell } from '@/components/ui/auth-shell';
 
 interface FamiliaSelectorPageProps {
   familias: FamiliaMinhasItem[];
   onSelect: (familiaId: string) => void;
+  familiaIdAtiva?: string | null;
+  erro?: string | null;
   onGoToOnboarding: () => void;
 }
 
@@ -26,6 +29,8 @@ const roleBadge = (role: string) => {
 export const FamiliaSelectorPage = ({
   familias,
   onSelect,
+  familiaIdAtiva,
+  erro,
   onGoToOnboarding,
 }: FamiliaSelectorPageProps) => (
   <AuthShell
@@ -45,6 +50,7 @@ export const FamiliaSelectorPage = ({
       </>
     }
   >
+    <ErrorBanner error={erro ?? null} />
     <div className="flex flex-col gap-3" role="group" aria-label="Selecionar família">
       {familias.map((familia) => (
         <button
@@ -56,7 +62,14 @@ export const FamiliaSelectorPage = ({
           <div>
             <div className="text-sm font-bold text-text">{familia.nome}</div>
           </div>
-          {roleBadge(familia.role)}
+          <div className="flex items-center gap-2">
+            {roleBadge(familia.role)}
+            {familia.id === familiaIdAtiva && (
+              <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-semibold text-text-muted">
+                Atual
+              </span>
+            )}
+          </div>
         </button>
       ))}
     </div>

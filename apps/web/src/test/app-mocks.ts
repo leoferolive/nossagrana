@@ -18,6 +18,7 @@ vi.mock('../services/core-financeiro.service', () => ({
     desativar: vi.fn().mockResolvedValue({ success: true }),
   },
   coreFinanceiroService: {
+    getDashboardOrcamento: vi.fn().mockResolvedValue([]),
     getOrcamentos: vi.fn().mockResolvedValue({ orcamentos: [] }),
     getRelatorioDistribuicao: vi.fn().mockResolvedValue({ distribuicao: [] }),
     getRelatorioPorUsuario: vi.fn().mockResolvedValue({ porUsuario: [] }),

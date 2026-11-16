@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mockSessao, resetAppMocks } from '@/test/app-mocks';
+import { barraInferior } from '@/test/barra-inferior';
 import { renderApp } from '@/test/render-app';
 
 afterEach(resetAppMocks);
@@ -10,17 +11,18 @@ const tituloNoConteudo = (nome: RegExp) =>
   within(screen.getByRole('main')).getByRole('heading', { level: 1, name: nome });
 
 const TELAS_POR_ENDERECO: Array<[string, RegExp]> = [
-  ['/', /nossagrana/i],
+  ['/', /^início$/i],
   ['/extrato', /^extrato$/i],
-  ['/planejar/contas', /lançamentos do mês/i],
-  ['/planejar/limites', /orçamento mensal/i],
+  ['/planejar', /^planejar$/i],
+  ['/planejar/contas', /^contas do mês$/i],
+  ['/planejar/limites', /^limites por categoria$/i],
   ['/planejar/cofrinhos', /^cofrinhos$/i],
-  ['/mais', /configurações/i],
+  ['/mais', /^mais$/i],
   ['/mais/relatorios', /relatórios/i],
   ['/mais/historico', /histórico/i],
   ['/mais/familia', /^família$/i],
   ['/mais/categorias', /^categorias$/i],
-  ['/mais/metodos-pagamento', /cartões e pagamentos/i],
+  ['/mais/metodos-pagamento', /^métodos de pagamento$/i],
   ['/mais/perfil', /^perfil$/i],
   ['/mais/ajuda', /^ajuda$/i],
 ];
@@ -46,9 +48,9 @@ describe('App > rotas > a tela vem do endereço', () => {
 
   it('clicar em "Ver extrato" a partir do Início muda a tela e o endereço', async () => {
     renderApp('/');
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => barraInferior().getByRole('link', { name: 'Extrato' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Extrato' }));
 
     expect(tituloNoConteudo(/^extrato$/i)).toBeInTheDocument();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent('/extrato');
@@ -57,15 +59,15 @@ describe('App > rotas > a tela vem do endereço', () => {
   it('endereço desconhecido mostra o Início', async () => {
     renderApp('/nao-existe');
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
   });
 
-  it('/planejar mostra Lançamentos até a tela Planejar existir', async () => {
+  it('/planejar mostra a tela Planejar, sem redirecionar', async () => {
     renderApp('/planejar');
 
-    expect(await waitFor(() => tituloNoConteudo(/lançamentos do mês/i))).toBeInTheDocument();
-    expect(screen.getByTestId('sonda-local')).toHaveTextContent('/planejar/contas');
+    expect(await waitFor(() => tituloNoConteudo(/^planejar$/i))).toBeInTheDocument();
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });
 });
 
@@ -143,7 +145,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
 
     await entrarComFamilias([{ id: 'fam-1', nome: 'Casa' }]);
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 
@@ -176,7 +178,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
     mockSessao({ autenticado: true, familiaAtiva: 'fam-test' });
     renderApp(endereco);
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 
@@ -186,7 +188,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
 
     await entrarComFamilias([{ id: 'fam-1', nome: 'Casa' }]);
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 
@@ -195,7 +197,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
     renderApp(['/', '/mais']);
     const main = await waitFor(() => screen.getByRole('main'));
 
-    fireEvent.click(await within(main).findByRole('button', { name: /sair da conta/i }));
+    fireEvent.click(await within(main).findByRole('button', { name: 'Sair' }));
 
     expect(await screen.findByRole('form', { name: /login/i })).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/entrar$/);
@@ -204,7 +206,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
 
     expect(await screen.findByRole('form', { name: /login/i })).toBeInTheDocument();
     // A casca (barra inferior) só existe nas telas protegidas.
-    expect(screen.queryByRole('button', { name: /ver extrato/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Extrato' })).not.toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/entrar$/);
   });
 
@@ -212,7 +214,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
     mockSessao({ autenticado: true, familiaAtiva: 'fam-test' });
     renderApp(['/', '/mais/categorias', '/mais']);
     const main = await waitFor(() => screen.getByRole('main'));
-    fireEvent.click(await within(main).findByRole('button', { name: /sair da conta/i }));
+    fireEvent.click(await within(main).findByRole('button', { name: 'Sair' }));
     await screen.findByRole('form', { name: /login/i });
 
     await entrarComFamilias([{ id: 'fam-1', nome: 'Casa' }]);
@@ -226,11 +228,11 @@ describe('App > o "Voltar" da tela e o voltar do navegador', () => {
   const voltarDoNavegador = () =>
     fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
 
-  it('Início, Config, Categorias e "Voltar" da tela: o voltar do navegador termina no Início', async () => {
+  it('Início, Mais, Categorias e "Voltar" da tela: o voltar do navegador termina no Início', async () => {
     renderApp('/');
-    fireEvent.click(await screen.findByRole('button', { name: /ver configurações/i }));
+    fireEvent.click(await screen.findByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
-    fireEvent.click(await within(main).findByRole('button', { name: /categorias/i }));
+    fireEvent.click(await within(main).findByRole('link', { name: 'Categorias' }));
     await waitFor(() => tituloNoConteudo(/^categorias$/i));
 
     fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: /^voltar$/i }));

@@ -1,24 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
 import { COR_DESPESA } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
+import { CabecalhoAba } from '../components/cabecalho-aba';
 import { ErrorBanner } from '../components/error-banner';
-import { FirstTimeTour } from '../components/first-time-tour';
+
 import {
-  IconAdicionar,
   IconAvancar,
-  IconBoasVindas,
   IconCofrinho,
   IconEntrada,
   IconOrcamento,
   IconRelatorio,
   IconSaida,
-  IconSaldo,
 } from '../components/icons';
-import { MonthNav } from '../components/month-nav';
-import { getCurrentMonth, shiftMonth } from '../utils/date';
+import { CAMINHOS } from '../routes/caminhos';
+import { useNavegacao } from '../routes/use-navegacao';
+import { getCurrentMonth } from '../utils/date';
+import { TourBoasVindas } from '../components/tour-boas-vindas';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { useDashboardStore } from '../stores/dashboard.store';
 import { formatBRL } from '../utils/formatting';
@@ -56,10 +56,10 @@ function TrendBadge({ variacao, invertColor }: { variacao: number | null; invert
 interface DashboardPageProps {
   familiaId: string;
   onNovaTransacao?: () => void;
-  onNavigate?: (screen: string) => void;
 }
 
-export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: DashboardPageProps) => {
+export const DashboardPage = ({ familiaId, onNovaTransacao }: DashboardPageProps) => {
+  const { irParaCaminho } = useNavegacao();
   const { resumo, graficos, orcamento, loading, error, fetchAll } = useDashboardStore();
   const { cofrinhos, fetchAll: fetchCofrinhos } = useCofrinhoStore();
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
@@ -68,9 +68,6 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
     fetchAll(familiaId, mesReferencia);
     fetchCofrinhos(familiaId);
   }, [familiaId, mesReferencia, fetchAll, fetchCofrinhos]);
-
-  const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
-  const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
   const pieData = useMemo(
     () =>
@@ -119,62 +116,12 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
   const temTransacoes =
     resumo && (parseFloat(resumo.totalReceitas) > 0 || parseFloat(resumo.totalDespesas) > 0);
 
-  const isCurrentMonth = mesReferencia === getCurrentMonth();
-
-  const dashboardTourSteps = [
-    {
-      icon: IconBoasVindas,
-      title: 'Bem-vindo ao NossaGrana!',
-      description:
-        'Aqui é o seu painel financeiro. Você vê receitas, despesas e saldo do mês de forma rápida.',
-    },
-    {
-      icon: IconSaldo,
-      title: 'Cards de resumo',
-      description:
-        'Os três cards no topo mostram o total de receitas, despesas e o saldo. As setas indicam se subiu ou caiu em relação ao mês anterior.',
-    },
-    {
-      icon: IconAdicionar,
-      title: 'Registrar transação',
-      description:
-        'Toque no botão "+" (mobile) ou "Nova Transação" (desktop) para registrar uma receita ou despesa.',
-    },
-    {
-      icon: IconRelatorio,
-      title: 'Gráficos e orçamento',
-      description:
-        'Acompanhe despesas por categoria, evolução diária e limites de orçamento — tudo nesta mesma tela.',
-    },
-  ];
-
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={error} />
-      <FirstTimeTour tourKey="dashboard" steps={dashboardTourSteps} />
+      <TourBoasVindas />
 
-      {/* Header mobile */}
-      <header className="flex items-center justify-between border-b border-border px-4 py-4 md:hidden">
-        <div>
-          <h1 className="text-xl font-bold text-text">NossaGrana</h1>
-          <MonthNav
-            mesReferencia={mesReferencia}
-            onMesAnterior={handleMesAnterior}
-            onMesProximo={handleMesProximo}
-            isCurrentMonth={isCurrentMonth}
-          />
-        </div>
-      </header>
-
-      {/* Mês de referência no desktop */}
-      <div className="hidden px-6 pt-4 md:block">
-        <MonthNav
-          mesReferencia={mesReferencia}
-          onMesAnterior={handleMesAnterior}
-          onMesProximo={handleMesProximo}
-          isCurrentMonth={isCurrentMonth}
-        />
-      </div>
+      <CabecalhoAba titulo="Início" mes={mesReferencia} onMesChange={setMesReferencia} />
 
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* Saldo em largura total para o valor não ser cortado em 390px; no desktop volta a 3 colunas */}
@@ -251,15 +198,13 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <IconOrcamento className="text-text-dim" size={32} />
               <p className="text-sm text-text-muted">Nenhum orçamento configurado</p>
-              {onNavigate && (
-                <button
-                  type="button"
-                  onClick={() => onNavigate('orcamento')}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-                >
-                  Configurar orçamento
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => irParaCaminho(CAMINHOS.limites)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Configurar orçamento
+              </button>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -283,7 +228,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             </h3>
             {cofrinhos.length > 0 && (
               <button
-                onClick={() => onNavigate?.('cofrinhos')}
+                onClick={() => irParaCaminho(CAMINHOS.cofrinhos)}
                 className="inline-flex items-center gap-1 text-sm text-success hover:underline"
               >
                 Ver todos

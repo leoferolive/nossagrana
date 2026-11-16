@@ -4,6 +4,9 @@
  */
 export {
   // Navegação
+  House as IconInicio,
+  ClipboardList as IconPlanejar,
+  Ellipsis as IconMais,
   ArrowLeft as IconVoltar,
   ArrowRight as IconAvancar,
   ChevronLeft as IconMesAnterior,
@@ -25,6 +28,7 @@ export {
   CalendarDays as IconHistorico,
   Target as IconOrcamento,
   Receipt as IconExtrato,
+  Tag as IconCategoria,
   Wallet as IconSaldo,
   Banknote as IconDinheiro,
   Zap as IconPix,
@@ -36,6 +40,7 @@ export {
 
   // Família / Usuário
   Users as IconFamilia,
+  ArrowLeftRight as IconAlternarFamilia,
   UserCircle as IconPerfil,
   Settings as IconConfiguracoes,
 

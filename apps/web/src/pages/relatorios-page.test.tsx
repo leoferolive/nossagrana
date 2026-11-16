@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockService = vi.hoisted(() => ({
@@ -11,11 +11,8 @@ vi.mock('../services/core-financeiro.service', () => ({
   coreFinanceiroService: mockService,
 }));
 
-vi.mock('../components/first-time-tour', () => ({
-  FirstTimeTour: ({ tourKey }: { tourKey: string }) => <div data-testid={`tour-${tourKey}`} />,
-}));
-
 import { RelatoriosPage } from './relatorios-page';
+import { renderPagina } from '../test/render-pagina';
 
 const familiaId = 'fam-1';
 
@@ -38,7 +35,7 @@ beforeEach(() => {
 
 describe('RelatoriosPage', () => {
   it('renders heading', async () => {
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /relatórios/i })).toBeInTheDocument(),
     );
@@ -52,7 +49,7 @@ describe('RelatoriosPage', () => {
         { categoriaId: 'c2', categoriaNome: 'Lazer', total: '200.00', percentual: 40 },
       ],
     });
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() => screen.getAllByText('Alimentação'));
     expect(screen.getAllByText('Alimentação').length).toBeGreaterThan(0);
   });
@@ -62,7 +59,7 @@ describe('RelatoriosPage', () => {
       mesReferencia: '2026-03',
       porUsuario: [{ usuarioId: 'u1', usuarioNome: 'Leo', total: '400.00', percentual: 80 }],
     });
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() => screen.getByRole('tab', { name: /por membro/i }));
     fireEvent.click(screen.getByRole('tab', { name: /por membro/i }));
     await waitFor(() => screen.getByText('Leo'));
@@ -71,12 +68,12 @@ describe('RelatoriosPage', () => {
 
   it('exibe banner de erro quando a requisição falha', async () => {
     mockService.getRelatorioDistribuicao.mockRejectedValue(new Error('network'));
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
   });
 
   it('exibe seletor de mês e re-fetch ao mudar', async () => {
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() => screen.getByLabelText(/mês anterior/i));
     expect(screen.getByLabelText(/mês anterior/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/próximo mês/i)).toBeInTheDocument();
@@ -90,7 +87,7 @@ describe('RelatoriosPage', () => {
   });
 
   it('passes mesReferencia to distribuição and porUsuario APIs', async () => {
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() => expect(mockService.getRelatorioDistribuicao).toHaveBeenCalled());
     // Chamada inicial usa mês atual
     expect(mockService.getRelatorioDistribuicao).toHaveBeenCalledWith(
@@ -126,10 +123,17 @@ describe('RelatoriosPage', () => {
         },
       ],
     });
-    render(<RelatoriosPage familiaId={familiaId} onBack={vi.fn()} />);
+    renderPagina(<RelatoriosPage familiaId={familiaId} />);
     await waitFor(() => screen.getByRole('tab', { name: /tendências/i }));
     fireEvent.click(screen.getByRole('tab', { name: /tendências/i }));
     await waitFor(() => screen.getByText(/receitas/i));
     expect(screen.getByText(/receitas/i)).toBeInTheDocument();
+  });
+  it('o Voltar leva a Mais quando a tela foi aberta por link direto', async () => {
+    renderPagina(<RelatoriosPage familiaId={familiaId} />, '/mais/relatorios');
+    await waitFor(() => screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Relatórios' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
   });
 });

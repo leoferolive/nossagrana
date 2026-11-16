@@ -1,33 +1,30 @@
 import { useEffect, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { ErrorBanner } from '../components/error-banner';
 import { CofrinhoAporteModal } from '../components/cofrinho-aporte-modal';
 import { CofrinhoEncerrarModal } from '../components/cofrinho-encerrar-modal';
 import { CofrinhoModal } from '../components/cofrinho-modal';
 import { CofrinhoRetiradaModal } from '../components/cofrinho-retirada-modal';
+import { CAMINHOS } from '../routes/caminhos';
+import { useNavegacao } from '../routes/use-navegacao';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { novaChaveIdempotencia } from '../services/idempotencia';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatDataBR } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
-import { IconEntrada, IconSaida, IconVoltar } from '../components/icons';
+import { IconEntrada, IconSaida } from '../components/icons';
 
 interface CofrinhoDetalhePageProps {
   familiaId: string;
   cofrinhoId: string;
-  onBack: () => void;
-  onNavigate: (screen: string) => void;
 }
 
 type ModalAberto = 'aporte' | 'retirada' | 'encerrar' | 'editar' | null;
 
-export function CofrinhoDetalhePage({
-  familiaId,
-  cofrinhoId,
-  onBack,
-  onNavigate: _onNavigate,
-}: CofrinhoDetalhePageProps) {
+export function CofrinhoDetalhePage({ familiaId, cofrinhoId }: CofrinhoDetalhePageProps) {
+  const { voltarPara } = useNavegacao();
   const { cofrinhoSelecionado: ultimoDetalhe, carregando, erro, fetchDetalhe } = useCofrinhoStore();
   // O id vem do endereço: o detalhe guardado na store pode ser de outro cofrinho.
   const cofrinhoSelecionado = ultimoDetalhe?.cofrinho.id === cofrinhoId ? ultimoDetalhe : null;
@@ -38,25 +35,10 @@ export function CofrinhoDetalhePage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familiaId, cofrinhoId]);
 
-  // Back button, também usado no estado de erro
-  const botaoVoltar = (
-    <div className="border-b border-border px-4 py-3">
-      <button
-        type="button"
-        aria-label="Voltar"
-        onClick={onBack}
-        className="inline-flex items-center gap-1 text-sm font-medium text-primary transition hover:opacity-80"
-      >
-        <IconVoltar size={16} aria-hidden="true" />
-        Voltar
-      </button>
-    </div>
-  );
-
   if (!carregando && erro && !cofrinhoSelecionado) {
     return (
       <div className="flex min-h-full flex-col bg-bg">
-        {botaoVoltar}
+        <CabecalhoDetalhe titulo="Cofrinho" origem={CAMINHOS.cofrinhos} />
         <ErrorBanner error={erro} />
       </div>
     );
@@ -98,7 +80,7 @@ export function CofrinhoDetalhePage({
   const handleEncerrar = async (voltarAoSaldo: boolean) => {
     await cofrinhoService.encerrar(familiaId, cofrinhoId, { voltarAoSaldo });
     void fetchDetalhe(familiaId, cofrinhoId);
-    onBack();
+    voltarPara(CAMINHOS.cofrinhos);
   };
 
   const handleEditar = async (payload: {
@@ -124,15 +106,12 @@ export function CofrinhoDetalhePage({
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      {botaoVoltar}
+      <CabecalhoDetalhe titulo={cofrinho.nome} origem={CAMINHOS.cofrinhos} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
-        {/* Header: emoji + nome + saldo + meta */}
+        {/* Resumo: emoji + saldo + meta (o nome fica no cabeçalho) */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            {cofrinho.emoji && <span className="text-3xl">{cofrinho.emoji}</span>}
-            <h1 className="text-xl font-bold text-text">{cofrinho.nome}</h1>
-          </div>
+          {cofrinho.emoji && <span className="text-3xl">{cofrinho.emoji}</span>}
 
           {cofrinho.descricao && <p className="text-sm text-text-muted">{cofrinho.descricao}</p>}
 

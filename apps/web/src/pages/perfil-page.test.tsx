@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../components/first-time-tour', () => ({
@@ -29,6 +29,7 @@ vi.mock('../services/core-financeiro.service', () => ({
 
 import { ApiError } from '../services/api-client';
 import { PerfilPage } from './perfil-page';
+import { renderPagina } from '../test/render-pagina';
 
 afterEach(() => {
   cleanup();
@@ -41,21 +42,21 @@ beforeEach(() => {
 
 describe('PerfilPage', () => {
   it('renderiza o título Perfil', async () => {
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /perfil/i })).toBeInTheDocument(),
     );
   });
 
   it('exibe nome e email carregados', async () => {
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() => expect(screen.getByDisplayValue('Maria')).toBeInTheDocument());
     expect(screen.getByDisplayValue('maria@example.com')).toBeInTheDocument();
   });
 
   it('chama updatePerfil ao salvar nome', async () => {
     mockService.updatePerfil.mockResolvedValue({ nome: 'Maria Silva', email: 'maria@example.com' });
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() => screen.getByDisplayValue('Maria'));
     fireEvent.change(screen.getByLabelText(/nome/i), { target: { value: 'Maria Silva' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar perfil/i }));
@@ -65,14 +66,14 @@ describe('PerfilPage', () => {
   });
 
   it('exibe formulário de troca de senha', async () => {
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() => screen.getByLabelText(/senha atual/i));
     expect(screen.getByLabelText(/nova senha/i)).toBeInTheDocument();
   });
 
   it('chama updateSenha ao submeter troca de senha', async () => {
     mockService.updateSenha.mockResolvedValue({});
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() => screen.getByLabelText(/senha atual/i));
     fireEvent.change(screen.getByLabelText(/senha atual/i), { target: { value: 'old123' } });
     fireEvent.change(screen.getByLabelText(/nova senha/i), { target: { value: 'new456' } });
@@ -85,24 +86,24 @@ describe('PerfilPage', () => {
     );
   });
 
-  it('chama onBack ao clicar em Voltar', async () => {
-    const onBack = vi.fn();
-    render(<PerfilPage onBack={onBack} />);
-    await waitFor(() => screen.getByRole('button', { name: /voltar/i }));
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
+  it('mostra o título como heading de nível 1 e o Voltar leva a Mais (link direto)', async () => {
+    renderPagina(<PerfilPage />, '/mais/perfil');
+    await waitFor(() => screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Perfil' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
   });
 
   it('exibe mensagem de sucesso ao salvar perfil', async () => {
     mockService.updatePerfil.mockResolvedValue({ nome: 'Maria', email: 'maria@example.com' });
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() => screen.getByDisplayValue('Maria'));
     fireEvent.click(screen.getByRole('button', { name: /salvar perfil/i }));
     await waitFor(() => expect(screen.getByText(/salvo/i)).toBeInTheDocument());
   });
 
   async function submeterTrocaDeSenha() {
-    render(<PerfilPage onBack={vi.fn()} />);
+    renderPagina(<PerfilPage />);
     await waitFor(() => screen.getByLabelText(/senha atual/i));
     fireEvent.change(screen.getByLabelText(/senha atual/i), { target: { value: 'old123' } });
     fireEvent.change(screen.getByLabelText(/nova senha/i), { target: { value: 'new456' } });

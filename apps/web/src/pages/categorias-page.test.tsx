@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { CategoriasPage } from './categorias-page';
+import { renderPagina } from '../test/render-pagina';
 
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: () => ({
@@ -62,21 +63,21 @@ describe('CategoriasPage', () => {
 
   it('exibe lista de categorias', () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Salario').length).toBeGreaterThan(0);
   });
 
   it('exibe seções DESPESAS e RECEITAS', () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     expect(screen.getAllByText(/despesas/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/receitas/i).length).toBeGreaterThan(0);
   });
 
   it('abre formulário de nova categoria ao clicar em adicionar', () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     const addButtons = screen.getAllByRole('button', { name: /nova categoria/i });
     fireEvent.click(addButtons[0]);
     expect(screen.getByLabelText(/nome/i)).toBeInTheDocument();
@@ -84,25 +85,25 @@ describe('CategoriasPage', () => {
 
   it('exibe botão de desativar por categoria', () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     const deleteButtons = screen.getAllByRole('button', { name: /desativar/i });
     // Desktop (2) + Mobile (2) = 4
     expect(deleteButtons.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('chama onBack ao clicar em voltar', () => {
+  it('mostra o título como heading de nível 1 e o Voltar leva a Mais (link direto)', async () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    const onBack = vi.fn();
-    render(<CategoriasPage familiaId="f1" onBack={onBack} />);
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
+    renderPagina(<CategoriasPage familiaId="f1" />, '/mais/categorias');
+    expect(screen.getByRole('heading', { level: 1, name: 'Categorias' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
   });
 
   // ── Novos testes TDD ────────────────────────────────────────────────────────
 
   it('chama categoriaService.listar ao montar com familiaId', async () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     await waitFor(() => {
       expect(mockListar).toHaveBeenCalledWith('f1');
     });
@@ -111,7 +112,7 @@ describe('CategoriasPage', () => {
   it('exibe categorias retornadas pelo serviço após montagem', async () => {
     useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     await waitFor(() => {
       expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Salario').length).toBeGreaterThan(0);
@@ -131,7 +132,7 @@ describe('CategoriasPage', () => {
     };
     mockCriar.mockResolvedValue({ categoria: novaCategoria });
 
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
 
     const addButtons = screen.getAllByRole('button', { name: /nova categoria/i });
     fireEvent.click(addButtons[0]);
@@ -159,7 +160,7 @@ describe('CategoriasPage', () => {
     };
     mockEditar.mockResolvedValue({ categoria: categoriaAtualizada });
 
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
 
     const editButtons = screen.getAllByRole('button', { name: /editar mercado/i });
     fireEvent.click(editButtons[0]);
@@ -181,7 +182,7 @@ describe('CategoriasPage', () => {
   it('exibe erro ao falhar carregamento de categorias', async () => {
     useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
     mockListar.mockRejectedValue(new Error('Falha'));
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(/erro ao carregar categorias/i);
     });
@@ -190,7 +191,7 @@ describe('CategoriasPage', () => {
   it('exibe erro ao falhar ao salvar categoria', async () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
     mockCriar.mockRejectedValue(new Error('Falha'));
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
 
     const addButtons = screen.getAllByRole('button', { name: /nova categoria/i });
     fireEvent.click(addButtons[0]);
@@ -207,7 +208,7 @@ describe('CategoriasPage', () => {
   it('exibe erro ao falhar desativacao de categoria', async () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
     mockDesativar.mockRejectedValue(new Error('Falha'));
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
 
     const desativarButtons = screen.getAllByRole('button', { name: /desativar/i });
     fireEvent.click(desativarButtons[0]);
@@ -221,7 +222,7 @@ describe('CategoriasPage', () => {
     mockListar.mockResolvedValue({ categorias: CATEGORIAS });
     mockDesativar.mockResolvedValue({ success: true });
 
-    render(<CategoriasPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<CategoriasPage familiaId="f1" />);
 
     const desativarButtons = screen.getAllByRole('button', { name: /desativar/i });
     fireEvent.click(desativarButtons[0]);

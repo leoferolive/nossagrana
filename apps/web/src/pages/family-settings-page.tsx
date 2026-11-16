@@ -1,28 +1,19 @@
 import { useEffect, useState } from 'react';
 
 import { ErrorBanner } from '@/components/error-banner';
-import { AuthShell } from '@/components/ui/auth-shell';
+import { CabecalhoDetalhe } from '@/components/cabecalho-detalhe';
 import { familiaService } from '@/services/auth.service';
 import type {
   FamiliaListJoinRequestsResponse,
   FamiliaListMembersResponse,
 } from '@nossagrana/types';
-import { IconVoltar } from '../components/icons';
-import { ALVO_TOQUE_CLASSES } from '../components/ui/campo-classes';
+import { CAMINHOS } from '../routes/caminhos';
 
 interface FamilySettingsPageProps {
-  onBackToOnboarding: () => void;
-  onGoToDashboard?: () => void;
-  onBack?: () => void;
   familiaId: string;
 }
 
-export const FamilySettingsPage = ({
-  onBackToOnboarding,
-  onGoToDashboard,
-  onBack,
-  familiaId,
-}: FamilySettingsPageProps) => {
+export const FamilySettingsPage = ({ familiaId }: FamilySettingsPageProps) => {
   const [membros, setMembros] = useState<FamiliaListMembersResponse['membros']>([]);
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<
     FamiliaListJoinRequestsResponse['solicitacoes']
@@ -89,8 +80,6 @@ export const FamilySettingsPage = ({
     await navigator.clipboard.writeText(inviteCode);
     setIsInviteCopied(true);
   };
-
-  const isInApp = !!onBack;
 
   const content = (
     <>
@@ -203,52 +192,10 @@ export const FamilySettingsPage = ({
     </>
   );
 
-  if (isInApp) {
-    return (
-      <div className="flex min-h-full flex-col bg-bg">
-        <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-          <button
-            type="button"
-            aria-label="Voltar"
-            onClick={onBack}
-            className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
-          >
-            <IconVoltar size={20} aria-hidden="true" />
-          </button>
-          <h1 className="text-lg font-bold text-text">Família</h1>
-        </header>
-
-        <div className="flex-1 space-y-4 p-4">{content}</div>
-      </div>
-    );
-  }
-
   return (
-    <AuthShell
-      title="Configurações da família"
-      subtitle="Gestão de membros, convites e solicitações."
-      footer={
-        <div className="flex flex-col items-center gap-2">
-          {onGoToDashboard && (
-            <button
-              type="button"
-              onClick={onGoToDashboard}
-              className="font-semibold text-success transition hover:underline"
-            >
-              Ir para o Dashboard
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onBackToOnboarding}
-            className="font-semibold text-info transition hover:underline"
-          >
-            Voltar ao onboarding
-          </button>
-        </div>
-      }
-    >
-      <div className="space-y-4">{content}</div>
-    </AuthShell>
+    <div className="flex min-h-full flex-col bg-bg">
+      <CabecalhoDetalhe titulo="Família" origem={CAMINHOS.mais} />
+      <div className="flex-1 space-y-4 p-4">{content}</div>
+    </div>
   );
 };

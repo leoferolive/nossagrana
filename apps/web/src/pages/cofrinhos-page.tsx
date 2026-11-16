@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { CofrinhoModal } from '../components/cofrinho-modal';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
+import { CAMINHOS, caminhoDoCofrinho } from '../routes/caminhos';
+import { useNavegacao } from '../routes/use-navegacao';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatBRL } from '../utils/formatting';
@@ -11,15 +14,10 @@ import { IconAdicionar, IconCofrinho } from '../components/icons';
 
 interface CofrinhosPageProps {
   familiaId: string;
-  onNavigate: (screen: string) => void;
-  onVerDetalhe: (cofrinhoId: string) => void;
 }
 
-export function CofrinhosPage({
-  familiaId,
-  onNavigate: _onNavigate,
-  onVerDetalhe,
-}: CofrinhosPageProps) {
+export function CofrinhosPage({ familiaId }: CofrinhosPageProps) {
+  const { irParaCaminho } = useNavegacao();
   const { cofrinhos, carregando, erro, fetchAll } = useCofrinhoStore();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -70,21 +68,23 @@ export function CofrinhosPage({
     <div className="flex min-h-full flex-col bg-bg">
       <FirstTimeTour tourKey="cofrinhos" steps={cofrinhosTourSteps} />
 
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-border px-4 py-4">
-        <h1 className="text-xl font-bold text-text">Cofrinhos</h1>
-        {cofrinhos.length > 0 && (
-          <button
-            type="button"
-            aria-label="Novo Cofrinho"
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            <IconAdicionar size={16} aria-hidden="true" />
-            Novo Cofrinho
-          </button>
-        )}
-      </header>
+      <CabecalhoDetalhe
+        titulo="Cofrinhos"
+        origem={CAMINHOS.planejar}
+        acao={
+          cofrinhos.length > 0 && (
+            <button
+              type="button"
+              aria-label="Novo Cofrinho"
+              onClick={() => setModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              <IconAdicionar size={16} aria-hidden="true" />
+              Novo Cofrinho
+            </button>
+          )
+        }
+      />
 
       <ErrorBanner error={erro} />
 
@@ -117,7 +117,7 @@ export function CofrinhosPage({
                 <button
                   key={cofrinho.id}
                   type="button"
-                  onClick={() => onVerDetalhe(cofrinho.id)}
+                  onClick={() => irParaCaminho(caminhoDoCofrinho(cofrinho.id), { familiaId })}
                   className="flex flex-col gap-2 rounded-xl border border-border bg-panel p-4 text-left transition hover:border-primary/40 hover:shadow-soft"
                 >
                   {/* Emoji + Nome */}

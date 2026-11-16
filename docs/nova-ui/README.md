@@ -79,7 +79,7 @@ cabeçalhos e tour; E2E. Desenho em
 - [x] 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário
 - [x] 2026-11-16 — Rotas com URL (voltar do Android, recarregar mantém a tela, link direto)
 - [x] 2026-11-16 — Barra de cinco posições com o "+" dentro
-- [ ] Cabeçalho único de aba e de passo/detalhe
+- [x] 2026-11-16 — Cabeçalho único de aba e de passo/detalhe
 - [ ] Tela Mais
 - [ ] Planejar como entrada para orçamento, cartões, cofrinhos e contas do mês
 - [ ] Um único tour de boas-vindas
@@ -197,6 +197,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — PR 1 da Entrega 2 (#188) mergeado. Plano do PR 2 (barra de cinco,
   Mais, Planejar, cabeçalhos e tour) escrito.
 - 2026-11-16 — Entrega 2, PR 2, barra de cinco: `BottomNav` com Início, Extrato, "+", Planejar e Mais (links; `abaDoCaminho` marca a aba também em telas de segundo nível), "+" de 58px dentro da barra em `z-lancar`; o botão flutuante saiu do `AppShell` e o toque longo para voz virou o hook `useToqueLongo`, que agora também solta a marca do toque longo se o dedo sai do botão sem clique (antes o próximo toque era engolido). Reserva do `<main>` passou a 112px mais a área segura.
+- 2026-11-16 — Entrega 2, PR 2, cabeçalhos únicos: `CabecalhoAba` (Início, Extrato; título 26/800 que some no desktop, pílula de mês à direita) e `CabecalhoDetalhe` (voltar 44×44 por `voltarPara(origem)`, título 20/800, subtítulo e ação opcionais) substituem os cabeçalhos próprios; `MonthNav` virou a pílula de mês. As páginas deixam de receber `onBack`/`onNavigate`/`onVerDetalhe`/`onVerFatura` e falam com o roteador por `useNavegacao`. `FamilySettingsPage` perdeu o ramo `AuthShell` (a única rota que a monta é `/mais/familia`, sempre dentro da casca). Em Relatórios e Lançamentos do mês a pílula fica numa linha abaixo do cabeçalho, porque no celular não cabe ao lado do título. Início passa a se chamar "Início" no cabeçalho (era "NossaGrana"). Testes de página usam `renderPagina` (`src/test/render-pagina.tsx`).
 
 ## Decisões fechadas
 

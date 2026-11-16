@@ -10,7 +10,7 @@ const tituloNoConteudo = (nome: RegExp) =>
   within(screen.getByRole('main')).getByRole('heading', { level: 1, name: nome });
 
 const TELAS_POR_ENDERECO: Array<[string, RegExp]> = [
-  ['/', /nossagrana/i],
+  ['/', /^início$/i],
   ['/extrato', /^extrato$/i],
   ['/planejar/contas', /lançamentos do mês/i],
   ['/planejar/limites', /orçamento mensal/i],
@@ -57,7 +57,7 @@ describe('App > rotas > a tela vem do endereço', () => {
   it('endereço desconhecido mostra o Início', async () => {
     renderApp('/nao-existe');
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
   });
 
@@ -143,7 +143,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
 
     await entrarComFamilias([{ id: 'fam-1', nome: 'Casa' }]);
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 
@@ -176,7 +176,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
     mockSessao({ autenticado: true, familiaAtiva: 'fam-test' });
     renderApp(endereco);
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 
@@ -186,7 +186,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
 
     await entrarComFamilias([{ id: 'fam-1', nome: 'Casa' }]);
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 

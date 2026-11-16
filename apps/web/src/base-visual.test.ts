@@ -160,10 +160,6 @@ describe('campos em 16px e alvos de toque com 44px', () => {
     expect(classes).not.toContain('py-2.5');
   });
 
-  it('as setas de mês de Lançamentos usam ALVO_TOQUE_CLASSES', () => {
-    expect(fonte('./pages/lancamentos-page.tsx')).toContain('ALVO_TOQUE_CLASSES');
-  });
-
   it('o fundo decorativo do auth-shell usa opacidade que existe na escala (/10)', () => {
     expect(authShell).not.toContain('bg-info/8');
   });
@@ -175,6 +171,8 @@ describe('campos em 16px e alvos de toque com 44px', () => {
 
   it.each([
     './components/month-nav.tsx',
+    './components/cabecalho-detalhe.tsx',
+    './components/bottom-nav.tsx',
     './pages/extrato-page.tsx',
     './pages/categorias-page.tsx',
     './components/transacao-modal.tsx',

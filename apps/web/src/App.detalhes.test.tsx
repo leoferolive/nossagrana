@@ -166,7 +166,7 @@ describe('App > troca de família com id no endereço', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /alternar família/i }));
     fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
-    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    await waitFor(() => tituloNoConteudo(/^início$/i));
   };
 
   it('trocar de família pela interface leva ao Início', async () => {
@@ -205,7 +205,7 @@ describe('App > troca de família com id no endereço', () => {
 
     fireEvent.submit(screen.getByRole('form', { name: /login/i }));
 
-    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    await waitFor(() => tituloNoConteudo(/^início$/i));
     expect(screen.queryByText(/viagem europa/i)).not.toBeInTheDocument();
   });
 
@@ -217,7 +217,7 @@ describe('App > troca de família com id no endereço', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
 
-    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    await waitFor(() => tituloNoConteudo(/^início$/i));
     expect(useMetodoPagamentoStore.getState().metodos).toEqual([]);
   });
 
@@ -236,7 +236,7 @@ describe('App > troca de família com id no endereço', () => {
     }));
     reavaliarSessao();
 
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
   });
 });

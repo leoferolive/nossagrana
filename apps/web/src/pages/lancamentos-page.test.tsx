@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
 import { LancamentosPage } from './lancamentos-page';
+import { renderPagina } from '../test/render-pagina';
 
 const mockAplicar = vi.fn();
 const mockFetchTemplates = vi.fn();
@@ -27,7 +28,6 @@ vi.mock('@/contexts/use-auth', () => ({
 
 const defaultProps = {
   familiaId: 'f1',
-  onNavigate: vi.fn(),
 };
 
 const TEMPLATE_SALARIO = {
@@ -123,17 +123,17 @@ describe('LancamentosPage', () => {
       carregando: true,
       erro: null,
     });
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
   it('exibe empty state quando não há templates', () => {
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(screen.getByText(/nenhum template cadastrado/i)).toBeInTheDocument();
   });
 
   it('chama fetchTemplates ao montar', () => {
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(mockFetchTemplates).toHaveBeenCalledWith('f1');
   });
 
@@ -145,7 +145,7 @@ describe('LancamentosPage', () => {
       fetchTemplates: mockFetchTemplates,
       aplicar: mockAplicar,
     });
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(screen.getByText('Salário')).toBeInTheDocument();
     expect(screen.getByText('Mercado')).toBeInTheDocument();
     expect(screen.getAllByText(/receitas/i).length).toBeGreaterThan(0);
@@ -160,7 +160,7 @@ describe('LancamentosPage', () => {
       fetchTemplates: mockFetchTemplates,
       aplicar: mockAplicar,
     });
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(screen.getByText(/cofrinhos/i)).toBeInTheDocument();
     expect(screen.getByText('Viagem')).toBeInTheDocument();
     expect(screen.getByText('✈️')).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe('LancamentosPage', () => {
       aplicar: mockAplicar,
       setValor: mockSetValor,
     });
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     const input = screen.getByLabelText(/valor para salário/i);
     fireEvent.change(input, { target: { value: '5000' } });
     expect(mockSetValor).toHaveBeenCalledWith('t1', '5000');
@@ -192,7 +192,7 @@ describe('LancamentosPage', () => {
       fetchTemplates: mockFetchTemplates,
       aplicar: mockAplicar,
     });
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /salvar lançamentos/i }));
     await waitFor(() => {
       expect(mockAplicar).toHaveBeenCalledWith('f1');
@@ -209,7 +209,7 @@ describe('LancamentosPage', () => {
       fetchTemplates: mockFetchTemplates,
       aplicar: mockAplicar,
     });
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /salvar lançamentos/i }));
     await waitFor(() => {
       expect(screen.getByText(/2 transações e 1 aportes criados/i)).toBeInTheDocument();
@@ -217,14 +217,23 @@ describe('LancamentosPage', () => {
   });
 
   it('exibe seletor de mês e permite navegar', () => {
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(screen.getByText('Março de 2026')).toBeInTheDocument();
     expect(screen.getByLabelText(/mês anterior/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/próximo mês/i)).toBeInTheDocument();
   });
 
   it('exibe título da página', () => {
-    render(<LancamentosPage {...defaultProps} />);
+    renderPagina(<LancamentosPage {...defaultProps} />);
     expect(screen.getByText('Lançamentos do Mês')).toBeInTheDocument();
+  });
+
+  it('mostra o título como heading de nível 1 e o Voltar leva a Planejar (link direto)', () => {
+    renderPagina(<LancamentosPage {...defaultProps} />, '/planejar/contas');
+    expect(
+      screen.getByRole('heading', { level: 1, name: /lançamentos do mês/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });
 });

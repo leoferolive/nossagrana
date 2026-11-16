@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { FamilySettingsPage } from './family-settings-page';
+import { renderPagina } from '../test/render-pagina';
 
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: () => ({
@@ -66,7 +67,7 @@ describe('FamilySettingsPage', () => {
     mockListarMembros.mockResolvedValue({ membros: MEMBROS });
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: SOLICITACOES });
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     await waitFor(() => {
       expect(mockListarMembros).toHaveBeenCalledWith('f1');
@@ -78,7 +79,7 @@ describe('FamilySettingsPage', () => {
     mockListarMembros.mockResolvedValue({ membros: MEMBROS });
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     await waitFor(() => {
       expect(screen.getAllByText(/u1/i).length).toBeGreaterThan(0);
@@ -100,7 +101,7 @@ describe('FamilySettingsPage', () => {
       },
     });
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     fireEvent.click(screen.getByRole('button', { name: /gerar c.digo de convite/i }));
 
@@ -118,7 +119,7 @@ describe('FamilySettingsPage', () => {
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
     mockRemoverMembro.mockResolvedValue(undefined);
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /remover u2/i })).toBeInTheDocument();
@@ -139,7 +140,7 @@ describe('FamilySettingsPage', () => {
     mockListarMembros.mockRejectedValue(new Error('Falha'));
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(/erro ao carregar membros/i);
@@ -151,7 +152,7 @@ describe('FamilySettingsPage', () => {
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
     mockRemoverMembro.mockRejectedValue(new Error('Falha'));
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /remover u2/i })).toBeInTheDocument();
@@ -169,7 +170,7 @@ describe('FamilySettingsPage', () => {
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
     mockGerarConvite.mockRejectedValue(new Error('Falha'));
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     fireEvent.click(screen.getByRole('button', { name: /gerar c.digo de convite/i }));
 
@@ -193,7 +194,7 @@ describe('FamilySettingsPage', () => {
       },
     });
 
-    render(<FamilySettingsPage onBackToOnboarding={vi.fn()} familiaId="f1" />);
+    renderPagina(<FamilySettingsPage familiaId="f1" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /aprovar/i })).toBeInTheDocument();
@@ -208,5 +209,14 @@ describe('FamilySettingsPage', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /^aprovar$/i })).not.toBeInTheDocument();
     });
+  });
+  it('mostra o título como heading de nível 1 e o Voltar leva a Mais (link direto)', async () => {
+    mockListarMembros.mockResolvedValue({ membros: MEMBROS });
+    mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });
+    renderPagina(<FamilySettingsPage familiaId="f1" />, '/mais/familia');
+    expect(screen.getByRole('heading', { level: 1, name: 'Família' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
+    await waitFor(() => expect(mockListarMembros).toHaveBeenCalled());
   });
 });

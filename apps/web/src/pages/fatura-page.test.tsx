@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockService = vi.hoisted(() => ({
@@ -10,6 +10,7 @@ vi.mock('../services/core-financeiro.service', () => ({
 }));
 
 import { FaturaPage } from './fatura-page';
+import { renderPagina } from '../test/render-pagina';
 
 afterEach(() => {
   cleanup();
@@ -22,7 +23,6 @@ describe('FaturaPage', () => {
     metodoPagamentoId: 'mp-1',
     metodoPagamentoNome: 'Visa',
     mesReferencia: '2026-03',
-    onBack: vi.fn(),
   };
 
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe('FaturaPage', () => {
   });
 
   it('renders heading with card name', async () => {
-    render(<FaturaPage {...props} />);
+    renderPagina(<FaturaPage {...props} />);
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /fatura.*visa/i })).toBeInTheDocument(),
     );
@@ -44,19 +44,19 @@ describe('FaturaPage', () => {
 
   it('com erro mostra só o aviso, sem o estado vazio', async () => {
     mockService.getFatura.mockRejectedValue(new Error('falhou'));
-    render(<FaturaPage {...props} />);
+    renderPagina(<FaturaPage {...props} />);
     expect(await screen.findByText(/erro ao carregar fatura/i)).toBeInTheDocument();
     expect(screen.queryByText(/nenhuma transação nesta fatura/i)).not.toBeInTheDocument();
   });
 
   it('shows loading state', () => {
     mockService.getFatura.mockReturnValue(new Promise(() => {}));
-    render(<FaturaPage {...props} />);
+    renderPagina(<FaturaPage {...props} />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
   it('shows empty state', async () => {
-    render(<FaturaPage {...props} />);
+    renderPagina(<FaturaPage {...props} />);
     await waitFor(() => screen.getByRole('heading', { name: /fatura.*visa/i }));
     expect(screen.getByText(/nenhuma transação/i)).toBeInTheDocument();
   });
@@ -91,7 +91,7 @@ describe('FaturaPage', () => {
         },
       ],
     });
-    render(<FaturaPage {...props} />);
+    renderPagina(<FaturaPage {...props} />);
     await waitFor(() => screen.getByText('Mercado'));
     expect(screen.getByText('Cinema')).toBeInTheDocument();
     expect(screen.getByText(/parcela 1\/3/i)).toBeInTheDocument();
@@ -99,11 +99,11 @@ describe('FaturaPage', () => {
     expect(screen.getByText(/350/)).toBeInTheDocument();
   });
 
-  it('calls onBack when back button clicked', async () => {
-    const onBack = vi.fn();
-    render(<FaturaPage {...{ ...props, onBack }} />);
-    await waitFor(() => screen.getByRole('button', { name: /voltar/i }));
-    screen.getByRole('button', { name: /voltar/i }).click();
-    expect(onBack).toHaveBeenCalled();
+  it('mostra o título como heading de nível 1 e o Voltar leva a Planejar (link direto)', async () => {
+    renderPagina(<FaturaPage {...props} />, '/planejar/fatura/mp-1?mes=2026-03');
+    await waitFor(() => screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByRole('heading', { level: 1, name: /fatura — visa/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });
 });

@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { FirstTimeTour } from '../components/first-time-tour';
-import { IconPerfil, IconVoltar } from '../components/icons';
+import { IconPerfil } from '../components/icons';
 import { useAuth } from '@/contexts/use-auth';
 
+import { CAMINHOS } from '../routes/caminhos';
 import { ApiError } from '../services/api-client';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 import { CAMPO_CLASSES } from '../components/ui/campo-classes';
-
-interface PerfilPageProps {
-  onBack: () => void;
-}
 
 // Tempo para o usuário ler o aviso antes do logout forçado.
 const LOGOUT_APOS_TROCA_DE_SENHA_MS = 2500;
@@ -20,7 +18,7 @@ const mensagemErroTrocaDeSenha = (error: unknown): string =>
     ? 'Senha atual incorreta.'
     : 'Não foi possível alterar a senha. Tente novamente.';
 
-export const PerfilPage = ({ onBack }: PerfilPageProps) => {
+export const PerfilPage = () => {
   const { logout } = useAuth();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -94,17 +92,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
         ]}
       />
 
-      <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <button
-          type="button"
-          aria-label="Voltar"
-          onClick={onBack}
-          className="text-text-muted transition hover:text-text"
-        >
-          <IconVoltar size={20} />
-        </button>
-        <h1 className="text-lg font-bold text-text">Perfil</h1>
-      </header>
+      <CabecalhoDetalhe titulo="Perfil" origem={CAMINHOS.mais} />
 
       <div className="flex-1 space-y-6 p-4">
         {/* Dados pessoais */}

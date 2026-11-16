@@ -10,7 +10,9 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   it('exibe dashboard ao inicializar com sessão ativa', async () => {
     renderApp();
     await waitFor(() =>
-      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+      expect(screen.getAllByRole('heading', { name: /início|nossagrana/i }).length).toBeGreaterThan(
+        0,
+      ),
     );
     expect(screen.getAllByRole('button', { name: /nova/i }).length).toBeGreaterThan(0);
   });

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CofrinhoDetalheResponse } from '@nossagrana/types';
@@ -29,6 +29,7 @@ vi.mock('../components/charts/budget-bar', () => ({
 }));
 
 import { CofrinhoDetalhePage } from './cofrinho-detalhe-page';
+import { renderPagina } from '../test/render-pagina';
 
 const familiaId = 'fam-1';
 const cofrinhoId = 'cof-1';
@@ -117,14 +118,7 @@ beforeEach(() => {
 describe('CofrinhoDetalhePage', () => {
   it('exibe nome, emoji, saldo e meta do cofrinho', () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByText('\u2708\uFE0F')).toBeInTheDocument();
     expect(screen.getByText('Viagem Europa')).toBeInTheDocument();
@@ -134,14 +128,7 @@ describe('CofrinhoDetalhePage', () => {
 
   it('exibe barra de progresso quando ha meta', () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByTestId('budget-bar')).toBeInTheDocument();
   });
@@ -153,28 +140,14 @@ describe('CofrinhoDetalhePage', () => {
         cofrinho: { ...baseCofrinhoDetalhe.cofrinho, metaValor: null },
       },
     });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.queryByTestId('budget-bar')).not.toBeInTheDocument();
   });
 
   it('exibe lista de movimentacoes', () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByText('Primeiro aporte')).toBeInTheDocument();
     expect(screen.getByText('Compra passagem')).toBeInTheDocument();
@@ -183,14 +156,7 @@ describe('CofrinhoDetalhePage', () => {
 
   it('botoes Aportar e Retirar existem', () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByRole('button', { name: /aportar/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /retirar/i })).toBeInTheDocument();
@@ -198,28 +164,14 @@ describe('CofrinhoDetalhePage', () => {
 
   it('botao Encerrar existe', () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByRole('button', { name: /encerrar/i })).toBeInTheDocument();
   });
 
   it('abre modal de aporte ao clicar Aportar', async () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     fireEvent.click(screen.getByRole('button', { name: /aportar/i }));
 
@@ -232,46 +184,27 @@ describe('CofrinhoDetalhePage', () => {
 
   it('exibe loading quando carregando', () => {
     setupStore({ carregando: true, cofrinhoSelecionado: null });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
   it('chama fetchDetalhe ao montar', () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(mockFetchDetalhe).toHaveBeenCalledWith(familiaId, cofrinhoId);
   });
 
-  it('chama onBack ao clicar no botao Voltar', () => {
+  it('mostra o título como heading de nível 1 e o Voltar leva a Cofrinhos (link direto)', async () => {
     setupStore();
-    const onBack = vi.fn();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={onBack}
-        onNavigate={vi.fn()}
-      />,
+    renderPagina(
+      <CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />,
+      '/planejar/cofrinhos/c1',
     );
-
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1, name: /.+/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar\/cofrinhos$/);
   });
 
   it('desabilita botoes de acao quando status encerrado', () => {
@@ -285,14 +218,7 @@ describe('CofrinhoDetalhePage', () => {
         },
       },
     });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByRole('button', { name: /aportar/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /retirar/i })).toBeDisabled();
@@ -301,14 +227,7 @@ describe('CofrinhoDetalhePage', () => {
 
   it('abre modal de retirada ao clicar Retirar', async () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     fireEvent.click(screen.getByRole('button', { name: /retirar/i }));
 
@@ -320,14 +239,7 @@ describe('CofrinhoDetalhePage', () => {
 
   it('abre modal de encerrar ao clicar Encerrar', async () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     fireEvent.click(screen.getByRole('button', { name: /encerrar/i }));
 
@@ -339,14 +251,7 @@ describe('CofrinhoDetalhePage', () => {
 
   it('abre modal de editar ao clicar Editar', async () => {
     setupStore();
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     fireEvent.click(screen.getByRole('button', { name: /editar/i }));
 
@@ -368,14 +273,7 @@ describe('CofrinhoDetalhePage', () => {
         },
       },
     });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByText(/Aporte recorrente/i)).toBeInTheDocument();
     expect(screen.getByText(/200,00/)).toBeInTheDocument();
@@ -384,13 +282,8 @@ describe('CofrinhoDetalhePage', () => {
 
   it('movimentacoes mostram indicadores de tipo', () => {
     setupStore();
-    const { container } = render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
+    const { container } = renderPagina(
+      <CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />,
     );
 
     // Aportes têm seta para cima, retiradas seta para baixo (ícones lucide, sem texto)
@@ -405,14 +298,7 @@ describe('CofrinhoDetalhePage', () => {
         movimentacoes: [],
       },
     });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByText(/nenhuma movimentação/i)).toBeInTheDocument();
   });
@@ -429,14 +315,7 @@ describe('CofrinhoDetalhePage', () => {
         },
       },
     });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     expect(screen.getByText(/31\/12\/2026/)).toBeInTheDocument();
   });
@@ -453,14 +332,7 @@ describe('CofrinhoDetalhePage', () => {
         },
       },
     });
-    render(
-      <CofrinhoDetalhePage
-        familiaId={familiaId}
-        cofrinhoId={cofrinhoId}
-        onBack={vi.fn()}
-        onNavigate={vi.fn()}
-      />,
-    );
+    renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     fireEvent.click(screen.getByRole('button', { name: /cancelar recorr/i }));
 
@@ -485,14 +357,7 @@ describe('CofrinhoDetalhePage', () => {
       ['retirada', /^retirar$/i, mockService.cofrinhoService.retirar],
     ])('%s: cada envio do usuário manda uma chave nova', async (_op, botao, chamada) => {
       setupStore();
-      render(
-        <CofrinhoDetalhePage
-          familiaId={familiaId}
-          cofrinhoId={cofrinhoId}
-          onBack={vi.fn()}
-          onNavigate={vi.fn()}
-        />,
-      );
+      renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
       await enviarPeloModal(botao, botao);
       await waitFor(() => expect(chamada).toHaveBeenCalledTimes(1));
@@ -508,15 +373,8 @@ describe('CofrinhoDetalhePage', () => {
 
   // Nova UI, Entrega 1: textos da tela e dos modais de cofrinho estavam sem acento.
   describe('textos com acento', () => {
-    const renderPagina = () =>
-      render(
-        <CofrinhoDetalhePage
-          familiaId={familiaId}
-          cofrinhoId={cofrinhoId}
-          onBack={vi.fn()}
-          onNavigate={vi.fn()}
-        />,
-      );
+    const renderizarPagina = () =>
+      renderPagina(<CofrinhoDetalhePage familiaId={familiaId} cofrinhoId={cofrinhoId} />);
 
     const abrirModal = (botao: RegExp) => {
       fireEvent.click(screen.getByRole('button', { name: botao }));
@@ -525,7 +383,7 @@ describe('CofrinhoDetalhePage', () => {
 
     it('título e estado vazio das movimentações', () => {
       setupStore({ cofrinhoSelecionado: { ...baseCofrinhoDetalhe, movimentacoes: [] } });
-      renderPagina();
+      renderizarPagina();
 
       expect(screen.getByRole('heading', { name: 'Movimentações' })).toBeInTheDocument();
       expect(screen.getByText('Nenhuma movimentação registrada.')).toBeInTheDocument();
@@ -543,7 +401,7 @@ describe('CofrinhoDetalhePage', () => {
           },
         },
       });
-      renderPagina();
+      renderizarPagina();
 
       expect(screen.getByText(/Até:/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Cancelar recorrência' })).toBeInTheDocument();
@@ -551,7 +409,7 @@ describe('CofrinhoDetalhePage', () => {
 
     it('modal de aporte', async () => {
       setupStore();
-      renderPagina();
+      renderizarPagina();
       const dialog = await abrirModal(/^aportar$/i);
 
       expect(
@@ -561,7 +419,7 @@ describe('CofrinhoDetalhePage', () => {
 
     it('modal de retirada', async () => {
       setupStore();
-      renderPagina();
+      renderizarPagina();
       const dialog = await abrirModal(/^retirar$/i);
 
       expect(within(dialog).getByText('Descrição (opcional)')).toBeInTheDocument();
@@ -574,7 +432,7 @@ describe('CofrinhoDetalhePage', () => {
 
     it('modal de encerrar', async () => {
       setupStore();
-      renderPagina();
+      renderizarPagina();
       const dialog = await abrirModal(/encerrar/i);
 
       expect(

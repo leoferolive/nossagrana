@@ -78,7 +78,9 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
     // Com isAuthenticated=true e familiaIdAtiva, App inicia direto no dashboard
     await waitFor(() =>
-      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+      expect(screen.getAllByRole('heading', { name: /início|nossagrana/i }).length).toBeGreaterThan(
+        0,
+      ),
     );
 
     // Navigate via BottomNav to extrato to verify familiaId propagation
@@ -209,7 +211,9 @@ describe('App > fluxo autenticado com familia > configurações e transações',
 
     renderApp();
     await waitFor(() =>
-      expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
+      expect(screen.getAllByRole('heading', { name: /início|nossagrana/i }).length).toBeGreaterThan(
+        0,
+      ),
     );
 
     // Click "Nova Transação" button (top bar or FAB)

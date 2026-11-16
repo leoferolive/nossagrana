@@ -5,13 +5,14 @@ import { metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 
 import type { MetodoPagamentoCreateRequest } from '@nossagrana/types';
-import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconAdicionar, IconCartao, IconDinheiro, IconPix, IconVoltar } from '../components/icons';
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
+import { CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { IconAdicionar, IconCartao, IconDinheiro, IconPix } from '../components/icons';
+import { CAMINHOS, caminhoDaFatura } from '../routes/caminhos';
+import { useNavegacao } from '../routes/use-navegacao';
 
 interface MetodosPagamentoPageProps {
   familiaId: string;
-  onBack: () => void;
-  onVerFatura?: (id: string, nome: string, mes: string) => void;
 }
 
 type TipoMetodo = 'credito' | 'debito' | 'pix' | 'dinheiro';
@@ -49,11 +50,20 @@ const TIPO_ICON_BG: Record<TipoMetodo, string> = {
   dinheiro: 'bg-accent-soft',
 };
 
-export const MetodosPagamentoPage = ({
-  familiaId,
-  onBack,
-  onVerFatura,
-}: MetodosPagamentoPageProps) => {
+/** Mês da fatura aberta a partir do cartão: o corrente no fuso da família (AAAA-MM). */
+const mesCorrenteEmSaoPaulo = (): string =>
+  new Intl.DateTimeFormat('pt-BR', {
+    year: 'numeric',
+    month: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  })
+    .format(new Date())
+    .split('/')
+    .reverse()
+    .join('-');
+
+export const MetodosPagamentoPage = ({ familiaId }: MetodosPagamentoPageProps) => {
+  const { irParaCaminho } = useNavegacao();
   const { metodos, carregando } = useMetodoPagamentoStore();
   const setMetodos = useMetodoPagamentoStore((s) => s.setMetodos);
   const addMetodo = useMetodoPagamentoStore((s) => s.addMetodo);
@@ -114,26 +124,19 @@ export const MetodosPagamentoPage = ({
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Voltar"
-          className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
-        >
-          <IconVoltar size={20} aria-hidden="true" />
-        </button>
-        <h1 className="text-lg font-bold text-text">Cartões e Pagamentos</h1>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => setFormOpen(true)}
-          className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
-        >
-          Novo método
-        </button>
-      </header>
+      <CabecalhoDetalhe
+        titulo="Cartões e Pagamentos"
+        origem={CAMINHOS.mais}
+        acao={
+          <button
+            type="button"
+            onClick={() => setFormOpen(true)}
+            className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
+          >
+            Novo método
+          </button>
+        }
+      />
 
       {/* Formulário inline */}
       {formOpen && (
@@ -251,21 +254,12 @@ export const MetodosPagamentoPage = ({
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                {m.tipo === 'credito' && onVerFatura && (
+                {m.tipo === 'credito' && (
                   <button
                     type="button"
-                    onClick={() => {
-                      const mes = new Intl.DateTimeFormat('pt-BR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        timeZone: 'America/Sao_Paulo',
-                      })
-                        .format(new Date())
-                        .split('/')
-                        .reverse()
-                        .join('-');
-                      onVerFatura(m.id, m.nome, mes);
-                    }}
+                    onClick={() =>
+                      irParaCaminho(caminhoDaFatura(m.id, mesCorrenteEmSaoPaulo()), { familiaId })
+                    }
                     aria-label={`Ver fatura de ${m.nome}`}
                     className="rounded-lg px-3 py-1 text-xs text-success transition hover:bg-accent-soft"
                   >

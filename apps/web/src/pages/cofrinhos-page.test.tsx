@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCofrinhoStore } from '@/stores/cofrinho.store';
 import { CofrinhosPage } from './cofrinhos-page';
+import { renderPagina } from '../test/render-pagina';
 
 const mockCriar = vi.fn();
 
@@ -25,8 +26,6 @@ vi.mock('@/contexts/use-auth', () => ({
 
 const defaultProps = {
   familiaId: 'f1',
-  onNavigate: vi.fn(),
-  onVerDetalhe: vi.fn(),
 };
 
 const COFRINHO_VIAGEM = {
@@ -96,12 +95,12 @@ describe('CofrinhosPage', () => {
   });
 
   it('exibe empty state quando não há cofrinhos', () => {
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText(/ainda não tem cofrinhos/i)).toBeInTheDocument();
   });
 
   it('exibe botão de criar cofrinho no empty state', () => {
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByRole('button', { name: /criar cofrinho/i })).toBeInTheDocument();
   });
 
@@ -111,7 +110,7 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText('Viagem')).toBeInTheDocument();
     expect(screen.getByText(/1\.500/)).toBeInTheDocument();
   });
@@ -122,7 +121,7 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText('✈️')).toBeInTheDocument();
   });
 
@@ -132,7 +131,7 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     // BudgetBar renders percentage text
     expect(screen.getByText(/30%/)).toBeInTheDocument();
   });
@@ -143,7 +142,7 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText('Reserva')).toBeInTheDocument();
     // Should not have percentage since there's no meta
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
@@ -155,19 +154,26 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText(/meta atingida/i)).toBeInTheDocument();
   });
 
-  it('chama onVerDetalhe ao clicar no card', () => {
+  it('abre o detalhe do cofrinho no endereço ao clicar no card', () => {
     useCofrinhoStore.setState({
       cofrinhos: [COFRINHO_VIAGEM],
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />, '/planejar/cofrinhos');
     fireEvent.click(screen.getByText('Viagem'));
-    expect(defaultProps.onVerDetalhe).toHaveBeenCalledWith('1');
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar\/cofrinhos\/1$/);
+  });
+
+  it('mostra o título como heading de nível 1 e o Voltar leva a Planejar (link direto)', () => {
+    renderPagina(<CofrinhosPage {...defaultProps} />, '/planejar/cofrinhos');
+    expect(screen.getByRole('heading', { level: 1, name: 'Cofrinhos' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });
 
   it('abre modal de criar ao clicar botão "Novo Cofrinho"', () => {
@@ -176,13 +182,13 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /novo cofrinho/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('abre modal de criar ao clicar botão no empty state', () => {
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /criar cofrinho/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
@@ -193,7 +199,7 @@ describe('CofrinhosPage', () => {
       carregando: true,
       erro: null,
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
@@ -203,19 +209,19 @@ describe('CofrinhosPage', () => {
       carregando: false,
       erro: 'Erro ao carregar cofrinhos',
     });
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText('Erro ao carregar cofrinhos')).toBeInTheDocument();
   });
 
   it('chama fetchAll ao montar', () => {
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(mockFetchAll).toHaveBeenCalledWith('f1');
   });
 
   it('cria cofrinho via modal e faz refresh', async () => {
     mockCriar.mockResolvedValue({ cofrinho: COFRINHO_VIAGEM });
 
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
 
     // Open modal
     fireEvent.click(screen.getByRole('button', { name: /criar cofrinho/i }));
@@ -248,7 +254,7 @@ describe('CofrinhosPage', () => {
   });
 
   it('exibe título "Cofrinhos"', () => {
-    render(<CofrinhosPage {...defaultProps} />);
+    renderPagina(<CofrinhosPage {...defaultProps} />);
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { COR_DESPESA, COR_RECEITA, COR_SALDO } from '../components/charts/chart-colors';
@@ -7,6 +8,7 @@ import { MiniChart } from '../components/charts/mini-chart';
 
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
 
+import { CAMINHOS } from '../routes/caminhos';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 import { formatBRL } from '../utils/formatting';
 import {
@@ -20,7 +22,6 @@ import { ALVO_TOQUE_CLASSES } from '../components/ui/campo-classes';
 
 interface HistoricoPageProps {
   familiaId: string;
-  onBack: () => void;
 }
 
 const MES_NOMES = [
@@ -43,7 +44,7 @@ const formatMes = (mesReferencia: string): string => {
   return `${MES_NOMES[parseInt(mes) - 1]} ${ano}`;
 };
 
-export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
+export const HistoricoPage = ({ familiaId }: HistoricoPageProps) => {
   const [meses, setMeses] = useState<HistoricoMesItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -128,21 +129,10 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
           },
         ]}
       />
+      <CabecalhoDetalhe titulo="Histórico" origem={CAMINHOS.mais} />
       <ErrorBanner error={erro} />
 
       <div className="mx-auto max-w-2xl p-4">
-        {/* Header mobile */}
-        <div className="mb-6 flex items-center gap-3 md:hidden">
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-lg bg-surface px-3 py-1.5 text-sm text-text-muted hover:bg-surface/80"
-          >
-            Voltar
-          </button>
-          <h1 className="text-xl font-bold">Histórico</h1>
-        </div>
-
         {loading && <p className="py-8 text-center text-text-muted">Carregando...</p>}
 
         {!loading && meses.length === 0 && (

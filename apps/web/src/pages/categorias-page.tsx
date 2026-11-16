@@ -3,17 +3,18 @@ import { useEffect, useState } from 'react';
 import { ErrorBanner } from '@/components/error-banner';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconAdicionar, IconVoltar } from '../components/icons';
+import { IconAdicionar } from '../components/icons';
+import { CAMINHOS } from '../routes/caminhos';
 
 interface CategoriasPageProps {
   familiaId: string;
-  onBack: () => void;
 }
 
 type FormMode = 'idle' | 'create' | 'edit';
 
-export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
+export const CategoriasPage = ({ familiaId }: CategoriasPageProps) => {
   const { categorias, carregando } = useCategoriaStore();
   const setCategorias = useCategoriaStore((s) => s.setCategorias);
   const addCategoria = useCategoriaStore((s) => s.addCategoria);
@@ -91,26 +92,19 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Voltar"
-          className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
-        >
-          <IconVoltar size={20} aria-hidden="true" />
-        </button>
-        <h1 className="text-lg font-bold text-text">Categorias</h1>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
-        >
-          Nova categoria
-        </button>
-      </header>
+      <CabecalhoDetalhe
+        titulo="Categorias"
+        origem={CAMINHOS.mais}
+        acao={
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
+          >
+            Nova categoria
+          </button>
+        }
+      />
 
       <ErrorBanner error={erro} />
 

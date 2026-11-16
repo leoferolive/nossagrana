@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { MetodosPagamentoPage } from './metodos-pagamento-page';
+import { renderPagina } from '../test/render-pagina';
 
 vi.mock('@/contexts/use-auth', () => ({
   useAuth: () => ({
@@ -64,14 +65,14 @@ describe('MetodosPagamentoPage', () => {
 
   it('exibe lista de métodos', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
     expect(screen.getByText('Nubank')).toBeInTheDocument();
     expect(screen.getByText('Pix pessoal')).toBeInTheDocument();
   });
 
   it('exibe tipo do método', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
     // Crédito mostra info de fechamento/vencimento
     expect(screen.getByText(/fecha dia 15/i)).toBeInTheDocument();
     // Pix mostra badge de tipo
@@ -80,31 +81,42 @@ describe('MetodosPagamentoPage', () => {
 
   it('exibe datas de fechamento/vencimento para crédito', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
     expect(screen.getByText(/fecha dia 15/i)).toBeInTheDocument();
   });
 
   it('abre formulário ao clicar em novo método', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
     const addButtons = screen.getAllByRole('button', { name: /novo método/i });
     fireEvent.click(addButtons[0]);
     expect(screen.getByLabelText(/nome/i)).toBeInTheDocument();
   });
 
-  it('chama onBack ao clicar em voltar', () => {
+  it('mostra o título como heading de nível 1 e o Voltar leva a Mais (link direto)', async () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    const onBack = vi.fn();
-    render(<MetodosPagamentoPage familiaId="f1" onBack={onBack} />);
-    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
-    expect(onBack).toHaveBeenCalled();
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />, '/mais/metodos-pagamento');
+    expect(
+      screen.getByRole('heading', { level: 1, name: /cartões e pagamentos/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);
+  });
+
+  it('"Ver fatura" de um cartão de crédito abre a fatura no endereço, com o mês corrente', async () => {
+    mockListar.mockResolvedValue({ metodosPagamento: METODOS });
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />, '/mais/metodos-pagamento');
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver fatura de Nubank' }));
+    expect(screen.getByTestId('sonda-local')).toHaveTextContent(
+      new RegExp(`^/planejar/fatura/${METODOS[0].id}\\?mes=\\d{4}-\\d{2}$`),
+    );
   });
 
   // ── Novos testes TDD ────────────────────────────────────────────────────────
 
   it('chama metodoPagamentoService.listar ao montar com familiaId', async () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
     await waitFor(() => {
       expect(mockListar).toHaveBeenCalledWith('f1');
     });
@@ -113,7 +125,7 @@ describe('MetodosPagamentoPage', () => {
   it('exibe métodos retornados pelo serviço após montagem', async () => {
     useMetodoPagamentoStore.setState({ metodos: [], carregando: false, erro: null });
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
     await waitFor(() => {
       expect(screen.getByText('Nubank')).toBeInTheDocument();
       expect(screen.getByText('Pix pessoal')).toBeInTheDocument();
@@ -135,7 +147,7 @@ describe('MetodosPagamentoPage', () => {
     };
     mockCriar.mockResolvedValue({ metodoPagamento: novoMetodo });
 
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
 
     const addButtons = screen.getAllByRole('button', { name: /novo método/i });
     fireEvent.click(addButtons[0]);
@@ -174,7 +186,7 @@ describe('MetodosPagamentoPage', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
     mockDesativar.mockResolvedValue({ success: true });
 
-    render(<MetodosPagamentoPage familiaId="f1" onBack={vi.fn()} />);
+    renderPagina(<MetodosPagamentoPage familiaId="f1" />);
 
     const desativarButtons = screen.getAllByRole('button', { name: /desativar/i });
     fireEvent.click(desativarButtons[0]);

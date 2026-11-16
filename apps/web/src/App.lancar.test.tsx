@@ -87,7 +87,7 @@ describe('App > painel de lançar no endereço', () => {
 
     await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
     voltar();
-    expect(await waitFor(() => tituloNoConteudo(/nossagrana/i))).toBeInTheDocument();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/$/);
   });
 

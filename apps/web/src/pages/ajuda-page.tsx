@@ -1,9 +1,8 @@
 import { useState } from 'react';
 
-interface AjudaPageProps {
-  onBack?: () => void;
-  onNavigate?: (screen: string) => void;
-}
+import { CabecalhoDetalhe } from '../components/cabecalho-detalhe';
+import { CAMINHOS } from '../routes/caminhos';
+import { useNavegacao } from '../routes/use-navegacao';
 
 const FAQ = [
   {
@@ -107,7 +106,8 @@ const TOUR_KEYS = [
   'perfil',
 ];
 
-export const AjudaPage = ({ onBack, onNavigate }: AjudaPageProps) => {
+export const AjudaPage = () => {
+  const { irParaCaminho } = useNavegacao();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [tourReset, setTourReset] = useState(false);
 
@@ -118,27 +118,14 @@ export const AjudaPage = ({ onBack, onNavigate }: AjudaPageProps) => {
       localStorage.removeItem(`tour-${key}`);
     }
     setTourReset(true);
-    if (onNavigate) {
-      onNavigate('dashboard');
-    }
+    irParaCaminho(CAMINHOS.inicio);
   };
 
   return (
-    <div className="min-h-full bg-bg text-text p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-5">
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="mb-2 px-3 py-1.5 rounded-lg bg-surface text-text-muted hover:bg-surface/80 text-sm"
-            >
-              Voltar
-            </button>
-          )}
-          <h1 className="text-2xl font-bold">Ajuda</h1>
-          <p className="text-sm text-text-muted mt-1">Perguntas frequentes sobre o NossaGrana</p>
-        </div>
+    <div className="min-h-full bg-bg text-text">
+      <CabecalhoDetalhe titulo="Ajuda" origem={CAMINHOS.mais} />
+      <div className="mx-auto max-w-2xl p-4">
+        <p className="mb-5 text-sm text-text-muted">Perguntas frequentes sobre o NossaGrana</p>
 
         {/* Card de tutorial */}
         <div className="mb-4 rounded-xl border border-border bg-panel p-4">

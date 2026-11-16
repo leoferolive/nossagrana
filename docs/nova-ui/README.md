@@ -26,13 +26,14 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-15:** PR 1 da Entrega 1 (Correções) mergeado (#183): os cinco
-bugs funcionais da auditoria estão corrigidos. O PR 2 (Base visual) tem plano
-escrito e nenhuma linha de código ainda. **Próximo passo:** executar o
-[plano do PR 2](../superpowers/plans/2026-11-15-nova-ui-entrega-1-pr2-base-visual.md)
-na branch `feat/nova-ui-e1-base-visual`.
+**Estado em 2026-11-16:** Entrega 1 concluída, em dois PRs: #183 (Correções) e
+#186 (Base visual). O app está no tema claro, com Manrope, campos em 16px, alvos
+de toque de 44px e ícones lucide; a navegação e o desenho das telas ainda são os
+antigos. **Próximo passo:** escrever o desenho curto da Entrega 2 (Navegação) e
+levá-lo ao usuário para aprovação. A pergunta em aberto que trava esse desenho é
+a biblioteca de rotas.
 
-A partir do PR 2, cada PR segue este fluxo: um subagente desenvolve, outro testa
+Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
 verde, o PR é mergeado e vai para dev.
 
@@ -109,6 +110,24 @@ Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
 parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
 R$ 99,99). A sobra deveria ir para a parcela 1.
 
+Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
+
+- Escape não fecha os modais de cofrinho.
+- O mesmo orçamento aparece como 6% no dashboard e 7% na tela de orçamento
+  (arredondamentos diferentes).
+- Botão desabilitado com texto branco tem contraste entre 2,7:1 e 3,5:1.
+- No modal de modelos, os ícones de editar e excluir ficaram afastados da borda
+  direita.
+- Nas telas de login, cadastro e onboarding, um elemento decorativo deixa o
+  `<main>` 40px mais largo que a tela (sem rolagem visível).
+- O campo de data nativo mede 48px, e não 44px.
+- A área segura só é tratada embaixo; em paisagem, num iPhone com notch, a
+  borda lateral pode ficar atrás dele.
+- O desktop só foi validado no dashboard, em 1280px.
+- A regra de lint contra símbolos reprova "×" usado como multiplicação e não
+  pega `{'+ Texto'}` escrito como expressão.
+- Os testes de `cores-saida.test.ts` conferem o texto dos arquivos, não a tela.
+
 ### Diário
 
 - 2026-11-15 — Arquivo criado com a direção aprovada. Nada implementado.
@@ -149,6 +168,9 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
 - 2026-11-15 — Emojis e símbolos de texto (✕ ◀ ▶ ← → ↑ ↓ ⚠) viram ícones de `lucide-react` com `aria-hidden`, e o botão que era só símbolo mantém nome acessível; o tour passa a receber ícones; regra `no-restricted-syntax` no ESLint (`eslint.config.mjs`) barra emoji e esses símbolos em texto de interface; o emoji escolhido pelo usuário no cofrinho segue como está.
 - 2026-11-16 — Rodada de correção do PR 2 após validação no navegador: regra base de 44px para botão, aba, select e rádio; "+" não cobre mais o fim da rolagem; saída em texto neutro e verde como única cor de ação; o "+" de texto dos botões virou ícone `Plus` (a regra de lint também barra isso).
 - 2026-11-16 — Ajustes da revisão do PR 2: selo de variação do dashboard com nome acessível ("subiu/caiu N%"), campo desabilitado e `py-2.5` em `CAMPO_CLASSES`, mês em "Novembro de 2026" e alvo de toque nas setas de Lançamentos, `bg-info/10` no `auth-shell`.
+- 2026-11-16 — Campos com 44px de altura (`py-2` em `CAMPO_CLASSES`). PR 2 (#186)
+  validado em duas rodadas no navegador (todas as telas e modais em 390×844),
+  revisado por subagente e pelo Codex, sem pendências. Entrega 1 concluída.
 
 ## Decisões fechadas
 

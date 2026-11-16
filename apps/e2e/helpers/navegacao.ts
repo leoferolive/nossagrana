@@ -41,9 +41,14 @@ export async function irParaAba(
   await esperarTela(page, aba);
 }
 
-/** Abre uma tela de segundo nível pela linha de link dela (em Mais ou Planejar). */
+/**
+ * Abre uma tela de segundo nível pela linha de link dela (em Mais ou Planejar). Em Planejar o
+ * nome acessível da linha inclui o resumo ("Limites por categoria 2 de 3 ..."), então o rótulo
+ * casa pelo início do nome.
+ */
 export async function abrirLinha(page: Page, rotulo: string, titulo: string): Promise<void> {
-  await page.getByRole('main').getByRole('link', { name: rotulo, exact: true }).click();
+  const inicioDoNome = new RegExp(`^${rotulo}`);
+  await page.getByRole('main').getByRole('link', { name: inicioDoNome }).click();
   await esperarTela(page, titulo);
 }
 

@@ -182,6 +182,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário (decisões 17 a 23).
   Plano do PR 1 da entrega (Rotas com URL) escrito.
 - 2026-11-16 — Entrega 2, PR 1: entra o mapa de endereços das telas em `apps/web/src/routes/caminhos.ts`, com a tradução nos dois sentidos entre os identificadores de tela de hoje e o endereço.
+- 2026-11-16 — Entrega 2, PR 1: entra o `react-router` 7 (modo declarativo) e a tela passa a vir do endereço. O `App.tsx` (454 linhas) vira uma casca de 10 linhas; a árvore de rotas fica em `apps/web/src/routes/` e o fluxo de sessão, o lançar e a voz em hooks. As páginas e o `AppShell` seguem com as mesmas propriedades de navegação. Os quatro testes do `App` passam a usar `renderApp` (roteador em memória) com os mesmos cenários.
 
 ## Decisões fechadas
 

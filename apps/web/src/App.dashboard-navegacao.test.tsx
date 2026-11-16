@@ -1,15 +1,14 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { resetAppMocks } from '@/test/app-mocks';
-
-import { App } from './App';
+import { renderApp } from '@/test/render-app';
 
 afterEach(resetAppMocks);
 
 describe('App > fluxo autenticado com familia > navegação', () => {
   it('exibe dashboard ao inicializar com sessão ativa', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() =>
       expect(screen.getAllByRole('heading', { name: /nossagrana/i }).length).toBeGreaterThan(0),
     );
@@ -17,14 +16,14 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   });
 
   it('navega para ExtratoPage ao clicar em Extrato', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
     expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
   });
 
   it('navega para CategoriasPage ao clicar em Categorias', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     const main = screen.getByRole('main');
@@ -34,7 +33,7 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   });
 
   it('navega para MetodosPagamentoPage ao clicar em Cartões', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     const main = screen.getByRole('main');
@@ -46,7 +45,7 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   });
 
   it('navega para OrcamentoPage ao clicar em Orçamento', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     const main = screen.getByRole('main');
@@ -58,7 +57,7 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   });
 
   it('navega para RelatoriosPage ao clicar em Relatórios', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver relatórios/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver relatórios/i }));
     await waitFor(() =>
@@ -67,7 +66,7 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   });
 
   it('navega para HistoricoPage ao clicar em Ver histórico', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     const main = screen.getByRole('main');
@@ -77,14 +76,14 @@ describe('App > fluxo autenticado com familia > navegação', () => {
   });
 
   it('navega para ConfiguracoesPage ao clicar em Ver configurações', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     expect(screen.getAllByRole('heading', { name: /configurações/i }).length).toBeGreaterThan(0);
   });
 
   it('navega para PerfilPage a partir das configurações', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
     fireEvent.click(screen.getByRole('button', { name: /perfil \/ conta/i }));

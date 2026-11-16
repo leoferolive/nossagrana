@@ -160,6 +160,32 @@ export const resetAppMocks = () => {
   }));
 };
 
+/**
+ * Sessão que nasce anônima e, como a real, passa a autenticada quando a tela chama `login`.
+ * Sem isso o cadastro e o login não sairiam do lugar: as guardas de rota barram quem não
+ * tem sessão em qualquer endereço que não seja o de entrada.
+ */
+export const mockSessaoQueEntraAoLogar = () => {
+  let autenticado = false;
+  let familiaAtiva: string | null = null;
+  vi.mocked(useAuth).mockImplementation(() => ({
+    isAuthenticated: autenticado,
+    accessToken: autenticado ? 'token' : null,
+    familiaIdAtiva: familiaAtiva,
+    login: vi.fn(() => {
+      autenticado = true;
+    }),
+    logout: vi.fn(() => {
+      autenticado = false;
+      familiaAtiva = null;
+    }),
+    setAccessToken: vi.fn(),
+    updateFamiliaIdAtiva: vi.fn((id: string) => {
+      familiaAtiva = id;
+    }),
+  }));
+};
+
 export const fillSignUpForm = () => {
   fireEvent.change(screen.getByLabelText(/nome/i), {
     target: { value: 'João Silva' },

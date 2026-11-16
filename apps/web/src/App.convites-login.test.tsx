@@ -1,31 +1,18 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fillSignUpForm, resetAppMocks } from '@/test/app-mocks';
+import { fillSignUpForm, mockSessaoQueEntraAoLogar, resetAppMocks } from '@/test/app-mocks';
+import { renderApp } from '@/test/render-app';
 
-import { App } from './App';
 import { useAuth } from './contexts/use-auth';
 
 afterEach(resetAppMocks);
 
 describe('App > fluxo não autenticado > convites e login', () => {
-  beforeEach(() => {
-    let currentFamiliaId: string | null = null;
-    vi.mocked(useAuth).mockImplementation(() => ({
-      isAuthenticated: false as const,
-      accessToken: null,
-      familiaIdAtiva: currentFamiliaId,
-      login: vi.fn(),
-      logout: vi.fn(),
-      setAccessToken: vi.fn(),
-      updateFamiliaIdAtiva: vi.fn((id: string) => {
-        currentFamiliaId = id;
-      }),
-    }));
-  });
+  beforeEach(mockSessaoQueEntraAoLogar);
 
   it('manages pending requests in family settings', { timeout: 15000 }, async () => {
-    render(<App />);
+    renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
     fillSignUpForm();
@@ -67,7 +54,7 @@ describe('App > fluxo não autenticado > convites e login', () => {
       configurable: true,
     });
 
-    render(<App />);
+    renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: /cadastre-se/i }));
     fillSignUpForm();
@@ -131,7 +118,7 @@ describe('App > fluxo não autenticado > convites e login', () => {
       updateFamiliaIdAtiva: vi.fn(),
     }));
 
-    render(<App />);
+    renderApp();
     fireEvent.submit(screen.getByRole('form', { name: /login/i }));
 
     await waitFor(() =>
@@ -158,7 +145,7 @@ describe('App > fluxo não autenticado > convites e login', () => {
       ],
     });
 
-    render(<App />);
+    renderApp();
     fireEvent.submit(screen.getByRole('form', { name: /login/i }));
 
     await waitFor(() => {
@@ -167,7 +154,7 @@ describe('App > fluxo não autenticado > convites e login', () => {
   });
 
   it('navega para onboarding quando familiaId não existe após login', async () => {
-    render(<App />);
+    renderApp();
 
     // Trigger onLoginSuccess → sem familiaId → setScreen('onboarding')
     fireEvent.submit(screen.getByRole('form', { name: /login/i }));

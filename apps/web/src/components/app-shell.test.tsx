@@ -10,8 +10,6 @@ const renderShell = (
   render(
     <MemoryRouter initialEntries={[props.caminho ?? '/']}>
       <AppShell
-        currentScreen="dashboard"
-        onNavigate={vi.fn()}
         onNovaTransacao={props.onNovaTransacao ?? vi.fn()}
         onVoiceActivate={props.onVoiceActivate}
         onLogout={vi.fn()}

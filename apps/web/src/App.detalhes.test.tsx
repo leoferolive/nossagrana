@@ -164,7 +164,7 @@ describe('App > troca de família com id no endereço', () => {
     fireEvent.click(await screen.findByRole('button', { name: /viagem europa/i }));
     await waitFor(() => tituloNoConteudo(/viagem europa/i));
 
-    fireEvent.click(screen.getByRole('button', { name: /alternar família/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Alternar família' }));
     fireEvent.click(await screen.findByRole('button', { name: /praia/i }));
     await waitFor(() => tituloNoConteudo(/^início$/i));
   };
@@ -197,9 +197,7 @@ describe('App > troca de família com id no endereço', () => {
     renderApp('/');
     expect(await screen.findByText(/viagem europa/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
-    fireEvent.click(
-      await within(screen.getByRole('main')).findByRole('button', { name: /sair da conta/i }),
-    );
+    fireEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Sair' }));
     await screen.findByRole('form', { name: /login/i });
     vi.mocked(familiaService.listarMinhas).mockResolvedValue({ familias: [FAMILIAS[1]] });
 

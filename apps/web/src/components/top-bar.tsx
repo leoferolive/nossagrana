@@ -8,7 +8,7 @@ interface TopBarProps {
 }
 
 const screenTitles: Record<string, string> = {
-  dashboard: 'Dashboard',
+  dashboard: 'Início',
   extrato: 'Extrato',
   relatorios: 'Relatórios',
   historico: 'Histórico',
@@ -17,7 +17,9 @@ const screenTitles: Record<string, string> = {
   orcamento: 'Orçamento',
   'family-settings': 'Família',
   ajuda: 'Ajuda / FAQ',
-  configuracoes: 'Configurações',
+  mais: 'Mais',
+  planejar: 'Planejar',
+  lancamentos: 'Lançamentos do Mês',
   perfil: 'Perfil',
   fatura: 'Fatura',
   cofrinhos: 'Cofrinhos',

@@ -5,13 +5,13 @@ import { AjudaPage } from '@/pages/ajuda-page';
 import { CategoriasPage } from '@/pages/categorias-page';
 import { CofrinhoDetalhePage } from '@/pages/cofrinho-detalhe-page';
 import { CofrinhosPage } from '@/pages/cofrinhos-page';
-import { ConfiguracoesPage } from '@/pages/configuracoes-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { ExtratoPage } from '@/pages/extrato-page';
 import { FamilySettingsPage } from '@/pages/family-settings-page';
 import { FaturaPage } from '@/pages/fatura-page';
 import { HistoricoPage } from '@/pages/historico-page';
 import { LancamentosPage } from '@/pages/lancamentos-page';
+import { MaisPage } from '@/pages/mais-page';
 import { MetodosPagamentoPage } from '@/pages/metodos-pagamento-page';
 import { OrcamentoPage } from '@/pages/orcamento-page';
 import { PerfilPage } from '@/pages/perfil-page';
@@ -19,7 +19,6 @@ import { RelatoriosPage } from '@/pages/relatorios-page';
 import { getCurrentMonth } from '@/utils/date';
 
 import { useContextoLogado } from './contexto-logado';
-import { useNavegacao } from './use-navegacao';
 
 // Cada rota entrega ao componente da página o que ela não tira sozinha do roteador (a família e
 // o contexto de lançar). Na navegação, as páginas falam direto, por `useNavegacao` e pelos cabeçalhos.
@@ -82,21 +81,7 @@ export const FaturaRota = () => {
 
 export const MaisRota = () => {
   const { onLogout } = useContextoLogado();
-  const { irPara } = useNavegacao();
-  return (
-    <ConfiguracoesPage
-      onBack={() => undefined}
-      onGoToCategorias={() => irPara('categorias')}
-      onGoToMetodosPagamento={() => irPara('metodos-pagamento')}
-      onGoToOrcamento={() => irPara('orcamento')}
-      onGoToCofrinhos={() => irPara('cofrinhos')}
-      onGoToFamilia={() => irPara('family-settings')}
-      onGoToHistorico={() => irPara('historico')}
-      onGoToAjuda={() => irPara('ajuda')}
-      onGoToPerfil={() => irPara('perfil')}
-      onLogout={onLogout}
-    />
-  );
+  return <MaisPage onLogout={onLogout} />;
 };
 
 export const RelatoriosRota = () => {

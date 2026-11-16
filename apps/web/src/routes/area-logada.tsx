@@ -10,10 +10,9 @@ import { useLancamento } from '@/hooks/use-lancamento';
 import { useLancarPorVoz } from '@/hooks/use-lancar-por-voz';
 import type { FluxoSessao } from '@/hooks/use-fluxo-sessao';
 
-import { CAMINHOS, ehEnderecoComId, telaDoCaminho } from './caminhos';
+import { CAMINHOS, ehEnderecoComId } from './caminhos';
 import type { ContextoLogado } from './contexto-logado';
 import { RotaComFamilia } from './guardas';
-import { useNavegacao } from './use-navegacao';
 
 interface AreaLogadaProps {
   fluxo: FluxoSessao;
@@ -80,8 +79,6 @@ const PaineisDeLancar = ({ lancamento, voz }: Lancar) => (
 );
 
 const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId: string }) => {
-  const { pathname } = useLocation();
-  const { irPara } = useNavegacao();
   useVoltarAoInicioNaTrocaDeFamilia(familiaId);
   const { lancamento, voz } = useLancar(familiaId);
   const contexto: ContextoLogado = {
@@ -93,8 +90,6 @@ const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId:
   return (
     <>
       <AppShell
-        currentScreen={telaDoCaminho(pathname)}
-        onNavigate={irPara}
         onNovaTransacao={lancamento.abrirNova}
         onVoiceActivate={voz.ativar}
         onLogout={fluxo.aoSair}

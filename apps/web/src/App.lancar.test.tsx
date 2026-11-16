@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, mockSessao, resetAppMocks } from '@/test/app-mocks';
+import { barraInferior } from '@/test/barra-inferior';
 import { renderApp } from '@/test/render-app';
 
 import { categoriaService, transacaoService } from './services/core-financeiro.service';
@@ -280,7 +281,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
       'editar e %s termina em /extrato; um voltar leva ao Início',
       async (_n, encerrar) => {
         renderApp('/', opcoes);
-        fireEvent.click(await screen.findByRole('link', { name: 'Extrato' }));
+        fireEvent.click(await barraInferior().findByRole('link', { name: 'Extrato' }));
         await editarPrimeira();
 
         await encerrar();
@@ -295,7 +296,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
 
     it('nova transação salva: mesma tela e um voltar leva à anterior', async () => {
       renderApp('/', opcoes);
-      fireEvent.click(await screen.findByRole('link', { name: 'Extrato' }));
+      fireEvent.click(await barraInferior().findByRole('link', { name: 'Extrato' }));
       abrirPainelNovo();
       fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '10.00' } });
       fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));

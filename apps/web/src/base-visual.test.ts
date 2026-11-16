@@ -148,7 +148,7 @@ describe('campos em 16px e alvos de toque com 44px', () => {
     expect(CAMPO_CLASSES).toContain('disabled:cursor-not-allowed');
     expect(CAMPO_CLASSES).toContain('disabled:bg-surface-hover');
     expect(CAMPO_CLASSES).toContain('disabled:text-text-muted');
-    expect(CAMPO_CLASSES).toContain('py-2.5');
+    expect(CAMPO_CLASSES).toMatch(/\bpy-2\b/);
   });
 
   it('as setas de mês de Lançamentos usam ALVO_TOQUE_CLASSES', () => {

@@ -1,9 +1,12 @@
 import { useCallback, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+
+import { IconAvancar, IconVoltar } from './icons';
 
 interface TourStep {
   title: string;
   description: string;
-  icon?: string;
+  icon?: LucideIcon;
 }
 
 interface FirstTimeTourProps {
@@ -44,6 +47,7 @@ export const FirstTimeTour = ({ tourKey, steps }: FirstTimeTourProps) => {
   const isFirst = step === 0;
   const isLast = step === steps.length - 1;
   const total = steps.length;
+  const Icone = current.icon;
 
   return (
     <div
@@ -83,7 +87,7 @@ export const FirstTimeTour = ({ tourKey, steps }: FirstTimeTourProps) => {
         </div>
 
         {/* Icon */}
-        {current.icon && <div className="mb-3 text-3xl">{current.icon}</div>}
+        {Icone && <Icone size={32} aria-hidden="true" className="mb-3 text-success" />}
 
         {/* Content */}
         <h2 className="mb-2 text-lg font-bold text-text">{current.title}</h2>
@@ -96,9 +100,10 @@ export const FirstTimeTour = ({ tourKey, steps }: FirstTimeTourProps) => {
               type="button"
               aria-label="voltar"
               onClick={() => setStep((s) => s - 1)}
-              className="text-sm text-text-muted transition hover:text-text"
+              className="inline-flex items-center gap-1 text-sm text-text-muted transition hover:text-text"
             >
-              ← Voltar
+              <IconVoltar size={16} aria-hidden="true" />
+              Voltar
             </button>
           ) : (
             <span />
@@ -108,9 +113,10 @@ export const FirstTimeTour = ({ tourKey, steps }: FirstTimeTourProps) => {
               type="button"
               aria-label="próximo"
               onClick={() => setStep((s) => s + 1)}
-              className="rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
+              className="inline-flex items-center gap-1 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-success-strong"
             >
-              Próximo →
+              Próximo
+              <IconAvancar size={16} aria-hidden="true" />
             </button>
           ) : (
             <button

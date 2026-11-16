@@ -5,6 +5,7 @@ import { ApiError } from '@/services/api-client';
 import { familiaService } from '@/services/auth.service';
 import { AuthShell } from '@/components/ui/auth-shell';
 import { FormField } from '@/components/ui/form-field';
+import { IconVoltar } from '../components/icons';
 
 type OnboardingMode = 'create' | 'invite' | 'request' | null;
 
@@ -173,9 +174,10 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
         <button
           type="button"
           onClick={() => handleModeChange(null)}
-          className="mb-4 text-sm font-medium text-success transition hover:underline"
+          className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-success transition hover:underline"
         >
-          ← Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
       )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
+import { IconFechar } from './icons';
 
 interface CofrinhoModalProps {
   open: boolean;
@@ -78,7 +79,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
             onClick={onClose}
             className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
-            ✕
+            <IconFechar size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -104,7 +105,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               type="text"
               value={emoji}
               onChange={(e) => setEmoji(e.target.value.slice(0, 10))}
-              placeholder="🐷"
+              placeholder="Cole ou digite um emoji"
               maxLength={10}
               className={CAMPO_CLASSES}
             />

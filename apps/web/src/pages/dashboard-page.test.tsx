@@ -191,13 +191,16 @@ describe('DashboardPage', () => {
       ],
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
+    const { container } = render(
+      <DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />,
+    );
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
     expect(screen.getByText('Viagem')).toBeInTheDocument();
     expect(screen.getByText('✈️')).toBeInTheDocument();
     expect(screen.getByText('Reserva')).toBeInTheDocument();
-    expect(screen.getByText('🐷')).toBeInTheDocument();
-    expect(screen.getByText('Ver todos →')).toBeInTheDocument();
+    // Sem emoji escolhido, entra o ícone do cofrinho no lugar do emoji fixo do app
+    expect(container.querySelectorAll('svg.lucide-piggy-bank').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole('button', { name: /ver todos/i })).toBeInTheDocument();
   });
 
   it('exibe estado vazio quando sem cofrinhos', () => {
@@ -216,6 +219,6 @@ describe('DashboardPage', () => {
     render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
     expect(screen.getByText('Sua família ainda não tem cofrinhos.')).toBeInTheDocument();
-    expect(screen.queryByText('Ver todos →')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ver todos/i })).not.toBeInTheDocument();
   });
 });

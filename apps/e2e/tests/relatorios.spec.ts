@@ -243,7 +243,7 @@ test.describe('Relatórios', () => {
       await expect(page.getByText('Valores Atuais')).toBeVisible({ timeout: 5_000 });
 
       // Close the modal.
-      await page.getByRole('button', { name: '✕' }).click();
+      await page.getByRole('button', { name: 'Fechar detalhe' }).click();
       await expect(page.getByText(/Detalhe —/)).not.toBeVisible({ timeout: 5_000 });
     }
   });

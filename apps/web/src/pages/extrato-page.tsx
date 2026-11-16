@@ -14,6 +14,16 @@ import { useTransacaoStore } from '@/stores/transacao.store';
 import { formatMesLabel, getCurrentMonth, shiftMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
+import {
+  IconBusca,
+  IconEditar,
+  IconEntrada,
+  IconExportar,
+  IconExtrato,
+  IconMesAnterior,
+  IconProximoMes,
+  IconSaida,
+} from '../components/icons';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
@@ -189,24 +199,24 @@ export const ExtratoPage = ({
         tourKey="extrato"
         steps={[
           {
-            icon: '📋',
+            icon: IconExtrato,
             title: 'Seu extrato',
             description:
-              'Veja todas as transações do mês. Use as setas ◀ ▶ para navegar entre meses.',
+              'Veja todas as transações do mês. Use as setas ao lado do mês para navegar entre meses.',
           },
           {
-            icon: '🔍',
+            icon: IconBusca,
             title: 'Filtros e busca',
             description:
               'Filtre por receitas ou despesas com os chips. Use a barra de busca para encontrar uma transação específica.',
           },
           {
-            icon: '✏️',
+            icon: IconEditar,
             title: 'Editar transação',
             description: 'Toque em qualquer transação para editá-la ou excluí-la.',
           },
           {
-            icon: '📥',
+            icon: IconExportar,
             title: 'Exportar CSV',
             description: 'Use o botão "Exportar CSV" para baixar suas transações em planilha.',
           },
@@ -224,7 +234,7 @@ export const ExtratoPage = ({
               className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text`}
               aria-label="Mês anterior"
             >
-              ◀
+              <IconMesAnterior size={18} aria-hidden="true" />
             </button>
             <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
               {mesLabel}
@@ -236,7 +246,7 @@ export const ExtratoPage = ({
               className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed`}
               aria-label="Próximo mês"
             >
-              ▶
+              <IconProximoMes size={18} aria-hidden="true" />
             </button>
           </div>
           <button
@@ -329,7 +339,11 @@ export const ExtratoPage = ({
                 <span
                   className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
                 >
-                  {t.tipo === 'receita' ? '\u2191' : '\u2193'}
+                  {t.tipo === 'receita' ? (
+                    <IconEntrada size={14} aria-hidden="true" />
+                  ) : (
+                    <IconSaida size={14} aria-hidden="true" />
+                  )}
                 </span>
                 <span
                   className={`text-sm font-semibold tabular-nums ${

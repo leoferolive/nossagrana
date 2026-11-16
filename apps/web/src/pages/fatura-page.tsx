@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 import { formatBRL } from '../utils/formatting';
+import { IconVoltar } from '../components/icons';
 
 interface FaturaItem {
   id: string;
@@ -72,9 +73,10 @@ export function FaturaPage({
           type="button"
           aria-label="Voltar"
           onClick={onBack}
-          className="rounded-lg bg-surface px-3 py-2 text-sm text-text-muted hover:bg-surface-hover"
+          className="inline-flex items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm text-text-muted hover:bg-surface-hover"
         >
-          ← Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
         <div>
           <h1 className="text-2xl font-bold text-text">Fatura — {metodoPagamentoNome}</h1>

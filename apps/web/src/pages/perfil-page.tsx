@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { FirstTimeTour } from '../components/first-time-tour';
-import { IconVoltar } from '../components/icons';
+import { IconPerfil, IconVoltar } from '../components/icons';
 import { useAuth } from '@/contexts/use-auth';
 
 import { ApiError } from '../services/api-client';
@@ -86,7 +86,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
         tourKey="perfil"
         steps={[
           {
-            icon: '👤',
+            icon: IconPerfil,
             title: 'Seu perfil',
             description:
               'Atualize seu nome de exibição e altere sua senha. Seu e-mail é usado para login e não pode ser alterado.',

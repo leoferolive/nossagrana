@@ -6,6 +6,14 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import sonarjs from 'eslint-plugin-sonarjs';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
+// Emoji e símbolos de texto (✕ ✓ ◀ ▶ ← → ↑ ↓ ⚠) não renderizam igual em todo aparelho e não têm nome
+// acessível; a interface usa só ícones de lucide-react (decisão 11 da nova UI). Os pares
+// \uD83C-\uD83E cobrem os emojis acima do plano básico sem depender da flag `u`.
+const SIMBOLO_DE_TEXTO =
+  '[\\u00D7\\u2190-\\u21FF\\u25A0-\\u25FF\\u2600-\\u27BF\\u2B00-\\u2BFF\\uFE0F]|[\\uD83C-\\uD83E][\\uDC00-\\uDFFF]';
+const MENSAGEM_SEM_EMOJI =
+  'Use um ícone de lucide-react; a interface não usa emoji nem símbolo de texto como ícone';
+
 export default tseslint.config(
   {
     ignores: [
@@ -67,6 +75,27 @@ export default tseslint.config(
       'sonarjs/cognitive-complexity': ['warn', 15],
       'sonarjs/no-duplicate-string': ['warn', { threshold: 5 }],
       'sonarjs/no-identical-functions': 'warn',
+    },
+  },
+  {
+    files: ['apps/web/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `JSXText[value=/${SIMBOLO_DE_TEXTO}/]`,
+          message: MENSAGEM_SEM_EMOJI,
+        },
+        {
+          selector: `Literal[value=/${SIMBOLO_DE_TEXTO}/]`,
+          message: MENSAGEM_SEM_EMOJI,
+        },
+        {
+          selector: `TemplateElement[value.raw=/${SIMBOLO_DE_TEXTO}/]`,
+          message: MENSAGEM_SEM_EMOJI,
+        },
+      ],
     },
   },
   {

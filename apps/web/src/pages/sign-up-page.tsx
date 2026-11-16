@@ -5,6 +5,7 @@ import { FormField } from '@/components/ui/form-field';
 import { useAuth } from '@/contexts/use-auth';
 import { authService } from '@/services/auth.service';
 import { ApiError } from '@/services/api-client';
+import { IconVoltar } from '../components/icons';
 
 interface SignUpPageProps {
   onOpenLogin: () => void;
@@ -69,9 +70,10 @@ export const SignUpPage = ({ onOpenLogin, onCompleteSignUp }: SignUpPageProps) =
       <button
         type="button"
         onClick={onOpenLogin}
-        className="mb-4 text-sm font-medium text-success transition hover:underline"
+        className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-success transition hover:underline"
       >
-        ← Voltar
+        <IconVoltar size={16} aria-hidden="true" />
+        Voltar
       </button>
       <form
         aria-label="cadastro"

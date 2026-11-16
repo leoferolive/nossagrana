@@ -9,6 +9,14 @@ import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/typ
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 import { formatBRL } from '../utils/formatting';
+import {
+  IconAlerta,
+  IconFechar,
+  IconHistorico,
+  IconSnapshot,
+  IconTendencia,
+} from '../components/icons';
+import { ALVO_TOQUE_CLASSES } from '../components/ui/campo-classes';
 
 interface HistoricoPageProps {
   familiaId: string;
@@ -96,25 +104,25 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
         tourKey="historico"
         steps={[
           {
-            icon: '📅',
+            icon: IconHistorico,
             title: 'Histórico mensal',
             description:
               'Reveja o resumo financeiro de cada mês. Toque em um mês para ver o detalhamento.',
           },
           {
-            icon: '📸',
+            icon: IconSnapshot,
             title: 'Snapshot',
             description:
               'No fim de cada mês, uma "foto" dos totais é salva. Assim o relatório original fica preservado mesmo que algo mude depois.',
           },
           {
-            icon: '⚠️',
+            icon: IconAlerta,
             title: 'Mês divergente',
             description:
               'Se você editar uma transação de um mês já fechado, ele fica marcado como divergente. O snapshot original continua disponível.',
           },
           {
-            icon: '📈',
+            icon: IconTendencia,
             title: 'Gráfico de tendência',
             description: 'Acompanhe a evolução de receitas, despesas e saldo ao longo dos meses.',
           },
@@ -185,8 +193,9 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                           {formatMes(mes.mesReferencia)}
                         </span>
                         {mes.divergente && (
-                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
-                            ⚠ divergente
+                          <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+                            <IconAlerta size={12} aria-hidden="true" />
+                            divergente
                           </span>
                         )}
                         {mes.temSnapshot && !mes.divergente && (
@@ -263,8 +272,9 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       </td>
                       <td className="py-3">
                         {mes.divergente ? (
-                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
-                            ⚠ divergente
+                          <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+                            <IconAlerta size={12} aria-hidden="true" />
+                            divergente
                           </span>
                         ) : mes.temSnapshot ? (
                           <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-success">
@@ -312,13 +322,14 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 </h2>
                 <button
                   type="button"
+                  aria-label="Fechar detalhe"
                   onClick={() => {
                     setMesSelecionado(null);
                     setDetalhe(null);
                   }}
-                  className="text-text-muted hover:text-text"
+                  className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
                 >
-                  ✕
+                  <IconFechar size={18} aria-hidden="true" />
                 </button>
               </div>
 

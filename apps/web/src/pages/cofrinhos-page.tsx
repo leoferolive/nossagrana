@@ -7,6 +7,7 @@ import { FirstTimeTour } from '../components/first-time-tour';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatBRL } from '../utils/formatting';
+import { IconCofrinho } from '../components/icons';
 
 interface CofrinhosPageProps {
   familiaId: string;
@@ -90,7 +91,7 @@ export function CofrinhosPage({
         {cofrinhos.length === 0 ? (
           /* Empty State */
           <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-            <div className="text-5xl">🐷</div>
+            <IconCofrinho size={48} aria-hidden="true" className="text-text-dim" />
             <p className="text-center text-sm text-text-muted">
               Sua família ainda não tem cofrinhos.
             </p>

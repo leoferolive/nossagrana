@@ -7,6 +7,8 @@ import type {
   FamiliaListJoinRequestsResponse,
   FamiliaListMembersResponse,
 } from '@nossagrana/types';
+import { IconVoltar } from '../components/icons';
+import { ALVO_TOQUE_CLASSES } from '../components/ui/campo-classes';
 
 interface FamilySettingsPageProps {
   onBackToOnboarding: () => void;
@@ -209,9 +211,9 @@ export const FamilySettingsPage = ({
             type="button"
             aria-label="Voltar"
             onClick={onBack}
-            className="text-text-muted transition hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
           >
-            ←
+            <IconVoltar size={20} aria-hidden="true" />
           </button>
           <h1 className="text-lg font-bold text-text">Família</h1>
         </header>

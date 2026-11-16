@@ -4,6 +4,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { IconVoltar } from '../components/icons';
 
 interface CategoriasPageProps {
   familiaId: string;
@@ -96,9 +97,9 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
           type="button"
           onClick={onBack}
           aria-label="Voltar"
-          className="text-text-muted transition hover:text-text"
+          className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
         >
-          ←
+          <IconVoltar size={20} aria-hidden="true" />
         </button>
         <h1 className="text-lg font-bold text-text">Categorias</h1>
         <div className="flex-1" />

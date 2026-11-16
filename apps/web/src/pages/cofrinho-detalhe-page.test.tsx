@@ -384,7 +384,7 @@ describe('CofrinhoDetalhePage', () => {
 
   it('movimentacoes mostram indicadores de tipo', () => {
     setupStore();
-    render(
+    const { container } = render(
       <CofrinhoDetalhePage
         familiaId={familiaId}
         cofrinhoId={cofrinhoId}
@@ -393,11 +393,9 @@ describe('CofrinhoDetalhePage', () => {
       />,
     );
 
-    // Aportes have up arrow, retiradas have down arrow
-    const upArrows = screen.getAllByText('\u2191');
-    const downArrows = screen.getAllByText('\u2193');
-    expect(upArrows.length).toBe(2); // 2 aportes
-    expect(downArrows.length).toBe(1); // 1 retirada
+    // Aportes têm seta para cima, retiradas seta para baixo (ícones lucide, sem texto)
+    expect(container.querySelectorAll('svg.lucide-arrow-up')).toHaveLength(2); // 2 aportes
+    expect(container.querySelectorAll('svg.lucide-arrow-down')).toHaveLength(1); // 1 retirada
   });
 
   it('exibe mensagem quando nao ha movimentacoes', () => {

@@ -6,7 +6,17 @@ import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
-import { IconCofrinho, IconOrcamento, IconRelatorio } from '../components/icons';
+import {
+  IconAdicionar,
+  IconAvancar,
+  IconBoasVindas,
+  IconCofrinho,
+  IconEntrada,
+  IconOrcamento,
+  IconRelatorio,
+  IconSaida,
+  IconSaldo,
+} from '../components/icons';
 import { MonthNav } from '../components/month-nav';
 import { getCurrentMonth, shiftMonth } from '../utils/date';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
@@ -22,7 +32,7 @@ function calcVariacao(atual: string, anterior: string): number | null {
 function TrendBadge({ variacao, invertColor }: { variacao: number | null; invertColor?: boolean }) {
   if (variacao === null) return null;
   const isUp = variacao >= 0;
-  const arrow = isUp ? '\u2191' : '\u2193';
+  const Seta = isUp ? IconEntrada : IconSaida;
   // invertColor: for expenses, going up is bad (red) and going down is good (green)
   const colorClass = invertColor
     ? isUp
@@ -32,8 +42,11 @@ function TrendBadge({ variacao, invertColor }: { variacao: number | null; invert
       ? 'text-success'
       : 'text-danger';
   return (
-    <span className={`ml-1 text-[10px] font-semibold ${colorClass}`}>
-      {arrow} {Math.abs(variacao).toFixed(0)}%
+    <span
+      className={`ml-1 inline-flex items-center gap-0.5 text-[10px] font-semibold ${colorClass}`}
+    >
+      <Seta size={10} aria-hidden="true" />
+      {Math.abs(variacao).toFixed(0)}%
     </span>
   );
 }
@@ -108,25 +121,25 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
 
   const dashboardTourSteps = [
     {
-      icon: '👋',
+      icon: IconBoasVindas,
       title: 'Bem-vindo ao NossaGrana!',
       description:
         'Aqui é o seu painel financeiro. Você vê receitas, despesas e saldo do mês de forma rápida.',
     },
     {
-      icon: '💰',
+      icon: IconSaldo,
       title: 'Cards de resumo',
       description:
         'Os três cards no topo mostram o total de receitas, despesas e o saldo. As setas indicam se subiu ou caiu em relação ao mês anterior.',
     },
     {
-      icon: '➕',
+      icon: IconAdicionar,
       title: 'Registrar transação',
       description:
         'Toque no botão "+" (mobile) ou "Nova Transação" (desktop) para registrar uma receita ou despesa.',
     },
     {
-      icon: '📊',
+      icon: IconRelatorio,
       title: 'Gráficos e orçamento',
       description:
         'Acompanhe despesas por categoria, evolução diária e limites de orçamento — tudo nesta mesma tela.',
@@ -269,9 +282,10 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             {cofrinhos.length > 0 && (
               <button
                 onClick={() => onNavigate?.('cofrinhos')}
-                className="text-sm text-success hover:underline"
+                className="inline-flex items-center gap-1 text-sm text-success hover:underline"
               >
-                Ver todos →
+                Ver todos
+                <IconAvancar size={14} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -282,7 +296,11 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
               {cofrinhos.map((c) => (
                 <div key={c.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span>{c.emoji || '🐷'}</span>
+                    {c.emoji ? (
+                      <span>{c.emoji}</span>
+                    ) : (
+                      <IconCofrinho size={16} aria-hidden="true" />
+                    )}
                     <span className="text-sm font-medium text-text">{c.nome}</span>
                   </div>
                   <span className="text-sm font-semibold text-primary">

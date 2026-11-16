@@ -8,6 +8,7 @@ import { coreFinanceiroService, categoriaService } from '../services/core-financ
 import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
 import { CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { IconEditar, IconOrcamento, IconRelatorio, IconVoltar } from '../components/icons';
 
 interface OrcamentoItem {
   id: string;
@@ -138,19 +139,19 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
         tourKey="orcamento"
         steps={[
           {
-            icon: '🎯',
+            icon: IconOrcamento,
             title: 'Orçamento mensal',
             description:
               'Defina quanto deseja gastar no máximo por categoria. O controle ajuda a evitar surpresas no fim do mês.',
           },
           {
-            icon: '📊',
+            icon: IconRelatorio,
             title: 'Barra de progresso',
             description:
               'A barra muda de cor: verde = dentro do limite, amarelo = 80% usado, vermelho = estourou.',
           },
           {
-            icon: '✏️',
+            icon: IconEditar,
             title: 'Ajustar limites',
             description:
               'Toque em "Editar limite" para alterar o valor. A mudança vale a partir de agora e o histórico anterior é preservado.',
@@ -164,7 +165,8 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
           onClick={onBack}
           className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-surface"
         >
-          ← Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
         <div>
           <h1 className="text-xl font-bold text-text">Orçamento Mensal</h1>

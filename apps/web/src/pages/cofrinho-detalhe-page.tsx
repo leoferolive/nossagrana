@@ -10,6 +10,7 @@ import { novaChaveIdempotencia } from '../services/idempotencia';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatDataBR } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
+import { IconEntrada, IconSaida, IconVoltar } from '../components/icons';
 
 interface CofrinhoDetalhePageProps {
   familiaId: string;
@@ -102,9 +103,10 @@ export function CofrinhoDetalhePage({
           type="button"
           aria-label="Voltar"
           onClick={onBack}
-          className="text-sm font-medium text-primary transition hover:opacity-80"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary transition hover:opacity-80"
         >
-          &larr; Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
       </div>
 
@@ -229,7 +231,11 @@ export function CofrinhoDetalhePage({
                     <span
                       className={`text-lg font-bold ${isAporte ? 'text-success' : 'text-danger'}`}
                     >
-                      {isAporte ? '\u2191' : '\u2193'}
+                      {isAporte ? (
+                        <IconEntrada size={18} aria-hidden="true" />
+                      ) : (
+                        <IconSaida size={18} aria-hidden="true" />
+                      )}
                     </span>
                     <div className="flex flex-1 flex-col">
                       <span className="text-sm font-semibold text-text">

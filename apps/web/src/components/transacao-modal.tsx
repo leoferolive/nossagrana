@@ -9,7 +9,7 @@ import {
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { getTodayLocalISO } from '@/utils/date';
-import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
+import { IconFechar, IconMicrofone, IconParcelas, IconRecorrente } from './icons';
 import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
 import { CustomSelect } from './ui/custom-select';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
@@ -202,7 +202,7 @@ export const TransacaoModal = ({
             onClick={onClose}
             className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
-            ✕
+            <IconFechar size={18} aria-hidden="true" />
           </button>
         </div>
 

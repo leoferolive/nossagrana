@@ -5,6 +5,7 @@ import { LancamentosResumo } from '@/components/lancamentos-resumo';
 import { TemplateGrupo } from '@/components/template-grupo';
 import { TemplatesGerenciarModal } from '@/components/templates-gerenciar-modal';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
+import { IconMesAnterior, IconProximoMes, IconTemplates } from '../components/icons';
 
 interface LancamentosPageProps {
   familiaId: string;
@@ -117,7 +118,7 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
             onClick={() => setMesReferencia(addMonths(mesReferencia, -1))}
             className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface hover:text-text"
           >
-            ◀
+            <IconMesAnterior size={18} aria-hidden="true" />
           </button>
           <span className="text-sm font-semibold text-text">{formatMesLabel(mesReferencia)}</span>
           <button
@@ -126,14 +127,14 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
             onClick={() => setMesReferencia(addMonths(mesReferencia, 1))}
             className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface hover:text-text"
           >
-            ▶
+            <IconProximoMes size={18} aria-hidden="true" />
           </button>
         </div>
 
         {templates.length === 0 ? (
           /* Empty state */
           <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-            <div className="text-5xl">📋</div>
+            <IconTemplates size={48} aria-hidden="true" className="text-text-dim" />
             <p className="text-center text-sm text-text-muted">Nenhum template cadastrado.</p>
             <p className="text-center text-xs text-text-muted">
               Configure templates nas configurações para agilizar seus lançamentos mensais.

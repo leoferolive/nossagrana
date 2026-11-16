@@ -6,6 +6,7 @@ import {
   IconCartao,
   IconChevron,
   IconCofrinho,
+  IconConfiguracoes,
   IconExtrato,
   IconFamilia,
   IconHistorico,
@@ -102,7 +103,7 @@ export const ConfiguracoesPage = ({
         tourKey="configuracoes"
         steps={[
           {
-            icon: '⚙️',
+            icon: IconConfiguracoes,
             title: 'Configurações',
             description:
               'Aqui você acessa categorias, cartões, orçamento, família e perfil. No desktop, tudo aparece na barra lateral.',

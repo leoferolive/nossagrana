@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 
 import { metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 
 import type { MetodoPagamentoCreateRequest } from '@nossagrana/types';
-import { CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { IconCartao, IconDinheiro, IconPix, IconVoltar } from '../components/icons';
 
 interface MetodosPagamentoPageProps {
   familiaId: string;
@@ -28,11 +30,16 @@ const TIPO_COLOR: Record<TipoMetodo, string> = {
   dinheiro: 'bg-text-dim/10 text-text-muted',
 };
 
-const TIPO_ICON: Record<TipoMetodo, string> = {
-  credito: '\uD83D\uDCB3',
-  debito: '\uD83D\uDCB3',
-  pix: '\u26A1',
-  dinheiro: '\uD83D\uDCB5',
+const TIPO_ICON: Record<TipoMetodo, LucideIcon> = {
+  credito: IconCartao,
+  debito: IconCartao,
+  pix: IconPix,
+  dinheiro: IconDinheiro,
+};
+
+const TipoIcone = ({ tipo }: { tipo: TipoMetodo }) => {
+  const Icone = TIPO_ICON[tipo];
+  return <Icone size={20} />;
 };
 
 const TIPO_ICON_BG: Record<TipoMetodo, string> = {
@@ -113,9 +120,9 @@ export const MetodosPagamentoPage = ({
           type="button"
           onClick={onBack}
           aria-label="Voltar"
-          className="text-text-muted transition hover:text-text"
+          className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
         >
-          ←
+          <IconVoltar size={20} aria-hidden="true" />
         </button>
         <h1 className="text-lg font-bold text-text">Cartões e Pagamentos</h1>
         <div className="flex-1" />
@@ -240,7 +247,7 @@ export const MetodosPagamentoPage = ({
                   className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl ${TIPO_ICON_BG[m.tipo]}`}
                   aria-hidden="true"
                 >
-                  {TIPO_ICON[m.tipo]}
+                  <TipoIcone tipo={m.tipo} />
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2">

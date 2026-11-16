@@ -20,10 +20,15 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 import { FirstTimeTour } from './first-time-tour';
+import { IconBoasVindas, IconSaldo } from './icons';
 
 const steps = [
-  { icon: '👋', title: 'Bem-vindo!', description: 'Esta é a tela principal.' },
-  { icon: '💰', title: 'Transações', description: 'Clique em + para adicionar uma transação.' },
+  { icon: IconBoasVindas, title: 'Bem-vindo!', description: 'Esta é a tela principal.' },
+  {
+    icon: IconSaldo,
+    title: 'Transações',
+    description: 'Clique em + para adicionar uma transação.',
+  },
   { title: 'Fim', description: 'Pronto para usar!' },
 ];
 
@@ -50,7 +55,7 @@ describe('FirstTimeTour', () => {
   it('exibe ícone do step quando fornecido', () => {
     localStorageMock.getItem.mockReturnValue(null as unknown as string);
     render(<FirstTimeTour tourKey="dashboard" steps={steps} />);
-    expect(screen.getByText('👋')).toBeInTheDocument();
+    expect(screen.getByRole('dialog').querySelector('svg.lucide-hand')).toBeInTheDocument();
   });
 
   it('avança para o próximo passo', () => {

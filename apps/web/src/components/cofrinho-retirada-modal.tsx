@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
+import { IconFechar } from './icons';
 
 interface CofrinhoRetiradaModalProps {
   open: boolean;
@@ -67,7 +68,7 @@ export const CofrinhoRetiradaModal = ({
             onClick={onClose}
             className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
-            ✕
+            <IconFechar size={18} aria-hidden="true" />
           </button>
         </div>
 

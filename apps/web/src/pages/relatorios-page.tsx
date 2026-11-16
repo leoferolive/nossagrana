@@ -16,6 +16,7 @@ import type {
 } from '@nossagrana/types';
 
 import { formatBRL } from '../utils/formatting';
+import { IconRecorrente, IconRelatorio } from '../components/icons';
 
 type Tab = 'distribuicao' | 'por-membro' | 'tendencias';
 
@@ -94,13 +95,13 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
         tourKey="relatorios"
         steps={[
           {
-            icon: '📊',
+            icon: IconRelatorio,
             title: 'Relatórios',
             description:
               'Analise seus gastos de diferentes ângulos: distribuição por categoria, comparação entre membros e tendências ao longo dos meses.',
           },
           {
-            icon: '🔄',
+            icon: IconRecorrente,
             title: 'Abas de visualização',
             description:
               'Alterne entre Distribuição, Por Membro e Tendências usando as abas no topo.',

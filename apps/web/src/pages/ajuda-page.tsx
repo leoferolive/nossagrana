@@ -12,7 +12,7 @@ const FAQ = [
       {
         pergunta: 'Como cadastrar uma transação?',
         resposta:
-          "Clique no botão 'Nova Transação' no canto superior direito. Preencha valor, categoria, descrição e método de pagamento. Clique em 'Salvar'.",
+          "Toque no botão + (Lançar) da barra inferior. No computador, use 'Nova Transação' no topo da tela. Preencha valor, categoria, descrição e método de pagamento. Clique em 'Salvar'.",
       },
       {
         pergunta: 'Como funciona o parcelamento?',

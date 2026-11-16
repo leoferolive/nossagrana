@@ -55,6 +55,8 @@ export const useFluxoSessao = () => {
   const naTelaDeFamilias = pathname === CAMINHOS.familias;
   useEffect(() => {
     if (!naTelaDeFamilias || !isAuthenticated || familiasDoUsuario.length > 0) return;
+    // Cada tentativa começa sem o aviso da anterior.
+    setErroFamilias(null);
     familiaService
       .listarMinhas()
       .then((res) => setFamiliasDoUsuario(res.familias))

@@ -20,6 +20,7 @@ const GRUPOS: Array<[string, Array<[string, string]>]> = [
   [
     'Planejar',
     [
+      ['Planejar', '/planejar'],
       ['Contas do mês', '/planejar/contas'],
       ['Limites por categoria', '/planejar/limites'],
       ['Cofrinhos', '/planejar/cofrinhos'],
@@ -86,6 +87,15 @@ describe('Sidebar', () => {
         expect(grupo.getByRole('link', { name: rotulo })).toHaveAttribute('href', destino);
       }
     }
+  });
+
+  it('em Contas do mês, marca só Contas do mês e não o Planejar', () => {
+    renderSidebar('/planejar/contas');
+    expect(screen.getByRole('link', { name: 'Contas do mês' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: 'Planejar' })).not.toHaveAttribute('aria-current');
   });
 
   it('marca o item do endereço atual', () => {

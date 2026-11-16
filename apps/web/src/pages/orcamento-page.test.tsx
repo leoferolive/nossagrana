@@ -40,7 +40,7 @@ describe('OrcamentoPage', () => {
   it('renders heading', async () => {
     renderPagina(<OrcamentoPage familiaId={familiaId} />);
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /orçamento mensal/i })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: /^limites por categoria$/i })).toBeInTheDocument(),
     );
   });
 
@@ -97,7 +97,9 @@ describe('OrcamentoPage', () => {
   it('mostra o título como heading de nível 1 e o Voltar leva a Planejar (link direto)', async () => {
     renderPagina(<OrcamentoPage familiaId={familiaId} />, '/planejar/limites');
     await waitFor(() => screen.getByRole('button', { name: 'Voltar' }));
-    expect(screen.getByRole('heading', { level: 1, name: /orçamento/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /^limites por categoria$/i }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });

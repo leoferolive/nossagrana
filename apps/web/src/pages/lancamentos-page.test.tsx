@@ -225,14 +225,12 @@ describe('LancamentosPage', () => {
 
   it('exibe título da página', () => {
     renderPagina(<LancamentosPage {...defaultProps} />);
-    expect(screen.getByText('Lançamentos do Mês')).toBeInTheDocument();
+    expect(screen.getByText('Contas do mês')).toBeInTheDocument();
   });
 
   it('mostra o título como heading de nível 1 e o Voltar leva a Planejar (link direto)', () => {
     renderPagina(<LancamentosPage {...defaultProps} />, '/planejar/contas');
-    expect(
-      screen.getByRole('heading', { level: 1, name: /lançamentos do mês/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /^contas do mês$/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/planejar$/);
   });

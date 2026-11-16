@@ -136,7 +136,7 @@ export const OrcamentoPage = ({ familiaId }: OrcamentoPageProps) => {
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <CabecalhoDetalhe
-        titulo="Orçamento Mensal"
+        titulo="Limites por categoria"
         origem={CAMINHOS.planejar}
         subtitulo={
           orcamentos.length > 0 && orcamentos[0].vigenciaInicio

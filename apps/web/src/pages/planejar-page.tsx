@@ -75,7 +75,7 @@ const Linha = ({ linha }: { linha: LinhaDoPlano }) => {
       >
         <Icone size={20} className="text-text-muted" aria-hidden="true" />
         <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
-          <span className="whitespace-nowrap">{linha.rotulo}</span>
+          <span className="max-w-full break-words">{linha.rotulo}</span>
           {linha.resumo && (
             <span className="text-[13px] font-semibold tabular-nums text-text-dim">
               {linha.resumo}

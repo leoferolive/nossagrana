@@ -29,6 +29,7 @@ const GRUPO_DE_ABAS: GrupoDeMenu = {
 const GRUPO_PLANEJAR: GrupoDeMenu = {
   titulo: 'Planejar',
   itens: [
+    { rotulo: 'Planejar', caminho: CAMINHOS.planejar, icone: IconPlanejar },
     { rotulo: 'Contas do mês', caminho: CAMINHOS.contas, icone: IconPlanejar },
     { rotulo: 'Limites por categoria', caminho: CAMINHOS.limites, icone: IconOrcamento },
     { rotulo: 'Cofrinhos', caminho: CAMINHOS.cofrinhos, icone: IconCofrinho },
@@ -39,7 +40,7 @@ const GRUPOS: GrupoDeMenu[] = [GRUPO_DE_ABAS, GRUPO_PLANEJAR, ...GRUPOS_DE_MAIS]
 
 /** O item fica marcado no próprio endereço e nos de baixo (cofrinho aberto marca Cofrinhos). */
 const estaAtivo = (pathname: string, caminho: string): boolean =>
-  caminho === CAMINHOS.inicio
+  caminho === CAMINHOS.inicio || caminho === CAMINHOS.planejar
     ? pathname === caminho
     : pathname === caminho || pathname.startsWith(`${caminho}/`);
 

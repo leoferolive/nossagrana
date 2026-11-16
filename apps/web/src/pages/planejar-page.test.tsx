@@ -121,8 +121,10 @@ describe('PlanejarPage', () => {
     renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
     const contas = await linha(/contas do mês/i);
     const titulo = within(contas).getByText('Contas do mês');
-    expect(titulo).toHaveClass('whitespace-nowrap');
     expect(titulo.parentElement).toHaveClass('flex-wrap');
+    // Nome comprido quebra linha, nunca é cortado nem estoura o cartão.
+    expect(titulo).toHaveClass('max-w-full', 'break-words');
+    expect(titulo.className).not.toMatch(/nowrap|truncate|ellipsis/);
   });
 
   it('Cofrinhos: "N ativos"', async () => {

@@ -100,4 +100,11 @@ describe('AjudaPage', () => {
     expect(localStorage.getItem('tour-boas-vindas')).toBeNull();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
   });
+
+  it('a resposta de cadastrar transação descreve o "+" da barra, não um botão no canto', () => {
+    renderPagina(<AjudaPage />);
+    fireEvent.click(screen.getByText('Como cadastrar uma transação?'));
+    expect(screen.getByText(/botão \+ \(Lançar\) da barra inferior/i)).toBeInTheDocument();
+    expect(screen.queryByText(/canto superior direito/i)).not.toBeInTheDocument();
+  });
 });

@@ -84,6 +84,27 @@ describe('App > Alternar família com uma família só', () => {
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/familias$/);
   });
 
+  it('o aviso some quando a lista volta a carregar', async () => {
+    const { familiaService } = await import('./services/auth.service');
+    vi.mocked(familiaService.listarMinhas).mockRejectedValueOnce(new Error('rede'));
+    renderApp(['/', '/familias']);
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+    vi.mocked(familiaService.listarMinhas).mockResolvedValue({
+      familias: [{ id: 'fam-test', nome: 'Casa', dataEntrada: '2026-01-01', role: 'admin' }],
+    });
+    fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
+    fireEvent.click(await barraInferior().findByRole('link', { name: 'Mais' }));
+    fireEvent.click(
+      await within(await waitFor(() => screen.getByRole('main'))).findByRole('link', {
+        name: 'Alternar família',
+      }),
+    );
+
+    expect(await screen.findByRole('button', { name: /casa/i })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('sem família ativa, a lista que falha leva às boas-vindas', async () => {
     const { familiaService } = await import('./services/auth.service');
     const { useAuth } = await import('./contexts/use-auth');

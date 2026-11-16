@@ -75,7 +75,7 @@ export function LancamentosPage({ familiaId }: LancamentosPageProps) {
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <CabecalhoDetalhe
-        titulo="Lançamentos do Mês"
+        titulo="Contas do mês"
         origem={CAMINHOS.planejar}
         acao={
           <button

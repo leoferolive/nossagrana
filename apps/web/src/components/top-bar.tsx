@@ -7,28 +7,22 @@ interface TopBarProps {
   onNovaTransacao: () => void;
 }
 
-const screenTitles: Record<string, string> = {
+// No desktop o título de cada aba vive aqui (o cabeçalho de aba esconde o dele). As telas de
+// detalhe mostram o próprio título no cabeçalho de detalhe, então esta barra não o repete.
+const TITULOS_DE_ABA: Record<string, string> = {
   dashboard: 'Início',
   extrato: 'Extrato',
-  relatorios: 'Relatórios',
-  historico: 'Histórico',
-  categorias: 'Categorias',
-  'metodos-pagamento': 'Métodos de pagamento',
-  orcamento: 'Orçamento',
-  'family-settings': 'Família',
-  ajuda: 'Ajuda / FAQ',
-  mais: 'Mais',
   planejar: 'Planejar',
-  lancamentos: 'Lançamentos do Mês',
-  perfil: 'Perfil',
-  fatura: 'Fatura',
-  cofrinhos: 'Cofrinhos',
-  'cofrinho-detalhe': 'Detalhe do Cofrinho',
+  mais: 'Mais',
 };
 
 export const TopBar = ({ currentScreen, onNovaTransacao }: TopBarProps) => (
   <header className="sticky top-0 z-barra flex items-center justify-between border-b border-border bg-bg px-8 py-3">
-    <h2 className="text-lg font-bold text-text">{screenTitles[currentScreen] ?? 'NossaGrana'}</h2>
+    {TITULOS_DE_ABA[currentScreen] ? (
+      <h2 className="text-lg font-bold text-text">{TITULOS_DE_ABA[currentScreen]}</h2>
+    ) : (
+      <span />
+    )}
     <button
       type="button"
       onClick={onNovaTransacao}

@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { mockSessao, resetAppMocks } from '@/test/app-mocks';
+import { barraInferior } from '@/test/barra-inferior';
 import { renderApp } from '@/test/render-app';
 
 import { useAuth } from './contexts/use-auth';
@@ -270,7 +271,7 @@ describe('App > troca de família com id no endereço', () => {
     it('fatura aberta por Planejar', async () => {
       await prepararFamilias();
       renderApp('/');
-      fireEvent.click(await screen.findByRole('link', { name: 'Planejar' }));
+      fireEvent.click(await barraInferior().findByRole('link', { name: 'Planejar' }));
       fireEvent.click(await screen.findByRole('link', { name: /fatura nubank/i }));
       await screen.findByRole('heading', { name: /fatura — nubank/i });
       await trocarParaPraia();

@@ -29,11 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2 em
 andamento: o PR 1 dela (#188, Rotas com URL) deu endereço a toda tela, e o voltar
 do Android, recarregar e link direto já funcionam; a barra, a tela Configurações
-e os cabeçalhos ainda são os antigos. **Próximo passo:** escrever o plano do PR 2
-da Entrega 2 (barra de cinco, Mais, Planejar, cabeçalhos únicos e tour) em
-`docs/superpowers/plans/`, a partir do
-[desenho da Entrega 2](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md),
-e executá-lo. Depois, o PR 3 (E2E).
+e os cabeçalhos ainda são os antigos. **Próximo passo:** executar o
+[plano do PR 2 da Entrega 2](../superpowers/plans/2026-11-16-nova-ui-entrega-2-pr2-navegacao.md)
+(barra de cinco, Mais, Planejar, cabeçalhos únicos e tour) na branch
+`feat/nova-ui-e2-navegacao`. Depois, o PR 3 (E2E).
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -195,6 +194,8 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 2, PR 1, correções da revisão de código: encerrar o painel de lançar (X, salvar, excluir, envio que termina, toque duplo) anda no histórico uma só vez por abertura; `usePainelLancar` e a área logada em funções menores; a escolha de família limpa a store de métodos de pagamento, e entradas de cofrinho/fatura guardam a família em que foram abertas (`state.familiaId`), então voltar do navegador a uma delas, já em outra família, vai ao Início.
 - 2026-11-16 — Entrega 2, PR 1: `limparDadosDaFamilia` (`stores/limpar-dados-da-familia.ts`) zera as stores globais com dado de família (categorias, cofrinhos, dashboard, métodos, modelos e transações) na escolha de família, ao sair e ao entrar; sessão e websocket ficam de fora. Antes o Início mostrava o cofrinho da família ou conta anterior até a nova resposta chegar.
 - 2026-11-16 — Entrega 2, PR 1, achado do Codex: o rascunho de voz agora é descartado sempre que o painel de lançar passa a fechado (inclusive pelo voltar do histórico), e não só nos callbacks do modal; antes ele sobrescrevia o lançamento seguinte.
+- 2026-11-16 — PR 1 da Entrega 2 (#188) mergeado. Plano do PR 2 (barra de cinco,
+  Mais, Planejar, cabeçalhos e tour) escrito.
 
 ## Decisões fechadas
 

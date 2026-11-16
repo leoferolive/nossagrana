@@ -26,13 +26,11 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2
-concluída: o PR 1 (#188) deu endereço a toda tela, e o PR 2 trocou a navegação
-visível do celular (barra de cinco com o "+" dentro, tela Mais no lugar de
-Configurações, tela Planejar como entrada, cabeçalhos únicos e um só tour). O
-PR 3 ajustou os seis specs do E2E à navegação nova. O miolo de Extrato, Lançar e
-Início ainda é o antigo. **Próximo passo:** o desenho da Entrega 3 (Extrato e
-Lançar), para aprovação do usuário.
+**Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
+e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
+Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
+Lançar e Início ainda é o antigo. **Próximo passo:** escrever o desenho curto da
+Entrega 3 (Extrato e Lançar) e levá-lo ao usuário para aprovação.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -115,6 +113,18 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
 parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
 R$ 99,99). A sobra deveria ir para a parcela 1.
+
+Defeitos do app achados ao ajustar os testes E2E (PR 3 da Entrega 2), ainda sem
+correção:
+
+- Editar o limite de uma categoria na mesma vigência grava outra linha, e a
+  tela de limites mostra a categoria duas vezes (teste em `test.fixme` em
+  `orcamento.spec.ts`).
+- Aprovar uma solicitação de entrada não recarrega a lista de membros na tela
+  da família; o novo membro só aparece ao recarregar.
+- Estourar o limite de requisições no login devolve erro 500 em vez de 429.
+- A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
+  testes E2E tentavam usar para limpar os usuários criados.
 
 Pontos menores que ficaram do PR 2 da Entrega 2 (validação no navegador):
 

@@ -29,9 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entrega 1 concluída, em dois PRs: #183 (Correções) e
 #186 (Base visual). O app está no tema claro, com Manrope, campos em 16px, alvos
 de toque de 44px e ícones lucide; a navegação e o desenho das telas ainda são os
-antigos. **Próximo passo:** escrever o desenho curto da Entrega 2 (Navegação) e
-levá-lo ao usuário para aprovação. A pergunta em aberto que trava esse desenho é
-a biblioteca de rotas.
+antigos. O desenho da Entrega 2 (Navegação) está escrito. **Próximo passo:** o
+usuário aprovar o
+[desenho da Entrega 2](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md);
+em seguida, o plano do primeiro PR dela (Rotas com URL).
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -71,6 +72,11 @@ visual (as demais). Desenho em
 
 ### Entrega 2 — Navegação
 
+Sai em três PRs em sequência: rotas com URL; barra de cinco, Mais, Planejar,
+cabeçalhos e tour; E2E. Desenho em
+[`2026-11-16-nova-ui-entrega-2-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md).
+
+- [ ] Desenho da Entrega 2 aprovado pelo usuário
 - [ ] Rotas com URL (voltar do Android, recarregar mantém a tela, link direto)
 - [ ] Barra de cinco posições com o "+" dentro
 - [ ] Cabeçalho único de aba e de passo/detalhe
@@ -171,6 +177,8 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Campos com 44px de altura (`py-2` em `CAMPO_CLASSES`). PR 2 (#186)
   validado em duas rodadas no navegador (todas as telas e modais em 390×844),
   revisado por subagente e pelo Codex, sem pendências. Entrega 1 concluída.
+- 2026-11-16 — PR 2 (#186) mergeado. Desenho da Entrega 2 (Navegação) escrito,
+  aguardando aprovação do usuário.
 
 ## Decisões fechadas
 
@@ -358,7 +366,8 @@ Ao terminar, encerre os processos e rode
 
 1. **O que "Confirmar lazer" gera** (Entrega 4): um lançamento por pessoa, uma
    transferência ou só o registro do valor disponível?
-2. **Biblioteca de rotas** para a Entrega 2.
+2. **Biblioteca de rotas** para a Entrega 2. Proposta no desenho da entrega:
+   `react-router` 7, no modo declarativo; vale quando o desenho for aprovado.
 3. **Emoji do cofrinho** (Entrega 4): o emoji que a família escolhe para cada
    cofrinho (`cofrinhos.emoji`) continua, ou vira um seletor de ícones lucide? A
    Entrega 1 não mexe nele.

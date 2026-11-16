@@ -88,9 +88,9 @@ export const PieChart = ({ data: todos, size = 120 }: PieChartProps) => {
           slices.map((s, i) => <path key={i} d={s.path} fill={s.color} />)
         )}
       </svg>
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
         {slices.map((s, i) => (
-          <li key={i} className="flex items-center gap-2 text-xs">
+          <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
             <span
               className="inline-block h-2 w-2 rounded-full shrink-0"
               style={{ background: s.color }}

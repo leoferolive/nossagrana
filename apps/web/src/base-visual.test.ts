@@ -49,7 +49,8 @@ describe('área segura do iPhone', () => {
 
   it('o AppShell reserva a barra mais a área segura e sobe o "+" na mesma medida', () => {
     // 144px = barra (68px) + "+" (56px) + folga, para o último item rolar acima do "+".
-    expect(appShell).toContain('pb-[calc(68px+env(safe-area-inset-bottom))]');
+    // 144px = barra (68px) + "+" (56px) + folga, para o último item rolar acima do "+".
+    expect(appShell).toContain('pb-[calc(144px+env(safe-area-inset-bottom))]');
     expect(appShell).toContain('bottom-[calc(80px+env(safe-area-inset-bottom))]');
   });
 

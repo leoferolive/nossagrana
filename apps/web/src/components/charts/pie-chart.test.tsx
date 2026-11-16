@@ -21,6 +21,14 @@ function expectAnelCompleto(container: HTMLElement) {
 }
 
 describe('PieChart', () => {
+  it('a legenda quebra linha em vez de estourar o cartão com valores grandes', () => {
+    render(<PieChart data={[{ label: 'Moradia', value: 2345808.89 }]} />);
+
+    const item = screen.getByText('Moradia').closest('li');
+    expect(item).toHaveClass('flex-wrap');
+    expect(item?.parentElement).toHaveClass('min-w-0');
+  });
+
   // Regressão: com 100% em uma fatia o arco começava e terminava no mesmo
   // ponto e o SVG não desenhava nada.
   it('desenha um anel completo quando há uma única categoria', () => {

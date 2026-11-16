@@ -110,7 +110,7 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
       />
       <ErrorBanner error={erro} />
 
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="text-2xl font-bold text-text md:hidden">Relatórios</h1>
         <MonthNav
           mesReferencia={mesReferencia}

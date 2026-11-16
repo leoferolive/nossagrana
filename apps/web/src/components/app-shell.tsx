@@ -90,8 +90,8 @@ export const AppShell = ({
           <TopBar currentScreen={currentScreen} onNovaTransacao={onNovaTransacao} />
         </div>
 
-        {/* Conteúdo — padding-bottom no mobile para não ficar atrás da BottomNav */}
-        <main className="flex-1 overflow-y-auto pb-[calc(68px+env(safe-area-inset-bottom))] md:pb-0">
+        {/* Conteúdo — padding-bottom no mobile para o último item rolar acima da BottomNav e do "+" */}
+        <main className="flex-1 overflow-y-auto pb-[calc(144px+env(safe-area-inset-bottom))] md:pb-0">
           {children}
         </main>
 

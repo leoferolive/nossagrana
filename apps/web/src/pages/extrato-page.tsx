@@ -11,7 +11,7 @@ import {
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
-import { formatMesLabel, getCurrentMonth, shiftMonth } from '@/utils/date';
+import { formatMesTitulo, getCurrentMonth, shiftMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
 import {
@@ -147,7 +147,7 @@ export const ExtratoPage = ({
   const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
   const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
-  const mesLabel = formatMesLabel(mesReferencia);
+  const mesLabel = formatMesTitulo(mesReferencia);
   const isCurrentMonth = mesReferencia === getCurrentMonth();
 
   const transacoesFiltradas = useMemo(
@@ -225,9 +225,9 @@ export const ExtratoPage = ({
 
       {/* Header — título + mês + filtros */}
       <header className="border-b border-border px-4 py-4 md:px-6">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-text md:hidden">Extrato</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={handleMesAnterior}
@@ -236,9 +236,7 @@ export const ExtratoPage = ({
             >
               <IconMesAnterior size={18} aria-hidden="true" />
             </button>
-            <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
-              {mesLabel}
-            </span>
+            <span className="min-w-[120px] text-center text-sm text-text-muted">{mesLabel}</span>
             <button
               type="button"
               onClick={handleMesProximo}
@@ -252,7 +250,7 @@ export const ExtratoPage = ({
           <button
             type="button"
             onClick={exportarCSV}
-            className={`${ALVO_TOQUE_CLASSES} rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
+            className={`${ALVO_TOQUE_CLASSES} shrink-0 whitespace-nowrap rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
             aria-label="Exportar CSV"
           >
             Exportar CSV

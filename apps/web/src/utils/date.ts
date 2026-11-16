@@ -43,6 +43,12 @@ export function formatMesLabel(mesReferencia: string): string {
   });
 }
 
+/** "Novembro de 2026": só a primeira letra maiúscula (a classe `capitalize` poria "De"). */
+export function formatMesTitulo(mesReferencia: string): string {
+  const rotulo = formatMesLabel(mesReferencia);
+  return rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
+}
+
 /**
  * Formats a YYYY-MM reference as a short pt-BR label like "nov. de 2026".
  *

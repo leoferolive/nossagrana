@@ -47,10 +47,15 @@ describe('área segura do iPhone', () => {
     expect(spacing?.safe).toBe('env(safe-area-inset-bottom)');
   });
 
-  it('o AppShell reserva a barra mais a área segura e sobe o "+" na mesma medida', () => {
-    // 144px = barra (68px) + "+" (56px) + folga, para o último item rolar acima do "+".
-    expect(appShell).toContain('pb-[calc(144px+env(safe-area-inset-bottom))]');
-    expect(appShell).toContain('bottom-[calc(80px+env(safe-area-inset-bottom))]');
+  it('o AppShell reserva a barra, a folga do "+" e a área segura no fim do <main>', () => {
+    // 112px = barra (84px) + os 28px que o "+" sobe acima dela, para o último item rolar livre.
+    expect(appShell).toContain('pb-[calc(112px+env(safe-area-inset-bottom))]');
+  });
+
+  it('a barra tem 84px de altura mais a área segura (pb-safe)', () => {
+    const barra = fonte('./components/bottom-nav.tsx');
+    expect(barra).toContain('h-[84px]');
+    expect(barra).toContain('pb-safe');
   });
 
   it.each([
@@ -196,9 +201,10 @@ describe('escala de z-index', () => {
     },
   );
 
-  it('o "+" do AppShell fica abaixo dos painéis e acima da barra', () => {
-    const botao = appShell.slice(appShell.indexOf('aria-label={onVoiceActivate'));
-    expect(botao).toContain('z-lancar');
+  it('o "+" da barra usa z-lancar, abaixo dos painéis (z-painel)', () => {
+    const barra = fonte('./components/bottom-nav.tsx');
+    expect(barra).toContain('z-lancar');
+    expect(barra).not.toContain('z-painel');
   });
 
   it('a barra inferior usa z-barra', () => {

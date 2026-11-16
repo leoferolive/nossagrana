@@ -46,9 +46,9 @@ describe('App > rotas > a tela vem do endereço', () => {
 
   it('clicar em "Ver extrato" a partir do Início muda a tela e o endereço', async () => {
     renderApp('/');
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Extrato' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Extrato' }));
 
     expect(tituloNoConteudo(/^extrato$/i)).toBeInTheDocument();
     expect(screen.getByTestId('sonda-local')).toHaveTextContent('/extrato');
@@ -204,7 +204,7 @@ describe('App > guardas > sessão e retorno ao endereço pedido', () => {
 
     expect(await screen.findByRole('form', { name: /login/i })).toBeInTheDocument();
     // A casca (barra inferior) só existe nas telas protegidas.
-    expect(screen.queryByRole('button', { name: /ver extrato/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Extrato' })).not.toBeInTheDocument();
     expect(local()).toHaveTextContent(/^\/entrar$/);
   });
 
@@ -228,7 +228,7 @@ describe('App > o "Voltar" da tela e o voltar do navegador', () => {
 
   it('Início, Config, Categorias e "Voltar" da tela: o voltar do navegador termina no Início', async () => {
     renderApp('/');
-    fireEvent.click(await screen.findByRole('button', { name: /ver configurações/i }));
+    fireEvent.click(await screen.findByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
     fireEvent.click(await within(main).findByRole('button', { name: /categorias/i }));
     await waitFor(() => tituloNoConteudo(/^categorias$/i));

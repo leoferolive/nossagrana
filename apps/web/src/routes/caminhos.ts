@@ -68,3 +68,16 @@ export const telaDoCaminho = (pathname: string): string => {
 /** Endereços que carregam id de outro registro (cofrinho, método de pagamento) no caminho. */
 export const ehEnderecoComId = (pathname: string): boolean =>
   pathname.startsWith(PREFIXO_COFRINHO) || pathname.startsWith(PREFIXO_FATURA);
+
+export type AbaDaBarra = 'inicio' | 'extrato' | 'planejar' | 'mais';
+
+const ehCaminhoDaAba = (pathname: string, raiz: string): boolean =>
+  pathname === raiz || pathname.startsWith(`${raiz}/`);
+
+/** Aba da barra inferior que fica marcada em cada endereço, inclusive nas telas de segundo nível. */
+export const abaDoCaminho = (pathname: string): AbaDaBarra => {
+  if (ehCaminhoDaAba(pathname, CAMINHOS.extrato)) return 'extrato';
+  if (ehCaminhoDaAba(pathname, CAMINHOS.planejar)) return 'planejar';
+  if (ehCaminhoDaAba(pathname, CAMINHOS.mais)) return 'mais';
+  return 'inicio';
+};

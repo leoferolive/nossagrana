@@ -196,7 +196,7 @@ describe('App > troca de família com id no endereço', () => {
     const { familiaService } = await import('./services/auth.service');
     renderApp('/');
     expect(await screen.findByText(/viagem europa/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     fireEvent.click(
       await within(screen.getByRole('main')).findByRole('button', { name: /sair da conta/i }),
     );

@@ -17,15 +17,15 @@ describe('App > fluxo autenticado com familia > navegação', () => {
 
   it('navega para ExtratoPage ao clicar em Extrato', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver extrato/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver extrato/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Extrato' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Extrato' }));
     expect(screen.getAllByRole('heading', { name: /extrato/i }).length).toBeGreaterThan(0);
   });
 
   it('navega para CategoriasPage ao clicar em Categorias', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
     await waitFor(() => within(main).getByRole('button', { name: /categorias/i }));
     fireEvent.click(within(main).getByRole('button', { name: /categorias/i }));
@@ -34,8 +34,8 @@ describe('App > fluxo autenticado com familia > navegação', () => {
 
   it('navega para MetodosPagamentoPage ao clicar em Cartões', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
     await waitFor(() => within(main).getByRole('button', { name: /cart.es \/ pagamentos/i }));
     fireEvent.click(within(main).getByRole('button', { name: /cart.es \/ pagamentos/i }));
@@ -46,8 +46,8 @@ describe('App > fluxo autenticado com familia > navegação', () => {
 
   it('navega para OrcamentoPage ao clicar em Orçamento', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
     await waitFor(() => within(main).getByRole('button', { name: /orçamento mensal/i }));
     fireEvent.click(within(main).getByRole('button', { name: /orçamento mensal/i }));
@@ -58,8 +58,8 @@ describe('App > fluxo autenticado com familia > navegação', () => {
 
   it('navega para RelatoriosPage ao clicar em Relatórios', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver relatórios/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver relatórios/i }));
+    await waitFor(() => screen.getByRole('button', { name: 'Relatórios' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Relatórios' }));
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /relatórios/i })).toBeInTheDocument(),
     );
@@ -67,8 +67,8 @@ describe('App > fluxo autenticado com familia > navegação', () => {
 
   it('navega para HistoricoPage ao clicar em Ver histórico', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     const main = screen.getByRole('main');
     await waitFor(() => within(main).getByRole('button', { name: /histórico de meses/i }));
     fireEvent.click(within(main).getByRole('button', { name: /histórico de meses/i }));
@@ -77,15 +77,15 @@ describe('App > fluxo autenticado com familia > navegação', () => {
 
   it('navega para ConfiguracoesPage ao clicar em Ver configurações', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     expect(screen.getAllByRole('heading', { name: /configurações/i }).length).toBeGreaterThan(0);
   });
 
   it('navega para PerfilPage a partir das configurações', async () => {
     renderApp();
-    await waitFor(() => screen.getByRole('button', { name: /ver configurações/i }));
-    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    await waitFor(() => screen.getByRole('link', { name: 'Mais' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Mais' }));
     fireEvent.click(screen.getByRole('button', { name: /perfil \/ conta/i }));
     await waitFor(() =>
       expect(screen.getAllByRole('heading', { name: /perfil/i }).length).toBeGreaterThan(0),

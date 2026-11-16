@@ -24,8 +24,7 @@ vi.mock('./hooks/use-speech-recognition', () => ({
 const local = () => screen.getByTestId('sonda-local');
 const tituloNoConteudo = (nome: RegExp) =>
   within(screen.getByRole('main')).getByRole('heading', { level: 1, name: nome });
-const abrirPainelNovo = () =>
-  fireEvent.click(screen.getAllByRole('button', { name: /^nova transação/i })[0]);
+const abrirPainelNovo = () => fireEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 const voltar = () => fireEvent.click(screen.getByRole('button', { name: /histórico para trás/i }));
 
 beforeEach(() => {
@@ -154,12 +153,14 @@ describe('App > painel de lançar no endereço', () => {
   it('o fluxo de voz termina abrindo o painel pelo mesmo caminho, com os dados falados', async () => {
     renderApp(['/', '/extrato']);
     await waitFor(() => tituloNoConteudo(/^extrato$/i));
-    const botaoMais = screen.getAllByRole('button', { name: /segure para usar voz/i })[0];
+    const botaoMais = screen.getByRole('button', { name: 'Lançar' });
 
     // Segurar o "+" por 500 ms abre a folha de gravação.
     fireEvent.pointerDown(botaoMais, { clientX: 1, clientY: 1 });
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
     fireEvent.pointerUp(botaoMais);
+    // Depois de um toque longo o navegador ainda dispara o clique; ele não pode abrir o painel.
+    fireEvent.click(botaoMais);
     falaDeTeste.finalTranscript = 'gastei 50 reais no mercado';
     fireEvent.pointerDown(await screen.findByRole('button', { name: /segure para falar/i }));
 
@@ -174,10 +175,12 @@ describe('App > painel de lançar no endereço', () => {
 describe('App > dados de voz não sobram depois de o painel fechar', () => {
   const rascunhoPorVoz = async () => {
     await waitFor(() => tituloNoConteudo(/^extrato$/i));
-    const botaoMais = screen.getAllByRole('button', { name: /segure para usar voz/i })[0];
+    const botaoMais = screen.getByRole('button', { name: 'Lançar' });
     fireEvent.pointerDown(botaoMais, { clientX: 1, clientY: 1 });
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
     fireEvent.pointerUp(botaoMais);
+    // Depois de um toque longo o navegador ainda dispara o clique; ele não pode abrir o painel.
+    fireEvent.click(botaoMais);
     falaDeTeste.finalTranscript = 'gastei 50 reais no mercado';
     fireEvent.pointerDown(await screen.findByRole('button', { name: /segure para falar/i }));
     await waitFor(() => expect(screen.getByLabelText(/valor/i)).toHaveValue(50));
@@ -277,7 +280,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
       'editar e %s termina em /extrato; um voltar leva ao Início',
       async (_n, encerrar) => {
         renderApp('/', opcoes);
-        fireEvent.click(await screen.findByRole('button', { name: /ver extrato/i }));
+        fireEvent.click(await screen.findByRole('link', { name: 'Extrato' }));
         await editarPrimeira();
 
         await encerrar();
@@ -292,7 +295,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
 
     it('nova transação salva: mesma tela e um voltar leva à anterior', async () => {
       renderApp('/', opcoes);
-      fireEvent.click(await screen.findByRole('button', { name: /ver extrato/i }));
+      fireEvent.click(await screen.findByRole('link', { name: 'Extrato' }));
       abrirPainelNovo();
       fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '10.00' } });
       fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));

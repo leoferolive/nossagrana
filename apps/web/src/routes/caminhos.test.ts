@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CAMINHOS,
+  abaDoCaminho,
   caminhoDaFatura,
   caminhoDaTela,
   caminhoDoCofrinho,
@@ -79,5 +80,34 @@ describe('caminhos > mapa de endereços', () => {
 
   it('endereço desconhecido cai no dashboard', () => {
     expect(telaDoCaminho('/nao-existe')).toBe('dashboard');
+  });
+});
+
+describe('abaDoCaminho', () => {
+  it.each([
+    ['/', 'inicio'],
+    ['/extrato', 'extrato'],
+    ['/planejar', 'planejar'],
+    ['/planejar/contas', 'planejar'],
+    ['/planejar/limites', 'planejar'],
+    ['/planejar/cofrinhos', 'planejar'],
+    ['/planejar/cofrinhos/c1', 'planejar'],
+    ['/planejar/fatura/m1', 'planejar'],
+    ['/mais', 'mais'],
+    ['/mais/relatorios', 'mais'],
+    ['/mais/historico', 'mais'],
+    ['/mais/familia', 'mais'],
+    ['/mais/categorias', 'mais'],
+    ['/mais/metodos-pagamento', 'mais'],
+    ['/mais/perfil', 'mais'],
+    ['/mais/ajuda', 'mais'],
+    ['/qualquer-coisa', 'inicio'],
+  ])('%s marca a aba %s', (caminho, aba) => {
+    expect(abaDoCaminho(caminho)).toBe(aba);
+  });
+
+  it('não confunde um prefixo parecido com a aba', () => {
+    expect(abaDoCaminho('/maisquerido')).toBe('inicio');
+    expect(abaDoCaminho('/planejarx')).toBe('inicio');
   });
 });

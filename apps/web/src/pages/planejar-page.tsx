@@ -10,7 +10,12 @@ import {
   IconOrcamento,
   IconPlanejar,
 } from '../components/icons';
-import { usePlanejar, type ContagemDoMes, type FaturaDoMes } from '../hooks/use-planejar';
+import {
+  usePlanejar,
+  type ContagemDoMes,
+  type DiasDoCartao,
+  type FaturaDoMes,
+} from '../hooks/use-planejar';
 import { CAMINHOS, caminhoDaFatura } from '../routes/caminhos';
 import { getCurrentMonth } from '../utils/date';
 
@@ -37,13 +42,25 @@ const resumoDeContagem = (
   contagem &&
   `${contagem.parcial} de ${contagem.total} ${comPlural(contagem.parcial, singular, plural)}`;
 
+const resumoDeContas = (modelos: number | null): string | null =>
+  modelos === null ? null : `${modelos} ${comPlural(modelos, 'conta', 'contas')} no mês`;
+
+/** Os dias cadastrados no cartão, sem converter em data: essa regra é da Entrega 4. */
+const resumoDeDias = ({ fechamento, vencimento }: DiasDoCartao): string | null => {
+  const partes = [
+    fechamento !== null && `fecha dia ${fechamento}`,
+    vencimento !== null && `vence dia ${vencimento}`,
+  ].filter((parte): parte is string => parte !== false);
+  return partes.length > 0 ? partes.join(' · ') : null;
+};
+
 const resumoDeCofrinhos = (ativos: number | null): string | null =>
   ativos === null ? null : `${ativos} ${comPlural(ativos, 'ativo', 'ativos')}`;
 
 const linhaDeFatura = (fatura: FaturaDoMes, mes: string): LinhaDoPlano => ({
   chave: `fatura-${fatura.metodoId}`,
   rotulo: `Fatura ${fatura.nome}`,
-  resumo: fatura.vencimento && `vence ${fatura.vencimento}`,
+  resumo: resumoDeDias(fatura.dias),
   caminho: caminhoDaFatura(fatura.metodoId, mes),
   icone: IconCartao,
 });
@@ -82,7 +99,7 @@ export const PlanejarPage = ({ familiaId }: PlanejarPageProps) => {
     {
       chave: 'contas',
       rotulo: 'Contas do mês',
-      resumo: resumoDeContagem(resumo.contas, 'lançada', 'lançadas'),
+      resumo: resumoDeContas(resumo.contas),
       caminho: CAMINHOS.contas,
       icone: IconPlanejar,
     },

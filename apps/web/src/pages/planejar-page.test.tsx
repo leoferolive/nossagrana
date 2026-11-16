@@ -1,11 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  coreFinanceiroService,
-  metodoPagamentoService,
-  transacaoService,
-} from '../services/core-financeiro.service';
+import { coreFinanceiroService, metodoPagamentoService } from '../services/core-financeiro.service';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { templateTransacaoService } from '../services/template-transacao.service';
 import { renderPagina } from '../test/render-pagina';
@@ -14,7 +10,6 @@ import { PlanejarPage } from './planejar-page';
 
 vi.mock('../services/core-financeiro.service', () => ({
   lazyApiClient: { request: vi.fn() },
-  transacaoService: { listar: vi.fn() },
   coreFinanceiroService: { getDashboardOrcamento: vi.fn() },
   metodoPagamentoService: { listar: vi.fn() },
 }));
@@ -28,7 +23,6 @@ const modelo = (nome: string, tipo: 'receita' | 'despesa' = 'despesa') => ({
   nome,
   tipo,
 });
-const transacao = (descricao: string) => ({ id: `t-${descricao}`, descricao });
 const orcamento = (status: 'ok' | 'warning' | 'exceeded') => ({
   categoriaId: status,
   categoriaNome: status,
@@ -51,15 +45,11 @@ const cartao = (
 
 const configurarDados = ({
   modelos = [modelo('Salário', 'receita'), modelo('Aluguel'), modelo('Luz')],
-  lancadas = ['Salário', 'Aluguel'],
   limites = [orcamento('ok'), orcamento('exceeded'), orcamento('warning'), orcamento('ok')],
   metodos = [cartao('m1', 'Nubank', 28, 5), cartao('m2', 'Inter', 10, 17)] as object[],
   cofrinhos = [{ id: 'c1' }, { id: 'c2' }, { id: 'c3' }],
 } = {}) => {
   vi.mocked(templateTransacaoService.listar).mockResolvedValue({ templates: modelos } as never);
-  vi.mocked(transacaoService.listar).mockResolvedValue({
-    transacoes: lancadas.map(transacao),
-  } as never);
   vi.mocked(coreFinanceiroService.getDashboardOrcamento).mockResolvedValue(limites as never);
   vi.mocked(metodoPagamentoService.listar).mockResolvedValue({
     metodosPagamento: metodos,
@@ -90,20 +80,20 @@ describe('PlanejarPage', () => {
     await linha(/contas do mês/i);
   });
 
-  it('Contas do mês: "N de M lançadas" pelas transações do mês com o nome do modelo', async () => {
+  it('Contas do mês: mostra só a quantidade de modelos, sem "lançadas"', async () => {
     renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
     const contas = await linha(/contas do mês/i);
     expect(contas).toHaveAttribute('href', '/planejar/contas');
-    await waitFor(() => expect(contas).toHaveTextContent('2 de 3 lançadas'));
-    expect(transacaoService.listar).toHaveBeenCalledWith({ mesReferencia: '2026-11' }, 'f1');
+    await waitFor(() => expect(contas).toHaveTextContent('3 contas no mês'));
+    expect(contas).not.toHaveTextContent(/lançada/);
   });
 
-  it('Contas do mês: com uma só lançada, o resumo fica no singular', async () => {
-    configurarDados({ lancadas: ['Luz'] });
+  it('Contas do mês: com um só modelo, o resumo fica no singular', async () => {
+    configurarDados({ modelos: [modelo('Luz')] });
     renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
     await waitFor(() =>
       expect(screen.getByRole('link', { name: /contas do mês/i })).toHaveTextContent(
-        '1 de 3 lançada',
+        '1 conta no mês',
       ),
     );
   });
@@ -142,12 +132,29 @@ describe('PlanejarPage', () => {
     renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
     const nubank = await linha(/fatura nubank/i);
     expect(nubank).toHaveAttribute('href', '/planejar/fatura/m1?mes=2026-11');
-    await waitFor(() => expect(nubank).toHaveTextContent('vence 05/12'));
+    await waitFor(() => expect(nubank).toHaveTextContent('fecha dia 28 · vence dia 5'));
     const inter = screen.getByRole('link', { name: /fatura inter/i });
     expect(inter).toHaveAttribute('href', '/planejar/fatura/m2?mes=2026-11');
-    expect(inter).toHaveTextContent('vence 17/11');
+    expect(inter).toHaveTextContent('fecha dia 10 · vence dia 17');
     expect(screen.queryByRole('link', { name: /fatura antigo/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /fatura pix/i })).not.toBeInTheDocument();
+  });
+
+  it('fatura com só um dos dias cadastrados mostra só esse; sem nenhum, fica sem resumo', async () => {
+    configurarDados({
+      metodos: [
+        { ...cartao('m1', 'Nubank', 0, 5), dataFechamento: null },
+        { ...cartao('m2', 'Inter', 10, 0), dataVencimento: null },
+        { ...cartao('m3', 'Vazio', 0, 0), dataFechamento: null, dataVencimento: null },
+      ],
+    });
+    renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
+    const nubank = await linha(/fatura nubank/i);
+    await waitFor(() => expect(nubank).toHaveTextContent('vence dia 5'));
+    expect(nubank).not.toHaveTextContent(/fecha/);
+    expect(screen.getByRole('link', { name: /fatura inter/i })).toHaveTextContent('fecha dia 10');
+    expect(screen.getByRole('link', { name: /fatura inter/i })).not.toHaveTextContent(/vence/);
+    expect(screen.getByRole('link', { name: /fatura vazio/i })).toHaveTextContent(/^Fatura Vazio$/);
   });
 
   it('sem cartão de crédito, não há linha de fatura', async () => {
@@ -169,18 +176,18 @@ describe('PlanejarPage', () => {
 
   it('trocar o mês busca os resumos do mês escolhido', async () => {
     renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
-    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(coreFinanceiroService.getDashboardOrcamento).toHaveBeenCalledTimes(1),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Mês anterior' }));
     await waitFor(() =>
-      expect(transacaoService.listar).toHaveBeenLastCalledWith({ mesReferencia: '2026-10' }, 'f1'),
+      expect(coreFinanceiroService.getDashboardOrcamento).toHaveBeenLastCalledWith('f1', '2026-10'),
     );
-    expect(coreFinanceiroService.getDashboardOrcamento).toHaveBeenLastCalledWith('f1', '2026-10');
     expect(screen.getByText('Outubro de 2026')).toBeInTheDocument();
   });
 
   it('enquanto carrega, mostra o aviso e já deixa as linhas navegáveis', () => {
     vi.mocked(templateTransacaoService.listar).mockReturnValue(new Promise(() => undefined));
-    vi.mocked(transacaoService.listar).mockReturnValue(new Promise(() => undefined));
     vi.mocked(coreFinanceiroService.getDashboardOrcamento).mockReturnValue(
       new Promise(() => undefined),
     );

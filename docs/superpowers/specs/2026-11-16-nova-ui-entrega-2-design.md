@@ -1,6 +1,6 @@
 # Nova UI — Entrega 2: navegação
 
-**Estado:** aguardando aprovação do usuário. **Data:** 2026-11-16.
+**Estado:** aprovado pelo usuário em 2026-11-16. **Data:** 2026-11-16.
 Direção e sistema visual: [`docs/nova-ui/README.md`](../../nova-ui/README.md).
 Evidências dos problemas: [`docs/nova-ui/auditoria.md`](../../nova-ui/auditoria.md).
 
@@ -19,8 +19,8 @@ Entrega 4.
 
 ## Decisões que este desenho assume
 
-Escolhas do Claude, por delegação do usuário; entram em "Decisões fechadas" do
-README quando este desenho for aprovado.
+Escolhas propostas pelo Claude e aprovadas pelo usuário com este desenho; estão
+em "Decisões fechadas" do README (itens 17 a 23).
 
 | Assunto             | Escolha                                                                                                |
 | ------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -193,12 +193,12 @@ merge e deploy em dev):
 
 ## Riscos
 
-| Risco                                                                 | Tratamento                                                                                          |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Os quatro arquivos de teste do `App` dependem da navegação por estado | São reescritos no PR 1 sobre o roteador em memória, mantendo os mesmos cenários                     |
-| Service worker devolver o `index.html` para chamadas de API           | `/api` e `/health` ficam fora do retorno de navegação do service worker                             |
-| Quem tem o app instalado ficar com a versão antiga em cache           | O service worker já atualiza sozinho (`autoUpdate`); conferir na validação que a versão nova assume |
-| Dezesseis páginas recebem a navegação por propriedades                | No PR 1 passam a usar o roteador; a troca é mecânica e coberta pelos testes de cada página          |
+| Risco                                                                 | Tratamento                                                                                                                                                           |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Os quatro arquivos de teste do `App` dependem da navegação por estado | São reescritos no PR 1 sobre o roteador em memória, mantendo os mesmos cenários                                                                                      |
+| Service worker devolver o `index.html` para chamadas de API           | `/api` e `/health` ficam fora do retorno de navegação do service worker                                                                                              |
+| Quem tem o app instalado ficar com a versão antiga em cache           | O service worker já atualiza sozinho (`autoUpdate`); conferir na validação que a versão nova assume                                                                  |
+| Dezesseis páginas recebem a navegação por propriedades                | No PR 1 a camada de rotas passa a alimentar essas propriedades, sem tocar nas páginas; no PR 2, com os cabeçalhos únicos, as páginas passam a usar o roteador direto |
 
 ## O que fica para quem implementa
 

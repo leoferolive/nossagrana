@@ -27,12 +27,12 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 ## Checkpoint
 
 **Estado em 2026-11-16:** Entrega 1 concluída, em dois PRs: #183 (Correções) e
-#186 (Base visual). O app está no tema claro, com Manrope, campos em 16px, alvos
-de toque de 44px e ícones lucide; a navegação e o desenho das telas ainda são os
-antigos. O desenho da Entrega 2 (Navegação) está escrito. **Próximo passo:** o
-usuário aprovar o
-[desenho da Entrega 2](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md);
-em seguida, o plano do primeiro PR dela (Rotas com URL).
+#186 (Base visual). O desenho da Entrega 2 (Navegação) está aprovado e o plano do
+primeiro PR dela está escrito; nenhuma linha de código da Entrega 2 ainda.
+**Próximo passo:** executar o
+[plano do PR 1 da Entrega 2 (Rotas com URL)](../superpowers/plans/2026-11-16-nova-ui-entrega-2-pr1-rotas.md)
+na branch `feat/nova-ui-e2-rotas`. Os PRs 2 e 3 da entrega ganham plano próprio
+depois do merge do anterior.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -76,7 +76,7 @@ Sai em três PRs em sequência: rotas com URL; barra de cinco, Mais, Planejar,
 cabeçalhos e tour; E2E. Desenho em
 [`2026-11-16-nova-ui-entrega-2-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md).
 
-- [ ] Desenho da Entrega 2 aprovado pelo usuário
+- [x] 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário
 - [ ] Rotas com URL (voltar do Android, recarregar mantém a tela, link direto)
 - [ ] Barra de cinco posições com o "+" dentro
 - [ ] Cabeçalho único de aba e de passo/detalhe
@@ -179,30 +179,40 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
   revisado por subagente e pelo Codex, sem pendências. Entrega 1 concluída.
 - 2026-11-16 — PR 2 (#186) mergeado. Desenho da Entrega 2 (Navegação) escrito,
   aguardando aprovação do usuário.
+- 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário (decisões 17 a 23).
+  Plano do PR 1 da entrega (Rotas com URL) escrito.
 
 ## Decisões fechadas
 
-| #   | Decisão                                                                                                                                                                | Por quê                                                                         |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| 1   | Celular primeiro, tela de referência 390×844                                                                                                                           | É onde a família lança e consulta                                               |
-| 2   | Estrutura "Mês em foco": um número principal por tela, régua do mês, cartões                                                                                           | Proposta A, escolhida pelo usuário                                              |
-| 3   | Paleta clara: papel esverdeado, tinta verde-escura, um acento verde                                                                                                    | Paleta da proposta B, escolhida pelo usuário                                    |
-| 4   | Fonte Manrope em tudo, com números tabulares                                                                                                                           | Já é a fonte declarada no app; hoje ela nunca é carregada                       |
-| 5   | Barra inferior: Início · Extrato · + · Planejar · Mais                                                                                                                 | O "+" flutuante cobria valores e modais                                         |
-| 6   | Toda tela tem URL                                                                                                                                                      | Hoje o voltar do Android sai do app e recarregar cai no dashboard               |
-| 7   | Planejar é o **plano do mês** em quatro passos: receitas, contas fixas, cofrinhos, lazer de cada um                                                                    | É a ordem em que a família preenche a planilha                                  |
-| 8   | Lazer disponível = direito fixo da pessoa − lazer dela no cartão, na fatura que vence no mês                                                                           | Regra da planilha, confirmada pelo usuário                                      |
-| 9   | Verde é a única cor de ação; vermelho só para alerta; saída em texto neutro, entrada em verde                                                                          | Na auditoria, verde, azul, laranja e vermelho disputavam a ação principal       |
-| 10  | Os nomes dos tokens Tailwind ficam (`bg-bg`, `bg-panel`, `text-text-muted`…); mudam os valores                                                                         | `.claude/rules/code-style.md` já os define; evita renomear o app inteiro        |
-| 11  | Ícones só de `lucide-react`; nenhum emoji na interface                                                                                                                 | Regra do projeto de uma biblioteca de ícones                                    |
-| 12  | Alvos de toque com 44px, campos em 16px, texto com contraste mínimo de 4,5:1                                                                                           | Campos em 14px dão zoom no iPhone; botão verde com texto branco tinha 2,3:1     |
-| 13  | Ordem das entregas: 1 → 2 → 3 → 4                                                                                                                                      | Planejar é uma aba da barra nova e seus passos têm URL, então a 4 depende da 2  |
-| 14  | Só o tema claro; o tema escuro deixa de existir                                                                                                                        | O app nunca teve alternador; os tokens são variáveis CSS, dá para voltar depois |
-| 15  | Primeira parcela com o valor total é bug: o pai passa a valer a parcela e os já gravados são corrigidos, com os snapshots dos meses afetados marcados como divergentes | Os totais somam `valor`; R$ 1.299,90 em 10x pesava R$ 2.469,81                  |
-| 16  | Manrope pelo pacote `@fontsource-variable/manrope`, no build do app e no cache offline                                                                                 | O app é um PWA e a fonte precisa funcionar sem rede                             |
+| #   | Decisão                                                                                                                                                                | Por quê                                                                                                               |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | Celular primeiro, tela de referência 390×844                                                                                                                           | É onde a família lança e consulta                                                                                     |
+| 2   | Estrutura "Mês em foco": um número principal por tela, régua do mês, cartões                                                                                           | Proposta A, escolhida pelo usuário                                                                                    |
+| 3   | Paleta clara: papel esverdeado, tinta verde-escura, um acento verde                                                                                                    | Paleta da proposta B, escolhida pelo usuário                                                                          |
+| 4   | Fonte Manrope em tudo, com números tabulares                                                                                                                           | Já é a fonte declarada no app; hoje ela nunca é carregada                                                             |
+| 5   | Barra inferior: Início · Extrato · + · Planejar · Mais                                                                                                                 | O "+" flutuante cobria valores e modais                                                                               |
+| 6   | Toda tela tem URL                                                                                                                                                      | Hoje o voltar do Android sai do app e recarregar cai no dashboard                                                     |
+| 7   | Planejar é o **plano do mês** em quatro passos: receitas, contas fixas, cofrinhos, lazer de cada um                                                                    | É a ordem em que a família preenche a planilha                                                                        |
+| 8   | Lazer disponível = direito fixo da pessoa − lazer dela no cartão, na fatura que vence no mês                                                                           | Regra da planilha, confirmada pelo usuário                                                                            |
+| 9   | Verde é a única cor de ação; vermelho só para alerta; saída em texto neutro, entrada em verde                                                                          | Na auditoria, verde, azul, laranja e vermelho disputavam a ação principal                                             |
+| 10  | Os nomes dos tokens Tailwind ficam (`bg-bg`, `bg-panel`, `text-text-muted`…); mudam os valores                                                                         | `.claude/rules/code-style.md` já os define; evita renomear o app inteiro                                              |
+| 11  | Ícones só de `lucide-react`; nenhum emoji na interface                                                                                                                 | Regra do projeto de uma biblioteca de ícones                                                                          |
+| 12  | Alvos de toque com 44px, campos em 16px, texto com contraste mínimo de 4,5:1                                                                                           | Campos em 14px dão zoom no iPhone; botão verde com texto branco tinha 2,3:1                                           |
+| 13  | Ordem das entregas: 1 → 2 → 3 → 4                                                                                                                                      | Planejar é uma aba da barra nova e seus passos têm URL, então a 4 depende da 2                                        |
+| 14  | Só o tema claro; o tema escuro deixa de existir                                                                                                                        | O app nunca teve alternador; os tokens são variáveis CSS, dá para voltar depois                                       |
+| 15  | Primeira parcela com o valor total é bug: o pai passa a valer a parcela e os já gravados são corrigidos, com os snapshots dos meses afetados marcados como divergentes | Os totais somam `valor`; R$ 1.299,90 em 10x pesava R$ 2.469,81                                                        |
+| 16  | Manrope pelo pacote `@fontsource-variable/manrope`, no build do app e no cache offline                                                                                 | O app é um PWA e a fonte precisa funcionar sem rede                                                                   |
+| 17  | Rotas com `react-router` 7, no modo declarativo                                                                                                                        | Padrão de fato, com rotas aninhadas e parâmetros prontos; o servidor já devolve o `index.html` para qualquer endereço |
+| 18  | Endereços em português, agrupados pela aba (`/extrato`, `/planejar/cofrinhos`, `/mais/categorias`)                                                                     | O endereço diz onde a tela fica na navegação                                                                          |
+| 19  | Abrir o painel de lançar acrescenta um passo ao histórico                                                                                                              | O voltar do Android fecha o painel em vez de sair da tela                                                             |
+| 20  | A barra inferior aparece nas quatro abas e nas telas de segundo nível, com a aba de origem marcada                                                                     | Trocar de aba não exige voltar antes                                                                                  |
+| 21  | Um único tour de boas-vindas, mostrado uma vez a todos                                                                                                                 | Eram oito tours, um por tela; a navegação mudou para todo mundo                                                       |
+| 22  | O mês selecionado não vai para o endereço; só a fatura leva o mês                                                                                                      | O mês identifica a fatura; nas outras telas seria custo sem ganho agora                                               |
+| 23  | Troca de família em Mais › Família; a troca rápida no topo do Início vem com o Início novo (Entrega 4)                                                                 | O topo do Início é redesenhado na Entrega 4                                                                           |
 
 As decisões 13 a 16 foram escolhidas pelo Claude em 2026-11-15, por delegação do
-usuário.
+usuário. As decisões 17 a 23 foram propostas pelo Claude no desenho da Entrega 2,
+que o usuário aprovou em 2026-11-16.
 
 `docs/AUDIT-UX.md` (2026-03) e `docs/wireframes/` são anteriores a esta direção;
 onde divergirem, vale este arquivo.
@@ -366,11 +376,11 @@ Ao terminar, encerre os processos e rode
 
 1. **O que "Confirmar lazer" gera** (Entrega 4): um lançamento por pessoa, uma
    transferência ou só o registro do valor disponível?
-2. **Biblioteca de rotas** para a Entrega 2. Proposta no desenho da entrega:
-   `react-router` 7, no modo declarativo; vale quando o desenho for aprovado.
-3. **Emoji do cofrinho** (Entrega 4): o emoji que a família escolhe para cada
+2. **Emoji do cofrinho** (Entrega 4): o emoji que a família escolhe para cada
    cofrinho (`cofrinhos.emoji`) continua, ou vira um seletor de ícones lucide? A
    Entrega 1 não mexe nele.
+
+Respondida em 2026-11-16, na decisão 17: biblioteca de rotas.
 
 Respondidas em 2026-11-15 e movidas para as decisões 13 a 16: ordem das
 entregas, tema escuro, primeira parcela e fonte.

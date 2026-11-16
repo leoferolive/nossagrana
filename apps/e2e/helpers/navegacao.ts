@@ -43,7 +43,7 @@ export async function irParaAba(
 
 /** Abre uma tela de segundo nível pela linha de link dela (em Mais ou Planejar). */
 export async function abrirLinha(page: Page, rotulo: string, titulo: string): Promise<void> {
-  await page.getByRole('main').getByRole('link', { name: rotulo }).first().click();
+  await page.getByRole('main').getByRole('link', { name: rotulo, exact: true }).click();
   await esperarTela(page, titulo);
 }
 

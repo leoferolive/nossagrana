@@ -306,9 +306,16 @@ export async function criarMetodoPagamento(
 
 /**
  * DELETE /auth/account
- * Deletes the authenticated user's account. Used for cleanup after tests.
- * Returns void (204 No Content).
+ * Tenta excluir a conta do usuário autenticado ao fim de um teste. Hoje a API não tem essa rota
+ * (404): os usuários dos testes ficam no banco do ambiente isolado, sem colidir (e-mails únicos
+ * por teste), e somem com `docker compose down -v`. O 404 é ignorado de propósito para a limpeza
+ * não derrubar o teste; qualquer outro erro continua sendo lançado.
  */
 export async function deleteAccount(token: string): Promise<void> {
-  await request<void>('DELETE', '/api/auth/account', { token });
+  try {
+    await request<void>('DELETE', '/api/auth/account', { token });
+  } catch (erro) {
+    if (erro instanceof Error && /status 404/.test(erro.message)) return;
+    throw erro;
+  }
 }

@@ -8,6 +8,7 @@
 
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
+import { hojeEmSaoPaulo } from '../helpers/data.js';
 import { abrirInicio, abrirLinha, irParaAba } from '../helpers/navegacao.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -33,8 +34,7 @@ async function setOrcamentoViaApi(
   categoriaId: string,
   valorLimite: string,
 ) {
-  const now = new Date();
-  const mesReferencia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const mesReferencia = hojeEmSaoPaulo().slice(0, 7);
 
   const resposta = await page.request.post(`${BASE_URL}/api/orcamento/${categoriaId}`, {
     headers: {
@@ -152,7 +152,7 @@ test.describe('Orçamento', () => {
       valor: '150.00',
       categoriaId: categoria.id,
       descricao: 'Gasto acima do limite E2E',
-      data: new Date().toISOString().slice(0, 10),
+      data: hojeEmSaoPaulo(),
     });
 
     await abrirInicio(page, authContext, familiaId);
@@ -190,7 +190,7 @@ test.describe('Orçamento', () => {
       valor: '120.00',
       categoriaId: categoria.id,
       descricao: 'Farmácia E2E',
-      data: new Date().toISOString().slice(0, 10),
+      data: hojeEmSaoPaulo(),
     });
 
     await abrirInicio(page, authContext, familiaId);

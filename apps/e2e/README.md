@@ -1,7 +1,7 @@
 # E2E (Playwright)
 
-Os testes E2E não rodam no CI: rodam à mão, contra um ambiente isolado. São 30 testes em seis
-specs (`tests/`), 28 rodando e 2 em `test.fixme` (defeitos do app, comentados em cada um): `auth`, `onboarding`, `familia`, `transacoes`, `orcamento` e `relatorios`.
+Os testes E2E não rodam no CI: rodam à mão, contra um ambiente isolado. São 32 testes em seis
+specs (`tests/`), 29 rodando e 3 em `test.fixme` (um defeito do app em cada um, comentado no teste): `auth`, `onboarding`, `familia`, `transacoes`, `orcamento` e `relatorios`.
 
 ## Subir o ambiente
 
@@ -45,19 +45,22 @@ Estourar o limite não dá um 429 limpo (o login devolve 500; é defeito conheci
 
 Cada teste é independente e cria o próprio usuário, então gasta **1 cadastro e 1 login**. Os
 testes de família criam um segundo usuário (mais 1 cadastro e 1 login), e os de `auth` que passam
-pelos formulários gastam as vagas deles. Uma execução completa mede 29 cadastros, 31 logins e 29
-refreshes (cerca de 570 requisições no total), o que, a 3 cadastros por minuto, dá no mínimo
+pelos formulários gastam as vagas deles. Uma execução completa mede 30 cadastros, 32 logins e 30
+refreshes (cerca de 600 requisições no total), o que, a 3 cadastros por minuto, dá no mínimo
 9 minutos; na prática, cerca de 10. Sem 429 nem 500.
 
 Como o ritmo é cumprido:
 
 - `workers: 1` e sem nova tentativa (`retries: 0`): refazer um teste cadastraria outro usuário.
+  A suíte só funciona com um worker (o arquivo de uso abaixo não tem trava): `--workers=N` com
+  N diferente de 1 faz a fixture automática `tourSuprimido` falhar com uma mensagem clara.
+- Os testes com dois cadastros usam `test.slow()`: a espera do segundo entra no tempo do teste.
 - `helpers/ritmo.ts` guarda quando cada cadastro e cada login aconteceu e faz uma janela
   deslizante de 60 s: `api.register` e `api.login` esperam a vaga antes de chamar a API. Os
   testes que cadastram ou entram pelo formulário usam as fixtures `vagaDeCadastroNaTela` e
   `vagaDeLoginNaTela`. Entre dois cadastros há uma pausa mínima de 21 s (60 s / 3, com folga);
   `E2E_PAUSA_MS` ajusta essa pausa.
-- O uso fica em `apps/e2e/.ritmo/uso-api.json` (ignorado pelo git), e não na memória, porque o
+- O uso fica em `apps/e2e/.ritmo/uso-api.json` (ignorado pelo git e pelo Prettier), e não na memória, porque o
   Playwright troca o processo do worker depois de uma falha e duas execuções seguidas precisam
   enxergar o que a anterior gastou. Para zerar o contador depois de reiniciar a API (o limite
   da API zera junto), apague a pasta `apps/e2e/.ritmo/`.

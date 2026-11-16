@@ -81,7 +81,7 @@ cabeçalhos e tour; E2E. Desenho em
 - [x] 2026-11-16 — Tela Mais
 - [x] 2026-11-16 — Planejar como entrada para orçamento, cartões, cofrinhos e contas do mês
 - [x] 2026-11-16 — Um único tour de boas-vindas
-- [x] 2026-11-16 — E2E ajustados à nova navegação (28 passam, 2 em `test.fixme`
+- [x] 2026-11-16 — E2E ajustados à nova navegação (29 passam, 3 em `test.fixme`
       por defeitos do app; como rodar em `apps/e2e/README.md`)
 
 ### Entrega 3 — Extrato e Lançar
@@ -223,7 +223,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 2, PR 2, ajuste em Planejar: saíram duas regras que eu tinha inventado. A fatura mostra os dias cadastrados no cartão ("fecha dia X · vence dia Y", só o que existir; `vencimentoDaFatura` foi apagada, a conversão em data é decisão da Entrega 4) e Contas do mês mostra só "M contas no mês", porque a tela Lançamentos do mês não calcula quais modelos já foram lançados (casar transação com modelo pelo nome não é confiável).
 - 2026-11-16 — Entrega 2, PR 2, correções da validação no navegador: o "+" agora sobe 28px acima da barra (a coluna dele estava sem altura e o `-top-7` contava a partir do meio da barra; ganhou `self-stretch`); `CabecalhoDetalhe` não corta mais o título (quebra em duas linhas) e Cartões e Pagamentos virou "Métodos de pagamento"; se a lista de famílias falha, quem tem família ativa fica no seletor com aviso (antes ia ao onboarding), e o seletor marca a família "Atual"; Planejar não mostra "0 de 0" em mês sem orçamento e mantém o título da linha em uma linha, com o resumo descendo quando não couber.
 - 2026-11-16 — Entrega 2, PR 2, correções da revisão de código: a área logada passou a carimbar a família em toda entrada de histórico com id (fatura aberta por Planejar escapava; os chamadores deixaram de passar `state`), com `semEntradaAnterior` no state para o Voltar de link direto; o aviso de falha da lista de famílias some ao tentar de novo; títulos alinhados à navegação ("Contas do mês", "Limites por categoria") e a Ajuda descreve o "+" da barra; no desktop o título da aba fica na TopBar e o de detalhe no próprio cabeçalho (a TopBar não o repete), e o menu lateral ganhou o link Planejar; nome de cartão comprido quebra linha em Planejar.
-- 2026-11-16 — Entrega 2, PR 3: os seis specs do E2E rodam na navegação nova, em 390×844, e a suíte cabe no limite de requisições da API (um login por teste, janela deslizante gravada em arquivo, cerca de 10 minutos). Passam 28; dois ficam em `test.fixme` por defeitos do app: o Extrato não atualiza a lista depois de salvar na própria tela (Entrega 3) e editar o limite de uma categoria na mesma vigência duplica a categoria na lista de limites. Também anotado: aprovar uma solicitação de entrada não recarrega os membros na tela da família, e a API não tem rota de exclusão de conta.
+- 2026-11-16 — Entrega 2, PR 3: os seis specs do E2E rodam na navegação nova, em 390×844, e a suíte cabe no limite de requisições da API (um login por teste, janela deslizante gravada em arquivo, cerca de 10 minutos, 30 cadastros e 32 logins por execução). Passam 29; três ficam em `test.fixme`, um por defeito do app: o Extrato não atualiza a lista depois de salvar na própria tela (Entrega 3), editar o limite de uma categoria na mesma vigência duplica a categoria na lista de limites e aprovar uma solicitação de entrada não mostra o novo membro sem recarregar. Também anotado: a API não tem rota de exclusão de conta.
 
 ## Decisões fechadas
 

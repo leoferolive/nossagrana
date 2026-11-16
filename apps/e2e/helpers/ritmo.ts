@@ -12,6 +12,9 @@
  * precisam enxergar o que a anterior gastou. Em `test-results/` não serve: o Playwright o apaga
  * no começo de cada execução.
  *
+ * O arquivo é lido e gravado sem trava porque a suíte roda com um worker só: a fixture automática
+ * `tourSuprimido` recusa `--workers` diferente de 1.
+ *
  * `E2E_PAUSA_MS` é o intervalo mínimo entre dois cadastros (padrão: a janela dividida pelo limite,
  * mais folga). Com `E2E_PAUSA_MS=0` só a janela deslizante segue valendo, o que permite uma
  * rajada inicial de cadastros e depois espera.

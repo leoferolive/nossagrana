@@ -102,6 +102,8 @@ test.describe('Família', () => {
     authContext,
     familiaId,
   }) => {
+    // Dois cadastros: a espera do segundo pelo limite da API entra nos 30 s do teste.
+    test.slow();
     // ── User 1: generate an invite code via the API ──
     const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
     const inviteRes = await page.request.post(`${BASE_URL}/api/familias/convites`, {
@@ -150,6 +152,8 @@ test.describe('Família', () => {
     authContext,
     familiaId,
   }) => {
+    // Dois cadastros: a espera do segundo pelo limite da API entra nos 30 s do teste.
+    test.slow();
     // ── User 2: register and send a join request via the API ──
     const user2Email = uniqueEmail('req');
     const user2Reg = await api.register({
@@ -226,8 +230,45 @@ test.describe('Família', () => {
     }
   });
 
+  // DEFEITO DO APP (não corrigido neste PR): ao aprovar, a tela só tira a solicitação da lista de
+  // pendentes e não recarrega os membros. O teste acima confere o membro depois de recarregar;
+  // este fixa o comportamento certo, sem recarregar. Remover o `fixme` quando a tela atualizar.
+  test.fixme('aprovar solicitação mostra o novo membro sem recarregar', async ({
+    page,
+    authContext,
+    familiaId,
+  }) => {
+    test.slow();
+    const email = uniqueEmail('semreload');
+    await api.register({ nome: 'Usuário Sem Reload E2E', email, senha: 'Senha@E2E123' });
+    const user2 = await api.login({ email, senha: 'Senha@E2E123' });
+    const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
+
+    try {
+      const res = await page.request.post(`${BASE_URL}/api/familias/solicitar`, {
+        headers: {
+          Authorization: `Bearer ${user2.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        data: { familiaId },
+      });
+      expect(res.status()).toBe(201);
+
+      await gotoFamilySettings(page, authContext, familiaId);
+      await page.getByRole('button', { name: /^Aprovar$/ }).click();
+
+      await expect(
+        page.getByRole('listitem').filter({ hasText: 'Usuário Sem Reload E2E' }),
+      ).toBeVisible({ timeout: 10_000 });
+    } finally {
+      await api.deleteAccount(user2.accessToken);
+    }
+  });
+
   // ── 5. Remover membro → membro removido da lista ─────────────────────────
   test('remover membro remove-o da lista de membros', async ({ page, authContext, familiaId }) => {
+    // Dois cadastros: a espera do segundo pelo limite da API entra nos 30 s do teste.
+    test.slow();
     // ── User 2: register, get invite, join the family ──
     const user2Email = uniqueEmail('remove');
     const user2Reg = await api.register({

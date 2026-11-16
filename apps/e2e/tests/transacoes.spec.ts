@@ -13,6 +13,7 @@
 
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
+import { hojeEmSaoPaulo } from '../helpers/data.js';
 import { escolherOpcao } from '../helpers/custom-select.js';
 import {
   abrirInicio,
@@ -24,21 +25,44 @@ import {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
-const hoje = () => new Date().toISOString().slice(0, 10);
+const hoje = hojeEmSaoPaulo;
 
 test.describe('Transações', () => {
   // ── 1. Criar receita simples → aparece no extrato ─────────────────────────
+  // ── 1. Criar receita simples → aparece no extrato ─────────────────────────
+  test('criar receita simples aparece no extrato', async ({ page, authContext, familiaId }) => {
+    await api.criarCategoria(authContext.accessToken, familiaId, {
+      nome: 'Salário E2E',
+      tipo: 'receita',
+    });
+
+    // Lança pelo Início (como a despesa) e confere no Extrato, que busca a lista ao abrir.
+    await abrirInicio(page, authContext, familiaId);
+    const painel = await abrirPainelLancar(page);
+
+    await painel.getByRole('button', { name: 'Receita', exact: true }).click();
+    await painel.getByRole('spinbutton', { name: 'Valor' }).fill('1500.00');
+    await escolherOpcao(page, painel, 'Categoria', 'Salário E2E');
+    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Salário mês E2E');
+    await salvarLancamento(page, painel);
+
+    await irParaAba(page, 'Extrato');
+    const linha = page.getByRole('listitem').filter({ hasText: 'Salário mês E2E' });
+    await expect(linha).toBeVisible({ timeout: 10_000 });
+    await expect(linha).toContainText(/\+\s*R\$\s*1\.500,00/);
+  });
+
   // DEFEITO DO APP (Entrega 3 da nova UI, ver docs/nova-ui/README.md): o Extrato não atualiza a
   // lista depois de salvar um lançamento feito na própria tela; só atualiza ao sair e voltar. O
   // lançamento é gravado (confirmado no banco), mas a lista segue em "Nenhuma transação
   // encontrada.". Remover o `fixme` quando a Entrega 3 entregar a atualização imediata.
-  test.fixme('criar receita simples aparece no extrato', async ({
+  test.fixme('lançar com o Extrato aberto atualiza a lista', async ({
     page,
     authContext,
     familiaId,
   }) => {
     await api.criarCategoria(authContext.accessToken, familiaId, {
-      nome: 'Salário E2E',
+      nome: 'Salário aberto E2E',
       tipo: 'receita',
     });
 
@@ -48,12 +72,12 @@ test.describe('Transações', () => {
 
     await painel.getByRole('button', { name: 'Receita', exact: true }).click();
     await painel.getByRole('spinbutton', { name: 'Valor' }).fill('1500.00');
-    await escolherOpcao(page, painel, 'Categoria', 'Salário E2E');
-    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Salário mês E2E');
+    await escolherOpcao(page, painel, 'Categoria', 'Salário aberto E2E');
+    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Salário aberto E2E');
     await salvarLancamento(page, painel);
 
     // O lançamento aparece na lista do Extrato, como receita.
-    const linha = page.getByRole('listitem').filter({ hasText: 'Salário mês E2E' });
+    const linha = page.getByRole('listitem').filter({ hasText: 'Salário aberto E2E' });
     await expect(linha).toBeVisible({ timeout: 10_000 });
     await expect(linha).toContainText(/\+\s*R\$\s*1\.500,00/);
   });

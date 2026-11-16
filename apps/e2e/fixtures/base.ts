@@ -11,8 +11,8 @@
  *                          before a test registers / logs in through the UI
  *  - `tourSuprimido`    – automatic; marks the welcome tour as seen in every test
  *
- * Cleanup (deleteAccount) runs automatically after each test that uses any of
- * these fixtures.
+ * Cleanup: `authContext` tries `deleteAccount` after each test, but the API has no such route
+ * today (404, ignored), so test users stay in the isolated database until `down -v`.
  *
  * ## Rate limit
  *
@@ -171,7 +171,14 @@ export const test = base.extend<E2EFixtures>({
 
   /** Marks the welcome tour as seen in every page of the test (see `suprimirTour`). */
   tourSuprimido: [
-    async ({ page }, use) => {
+    async ({ page }, use, testInfo) => {
+      // A suíte é feita para um worker só (limite de requisições por IP e arquivo de uso sem
+      // trava, ver helpers/ritmo.ts); `--workers=N` na linha de comando passaria por cima da config.
+      if (testInfo.config.workers !== 1) {
+        throw new Error(
+          `E2E exige um worker (recebido ${testInfo.config.workers}): o limite de requisições da API é por IP. Rode sem --workers ou com --workers=1.`,
+        );
+      }
       await suprimirTour(page);
       await use();
     },

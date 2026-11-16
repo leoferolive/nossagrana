@@ -13,13 +13,10 @@
 
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
+import { hojeEmSaoPaulo } from '../helpers/data.js';
 import { abrirInicio, abrirLinha, esperarTela, irParaAba } from '../helpers/navegacao.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Data de hoje (AAAA-MM-DD) no fuso do app: a fatura e o mês corrente usam São Paulo. */
-const hojeEmSaoPaulo = (): string =>
-  new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 
 /** Abre uma tela de segundo nível de Mais pelo nome da linha. */
 async function gotoDeMais(page: import('@playwright/test').Page, rotulo: string, titulo: string) {

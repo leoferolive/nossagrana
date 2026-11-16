@@ -105,6 +105,12 @@ export default tseslint.config(
     },
   },
   {
+    // Fixture do Playwright sem dependência exige o `{}` como primeiro argumento: é como o
+    // Playwright descobre de quais fixtures a função precisa (ver a documentação de fixtures).
+    files: ['apps/e2e/fixtures/**'],
+    rules: { 'no-empty-pattern': ['error', { allowObjectPatternsAsParameters: true }] },
+  },
+  {
     files: ['**/*.test.ts', '**/*.test.tsx', 'apps/e2e/**'],
     rules: {
       'max-lines-per-function': 'off',

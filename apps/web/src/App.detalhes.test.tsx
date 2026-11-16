@@ -46,7 +46,10 @@ const tituloNoConteudo = (nome: RegExp) =>
 
 beforeEach(() => {
   mockSessao({ autenticado: true, familiaAtiva: 'fam-test' });
-  vi.mocked(cofrinhoService.listar).mockResolvedValue({ cofrinhos: [cofrinhoBase] });
+  // A outra família nunca responde: o que aparecer no Início dela só pode ser dado velho da store.
+  vi.mocked(cofrinhoService.listar).mockImplementation(async (familiaId) =>
+    familiaId === 'fam-outra' ? new Promise<never>(() => {}) : { cofrinhos: [cofrinhoBase] },
+  );
   vi.mocked(cofrinhoService.detalhe).mockImplementation(async (_familia, id) => {
     if (id !== 'c1') throw new Error('Cofrinho não encontrado');
     return { cofrinho: cofrinhoBase, movimentacoes: [], aporteRecorrenteAtivo: null };
@@ -181,6 +184,29 @@ describe('App > troca de família com id no endereço', () => {
     await act(() => new Promise((resolve) => setTimeout(resolve, 80)));
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/$/);
     expect(screen.queryByRole('heading', { name: /viagem europa/i })).not.toBeInTheDocument();
+  });
+
+  it('depois da troca, o Início não mostra o cofrinho da família anterior', async () => {
+    await abrirCofrinhoETrocarDeFamilia();
+
+    expect(screen.queryByText(/viagem europa/i)).not.toBeInTheDocument();
+  });
+
+  it('depois de sair e entrar com outra conta, o Início não mostra o cofrinho da conta anterior', async () => {
+    const { familiaService } = await import('./services/auth.service');
+    renderApp('/');
+    expect(await screen.findByText(/viagem europa/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /ver configurações/i }));
+    fireEvent.click(
+      await within(screen.getByRole('main')).findByRole('button', { name: /sair da conta/i }),
+    );
+    await screen.findByRole('form', { name: /login/i });
+    vi.mocked(familiaService.listarMinhas).mockResolvedValue({ familias: [FAMILIAS[1]] });
+
+    fireEvent.submit(screen.getByRole('form', { name: /login/i }));
+
+    await waitFor(() => tituloNoConteudo(/nossagrana/i));
+    expect(screen.queryByText(/viagem europa/i)).not.toBeInTheDocument();
   });
 
   it('a troca de família limpa os métodos de pagamento da família anterior', async () => {

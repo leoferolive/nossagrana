@@ -5,7 +5,7 @@ import { AppShell } from '@/components/app-shell';
 import { TransacaoModal } from '@/components/transacao-modal';
 import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
-import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
+import { limparDadosDaFamilia } from '@/stores/limpar-dados-da-familia';
 import { useLancamento } from '@/hooks/use-lancamento';
 import { useLancarPorVoz } from '@/hooks/use-lancar-por-voz';
 import type { FluxoSessao } from '@/hooks/use-fluxo-sessao';
@@ -37,7 +37,7 @@ const useVoltarAoInicioNaTrocaDeFamilia = (familiaId: string) => {
   useEffect(() => {
     const trocou = familiaAnterior.current !== familiaId;
     familiaAnterior.current = familiaId;
-    if (trocou) useMetodoPagamentoStore.setState({ metodos: [] });
+    if (trocou) limparDadosDaFamilia();
     const daOutraFamilia = (familiaDaEntrada(state) ?? familiaId) !== familiaId;
     if ((trocou || daOutraFamilia) && ehEnderecoComId(pathname)) {
       void navigate(CAMINHOS.inicio, { replace: true });

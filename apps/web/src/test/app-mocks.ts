@@ -106,14 +106,18 @@ vi.mock('../contexts/use-auth', () => ({
 // gera um loop infinito de render que trava o event loop nos testes.
 const dashboardFetchAll = vi.fn();
 vi.mock('../stores/dashboard.store', () => ({
-  useDashboardStore: vi.fn(() => ({
-    resumo: null,
-    graficos: null,
-    orcamento: [],
-    loading: false,
-    error: null,
-    fetchAll: dashboardFetchAll,
-  })),
+  // `setState` existe porque limparDadosDaFamilia zera a store real ao trocar de família ou sair.
+  useDashboardStore: Object.assign(
+    vi.fn(() => ({
+      resumo: null,
+      graficos: null,
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: dashboardFetchAll,
+    })),
+    { setState: vi.fn() },
+  ),
 }));
 
 const websocketConnect = vi.fn();

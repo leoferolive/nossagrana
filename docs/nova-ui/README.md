@@ -26,13 +26,14 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-16:** Entrega 1 concluída, em dois PRs: #183 (Correções) e
-#186 (Base visual). O desenho da Entrega 2 (Navegação) está aprovado e o plano do
-primeiro PR dela está escrito; nenhuma linha de código da Entrega 2 ainda.
-**Próximo passo:** executar o
-[plano do PR 1 da Entrega 2 (Rotas com URL)](../superpowers/plans/2026-11-16-nova-ui-entrega-2-pr1-rotas.md)
-na branch `feat/nova-ui-e2-rotas`. Os PRs 2 e 3 da entrega ganham plano próprio
-depois do merge do anterior.
+**Estado em 2026-11-16:** Entrega 1 concluída (#183 e #186). Entrega 2 em
+andamento: o PR 1 dela (#188, Rotas com URL) deu endereço a toda tela, e o voltar
+do Android, recarregar e link direto já funcionam; a barra, a tela Configurações
+e os cabeçalhos ainda são os antigos. **Próximo passo:** escrever o plano do PR 2
+da Entrega 2 (barra de cinco, Mais, Planejar, cabeçalhos únicos e tour) em
+`docs/superpowers/plans/`, a partir do
+[desenho da Entrega 2](../superpowers/specs/2026-11-16-nova-ui-entrega-2-design.md),
+e executá-lo. Depois, o PR 3 (E2E).
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -91,6 +92,8 @@ cabeçalhos e tour; E2E. Desenho em
 ### Entrega 3 — Extrato e Lançar
 
 - [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
+- [ ] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
+      (hoje só atualiza ao sair e voltar à tela; visto na validação do #188)
 - [ ] Resumo do período, filtros e busca
 - [ ] Lançar com valor primeiro e chips de categoria, data e pagamento
 - [ ] Salvar fixo no rodapé e "Mais opções" para descrição, parcelas e repetição

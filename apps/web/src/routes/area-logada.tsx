@@ -48,6 +48,13 @@ const useVoltarAoInicioNaTrocaDeFamilia = (familiaId: string) => {
 const useLancar = (familiaId: string) => {
   const lancamento = useLancamento(familiaId);
   const voz = useLancarPorVoz({ familiaId, abrirPainel: lancamento.abrirNova });
+  // O painel fecha por vários caminhos (botão, salvar, voltar do histórico). Só limpar nos
+  // callbacks do modal deixaria o rascunho de voz vivo e ele sobrescreveria o próximo lançamento.
+  const { limparDados } = voz;
+  const painelAberto = lancamento.modal.open;
+  useEffect(() => {
+    if (!painelAberto) limparDados();
+  }, [painelAberto, limparDados]);
   return { lancamento, voz };
 };
 

@@ -171,6 +171,64 @@ describe('App > painel de lançar no endereço', () => {
   });
 });
 
+describe('App > dados de voz não sobram depois de o painel fechar', () => {
+  const rascunhoPorVoz = async () => {
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    const botaoMais = screen.getAllByRole('button', { name: /segure para usar voz/i })[0];
+    fireEvent.pointerDown(botaoMais, { clientX: 1, clientY: 1 });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    fireEvent.pointerUp(botaoMais);
+    falaDeTeste.finalTranscript = 'gastei 50 reais no mercado';
+    fireEvent.pointerDown(await screen.findByRole('button', { name: /segure para falar/i }));
+    await waitFor(() => expect(screen.getByLabelText(/valor/i)).toHaveValue(50));
+  };
+
+  const fecharPeloVoltar = async () => {
+    voltar();
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Nova Transação' })).not.toBeInTheDocument(),
+    );
+  };
+
+  it('rascunho por voz, voltar do histórico e editar um lançamento: mostra o lançamento, não a voz', async () => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({
+      transacoes: [makeTransacao({ id: 'tx-1', descricao: 'Farmácia', valor: '75.00' })],
+    });
+    renderApp(['/', '/extrato']);
+    await rascunhoPorVoz();
+    await fecharPeloVoltar();
+
+    fireEvent.click((await screen.findAllByText('Farmácia'))[0]);
+
+    await screen.findByText('Editar Transação');
+    expect(screen.getByLabelText(/valor/i)).toHaveValue(75);
+    expect(screen.getByLabelText(/descri/i)).toHaveValue('Farmácia');
+  });
+
+  it('rascunho por voz, voltar do histórico e "+" de novo: formulário vazio', async () => {
+    renderApp(['/', '/extrato']);
+    await rascunhoPorVoz();
+    await fecharPeloVoltar();
+
+    abrirPainelNovo();
+
+    expect(await screen.findByRole('heading', { name: 'Nova Transação' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/valor/i)).toHaveValue(null);
+  });
+
+  it('fluxo normal: voz, painel preenchido e salvar registra os dados falados', async () => {
+    renderApp(['/', '/extrato']);
+    await rascunhoPorVoz();
+
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    await waitFor(() => expect(transacaoService.registrar).toHaveBeenCalled());
+    expect(vi.mocked(transacaoService.registrar).mock.calls[0][0]).toMatchObject({
+      valor: '50.00',
+    });
+  });
+});
+
 describe('App > encerrar o painel anda no histórico uma única vez', () => {
   const MODOS: Array<[string, { strict?: boolean; navegador?: boolean }]> = [
     ['MemoryRouter', {}],

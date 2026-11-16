@@ -1,103 +1,61 @@
 /**
- * E2E tests for the onboarding flow.
+ * E2E do onboarding (`/boas-vindas`), a tela de quem entrou mas ainda não tem família ativa.
  *
- * Onboarding is the screen shown to a newly registered user who does not yet
- * have an active familia. It offers three modes:
- *   - "Criar família"        — create a brand-new familia
- *   - "Entrar com convite"   — join an existing familia via invite code
- *   - "Buscar e solicitar"   — search for a familia and request to join
+ * Três caminhos: criar família, entrar com código de convite e buscar uma família para pedir
+ * entrada. Os testes cobrem criar (o caminho do primeiro acesso) e a troca entre os modos.
  *
- * The tests in this file focus on the "Criar família" path which is the most
- * common first-run experience. A freshly registered user is set up via the API
- * (using `authContext`) and the tokens are injected into localStorage so the
- * app starts in the correct authenticated-but-no-familia state.
- *
- * ## Navigation strategy
- *
- * The app uses a state-machine navigation pattern: the `screen` state in
- * `App.tsx` always initialises to `'login'` regardless of what is stored in
- * localStorage.  To reach `screen = 'onboarding'` we must either:
- *   a) Complete the sign-up UI flow (which calls `onCompleteSignUp →
- *      setScreen('onboarding')`), OR
- *   b) Log in through the UI (to reach `screen = 'dashboard'`) and then use
- *      the React fiber helper to switch the screen state to `'onboarding'`.
- *
- * We use option (b) here so that we can reuse the `authContext` fixture user
- * (registered once per test via the API) without going through the sign-up
- * form every time.
+ * Um usuário recém-criado pela fixture `authContext` (sem família) abre o app direto: sem família
+ * ativa, a guarda das telas financeiras leva a `/boas-vindas`.
  */
 
 import { expect, test } from '../fixtures/base.js';
+import { barraPrincipal, esperarTela } from '../helpers/navegacao.js';
 import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 
-// ─── Constant ────────────────────────────────────────────────────────────────
+type Sessao = Parameters<typeof abrirAppAutenticado>[1];
 
-// ─── Helper ──────────────────────────────────────────────────────────────────
-
-/**
- * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session and reloads
- * the page so the App.tsx lazy initializer navigates to screen = 'onboarding'.
- */
-async function gotoOnboarding(
-  page: import('@playwright/test').Page,
-  tokens: { accessToken: string; email: string; password: string },
-) {
-  await abrirAppAutenticado(page, { email: tokens.email, password: tokens.password });
-  // The app should show the onboarding screen (no familia → onboarding)
-  await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
+async function abrirBoasVindas(page: import('@playwright/test').Page, sessao: Sessao) {
+  await abrirAppAutenticado(page, sessao);
+  await expect(page).toHaveURL(/\/boas-vindas$/, { timeout: 15_000 });
+  await esperarTela(page, 'Entrar numa Família');
 }
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
+/** As três opções são botões cujo nome acessível inclui a descrição embaixo do título. */
+const opcao = (page: import('@playwright/test').Page, titulo: string) =>
+  page.getByRole('button', { name: new RegExp(`^${titulo}`) });
 
 test.describe('Onboarding', () => {
   // ── 1. Primeiro acesso: onboarding é exibido ───────────────────────────────
   test('usuário autenticado sem familia vê tela de onboarding', async ({ page, authContext }) => {
-    await gotoOnboarding(page, {
-      accessToken: authContext.accessToken,
-      email: authContext.user.email,
-      password: authContext.password,
-    });
+    await abrirBoasVindas(page, authContext);
 
-    // The onboarding heading must be visible.
-    await expect(
-      page.getByRole('heading', { name: 'Como deseja entrar na sua familia?' }),
-    ).toBeVisible({ timeout: 10_000 });
-
-    // The three mode buttons must be present.
-    await expect(page.getByRole('button', { name: 'Criar família' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Entrar com convite' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Buscar e solicitar' })).toBeVisible();
+    await expect(opcao(page, 'Criar Família')).toBeVisible();
+    await expect(opcao(page, 'Tenho um código de convite')).toBeVisible();
+    await expect(opcao(page, 'Buscar Família')).toBeVisible();
   });
 
   // ── 2. Criar família durante onboarding ───────────────────────────────────
   test('criar familia avança para configurações da família', async ({ page, authContext }) => {
-    await gotoOnboarding(page, {
-      accessToken: authContext.accessToken,
-      email: authContext.user.email,
-      password: authContext.password,
-    });
+    await abrirBoasVindas(page, authContext);
 
-    // "Criar família" mode is active by default.
-    await expect(page.getByRole('form', { name: 'Criar família' })).toBeVisible({
-      timeout: 10_000,
-    });
+    await opcao(page, 'Criar Família').click();
+    const formulario = page.getByRole('form', { name: 'Criar família' });
+    await expect(formulario).toBeVisible({ timeout: 10_000 });
 
-    // Fill in the family name and submit.
-    await page.getByLabel('Nome da familia').fill('Família E2E Onboarding');
-    await page
-      .getByRole('form', { name: 'Criar família' })
-      .getByRole('button', { name: 'Criar família' })
-      .click();
+    await formulario.getByLabel('Nome da família', { exact: true }).fill('Família E2E Criação');
+    await formulario.getByRole('button', { name: 'Criar família', exact: true }).click();
 
-    // After creating a familia the app transitions to the FamilySettingsPage.
-    // That page renders its content inside an AuthShell — we look for the
-    // invite-code section or the members list heading which both appear there.
-    // The page title shown in FamilySettingsPage header is not yet known, so
-    // we rely on the absence of the onboarding heading plus the presence of
-    // a known FamilySettings element.
-    await expect(
-      page.getByRole('heading', { name: 'Como deseja entrar na sua familia?' }),
-    ).not.toBeVisible({ timeout: 10_000 });
+    // Criada a família, o app abre as configurações dela, dentro da casca com a barra inferior.
+    await expect(page).toHaveURL(/\/mais\/familia$/, { timeout: 10_000 });
+    await esperarTela(page, 'Família');
+    await expect(page.getByRole('heading', { name: 'Membros', level: 2 })).toBeVisible();
+
+    // O id da família ativa (não secreto) fica guardado; nenhum token pode ir para o storage.
+    const familiaAtiva = await page.evaluate(() =>
+      localStorage.getItem('nossagrana.familia-ativa'),
+    );
+    expect(familiaAtiva).toBeTruthy();
+    expect(await storageSemToken(page)).toBe(true);
   });
 
   // ── 3. Alternar para modo "Entrar com convite" ─────────────────────────────
@@ -105,17 +63,12 @@ test.describe('Onboarding', () => {
     page,
     authContext,
   }) => {
-    await gotoOnboarding(page, {
-      accessToken: authContext.accessToken,
-      email: authContext.user.email,
-      password: authContext.password,
-    });
+    await abrirBoasVindas(page, authContext);
 
-    await page.getByRole('button', { name: 'Entrar com convite' }).click();
+    await opcao(page, 'Tenho um código de convite').click();
 
-    // The invite-code form must be visible.
     await expect(page.getByRole('form', { name: 'Entrar com convite' })).toBeVisible();
-    await expect(page.getByLabel('Codigo de convite')).toBeVisible();
+    await expect(page.getByLabel('Código de convite', { exact: true })).toBeVisible();
   });
 
   // ── 4. Alternar para modo "Buscar e solicitar" ────────────────────────────
@@ -123,35 +76,25 @@ test.describe('Onboarding', () => {
     page,
     authContext,
   }) => {
-    await gotoOnboarding(page, {
-      accessToken: authContext.accessToken,
-      email: authContext.user.email,
-      password: authContext.password,
-    });
+    await abrirBoasVindas(page, authContext);
 
-    await page.getByRole('button', { name: 'Buscar e solicitar' }).click();
+    await opcao(page, 'Buscar Família').click();
 
-    // The search form must be visible.
-    await expect(page.getByRole('form', { name: 'Buscar família' })).toBeVisible();
-    await expect(page.getByLabel('Nome da familia')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Buscar', exact: true })).toBeVisible();
+    const formulario = page.getByRole('form', { name: 'Buscar família' });
+    await expect(formulario).toBeVisible();
+    await expect(formulario.getByLabel('Nome da família', { exact: true })).toBeVisible();
+    await expect(formulario.getByRole('button', { name: 'Buscar', exact: true })).toBeVisible();
   });
 
   // ── 5. Código de convite inválido exibe erro ──────────────────────────────
   test('código de convite inválido exibe mensagem de erro', async ({ page, authContext }) => {
-    await gotoOnboarding(page, {
-      accessToken: authContext.accessToken,
-      email: authContext.user.email,
-      password: authContext.password,
-    });
+    await abrirBoasVindas(page, authContext);
 
-    await page.getByRole('button', { name: 'Entrar com convite' }).click();
+    await opcao(page, 'Tenho um código de convite').click();
 
-    await page.getByLabel('Codigo de convite').fill('CODIGO-INVALIDO-123');
-    await page
-      .getByRole('form', { name: 'Entrar com convite' })
-      .getByRole('button', { name: 'Entrar com convite' })
-      .click();
+    const formulario = page.getByRole('form', { name: 'Entrar com convite' });
+    await formulario.getByLabel('Código de convite', { exact: true }).fill('CODIGO-INVALIDO-123');
+    await formulario.getByRole('button', { name: 'Entrar com convite', exact: true }).click();
 
     await expect(page.getByRole('alert')).toContainText('Código inválido ou expirado.', {
       timeout: 10_000,
@@ -163,29 +106,26 @@ test.describe('Onboarding', () => {
     page,
     authContext,
   }) => {
-    await gotoOnboarding(page, {
-      accessToken: authContext.accessToken,
-      email: authContext.user.email,
-      password: authContext.password,
-    });
+    await abrirBoasVindas(page, authContext);
 
-    // Create the familia through the onboarding form.
-    await page.getByLabel('Nome da familia').fill('Família E2E Dashboard');
-    await page
-      .getByRole('form', { name: 'Criar família' })
-      .getByRole('button', { name: 'Criar família' })
-      .click();
+    await opcao(page, 'Criar Família').click();
+    const formulario = page.getByRole('form', { name: 'Criar família' });
+    await formulario.getByLabel('Nome da família', { exact: true }).fill('Família E2E Dashboard');
+    await formulario.getByRole('button', { name: 'Criar família', exact: true }).click();
 
-    // The FamilySettingsPage is shown after creating a familia. In a real
-    // first-run scenario the user would proceed to the dashboard from there.
-    // Since the FamilySettingsPage does not yet expose a "Ir para dashboard"
-    // button in the current implementation, we verify we left onboarding and
-    // the session now contains a familiaIdAtiva.
-    await expect(
-      page.getByRole('heading', { name: 'Como deseja entrar na sua familia?' }),
-    ).not.toBeVisible({ timeout: 10_000 });
+    // O app abre as configurações da família; de lá o usuário vai ao Início pela barra.
+    await expect(page).toHaveURL(/\/mais\/familia$/, { timeout: 10_000 });
+    await barraPrincipal(page).getByRole('link', { name: 'Início', exact: true }).click();
+    await esperarTela(page, 'Início');
 
-    // The active familia id (non-secret) is persisted; no token may reach the storage.
+    // Família nova: nada lançado, então saldo, receitas e despesas valem zero.
+    const zero = /R\$\s*0,00/;
+    await expect(page.getByText('Saldo', { exact: true }).locator('..')).toContainText(zero);
+    await expect(page.getByText('Receitas', { exact: true }).locator('..')).toContainText(zero);
+    await expect(page.getByText('Despesas', { exact: true }).locator('..')).toContainText(zero);
+    await expect(page.getByText('Nenhuma despesa registrada neste mês')).toBeVisible();
+
+    // O id da família ativa (não secreto) fica guardado; nenhum token pode ir para o storage.
     const familiaAtiva = await page.evaluate(() =>
       localStorage.getItem('nossagrana.familia-ativa'),
     );

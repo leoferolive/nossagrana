@@ -1,0 +1,4 @@
+# Estado local da suíte E2E (gerado em execução; ver apps/e2e/helpers/ritmo.ts)
+apps/e2e/.ritmo/
+apps/e2e/test-results/
+apps/e2e/playwright-report/

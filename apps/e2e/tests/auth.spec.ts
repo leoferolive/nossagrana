@@ -1,125 +1,117 @@
 /**
- * E2E tests for authentication flows.
+ * E2E das telas de autenticação: cadastro, login, tela de entrada sem sessão e sair.
  *
- * The NossaGrana frontend is a single-page application with state-based
- * navigation — the URL stays at "/" for all screens. These tests interact
- * with the real UI to verify login, registration, protected route access,
- * and logout behaviour.
+ * Cada tela tem endereço próprio (`/entrar`, `/cadastro`, `/boas-vindas`, `/mais`). Os testes que
+ * passam pelos formulários pedem as fixtures `vagaDeCadastroNaTela` e `vagaDeLoginNaTela`, que
+ * esperam a vez no limite de requisições da API (ver `helpers/ritmo.ts`).
  */
 
 import { expect, test } from '../fixtures/base.js';
-import { abrirAppAutenticado, API_URL, storageSemToken } from '../helpers/session.js';
+import { abrirInicio, esperarTela, irParaAba } from '../helpers/navegacao.js';
+import { storageSemToken } from '../helpers/session.js';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// ─── Tests ───────────────────────────────────────────────────────────────────
+const entrarForm = (page: import('@playwright/test').Page) =>
+  page.getByRole('form', { name: 'login' });
 
 test.describe('Autenticação', () => {
   // ── 1. Registro com dados válidos ──────────────────────────────────────────
-  test('registro com dados válidos redireciona para onboarding', async ({ page }) => {
+  test('registro com dados válidos redireciona para onboarding', async ({
+    page,
+    vagaDeCadastroNaTela: _vaga,
+  }) => {
     await page.goto('/');
 
-    // The default screen is login; navigate to the sign-up form.
+    // Sem sessão, o app leva à tela de entrada; de lá, ao formulário de cadastro.
+    await expect(page).toHaveURL(/\/entrar$/);
     await page.getByRole('button', { name: 'Cadastre-se' }).click();
+    await expect(page).toHaveURL(/\/cadastro$/);
 
-    // Fill in the registration form.
-    const ts = Date.now();
-    const email = `e2e+reg+${ts}@test.com`;
-
-    await page.getByLabel('Nome completo').fill('Usuário E2E Registro');
+    const email = `e2e+reg+${Date.now()}@test.com`;
+    await page.getByLabel('Nome', { exact: true }).fill('Usuário E2E Registro');
     await page.getByLabel('E-mail').fill(email);
-    // Use exact:true to avoid matching 'Confirmar senha' (partial match would
-    // resolve to 2 elements and cause a strict-mode violation).
     await page.getByLabel('Senha', { exact: true }).fill('Senha@E2E123');
-    await page.getByLabel('Confirmar senha').fill('Senha@E2E123');
 
     await page
       .getByRole('form', { name: 'cadastro' })
-      .getByRole('button', { name: 'Criar conta' })
+      .getByRole('button', { name: 'Continuar' })
       .click();
 
-    // After successful registration the app performs an auto-login and
-    // transitions to the onboarding screen.
+    // Depois do cadastro o app faz o login sozinho e abre as boas-vindas (sem família ainda).
+    await expect(page).toHaveURL(/\/boas-vindas$/, { timeout: 10_000 });
     await expect(
-      page.getByRole('heading', { name: 'Como deseja entrar na sua familia?' }),
-    ).toBeVisible({ timeout: 10_000 });
+      page.getByRole('heading', { name: 'Entrar numa Família', level: 1 }),
+    ).toBeVisible();
   });
 
   // ── 2. Login com credenciais válidas ───────────────────────────────────────
   test('login com credenciais válidas redireciona para dashboard', async ({
     page,
     authContext,
+    familiaId: _familiaId,
+    vagaDeLoginNaTela: _vaga,
   }) => {
     await page.goto('/');
+    await expect(page).toHaveURL(/\/entrar$/);
 
-    // The login form is the default screen.
     await page.getByLabel('E-mail').fill(authContext.user.email);
-    await page.getByLabel('Senha').fill('Senha@E2E123');
+    await page.getByLabel('Senha').fill(authContext.password);
+    await entrarForm(page).getByRole('button', { name: 'Entrar' }).click();
 
-    await page.getByRole('form', { name: 'login' }).getByRole('button', { name: 'Entrar' }).click();
-
-    // After login the app navigates to the dashboard.
-    await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
-
-    // The dashboard shows the financial summary labels.
-    await expect(page.getByText('RECEITAS')).toBeVisible();
-    await expect(page.getByText('DESPESAS')).toBeVisible();
-    await expect(page.getByText('SALDO')).toBeVisible();
+    // Com uma família, o login termina no Início, que mostra o resumo financeiro do mês.
+    await esperarTela(page, 'Início');
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText('Saldo', { exact: true })).toBeVisible();
+    await expect(page.getByText('Receitas', { exact: true })).toBeVisible();
+    await expect(page.getByText('Despesas', { exact: true })).toBeVisible();
   });
 
   // ── 3. Login com credenciais inválidas ─────────────────────────────────────
-  test('login com credenciais inválidas exibe mensagem de erro', async ({ page }) => {
-    await page.goto('/');
+  test('login com credenciais inválidas exibe mensagem de erro', async ({
+    page,
+    vagaDeLoginNaTela: _vaga,
+  }) => {
+    await page.goto('/entrar');
 
     await page.getByLabel('E-mail').fill('invalido@test.com');
     await page.getByLabel('Senha').fill('SenhaErrada123!');
+    await entrarForm(page).getByRole('button', { name: 'Entrar' }).click();
 
-    await page.getByRole('form', { name: 'login' }).getByRole('button', { name: 'Entrar' }).click();
-
-    // The form renders a role="alert" paragraph with the error message.
     await expect(page.getByRole('alert')).toContainText(
       'E-mail ou senha incorretos. Tente novamente.',
       { timeout: 10_000 },
     );
 
-    // The login heading must still be visible (no screen transition occurred).
-    await expect(page.getByRole('heading', { name: 'Entrar no NossaGrana' })).toBeVisible();
+    // Nenhuma troca de tela: o formulário de entrada segue na tela, no mesmo endereço.
+    await expect(entrarForm(page)).toBeVisible();
+    await expect(page).toHaveURL(/\/entrar$/);
   });
 
   // ── 4. Acesso a rota protegida sem autenticação ────────────────────────────
   test('acesso sem autenticação exibe tela de login', async ({ page }) => {
-    // Navigate to the app without any stored session — the app should show
-    // the login screen because it is not authenticated.
-    await page.goto('/');
+    // Endereço protegido, sem sessão: a guarda leva à entrada.
+    await page.goto('/extrato');
 
-    await expect(page.getByRole('heading', { name: 'Entrar no NossaGrana' })).toBeVisible();
-
-    // The login form is rendered.
-    await expect(page.getByRole('form', { name: 'login' })).toBeVisible();
+    await expect(page).toHaveURL(/\/entrar$/);
+    await expect(entrarForm(page)).toBeVisible();
+    await expect(entrarForm(page).getByRole('button', { name: 'Entrar' })).toBeVisible();
   });
 
-  // ── 5. Logout limpa sessão e retorna para login ────────────────────────────
-  test('logout limpa sessão e exibe tela de login', async ({ page, authContext }) => {
-    // Sessão restaurada no bootstrap pelo cookie de refresh (sem familia → onboarding).
-    await abrirAppAutenticado(page, {
-      email: authContext.user.email,
-      password: authContext.password,
-    });
-    await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
+  // ── 5. Sair limpa sessão e retorna para login ──────────────────────────────
+  test('logout limpa sessão e exibe tela de login', async ({ page, authContext, familiaId }) => {
+    await abrirInicio(page, authContext, familiaId);
     expect(await storageSemToken(page)).toBe(true);
 
-    // Logout revoga o refresh e limpa o cookie; o reload não restaura mais a sessão.
-    const resposta = await page.request.post(`${API_URL}/api/auth/logout`, {
-      headers: { 'x-nossagrana-csrf': '1' },
-    });
-    expect(resposta.ok()).toBe(true);
-    await page.reload();
+    // "Sair" fica na tela Mais, no grupo Conta.
+    await irParaAba(page, 'Mais');
+    await page.getByRole('button', { name: 'Sair' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Entrar no NossaGrana' })).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(page.getByRole('form', { name: 'login' })).toBeVisible();
+    await expect(page).toHaveURL(/\/entrar$/, { timeout: 10_000 });
+    await expect(entrarForm(page)).toBeVisible();
+
+    // Sair revoga o refresh e limpa o cookie: recarregar não restaura mais a sessão.
+    await page.reload();
+    await expect(page).toHaveURL(/\/entrar$/);
+    await expect(entrarForm(page)).toBeVisible();
+    expect(await storageSemToken(page)).toBe(true);
   });
 });

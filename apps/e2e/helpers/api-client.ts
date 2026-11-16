@@ -7,6 +7,8 @@
  * Routes that require familia scope expect the `x-familia-id` header.
  */
 
+import { reservarVaga } from './ritmo.js';
+
 const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
 
 // ─── Response types ────────────────────────────────────────────────────────────
@@ -21,8 +23,15 @@ interface RegisterResponse {
   user: User & { dataCriacao: string };
 }
 
+/** Cookie de refresh que a API grava no login (HttpOnly); o navegador do teste o recebe depois. */
+export interface CookieDeRefresh {
+  name: string;
+  value: string;
+}
+
 interface LoginResponse {
   accessToken: string;
+  refreshCookie: CookieDeRefresh | null;
 }
 
 interface Familia {
@@ -192,17 +201,40 @@ async function request<T>(
 /**
  * POST /auth/register
  * Returns the created user. Does NOT return tokens — use `login` to obtain them.
+ * Espera a vaga do limite de cadastros (ver `ritmo.ts`).
  */
 export async function register(data: RegisterInput): Promise<RegisterResponse> {
+  await reservarVaga('cadastro');
   return request<RegisterResponse>('POST', '/api/auth/register', { body: data });
 }
 
 /**
  * POST /auth/login
- * Returns accessToken (refresh goes in an HttpOnly cookie). Does NOT return user data.
+ * Returns accessToken e o cookie de refresh (HttpOnly, vindo no `Set-Cookie`). Does NOT return
+ * user data. O cookie existe para o teste abrir o app já autenticado sem um segundo login, que
+ * gastaria outra vaga do limite de 5 logins por minuto.
  */
 export async function login(data: LoginInput): Promise<LoginResponse> {
-  return request<LoginResponse>('POST', '/api/auth/login', { body: data });
+  await reservarVaga('login');
+  const response = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error(`API POST /api/auth/login failed with status ${response.status}`);
+  }
+  const corpo = (await response.json()) as { accessToken: string };
+  return { accessToken: corpo.accessToken, refreshCookie: lerCookieDeRefresh(response) };
+}
+
+/** Extrai `nome=valor` do cookie de refresh no `Set-Cookie` do login. */
+function lerCookieDeRefresh(response: Response): CookieDeRefresh | null {
+  const linha = response.headers.getSetCookie().find((c) => /ng_refresh=/.test(c));
+  if (!linha) return null;
+  const [par] = linha.split(';');
+  const separador = par.indexOf('=');
+  return { name: par.slice(0, separador), value: par.slice(separador + 1) };
 }
 
 /**
@@ -274,9 +306,16 @@ export async function criarMetodoPagamento(
 
 /**
  * DELETE /auth/account
- * Deletes the authenticated user's account. Used for cleanup after tests.
- * Returns void (204 No Content).
+ * Tenta excluir a conta do usuário autenticado ao fim de um teste. Hoje a API não tem essa rota
+ * (404): os usuários dos testes ficam no banco do ambiente isolado, sem colidir (e-mails únicos
+ * por teste), e somem com `docker compose down -v`. O 404 é ignorado de propósito para a limpeza
+ * não derrubar o teste; qualquer outro erro continua sendo lançado.
  */
 export async function deleteAccount(token: string): Promise<void> {
-  await request<void>('DELETE', '/api/auth/account', { token });
+  try {
+    await request<void>('DELETE', '/api/auth/account', { token });
+  } catch (erro) {
+    if (erro instanceof Error && /status 404/.test(erro.message)) return;
+    throw erro;
+  }
 }

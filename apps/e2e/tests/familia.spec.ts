@@ -17,8 +17,9 @@
  */
 
 import { expect, test } from '../fixtures/base.js';
-import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 import * as api from '../helpers/api-client.js';
+import { abrirInicio, abrirLinha, esperarTela, irParaAba } from '../helpers/navegacao.js';
+import { abrirAppAutenticado, storageSemToken } from '../helpers/session.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -26,59 +27,28 @@ function uniqueEmail(label: string): string {
   return `e2e+familia+${label}+${Date.now()}+${Math.random().toString(36).slice(2, 7)}@test.com`;
 }
 
-/** Minimal shape of the authContext fixture used in navigation helpers. */
-interface AuthCtx {
-  accessToken: string;
-  password: string;
-  user: { id: string; nome: string; email: string };
+type Sessao = Parameters<typeof abrirAppAutenticado>[1];
+
+/** Abre o app de quem ainda não tem família: a guarda leva às boas-vindas. */
+async function gotoOnboarding(page: import('@playwright/test').Page, sessao: Sessao) {
+  await abrirAppAutenticado(page, sessao);
+  await expect(page).toHaveURL(/\/boas-vindas$/, { timeout: 15_000 });
+  await esperarTela(page, 'Entrar numa Família');
 }
 
 /**
- * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session and reloads
- * the page so the App.tsx lazy initializer navigates to screen = 'onboarding'.
- */
-async function gotoOnboarding(page: import('@playwright/test').Page, ctx: AuthCtx) {
-  await abrirAppAutenticado(page, { email: ctx.user.email, password: ctx.password });
-  await expect(page.getByText('Como deseja entrar')).toBeVisible({ timeout: 15_000 });
-}
-
-/**
- * Logs in through the browser context (HttpOnly refresh cookie, #117); the app bootstrap restores the session, reloads the page
- * to land on screen = 'dashboard', then navigates to FamilySettingsPage via
- * ConfiguracoesPage.
- *
- * The FamilySettingsPage is only reachable from:
- *   - Onboarding (after creating a familia)
- *   - ConfiguracoesPage → "Família"
- *
- * We use ConfiguracoesPage → Família as the navigation path from the
- * dashboard so we don't depend on the onboarding flow.
+ * Chega à tela da família pela navegação do app: Início, aba Mais, linha "Família". A tela só é
+ * alcançável por aí (ou logo depois de criar a família, nas boas-vindas).
  */
 async function gotoFamilySettings(
   page: import('@playwright/test').Page,
-  ctx: AuthCtx,
+  sessao: Sessao,
   familiaId: string,
 ) {
-  await abrirAppAutenticado(page, { email: ctx.user.email, password: ctx.password }, familiaId);
-
-  // Wait for dashboard.
-  await expect(page.getByRole('heading', { name: 'NossaGrana', exact: true })).toBeVisible({
-    timeout: 15_000,
-  });
-
-  // Navigate to Configurações.
-  await page.getByRole('button', { name: 'Ver configurações' }).click();
-  await expect(page.getByRole('heading', { name: 'Configurações', level: 1 })).toBeVisible({
-    timeout: 10_000,
-  });
-
-  // Navigate to Família settings.
-  await page.getByRole('button', { name: /família/i }).click();
-
-  // FamilySettingsPage renders with its AuthShell heading.
-  await expect(page.getByRole('heading', { name: /configuracoes da familia/i })).toBeVisible({
-    timeout: 10_000,
-  });
+  await abrirInicio(page, sessao, familiaId);
+  await irParaAba(page, 'Mais');
+  await abrirLinha(page, 'Família', 'Família');
+  await expect(page).toHaveURL(/\/mais\/familia$/);
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -91,23 +61,19 @@ test.describe('Família', () => {
   }) => {
     await gotoOnboarding(page, authContext);
 
-    // "Criar família" is the default mode.
-    await expect(page.getByRole('form', { name: 'Criar família' })).toBeVisible({
-      timeout: 10_000,
-    });
+    await page.getByRole('button', { name: /^Criar Família/ }).click();
+    const formulario = page.getByRole('form', { name: 'Criar família' });
+    await expect(formulario).toBeVisible({ timeout: 10_000 });
 
-    await page.getByLabel('Nome da familia').fill('Família E2E Criação');
-    await page
-      .getByRole('form', { name: 'Criar família' })
-      .getByRole('button', { name: 'Criar família' })
-      .click();
+    await formulario.getByLabel('Nome da família', { exact: true }).fill('Família E2E Criação');
+    await formulario.getByRole('button', { name: 'Criar família', exact: true }).click();
 
-    // After creating, the app moves to FamilySettingsPage.
-    await expect(page.getByRole('heading', { name: /configuracoes da familia/i })).toBeVisible({
-      timeout: 10_000,
-    });
+    // Criada a família, o app abre as configurações dela.
+    await expect(page).toHaveURL(/\/mais\/familia$/, { timeout: 10_000 });
+    await esperarTela(page, 'Família');
+    await expect(page.getByRole('heading', { name: 'Membros', level: 2 })).toBeVisible();
 
-    // The active familia id (non-secret) is persisted; no token may reach the storage.
+    // O id da família ativa (não secreto) fica guardado; nenhum token pode ir para o storage.
     const familiaAtiva = await page.evaluate(() =>
       localStorage.getItem('nossagrana.familia-ativa'),
     );
@@ -123,14 +89,11 @@ test.describe('Família', () => {
   }) => {
     await gotoFamilySettings(page, authContext, familiaId);
 
-    // Click the "Gerar codigo de convite" button.
-    await page.getByRole('button', { name: 'Gerar codigo de convite' }).click();
+    await page.getByRole('button', { name: 'Gerar código de convite' }).click();
 
-    // A section with "Codigo: <value>" must appear.
-    await expect(page.getByText(/Codigo:/)).toBeVisible({ timeout: 10_000 });
-
-    // The copy button must also appear.
-    await expect(page.getByRole('button', { name: 'Copiar codigo' })).toBeVisible();
+    // O código aparece numa linha com o botão de copiar.
+    await expect(page.locator('code')).toHaveText(/\S{4,}/, { timeout: 10_000 });
+    await expect(page.getByRole('button', { name: 'Copiar', exact: true })).toBeVisible();
   });
 
   // ── 3. Segundo usuário entra via código de convite ───────────────────────
@@ -139,6 +102,8 @@ test.describe('Família', () => {
     authContext,
     familiaId,
   }) => {
+    // Dois cadastros: a espera do segundo pelo limite da API entra nos 30 s do teste.
+    test.slow();
     // ── User 1: generate an invite code via the API ──
     const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
     const inviteRes = await page.request.post(`${BASE_URL}/api/familias/convites`, {
@@ -187,6 +152,8 @@ test.describe('Família', () => {
     authContext,
     familiaId,
   }) => {
+    // Dois cadastros: a espera do segundo pelo limite da API entra nos 30 s do teste.
+    test.slow();
     // ── User 2: register and send a join request via the API ──
     const user2Email = uniqueEmail('req');
     const user2Reg = await api.register({
@@ -229,6 +196,15 @@ test.describe('Família', () => {
         timeout: 10_000,
       });
 
+      // DEFEITO CONHECIDO DO APP (não corrigido neste PR): ao aprovar, a tela só tira a
+      // solicitação da lista de pendentes e não recarrega os membros, então o novo membro só
+      // aparece depois de recarregar. O teste confere o resultado depois do reload.
+      await page.reload();
+      await esperarTela(page, 'Família');
+      await expect(
+        page.getByRole('listitem').filter({ hasText: 'Usuário Solicitante E2E' }),
+      ).toBeVisible({ timeout: 10_000 });
+
       // Verify via API that the second user is now a member.
       const membrosRes = await page.request.get(`${BASE_URL}/api/familias/${familiaId}/membros`, {
         headers: {
@@ -254,8 +230,45 @@ test.describe('Família', () => {
     }
   });
 
+  // DEFEITO DO APP (não corrigido neste PR): ao aprovar, a tela só tira a solicitação da lista de
+  // pendentes e não recarrega os membros. O teste acima confere o membro depois de recarregar;
+  // este fixa o comportamento certo, sem recarregar. Remover o `fixme` quando a tela atualizar.
+  test.fixme('aprovar solicitação mostra o novo membro sem recarregar', async ({
+    page,
+    authContext,
+    familiaId,
+  }) => {
+    test.slow();
+    const email = uniqueEmail('semreload');
+    await api.register({ nome: 'Usuário Sem Reload E2E', email, senha: 'Senha@E2E123' });
+    const user2 = await api.login({ email, senha: 'Senha@E2E123' });
+    const BASE_URL = process.env.API_URL ?? 'http://localhost:3000';
+
+    try {
+      const res = await page.request.post(`${BASE_URL}/api/familias/solicitar`, {
+        headers: {
+          Authorization: `Bearer ${user2.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        data: { familiaId },
+      });
+      expect(res.status()).toBe(201);
+
+      await gotoFamilySettings(page, authContext, familiaId);
+      await page.getByRole('button', { name: /^Aprovar$/ }).click();
+
+      await expect(
+        page.getByRole('listitem').filter({ hasText: 'Usuário Sem Reload E2E' }),
+      ).toBeVisible({ timeout: 10_000 });
+    } finally {
+      await api.deleteAccount(user2.accessToken);
+    }
+  });
+
   // ── 5. Remover membro → membro removido da lista ─────────────────────────
   test('remover membro remove-o da lista de membros', async ({ page, authContext, familiaId }) => {
+    // Dois cadastros: a espera do segundo pelo limite da API entra nos 30 s do teste.
+    test.slow();
     // ── User 2: register, get invite, join the family ──
     const user2Email = uniqueEmail('remove');
     const user2Reg = await api.register({
@@ -292,11 +305,10 @@ test.describe('Família', () => {
       // ── User 1: navigate to FamilySettingsPage and remove user 2 ──
       await gotoFamilySettings(page, authContext, familiaId);
 
-      // The members list should show a "Remover <userId>" button for user 2.
-      // The UI renders the usuarioId (UUID) as text. We locate the remove button
-      // by its partial text which includes the user2 id.
+      // A lista de membros mostra o nome e um botão "Remover <nome>" para quem não é admin.
       const removeButton = page.getByRole('button', {
-        name: new RegExp(`Remover ${user2Reg.user.id}`, 'i'),
+        name: 'Remover Usuário para Remover E2E',
+        exact: true,
       });
 
       await expect(removeButton).toBeVisible({ timeout: 10_000 });

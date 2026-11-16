@@ -29,8 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. **Próximo passo:** escrever o desenho curto da
-Entrega 3 (Extrato e Lançar) e levá-lo ao usuário para aprovação.
+Lançar e Início ainda é o antigo. O desenho da Entrega 3 (Extrato e Lançar) está escrito. **Próximo passo:** o
+usuário aprovar o
+[desenho da Entrega 3](../superpowers/specs/2026-11-16-nova-ui-entrega-3-design.md);
+em seguida, o plano do primeiro PR dela (Correções).
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -86,6 +88,12 @@ cabeçalhos e tour; E2E. Desenho em
 
 ### Entrega 3 — Extrato e Lançar
 
+Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
+[`2026-11-16-nova-ui-entrega-3-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-3-design.md).
+
+- [ ] Desenho da Entrega 3 aprovado pelo usuário
+- [ ] Correções: limite duplicado, membros que não recarregam e erro 500 no
+      limite de login
 - [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
 - [ ] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
       (hoje só atualiza ao sair e voltar à tela; visto na validação do #188)

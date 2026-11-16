@@ -1,3 +1,5 @@
+import { CAMPO_CLASSES } from './ui/campo-classes';
+
 interface TemplateValorInputProps {
   nome: string;
   valor: string;
@@ -17,7 +19,7 @@ export function TemplateValorInput({
         {cofrinhoEmoji && <span>{cofrinhoEmoji}</span>}
         {nome}
       </span>
-      <div className="flex items-center gap-1 rounded-md border border-border bg-bg px-2 py-1">
+      <div className="flex items-center gap-1">
         <span className="text-xs text-text-muted">R$</span>
         <input
           type="text"
@@ -25,7 +27,7 @@ export function TemplateValorInput({
           value={valor}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0,00"
-          className="w-24 bg-transparent text-right text-sm text-text outline-none placeholder:text-text-muted"
+          className={`${CAMPO_CLASSES} !w-[124px] text-right font-bold`}
           aria-label={`Valor para ${nome}`}
         />
       </div>

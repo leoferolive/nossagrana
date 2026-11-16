@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 import { formatBRL } from '../utils/formatting';
+import { IconVoltar } from '../components/icons';
 
 interface FaturaItem {
   id: string;
@@ -59,22 +60,23 @@ export function FaturaPage({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg p-4">
+    <div className="min-h-full bg-bg p-4">
       <div className="mb-6 flex items-center gap-4">
         <button
           type="button"
           aria-label="Voltar"
           onClick={onBack}
-          className="rounded-lg bg-surface px-3 py-2 text-sm text-text-muted hover:bg-surface-hover"
+          className="inline-flex items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm text-text-muted hover:bg-surface-hover"
         >
-          ← Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
         <div>
           <h1 className="text-2xl font-bold text-text">Fatura — {metodoPagamentoNome}</h1>
@@ -83,7 +85,7 @@ export function FaturaPage({
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger">
+        <div className="mb-4 rounded-lg border border-danger bg-danger-soft p-3 text-sm text-danger">
           {error}
         </div>
       )}

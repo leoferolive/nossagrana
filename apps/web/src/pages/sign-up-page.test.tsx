@@ -53,7 +53,7 @@ describe('SignUpPage', () => {
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
   });
 
-  it('renderiza botão "← Voltar" que chama onOpenLogin', () => {
+  it('renderiza botão "Voltar" que chama onOpenLogin', () => {
     const onOpenLogin = vi.fn();
     renderPage({ onOpenLogin });
     const voltarBtn = screen.getByRole('button', { name: /voltar/i });

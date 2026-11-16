@@ -12,7 +12,7 @@ const FAQ = [
       {
         pergunta: 'Como cadastrar uma transação?',
         resposta:
-          "Clique no botão '+ Nova Transação' no canto superior direito. Preencha valor, categoria, descrição e método de pagamento. Clique em 'Salvar'.",
+          "Clique no botão 'Nova Transação' no canto superior direito. Preencha valor, categoria, descrição e método de pagamento. Clique em 'Salvar'.",
       },
       {
         pergunta: 'Como funciona o parcelamento?',
@@ -124,7 +124,7 @@ export const AjudaPage = ({ onBack, onNavigate }: AjudaPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text p-4">
+    <div className="min-h-full bg-bg text-text p-4">
       <div className="max-w-2xl mx-auto">
         <div className="mb-5">
           {onBack && (

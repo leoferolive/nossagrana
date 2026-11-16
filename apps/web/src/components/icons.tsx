@@ -5,7 +5,10 @@
 export {
   // Navegação
   ArrowLeft as IconVoltar,
+  ArrowRight as IconAvancar,
+  ChevronLeft as IconMesAnterior,
   ChevronRight as IconChevron,
+  ChevronRight as IconProximoMes,
   X as IconFechar,
 
   // Ações
@@ -13,6 +16,8 @@ export {
   Pencil as IconEditar,
   Trash2 as IconExcluir,
   Save as IconSalvar,
+  Search as IconBusca,
+  Download as IconExportar,
 
   // Financeiro
   CreditCard as IconCartao,
@@ -20,6 +25,14 @@ export {
   CalendarDays as IconHistorico,
   Target as IconOrcamento,
   Receipt as IconExtrato,
+  Wallet as IconSaldo,
+  Banknote as IconDinheiro,
+  Zap as IconPix,
+  ArrowUp as IconEntrada,
+  ArrowDown as IconSaida,
+  TrendingUp as IconTendencia,
+  Camera as IconSnapshot,
+  ClipboardList as IconTemplates,
 
   // Família / Usuário
   Users as IconFamilia,
@@ -30,6 +43,8 @@ export {
   LogOut as IconSair,
 
   // Informação
+  TriangleAlert as IconAlerta,
+  Hand as IconBoasVindas,
   HelpCircle as IconAjuda,
   RefreshCw as IconRecorrente,
   Layers as IconParcelas,

@@ -4,6 +4,7 @@ import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { MonthNav } from '../components/month-nav';
 import { getCurrentMonth, shiftMonth } from '../utils/date';
+import { COR_DESPESA, COR_RECEITA, COR_SALDO } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
@@ -15,6 +16,7 @@ import type {
 } from '@nossagrana/types';
 
 import { formatBRL } from '../utils/formatting';
+import { IconRecorrente, IconRelatorio } from '../components/icons';
 
 type Tab = 'distribuicao' | 'por-membro' | 'tendencias';
 
@@ -65,7 +67,7 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -88,18 +90,18 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
   ];
 
   return (
-    <div className="min-h-screen bg-bg p-4">
+    <div className="min-h-full bg-bg p-4">
       <FirstTimeTour
         tourKey="relatorios"
         steps={[
           {
-            icon: '📊',
+            icon: IconRelatorio,
             title: 'Relatórios',
             description:
               'Analise seus gastos de diferentes ângulos: distribuição por categoria, comparação entre membros e tendências ao longo dos meses.',
           },
           {
-            icon: '🔄',
+            icon: IconRecorrente,
             title: 'Abas de visualização',
             description:
               'Alterne entre Distribuição, Por Membro e Tendências usando as abas no topo.',
@@ -108,7 +110,7 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
       />
       <ErrorBanner error={erro} />
 
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="text-2xl font-bold text-text md:hidden">Relatórios</h1>
         <MonthNav
           mesReferencia={mesReferencia}
@@ -175,14 +177,14 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
               {porUsuario.map((item) => (
                 <div key={item.usuarioId} className="rounded-xl border border-border bg-panel p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-success/20 text-sm font-bold text-success">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-success">
                       {item.usuarioNome.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="font-semibold text-text">{item.usuarioNome}</p>
                       <p className="text-xs text-text-muted">{item.percentual}% do total</p>
                     </div>
-                    <p className="ml-auto font-bold text-danger tabular-nums">
+                    <p className="ml-auto font-bold text-text tabular-nums">
                       {formatBRL(item.total)}
                     </p>
                   </div>
@@ -202,15 +204,15 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
             <>
               <div className="rounded-xl border border-border bg-panel p-4">
                 <p className="mb-2 text-xs font-semibold text-success">Receitas</p>
-                <MiniChart data={receitas} height={56} color="#22C55E" labels={tendLabels} />
+                <MiniChart data={receitas} height={56} color={COR_RECEITA} labels={tendLabels} />
               </div>
               <div className="rounded-xl border border-border bg-panel p-4">
-                <p className="mb-2 text-xs font-semibold text-danger">Despesas</p>
-                <MiniChart data={despesas} height={56} color="#EF4444" labels={tendLabels} />
+                <p className="mb-2 text-xs font-semibold text-text-muted">Despesas</p>
+                <MiniChart data={despesas} height={56} color={COR_DESPESA} labels={tendLabels} />
               </div>
               <div className="rounded-xl border border-border bg-panel p-4">
-                <p className="mb-2 text-xs font-semibold text-primary">Saldo</p>
-                <MiniChart data={saldos} height={56} color="#3B82F6" labels={tendLabels} />
+                <p className="mb-2 text-xs font-semibold text-text-muted">Saldo</p>
+                <MiniChart data={saldos} height={56} color={COR_SALDO} labels={tendLabels} />
               </div>
             </>
           ) : (

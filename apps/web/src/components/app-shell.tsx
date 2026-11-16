@@ -72,7 +72,7 @@ export const AppShell = ({
   };
 
   return (
-    <div className="flex min-h-screen md:h-screen">
+    <div className="flex h-dvh overflow-hidden">
       {/* Sidebar: visível apenas no desktop */}
       <div className="hidden md:flex">
         <Sidebar
@@ -90,8 +90,10 @@ export const AppShell = ({
           <TopBar currentScreen={currentScreen} onNovaTransacao={onNovaTransacao} />
         </div>
 
-        {/* Conteúdo — padding-bottom no mobile para não ficar atrás da BottomNav */}
-        <main className="flex-1 overflow-y-auto pb-[68px] md:pb-0">{children}</main>
+        {/* Conteúdo — padding-bottom no mobile para o último item rolar acima da BottomNav e do "+" */}
+        <main className="flex-1 overflow-y-auto pb-[calc(144px+env(safe-area-inset-bottom))] md:pb-0">
+          {children}
+        </main>
 
         {/* BottomNav: visível apenas no mobile */}
         <div className="md:hidden">
@@ -118,7 +120,7 @@ export const AppShell = ({
           onNovaTransacao();
         }}
         onContextMenu={(e) => e.preventDefault()}
-        className="fixed bottom-20 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-success text-2xl font-bold text-white shadow-lg hover:bg-success-strong md:hidden"
+        className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-5 z-lancar flex h-14 w-14 items-center justify-center rounded-full bg-success text-2xl font-bold text-white shadow-lg hover:bg-success-strong md:hidden"
       >
         +
       </button>

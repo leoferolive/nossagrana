@@ -1,4 +1,7 @@
-import { formatMesLabel } from '../utils/date';
+import { formatMesTitulo } from '../utils/date';
+
+import { ALVO_TOQUE_CLASSES } from './ui/campo-classes';
+import { IconMesAnterior, IconProximoMes } from './icons';
 
 interface MonthNavProps {
   mesReferencia: string;
@@ -13,26 +16,26 @@ export const MonthNav = ({
   onMesProximo,
   isCurrentMonth,
 }: MonthNavProps) => (
-  <div className="flex items-center gap-3">
+  <div className="flex items-center gap-1">
     <button
       type="button"
       onClick={onMesAnterior}
-      className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text"
+      className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text`}
       aria-label="Mês anterior"
     >
-      ◀
+      <IconMesAnterior size={18} aria-hidden="true" />
     </button>
-    <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
-      {formatMesLabel(mesReferencia)}
+    <span className="min-w-[120px] text-center text-sm text-text-muted">
+      {formatMesTitulo(mesReferencia)}
     </span>
     <button
       type="button"
       onClick={onMesProximo}
       disabled={isCurrentMonth}
-      className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
+      className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text disabled:cursor-not-allowed disabled:opacity-30`}
       aria-label="Próximo mês"
     >
-      ▶
+      <IconProximoMes size={18} aria-hidden="true" />
     </button>
   </div>
 );

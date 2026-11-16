@@ -7,6 +7,14 @@ import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
 import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
+import { CAMPO_CLASSES } from '../components/ui/campo-classes';
+import {
+  IconAdicionar,
+  IconEditar,
+  IconOrcamento,
+  IconRelatorio,
+  IconVoltar,
+} from '../components/icons';
 
 interface OrcamentoItem {
   id: string;
@@ -125,31 +133,31 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <FirstTimeTour
         tourKey="orcamento"
         steps={[
           {
-            icon: '🎯',
+            icon: IconOrcamento,
             title: 'Orçamento mensal',
             description:
               'Defina quanto deseja gastar no máximo por categoria. O controle ajuda a evitar surpresas no fim do mês.',
           },
           {
-            icon: '📊',
+            icon: IconRelatorio,
             title: 'Barra de progresso',
             description:
               'A barra muda de cor: verde = dentro do limite, amarelo = 80% usado, vermelho = estourou.',
           },
           {
-            icon: '✏️',
+            icon: IconEditar,
             title: 'Ajustar limites',
             description:
               'Toque em "Editar limite" para alterar o valor. A mudança vale a partir de agora e o histórico anterior é preservado.',
@@ -163,7 +171,8 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
           onClick={onBack}
           className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-surface"
         >
-          ← Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
         <div>
           <h1 className="text-xl font-bold text-text">Orçamento Mensal</h1>
@@ -191,7 +200,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                   aria-label="Categoria"
                   value={addCategoriaId}
                   onChange={(e) => setAddCategoriaId(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  className={CAMPO_CLASSES}
                 >
                   <option value="">Selecione...</option>
                   {categoriasDisponiveis.map((c) => (
@@ -213,7 +222,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                   placeholder="Ex: 500.00"
                   value={addValorLimite}
                   onChange={(e) => setAddValorLimite(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  className={CAMPO_CLASSES}
                 />
               </div>
               <div className="flex gap-2">
@@ -262,9 +271,10 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
               <button
                 type="button"
                 onClick={handleOpenAddForm}
-                className="self-start rounded-lg border border-dashed border-border px-4 py-2 text-sm text-text-muted transition hover:border-success hover:text-success"
+                className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-dashed border-border px-4 py-2 text-sm text-text-muted transition hover:border-success hover:text-success"
               >
-                + Adicionar Categoria
+                <IconAdicionar size={16} aria-hidden="true" />
+                Adicionar Categoria
               </button>
             )}
             {/* Mobile: cards com BudgetBar */}
@@ -302,7 +312,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                         pattern="^\d+(\.\d{1,2})?$"
                         value={novoLimite}
                         onChange={(e) => setNovoLimite(e.target.value)}
-                        className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                        className={`${CAMPO_CLASSES} flex-1`}
                       />
                       <button
                         type="button"
@@ -414,7 +424,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                                   inputMode="decimal"
                                   value={novoLimite}
                                   onChange={(e) => setNovoLimite(e.target.value)}
-                                  className="w-24 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                                  className={`${CAMPO_CLASSES} !w-24`}
                                 />
                                 <button
                                   type="button"

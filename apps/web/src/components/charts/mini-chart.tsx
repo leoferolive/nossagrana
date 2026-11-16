@@ -1,3 +1,5 @@
+import { COR_RECEITA } from './chart-colors';
+
 interface MiniChartProps {
   data: number[];
   height?: number;
@@ -9,7 +11,7 @@ interface MiniChartProps {
 export const MiniChart = ({
   data,
   height = 60,
-  color = '#22C55E',
+  color = COR_RECEITA,
   fill = true,
   labels,
 }: MiniChartProps) => {
@@ -75,7 +77,7 @@ export const MiniChart = ({
                   y={height - 2}
                   textAnchor="middle"
                   fontSize={9}
-                  fill="#8B8D9A"
+                  className="fill-text-dim"
                 >
                   {label}
                 </text>

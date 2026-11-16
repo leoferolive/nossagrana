@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { ALVO_TOQUE_CLASSES } from './ui/campo-classes';
+import { IconFechar } from './icons';
 
 interface CofrinhoEncerrarModalProps {
   open: boolean;
@@ -37,12 +39,12 @@ export const CofrinhoEncerrarModal = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
+      className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 shadow-soft md:rounded-2xl md:border md:border-border">
+      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft md:rounded-2xl md:border md:border-border md:pb-5">
         {/* Handle bar mobile */}
         <div className="mb-4 flex justify-center md:hidden">
           <div className="h-1 w-10 rounded-full bg-border" />
@@ -54,9 +56,9 @@ export const CofrinhoEncerrarModal = ({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
-            ✕
+            <IconFechar size={18} aria-hidden="true" />
           </button>
         </div>
 

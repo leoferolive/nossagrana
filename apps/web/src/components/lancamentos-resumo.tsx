@@ -37,7 +37,7 @@ export function LancamentosResumo({ templates, valores }: LancamentosResumoProps
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-text-muted">Total Despesas</span>
-          <span className="text-sm font-semibold text-danger">{formatBRL(despesas)}</span>
+          <span className="text-sm font-semibold text-text">{formatBRL(despesas)}</span>
         </div>
         <div className="mt-1 border-t border-border pt-2 flex items-center justify-between">
           <span className="text-sm font-semibold text-text">Saldo</span>

@@ -16,6 +16,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Por padrão o Vitest zera todo CSS, inclusive `?raw`; o teste de tokens precisa ler o texto de index.css.
+    css: { include: [/index\.css/] },
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],

@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 
 import { metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 
 import type { MetodoPagamentoCreateRequest } from '@nossagrana/types';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { IconAdicionar, IconCartao, IconDinheiro, IconPix, IconVoltar } from '../components/icons';
 
 interface MetodosPagamentoPageProps {
   familiaId: string;
@@ -22,23 +25,28 @@ const TIPO_LABEL: Record<TipoMetodo, string> = {
 
 const TIPO_COLOR: Record<TipoMetodo, string> = {
   credito: 'bg-info/10 text-info',
-  debito: 'bg-warning/10 text-warning',
-  pix: 'bg-success/10 text-success',
+  debito: 'bg-warning-soft text-warning',
+  pix: 'bg-accent-soft text-success',
   dinheiro: 'bg-text-dim/10 text-text-muted',
 };
 
-const TIPO_ICON: Record<TipoMetodo, string> = {
-  credito: '\uD83D\uDCB3',
-  debito: '\uD83D\uDCB3',
-  pix: '\u26A1',
-  dinheiro: '\uD83D\uDCB5',
+const TIPO_ICON: Record<TipoMetodo, LucideIcon> = {
+  credito: IconCartao,
+  debito: IconCartao,
+  pix: IconPix,
+  dinheiro: IconDinheiro,
+};
+
+const TipoIcone = ({ tipo }: { tipo: TipoMetodo }) => {
+  const Icone = TIPO_ICON[tipo];
+  return <Icone size={20} />;
 };
 
 const TIPO_ICON_BG: Record<TipoMetodo, string> = {
-  credito: 'bg-[#8B5CF620]',
-  debito: 'bg-warning/10',
-  pix: 'bg-[#06B6D420]',
-  dinheiro: 'bg-success/10',
+  credito: 'bg-accent-soft',
+  debito: 'bg-warning-soft',
+  pix: 'bg-accent-soft',
+  dinheiro: 'bg-accent-soft',
 };
 
 export const MetodosPagamentoPage = ({
@@ -105,16 +113,16 @@ export const MetodosPagamentoPage = ({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
         <button
           type="button"
           onClick={onBack}
           aria-label="Voltar"
-          className="text-text-muted transition hover:text-text"
+          className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
         >
-          ←
+          <IconVoltar size={20} aria-hidden="true" />
         </button>
         <h1 className="text-lg font-bold text-text">Cartões e Pagamentos</h1>
         <div className="flex-1" />
@@ -138,7 +146,7 @@ export const MetodosPagamentoPage = ({
                 aria-label="Nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-info/40"
+                className={CAMPO_CLASSES}
                 placeholder="Ex: Nubank, Pix João"
               />
             </label>
@@ -148,7 +156,7 @@ export const MetodosPagamentoPage = ({
                 aria-label="Tipo"
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as TipoMetodo)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                className={CAMPO_CLASSES}
               >
                 <option value="credito">Crédito</option>
                 <option value="debito">Débito</option>
@@ -167,7 +175,7 @@ export const MetodosPagamentoPage = ({
                     aria-label="Dia de fechamento"
                     value={dataFechamento}
                     onChange={(e) => setDataFechamento(e.target.value)}
-                    className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                    className={CAMPO_CLASSES}
                     placeholder="15"
                   />
                 </label>
@@ -180,7 +188,7 @@ export const MetodosPagamentoPage = ({
                     aria-label="Dia de vencimento"
                     value={dataVencimento}
                     onChange={(e) => setDataVencimento(e.target.value)}
-                    className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                    className={CAMPO_CLASSES}
                     placeholder="22"
                   />
                 </label>
@@ -239,7 +247,7 @@ export const MetodosPagamentoPage = ({
                   className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl ${TIPO_ICON_BG[m.tipo]}`}
                   aria-hidden="true"
                 >
-                  {TIPO_ICON[m.tipo]}
+                  <TipoIcone tipo={m.tipo} />
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2">
@@ -259,7 +267,7 @@ export const MetodosPagamentoPage = ({
                       onVerFatura(m.id, m.nome, mes);
                     }}
                     aria-label={`Ver fatura de ${m.nome}`}
-                    className="rounded-lg px-3 py-1 text-xs text-info transition hover:bg-info/10"
+                    className="rounded-lg px-3 py-1 text-xs text-success transition hover:bg-accent-soft"
                   >
                     Ver fatura
                   </button>
@@ -268,7 +276,7 @@ export const MetodosPagamentoPage = ({
                   type="button"
                   onClick={() => void handleDesativar(m.id)}
                   aria-label={`Desativar ${m.nome}`}
-                  className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
+                  className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger-soft"
                 >
                   Desativar
                 </button>
@@ -281,9 +289,10 @@ export const MetodosPagamentoPage = ({
         <button
           type="button"
           onClick={() => setFormOpen(true)}
-          className="mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong md:hidden"
+          className="inline-flex items-center justify-center gap-2 mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong md:hidden"
         >
-          + Novo Método
+          <IconAdicionar size={16} aria-hidden="true" />
+          Novo Método
         </button>
       </div>
     </div>

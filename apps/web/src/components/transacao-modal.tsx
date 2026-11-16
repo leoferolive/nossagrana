@@ -9,9 +9,10 @@ import {
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
 import { getTodayLocalISO } from '@/utils/date';
-import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
+import { IconFechar, IconMicrofone, IconParcelas, IconRecorrente } from './icons';
 import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
 import { CustomSelect } from './ui/custom-select';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 export interface DadosVoz {
   tipo: 'receita' | 'despesa' | null;
@@ -179,13 +180,13 @@ export const TransacaoModal = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
+      className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       {/* Bottom-sheet mobile / modal centrado desktop */}
-      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 shadow-soft md:rounded-2xl md:border md:border-border">
+      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft md:rounded-2xl md:border md:border-border md:pb-5">
         {/* Handle bar mobile */}
         <div className="mb-4 flex justify-center md:hidden">
           <div className="h-1 w-10 rounded-full bg-border" />
@@ -199,9 +200,9 @@ export const TransacaoModal = ({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
-            ✕
+            <IconFechar size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -232,7 +233,7 @@ export const TransacaoModal = ({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -265,7 +266,7 @@ export const TransacaoModal = ({
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Mercado do mês"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -277,7 +278,7 @@ export const TransacaoModal = ({
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -324,7 +325,7 @@ export const TransacaoModal = ({
                 }}
                 className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
                   recorrente
-                    ? 'border-warning bg-warning/10 text-warning'
+                    ? 'border-warning bg-warning-soft text-warning'
                     : 'border-border text-text-muted hover:text-text'
                 }`}
               >
@@ -345,7 +346,7 @@ export const TransacaoModal = ({
                 max={72}
                 value={numeroParcelas}
                 onChange={(e) => setNumeroParcelas(Number(e.target.value))}
-                className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+                className={CAMPO_CLASSES}
               />
               {valor && numeroParcelas > 1 && (
                 <span className="text-xs text-text-muted">
@@ -376,7 +377,7 @@ export const TransacaoModal = ({
                   type="date"
                   value={dataFimRecorrencia}
                   onChange={(e) => setDataFimRecorrencia(e.target.value)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+                  className={CAMPO_CLASSES}
                 />
               </label>
             </>
@@ -394,7 +395,7 @@ export const TransacaoModal = ({
                   onClose();
                 }
               }}
-              className="mb-2 w-full rounded-lg border border-danger/30 py-2.5 text-sm text-danger transition hover:bg-danger/10"
+              className="mb-2 w-full rounded-lg border border-danger/30 py-2.5 text-sm text-danger transition hover:bg-danger-soft"
             >
               Excluir transação
             </button>

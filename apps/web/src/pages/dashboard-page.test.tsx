@@ -75,6 +75,52 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/1\.400,00/)).toBeInTheDocument();
   });
 
+  it('mostra o Saldo em largura total acima de Receitas e Despesas, sem truncar valores', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: { ...resumoBase, totalReceitas: '1234567.89', saldo: '1234567.89' },
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    render(<DashboardPage familiaId="f1" />);
+
+    const cartaoSaldo = screen.getByText(/^Saldo/, { selector: 'p' }).parentElement as HTMLElement;
+    const grade = cartaoSaldo.parentElement as HTMLElement;
+
+    expect(grade).toHaveClass('grid-cols-2');
+    expect(cartaoSaldo).toHaveClass('col-span-2');
+    expect(cartaoSaldo).toHaveTextContent(/^Saldo/);
+    expect(
+      Array.from(grade.children).map(
+        (c) => c.textContent?.match(/^(Saldo|Receitas|Despesas)/)?.[1],
+      ),
+    ).toEqual(['Saldo', 'Receitas', 'Despesas']);
+    for (const valor of grade.querySelectorAll('p:nth-of-type(2)')) {
+      expect(valor).not.toHaveClass('truncate');
+      expect(valor).toHaveClass('tabular-nums');
+    }
+  });
+
+  it('o selo de variação diz se subiu ou caiu, e não só o número', () => {
+    mockUseDashboard.mockReturnValue({
+      resumo: {
+        ...resumoBase,
+        mesAnterior: { totalReceitas: '4000.00', totalDespesas: '4000.00', saldo: '0.00' },
+      },
+      graficos: { distribuicaoCategorias: [], evolucaoDiaria: [] },
+      orcamento: [],
+      loading: false,
+      error: null,
+      fetchAll: vi.fn(),
+    });
+    render(<DashboardPage familiaId="f1" />);
+
+    expect(screen.getByLabelText('subiu 30%')).toBeInTheDocument();
+    expect(screen.getByLabelText('caiu 5%')).toBeInTheDocument();
+  });
+
   it('exibe mensagem de estado vazio sem transações', () => {
     mockUseDashboard.mockReturnValue({
       resumo: { ...resumoBase, totalReceitas: '0.00', totalDespesas: '0.00', saldo: '0.00' },
@@ -163,13 +209,16 @@ describe('DashboardPage', () => {
       ],
       fetchAll: vi.fn(),
     });
-    render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
+    const { container } = render(
+      <DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />,
+    );
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
     expect(screen.getByText('Viagem')).toBeInTheDocument();
     expect(screen.getByText('✈️')).toBeInTheDocument();
     expect(screen.getByText('Reserva')).toBeInTheDocument();
-    expect(screen.getByText('🐷')).toBeInTheDocument();
-    expect(screen.getByText('Ver todos →')).toBeInTheDocument();
+    // Sem emoji escolhido, entra o ícone do cofrinho no lugar do emoji fixo do app
+    expect(container.querySelectorAll('svg.lucide-piggy-bank').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole('button', { name: /ver todos/i })).toBeInTheDocument();
   });
 
   it('exibe estado vazio quando sem cofrinhos', () => {
@@ -188,6 +237,6 @@ describe('DashboardPage', () => {
     render(<DashboardPage familiaId="f1" onNovaTransacao={vi.fn()} onNavigate={vi.fn()} />);
     expect(screen.getByText('Cofrinhos')).toBeInTheDocument();
     expect(screen.getByText('Sua família ainda não tem cofrinhos.')).toBeInTheDocument();
-    expect(screen.queryByText('Ver todos →')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ver todos/i })).not.toBeInTheDocument();
   });
 });

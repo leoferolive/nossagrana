@@ -12,6 +12,7 @@ import { useCofrinhoStore } from '@/stores/cofrinho.store';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
 
 import { IconAdicionar, IconEditar, IconExcluir, IconFechar, IconSalvar } from './icons';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 interface TemplatesGerenciarModalProps {
   open: boolean;
@@ -168,13 +169,13 @@ export function TemplatesGerenciarModal({
               type="text"
               value={editar.form.nome}
               onChange={(e) => editar.setField('nome', e.target.value)}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className={CAMPO_CLASSES}
             />
             <select
               aria-label="Categoria"
               value={editar.form.categoriaId}
               onChange={(e) => editar.setField('categoriaId', e.target.value)}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className={CAMPO_CLASSES}
             >
               <option value="">Sem categoria</option>
               {categoriasParaSelecao(categorias, template.tipo, {
@@ -194,14 +195,14 @@ export function TemplatesGerenciarModal({
               value={editar.form.valorPadrao}
               onChange={(e) => editar.setField('valorPadrao', e.target.value)}
               placeholder="Valor padrão (opcional)"
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className={CAMPO_CLASSES}
             />
             {template.tipo === 'despesa' && (
               <select
                 aria-label="Cofrinho"
                 value={editar.form.cofrinhoId}
                 onChange={(e) => editar.setField('cofrinhoId', e.target.value)}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className={CAMPO_CLASSES}
               >
                 <option value="">Sem cofrinho</option>
                 {cofrinhos.map((c) => (
@@ -241,7 +242,7 @@ export function TemplatesGerenciarModal({
 
     if (isConfirmando) {
       return (
-        <div key={template.id} className="rounded-lg border border-danger/30 bg-danger/5 p-3">
+        <div key={template.id} className="rounded-lg border border-danger/30 bg-danger-soft p-3">
           <p className="mb-2 text-xs text-text">
             Desativar <strong>{template.nome}</strong>?
           </p>
@@ -313,12 +314,12 @@ export function TemplatesGerenciarModal({
       role="dialog"
       aria-modal="true"
       aria-label="Gerenciar Templates"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
+      className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[560px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 shadow-soft md:rounded-2xl md:border md:border-border">
+      <div className="w-full max-w-[560px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft md:rounded-2xl md:border md:border-border md:pb-5">
         {/* Handle bar mobile */}
         <div className="mb-4 flex justify-center md:hidden">
           <div className="h-1 w-10 rounded-full bg-border" />
@@ -331,7 +332,7 @@ export function TemplatesGerenciarModal({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted transition hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
           >
             <IconFechar size={18} />
           </button>
@@ -339,7 +340,7 @@ export function TemplatesGerenciarModal({
 
         {/* Error */}
         {erro && (
-          <p className="mb-3 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-xs text-danger">
+          <p className="mb-3 rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-xs text-danger">
             {erro}
           </p>
         )}
@@ -379,13 +380,13 @@ export function TemplatesGerenciarModal({
                 value={criar.form.nome}
                 onChange={(e) => criar.setField('nome', e.target.value)}
                 placeholder="Nome do template"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className={CAMPO_CLASSES}
               />
               <select
                 aria-label="Tipo"
                 value={criar.form.tipo}
                 onChange={(e) => trocarTipoCriacao(e.target.value as 'receita' | 'despesa')}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className={CAMPO_CLASSES}
               >
                 <option value="receita">Receita</option>
                 <option value="despesa">Despesa</option>
@@ -394,7 +395,7 @@ export function TemplatesGerenciarModal({
                 aria-label="Categoria"
                 value={criar.form.categoriaId}
                 onChange={(e) => criar.setField('categoriaId', e.target.value)}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className={CAMPO_CLASSES}
               >
                 <option value="">Sem categoria</option>
                 {categoriasParaSelecao(categorias, criar.form.tipo).map((c) => (
@@ -411,14 +412,14 @@ export function TemplatesGerenciarModal({
                 value={criar.form.valorPadrao}
                 onChange={(e) => criar.setField('valorPadrao', e.target.value)}
                 placeholder="Valor padrão (opcional)"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className={CAMPO_CLASSES}
               />
               {criar.form.tipo === 'despesa' && (
                 <select
                   aria-label="Cofrinho"
                   value={criar.form.cofrinhoId}
                   onChange={(e) => criar.setField('cofrinhoId', e.target.value)}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className={CAMPO_CLASSES}
                 >
                   <option value="">Sem cofrinho</option>
                   {cofrinhos.map((c) => (

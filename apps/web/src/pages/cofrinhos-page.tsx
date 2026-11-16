@@ -7,6 +7,7 @@ import { FirstTimeTour } from '../components/first-time-tour';
 import { cofrinhoService } from '../services/cofrinho.service';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatBRL } from '../utils/formatting';
+import { IconAdicionar, IconCofrinho } from '../components/icons';
 
 interface CofrinhosPageProps {
   familiaId: string;
@@ -40,7 +41,7 @@ export function CofrinhosPage({
 
   if (carregando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -66,7 +67,7 @@ export function CofrinhosPage({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <FirstTimeTour tourKey="cofrinhos" steps={cofrinhosTourSteps} />
 
       {/* Header */}
@@ -77,9 +78,10 @@ export function CofrinhosPage({
             type="button"
             aria-label="Novo Cofrinho"
             onClick={() => setModalOpen(true)}
-            className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
           >
-            + Novo Cofrinho
+            <IconAdicionar size={16} aria-hidden="true" />
+            Novo Cofrinho
           </button>
         )}
       </header>
@@ -90,7 +92,7 @@ export function CofrinhosPage({
         {cofrinhos.length === 0 ? (
           /* Empty State */
           <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-            <div className="text-5xl">🐷</div>
+            <IconCofrinho size={48} aria-hidden="true" className="text-text-dim" />
             <p className="text-center text-sm text-text-muted">
               Sua família ainda não tem cofrinhos.
             </p>
@@ -134,7 +136,7 @@ export function CofrinhosPage({
 
                   {/* Badge "Meta atingida!" */}
                   {metaAtingida && (
-                    <span className="inline-flex w-fit items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">
+                    <span className="inline-flex w-fit items-center rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-success">
                       Meta atingida!
                     </span>
                   )}

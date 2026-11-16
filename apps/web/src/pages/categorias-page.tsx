@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { ErrorBanner } from '@/components/error-banner';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
+import { IconAdicionar, IconVoltar } from '../components/icons';
 
 interface CategoriasPageProps {
   familiaId: string;
@@ -88,16 +90,16 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border px-4 py-4">
         <button
           type="button"
           onClick={onBack}
           aria-label="Voltar"
-          className="text-text-muted transition hover:text-text"
+          className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
         >
-          ←
+          <IconVoltar size={20} aria-hidden="true" />
         </button>
         <h1 className="text-lg font-bold text-text">Categorias</h1>
         <div className="flex-1" />
@@ -126,7 +128,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                 aria-label="Nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-info/40"
+                className={CAMPO_CLASSES}
                 placeholder="Ex: Alimentação"
               />
             </label>
@@ -136,7 +138,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                 aria-label="Tipo"
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as 'receita' | 'despesa')}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                className={CAMPO_CLASSES}
               >
                 <option value="despesa">despesa</option>
                 <option value="receita">receita</option>
@@ -192,7 +194,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => handleOpenEdit(cat.id)}
                         aria-label={`Editar ${cat.nome}`}
-                        className="cursor-pointer text-xs text-text-muted transition hover:text-text"
+                        className={`${ALVO_TOQUE_CLASSES} cursor-pointer px-2 text-xs text-text-muted transition hover:text-text`}
                       >
                         editar
                       </button>
@@ -200,7 +202,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => void handleDesativar(cat.id)}
                         aria-label="Desativar"
-                        className="text-xs text-danger transition hover:text-danger/80"
+                        className={`${ALVO_TOQUE_CLASSES} px-2 text-xs text-danger transition hover:text-danger/80`}
                       >
                         desativar
                       </button>
@@ -232,7 +234,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => handleOpenEdit(cat.id)}
                         aria-label={`Editar ${cat.nome}`}
-                        className="cursor-pointer text-xs text-text-muted transition hover:text-text"
+                        className={`${ALVO_TOQUE_CLASSES} cursor-pointer px-2 text-xs text-text-muted transition hover:text-text`}
                       >
                         editar
                       </button>
@@ -240,7 +242,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => void handleDesativar(cat.id)}
                         aria-label="Desativar"
-                        className="text-xs text-danger transition hover:text-danger/80"
+                        className={`${ALVO_TOQUE_CLASSES} px-2 text-xs text-danger transition hover:text-danger/80`}
                       >
                         desativar
                       </button>
@@ -253,9 +255,10 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong"
+            className="inline-flex items-center justify-center gap-2 mt-4 w-full py-3 text-center text-sm font-semibold text-success transition hover:text-success-strong"
           >
-            + Nova Categoria
+            <IconAdicionar size={16} aria-hidden="true" />
+            Nova Categoria
           </button>
         </div>
       </div>

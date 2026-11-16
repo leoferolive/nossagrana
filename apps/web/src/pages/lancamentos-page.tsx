@@ -4,18 +4,14 @@ import { IconConfiguracoes } from '@/components/icons';
 import { LancamentosResumo } from '@/components/lancamentos-resumo';
 import { TemplateGrupo } from '@/components/template-grupo';
 import { TemplatesGerenciarModal } from '@/components/templates-gerenciar-modal';
+import { ALVO_TOQUE_CLASSES } from '@/components/ui/campo-classes';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
+import { formatMesTitulo } from '@/utils/date';
+import { IconMesAnterior, IconProximoMes, IconTemplates } from '../components/icons';
 
 interface LancamentosPageProps {
   familiaId: string;
   onNavigate: (screen: string) => void;
-}
-
-const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-function formatMesLabel(mes: string): string {
-  const [ano, mesNum] = mes.split('-');
-  return `${MESES[parseInt(mesNum, 10) - 1]} ${ano}`;
 }
 
 function addMonths(mes: string, delta: number): string {
@@ -64,7 +60,7 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
 
   if (carregando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -84,7 +80,7 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
   }, {});
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <h1 className="text-xl font-bold text-text">Lançamentos do Mês</h1>
@@ -115,25 +111,25 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
             type="button"
             aria-label="Mês anterior"
             onClick={() => setMesReferencia(addMonths(mesReferencia, -1))}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} rounded-full text-text-muted transition hover:bg-surface hover:text-text`}
           >
-            ◀
+            <IconMesAnterior size={18} aria-hidden="true" />
           </button>
-          <span className="text-sm font-semibold text-text">{formatMesLabel(mesReferencia)}</span>
+          <span className="text-sm font-semibold text-text">{formatMesTitulo(mesReferencia)}</span>
           <button
             type="button"
             aria-label="Próximo mês"
             onClick={() => setMesReferencia(addMonths(mesReferencia, 1))}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} rounded-full text-text-muted transition hover:bg-surface hover:text-text`}
           >
-            ▶
+            <IconProximoMes size={18} aria-hidden="true" />
           </button>
         </div>
 
         {templates.length === 0 ? (
           /* Empty state */
           <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-            <div className="text-5xl">📋</div>
+            <IconTemplates size={48} aria-hidden="true" className="text-text-dim" />
             <p className="text-center text-sm text-text-muted">Nenhum template cadastrado.</p>
             <p className="text-center text-xs text-text-muted">
               Configure templates nas configurações para agilizar seus lançamentos mensais.
@@ -177,14 +173,14 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
 
             {/* Error */}
             {erro && (
-              <p className="rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
+              <p className="rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-sm text-danger">
                 {erro}
               </p>
             )}
 
             {/* Success */}
             {sucesso && (
-              <p className="rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-sm text-success">
+              <p className="rounded-lg border border-success/20 bg-accent-soft px-3 py-2 text-sm text-success">
                 {sucesso.transacoesCriadas} transações e {sucesso.aportesCriados} aportes criados
                 com sucesso!
               </p>

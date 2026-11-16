@@ -7,6 +7,8 @@ import type {
   FamiliaListJoinRequestsResponse,
   FamiliaListMembersResponse,
 } from '@nossagrana/types';
+import { IconVoltar } from '../components/icons';
+import { ALVO_TOQUE_CLASSES } from '../components/ui/campo-classes';
 
 interface FamilySettingsPageProps {
   onBackToOnboarding: () => void;
@@ -102,7 +104,7 @@ export const FamilySettingsPage = ({
               key={membro.usuarioId}
               className={`flex items-center gap-3 py-3 ${i < membros.length - 1 ? 'border-b border-border' : ''}`}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-success/15 text-sm font-bold text-success">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-success">
                 {(membro.nome || membro.usuarioId)[0].toUpperCase()}
               </div>
               <div className="flex-1">
@@ -111,7 +113,7 @@ export const FamilySettingsPage = ({
                 </div>
               </div>
               <span
-                className={`rounded px-2 py-0.5 text-[10px] font-bold ${membro.role === 'admin' ? 'bg-success/15 text-success' : 'bg-surface text-text-muted'}`}
+                className={`rounded px-2 py-0.5 text-[10px] font-bold ${membro.role === 'admin' ? 'bg-accent-soft text-success' : 'bg-surface text-text-muted'}`}
               >
                 {membro.role === 'admin' ? 'Admin' : 'Membro'}
               </span>
@@ -140,14 +142,14 @@ export const FamilySettingsPage = ({
           onClick={() => {
             void generateInviteCode();
           }}
-          className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-info transition hover:border-info"
+          className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-success transition hover:border-success"
         >
           Gerar código de convite
         </button>
 
         {inviteCode && (
           <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-bg px-4 py-3">
-            <code className="text-sm font-semibold tracking-wider text-info">{inviteCode}</code>
+            <code className="text-sm font-semibold tracking-wider text-text">{inviteCode}</code>
             <button
               type="button"
               onClick={() => {
@@ -203,15 +205,15 @@ export const FamilySettingsPage = ({
 
   if (isInApp) {
     return (
-      <div className="flex min-h-screen flex-col bg-bg">
+      <div className="flex min-h-full flex-col bg-bg">
         <header className="flex items-center gap-3 border-b border-border px-4 py-4">
           <button
             type="button"
             aria-label="Voltar"
             onClick={onBack}
-            className="text-text-muted transition hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
           >
-            ←
+            <IconVoltar size={20} aria-hidden="true" />
           </button>
           <h1 className="text-lg font-bold text-text">Família</h1>
         </header>

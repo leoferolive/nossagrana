@@ -4,6 +4,7 @@ import {
   formatDataBR,
   formatMesCurto,
   formatMesLabel,
+  formatMesTitulo,
   getCurrentMonth,
   getTodayLocalISO,
   shiftMonth,
@@ -80,6 +81,16 @@ describe('formatMesLabel', () => {
 
   it('retorna "março de 2026" para "2026-03"', () => {
     expect(formatMesLabel('2026-03')).toBe('março de 2026');
+  });
+});
+
+describe('formatMesTitulo', () => {
+  it('põe maiúscula só na primeira letra: "Novembro de 2026"', () => {
+    expect(formatMesTitulo('2026-11')).toBe('Novembro de 2026');
+  });
+
+  it('mantém acento: "Março de 2026"', () => {
+    expect(formatMesTitulo('2026-03')).toBe('Março de 2026');
   });
 });
 

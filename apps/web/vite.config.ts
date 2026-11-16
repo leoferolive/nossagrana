@@ -23,8 +23,8 @@ export default defineConfig({
         name: 'NossaGrana',
         short_name: 'NossaGrana',
         description: 'PWA de gestão financeira familiar',
-        theme_color: '#0f766e',
-        background_color: '#f8fafc',
+        theme_color: '#F2F4EF',
+        background_color: '#F2F4EF',
         display: 'standalone',
         start_url: '/',
         icons: [
@@ -43,7 +43,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Só o subconjunto latino da fonte entra no cache offline; os demais o navegador nem baixa em pt-BR.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}', '**/manrope-latin-wght-normal-*.woff2'],
       },
     }),
   ],

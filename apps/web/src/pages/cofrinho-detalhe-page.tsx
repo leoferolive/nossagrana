@@ -10,6 +10,7 @@ import { novaChaveIdempotencia } from '../services/idempotencia';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
 import { formatDataBR } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
+import { IconEntrada, IconSaida, IconVoltar } from '../components/icons';
 
 interface CofrinhoDetalhePageProps {
   familiaId: string;
@@ -36,7 +37,7 @@ export function CofrinhoDetalhePage({
 
   if (carregando || !cofrinhoSelecionado) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -95,16 +96,17 @@ export function CofrinhoDetalhePage({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       {/* Back button */}
       <div className="border-b border-border px-4 py-3">
         <button
           type="button"
           aria-label="Voltar"
           onClick={onBack}
-          className="text-sm font-medium text-primary transition hover:opacity-80"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary transition hover:opacity-80"
         >
-          &larr; Voltar
+          <IconVoltar size={16} aria-hidden="true" />
+          Voltar
         </button>
       </div>
 
@@ -128,7 +130,7 @@ export function CofrinhoDetalhePage({
           )}
 
           {isEncerrado && (
-            <span className="inline-flex w-fit items-center rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">
+            <span className="inline-flex w-fit items-center rounded-full bg-danger-soft px-2.5 py-0.5 text-xs font-semibold text-danger">
               Encerrado
             </span>
           )}
@@ -150,7 +152,7 @@ export function CofrinhoDetalhePage({
             aria-label="Retirar"
             onClick={() => setModalAberto('retirada')}
             disabled={isEncerrado}
-            className="rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg border border-border-strong bg-panel px-4 py-2 text-sm font-semibold text-text transition hover:bg-surface disabled:opacity-50"
           >
             Retirar
           </button>
@@ -168,7 +170,7 @@ export function CofrinhoDetalhePage({
             aria-label="Encerrar"
             onClick={() => setModalAberto('encerrar')}
             disabled={isEncerrado}
-            className="rounded-lg border border-danger px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
+            className="rounded-lg border border-danger px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger-soft disabled:opacity-50"
           >
             Encerrar
           </button>
@@ -205,7 +207,7 @@ export function CofrinhoDetalhePage({
               type="button"
               aria-label="Cancelar recorrência"
               onClick={() => void handleCancelarRecorrente()}
-              className="mt-3 rounded-lg border border-danger px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/10"
+              className="mt-3 rounded-lg border border-danger px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger-soft"
             >
               Cancelar recorrência
             </button>
@@ -227,9 +229,13 @@ export function CofrinhoDetalhePage({
                     className="flex items-center gap-3 rounded-lg border border-border bg-panel px-4 py-3"
                   >
                     <span
-                      className={`text-lg font-bold ${isAporte ? 'text-success' : 'text-danger'}`}
+                      className={`text-lg font-bold ${isAporte ? 'text-success' : 'text-text'}`}
                     >
-                      {isAporte ? '\u2191' : '\u2193'}
+                      {isAporte ? (
+                        <IconEntrada size={18} aria-hidden="true" />
+                      ) : (
+                        <IconSaida size={18} aria-hidden="true" />
+                      )}
                     </span>
                     <div className="flex flex-1 flex-col">
                       <span className="text-sm font-semibold text-text">

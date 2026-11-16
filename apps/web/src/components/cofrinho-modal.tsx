@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
+import { IconFechar } from './icons';
 
 interface CofrinhoModalProps {
   open: boolean;
@@ -56,12 +58,12 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
+      className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 shadow-soft md:rounded-2xl md:border md:border-border">
+      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft md:rounded-2xl md:border md:border-border md:pb-5">
         {/* Handle bar mobile */}
         <div className="mb-4 flex justify-center md:hidden">
           <div className="h-1 w-10 rounded-full bg-border" />
@@ -75,9 +77,9 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
-            ✕
+            <IconFechar size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -91,7 +93,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Nome do cofrinho"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -103,9 +105,9 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               type="text"
               value={emoji}
               onChange={(e) => setEmoji(e.target.value.slice(0, 10))}
-              placeholder="🐷"
+              placeholder="Cole ou digite um emoji"
               maxLength={10}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -120,7 +122,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               value={metaValor}
               onChange={(e) => setMetaValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -133,7 +135,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Para que serve esse cofrinho?"
               rows={3}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40 resize-none"
+              className={`${CAMPO_CLASSES} resize-none`}
             />
           </label>
         </div>

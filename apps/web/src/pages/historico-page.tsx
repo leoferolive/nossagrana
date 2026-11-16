@@ -2,12 +2,21 @@ import { useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
+import { COR_DESPESA, COR_RECEITA, COR_SALDO } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
 
 import { coreFinanceiroService } from '../services/core-financeiro.service';
 import { formatBRL } from '../utils/formatting';
+import {
+  IconAlerta,
+  IconFechar,
+  IconHistorico,
+  IconSnapshot,
+  IconTendencia,
+} from '../components/icons';
+import { ALVO_TOQUE_CLASSES } from '../components/ui/campo-classes';
 
 interface HistoricoPageProps {
   familiaId: string;
@@ -90,30 +99,30 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
   const labels = mesesOrdenados.map((m) => formatMes(m.mesReferencia).slice(0, 3));
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-full bg-bg text-text">
       <FirstTimeTour
         tourKey="historico"
         steps={[
           {
-            icon: '📅',
+            icon: IconHistorico,
             title: 'Histórico mensal',
             description:
               'Reveja o resumo financeiro de cada mês. Toque em um mês para ver o detalhamento.',
           },
           {
-            icon: '📸',
+            icon: IconSnapshot,
             title: 'Snapshot',
             description:
               'No fim de cada mês, uma "foto" dos totais é salva. Assim o relatório original fica preservado mesmo que algo mude depois.',
           },
           {
-            icon: '⚠️',
+            icon: IconAlerta,
             title: 'Mês divergente',
             description:
               'Se você editar uma transação de um mês já fechado, ele fica marcado como divergente. O snapshot original continua disponível.',
           },
           {
-            icon: '📈',
+            icon: IconTendencia,
             title: 'Gráfico de tendência',
             description: 'Acompanhe a evolução de receitas, despesas e saldo ao longo dos meses.',
           },
@@ -149,15 +158,15 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
             <div className="space-y-3">
               <div>
                 <p className="mb-1 text-xs text-success">Receitas</p>
-                <MiniChart data={receitas} height={48} color="#22C55E" labels={labels} />
+                <MiniChart data={receitas} height={48} color={COR_RECEITA} labels={labels} />
               </div>
               <div>
-                <p className="mb-1 text-xs text-danger">Despesas</p>
-                <MiniChart data={despesas} height={48} color="#EF4444" labels={labels} />
+                <p className="mb-1 text-xs text-text-muted">Despesas</p>
+                <MiniChart data={despesas} height={48} color={COR_DESPESA} labels={labels} />
               </div>
               <div>
-                <p className="mb-1 text-xs text-primary">Saldo</p>
-                <MiniChart data={saldos} height={48} color="#3B82F6" labels={labels} />
+                <p className="mb-1 text-xs text-text-muted">Saldo</p>
+                <MiniChart data={saldos} height={48} color={COR_SALDO} labels={labels} />
               </div>
             </div>
           </div>
@@ -184,19 +193,20 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                           {formatMes(mes.mesReferencia)}
                         </span>
                         {mes.divergente && (
-                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
-                            ⚠ divergente
+                          <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+                            <IconAlerta size={12} aria-hidden="true" />
+                            divergente
                           </span>
                         )}
                         {mes.temSnapshot && !mes.divergente && (
-                          <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
+                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-success">
                             fechado
                           </span>
                         )}
                       </div>
                       <div className="text-right text-sm">
                         <div className="text-success">+{formatBRL(mes.totalReceitas)}</div>
-                        <div className="text-danger">-{formatBRL(mes.totalDespesas)}</div>
+                        <div className="text-text">-{formatBRL(mes.totalDespesas)}</div>
                         <div
                           className={
                             parseFloat(mes.saldo) >= 0
@@ -252,7 +262,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       <td className="py-3 pr-4 text-right tabular-nums text-success">
                         +{formatBRL(mes.totalReceitas)}
                       </td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-danger">
+                      <td className="py-3 pr-4 text-right tabular-nums text-text">
                         -{formatBRL(mes.totalDespesas)}
                       </td>
                       <td
@@ -262,11 +272,12 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       </td>
                       <td className="py-3">
                         {mes.divergente ? (
-                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
-                            ⚠ divergente
+                          <span className="inline-flex items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+                            <IconAlerta size={12} aria-hidden="true" />
+                            divergente
                           </span>
                         ) : mes.temSnapshot ? (
-                          <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
+                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-success">
                             fechado
                           </span>
                         ) : (
@@ -303,7 +314,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
 
         {/* Modal de detalhe */}
         {mesSelecionado && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-painel flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-panel p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-bold capitalize">
@@ -311,13 +322,14 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                 </h2>
                 <button
                   type="button"
+                  aria-label="Fechar detalhe"
                   onClick={() => {
                     setMesSelecionado(null);
                     setDetalhe(null);
                   }}
-                  className="text-text-muted hover:text-text"
+                  className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
                 >
-                  ✕
+                  <IconFechar size={18} aria-hidden="true" />
                 </button>
               </div>
 
@@ -338,7 +350,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       </div>
                       <div>
                         <p className="text-text-muted">Despesas</p>
-                        <p className="font-semibold text-danger">
+                        <p className="font-semibold text-text">
                           {formatBRL(detalhe.atual.totalDespesas)}
                         </p>
                       </div>
@@ -361,7 +373,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                           {new Date(detalhe.snapshot.geradoEm).toLocaleDateString('pt-BR')})
                         </p>
                         {detalhe.snapshot.divergente && (
-                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                             divergente
                           </span>
                         )}
@@ -375,7 +387,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                         </div>
                         <div>
                           <p className="text-text-muted">Despesas</p>
-                          <p className="font-semibold text-danger">
+                          <p className="font-semibold text-text">
                             {formatBRL(detalhe.snapshot.totalDespesas)}
                           </p>
                         </div>
@@ -398,7 +410,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                             {detalhe.snapshot.dadosCategorias.map((cat) => (
                               <div key={cat.categoriaId} className="flex justify-between text-sm">
                                 <span>{cat.categoriaNome}</span>
-                                <span className="text-danger">{formatBRL(cat.total)}</span>
+                                <span className="text-text">{formatBRL(cat.total)}</span>
                               </div>
                             ))}
                           </div>

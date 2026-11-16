@@ -218,7 +218,7 @@ describe('LancamentosPage', () => {
 
   it('exibe seletor de mês e permite navegar', () => {
     render(<LancamentosPage {...defaultProps} />);
-    expect(screen.getByText(/mar 2026/i)).toBeInTheDocument();
+    expect(screen.getByText('Março de 2026')).toBeInTheDocument();
     expect(screen.getByLabelText(/mês anterior/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/próximo mês/i)).toBeInTheDocument();
   });

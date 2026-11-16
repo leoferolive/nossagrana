@@ -26,13 +26,16 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-15:** PR 1 da Entrega 1 (Correções) implementado e validado na
-branch `feat/nova-ui-e1-correcoes`: os cinco bugs funcionais da auditoria estão
-corrigidos, com duas migrations de dados (`0013` e `0014`). Nada da base visual
-foi escrito ainda. **Próximo passo:** o usuário revisar e mergear o PR 1; em
-seguida, escrever o plano do PR 2 (Base visual) em `docs/superpowers/plans/`,
-a partir do
-[desenho da Entrega 1](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
+**Estado em 2026-11-16:** Entrega 1 concluída, em dois PRs: #183 (Correções) e
+#186 (Base visual). O app está no tema claro, com Manrope, campos em 16px, alvos
+de toque de 44px e ícones lucide; a navegação e o desenho das telas ainda são os
+antigos. **Próximo passo:** escrever o desenho curto da Entrega 2 (Navegação) e
+levá-lo ao usuário para aprovação. A pergunta em aberto que trava esse desenho é
+a biblioteca de rotas.
+
+Cada PR segue este fluxo: um subagente desenvolve, outro testa
+e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
+verde, o PR é mergeado e vai para dev.
 
 ### Descoberta
 
@@ -56,15 +59,15 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — "Vigente desde" do orçamento no mês certo
 - [x] 2026-11-15 — Gráfico de pizza com uma única categoria
 - [x] 2026-11-15 — Acentos nas categorias padrão e nos textos
-- [ ] Tokens com os valores novos e os tokens adicionais
-- [ ] Manrope carregada pelo próprio app
-- [ ] Fundo do `body`, `theme-color` e manifest na paleta nova
-- [ ] Altura do shell sem rolagem fantasma
-- [ ] Área segura do iPhone na barra inferior
-- [ ] Campos em 16px e alvos de toque com 44px
-- [ ] Escala de z-index: barra, "+", painel/modal, aviso
-- [ ] Valores do dashboard sem corte em 390px
-- [ ] Emojis trocados por ícones lucide
+- [x] 2026-11-15 — Tokens com os valores novos e os tokens adicionais
+- [x] 2026-11-15 — Manrope carregada pelo próprio app
+- [x] 2026-11-15 — Fundo do `body`, `theme-color` e manifest na paleta nova
+- [x] 2026-11-15 — Altura do shell sem rolagem fantasma
+- [x] 2026-11-15 — Área segura do iPhone na barra inferior
+- [x] 2026-11-15 — Campos em 16px e alvos de toque com 44px
+- [x] 2026-11-15 — Escala de z-index: barra, "+", painel/modal, aviso
+- [x] 2026-11-15 — Valores do dashboard sem corte em 390px
+- [x] 2026-11-15 — Emojis trocados por ícones lucide
 
 ### Entrega 2 — Navegação
 
@@ -74,7 +77,10 @@ visual (as demais). Desenho em
 - [ ] Tela Mais
 - [ ] Planejar como entrada para orçamento, cartões, cofrinhos e contas do mês
 - [ ] Um único tour de boas-vindas
-- [ ] E2E ajustados à nova navegação
+- [ ] E2E ajustados à nova navegação. Hoje os specs de onboarding, família e
+      transações já estão quebrados: esperam o texto "Como deseja entrar", usam
+      `getByLabel('Nome da familia')` sem acento e `selectOption` num seletor
+      que deixou de ser `<select>`
 
 ### Entrega 3 — Extrato e Lançar
 
@@ -99,6 +105,28 @@ visual (as demais). Desenho em
 
 Telas ainda sem desenho (lista em `telas.md`), desktop, Análises (Relatórios +
 Histórico em uma tela) e ícones PNG/maskable do PWA.
+
+Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
+parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
+R$ 99,99). A sobra deveria ir para a parcela 1.
+
+Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
+
+- Escape não fecha os modais de cofrinho.
+- O mesmo orçamento aparece como 6% no dashboard e 7% na tela de orçamento
+  (arredondamentos diferentes).
+- Botão desabilitado com texto branco tem contraste entre 2,7:1 e 3,5:1.
+- No modal de modelos, os ícones de editar e excluir ficaram afastados da borda
+  direita.
+- Nas telas de login, cadastro e onboarding, um elemento decorativo deixa o
+  `<main>` 40px mais largo que a tela (sem rolagem visível).
+- O campo de data nativo mede 48px, e não 44px.
+- A área segura só é tratada embaixo; em paisagem, num iPhone com notch, a
+  borda lateral pode ficar atrás dele.
+- O desktop só foi validado no dashboard, em 1280px.
+- A regra de lint contra símbolos reprova "×" usado como multiplicação e não
+  pega `{'+ Texto'}` escrito como expressão.
+- Os testes de `cores-saida.test.ts` conferem o texto dos arquivos, não a tela.
 
 ### Diário
 
@@ -127,6 +155,22 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
   desatualizados na `main` (esperam o texto "Como deseja entrar", que não existe
   mais no app, e usam `selectOption` num seletor que deixou de ser `<select>`).
   O acerto fica para a tarefa "E2E ajustados à nova navegação" da Entrega 2.
+- 2026-11-15 — PR 1 (#183) revisado por subagente e pelo Codex, sem pendências,
+  e mergeado. Plano do PR 2 (Base visual) escrito.
+- 2026-11-15 — Paleta clara aplicada nos tokens (tema escuro removido), seis tokens novos (`accent-soft`, `danger-soft`, `warning-soft`, `warning-fill`, `border-strong`, `border-soft`), `shadow-soft` vira anel de 1px e as cores de gráfico passam para `chart-colors.ts`; teste de contraste dos tokens.
+- 2026-11-15 — Manrope vem do pacote `@fontsource-variable/manrope` (importada em `main.tsx`), com números tabulares no `body`; só o subconjunto latino entra no precache do service worker (conferido no build: `sw.js` lista o `woff2`).
+- 2026-11-15 — `<body>` sem o fundo slate, `theme-color` e manifest em `#F2F4EF`, `viewport-fit=cover`.
+- 2026-11-15 — `pb-safe` passa a existir (`spacing.safe`); o `<main>`, o "+" e o rodapé dos painéis de baixo para cima somam `env(safe-area-inset-bottom)`.
+- 2026-11-15 — `AppShell` em `h-dvh` com `overflow-hidden` (o `<main>` é a única área que rola); páginas do shell trocam `min-h-screen` por `min-h-full` e as telas de autenticação usam `min-h-dvh`.
+- 2026-11-15 — `CAMPO_CLASSES` (16px, 44px de altura, raio 10, anel de foco em `success`) vira a definição única dos 43 campos e do `CustomSelect`; `ALVO_TOQUE_CLASSES` dá 44x44 a fechar de modal, setas do mês, filtros do extrato e editar/desativar em categorias. Medição no navegador fica para a validação.
+- 2026-11-15 — Escala nomeada de z-index no Tailwind (`z-barra` 40, `z-lancar` 45, `z-painel` 50, `z-aviso` 60, este só reservado); o "+" passa a ficar abaixo de modais e painéis.
+- 2026-11-15 — Dashboard com Saldo em cartão de largura total e Receitas/Despesas em duas colunas abaixo (`grid-cols-2`; no desktop volta a três colunas na ordem antiga); valores com `tabular-nums` e sem `truncate`.
+- 2026-11-15 — Emojis e símbolos de texto (✕ ◀ ▶ ← → ↑ ↓ ⚠) viram ícones de `lucide-react` com `aria-hidden`, e o botão que era só símbolo mantém nome acessível; o tour passa a receber ícones; regra `no-restricted-syntax` no ESLint (`eslint.config.mjs`) barra emoji e esses símbolos em texto de interface; o emoji escolhido pelo usuário no cofrinho segue como está.
+- 2026-11-16 — Rodada de correção do PR 2 após validação no navegador: regra base de 44px para botão, aba, select e rádio; "+" não cobre mais o fim da rolagem; saída em texto neutro e verde como única cor de ação; o "+" de texto dos botões virou ícone `Plus` (a regra de lint também barra isso).
+- 2026-11-16 — Ajustes da revisão do PR 2: selo de variação do dashboard com nome acessível ("subiu/caiu N%"), campo desabilitado e `py-2.5` em `CAMPO_CLASSES`, mês em "Novembro de 2026" e alvo de toque nas setas de Lançamentos, `bg-info/10` no `auth-shell`.
+- 2026-11-16 — Campos com 44px de altura (`py-2` em `CAMPO_CLASSES`). PR 2 (#186)
+  validado em duas rodadas no navegador (todas as telas e modais em 390×844),
+  revisado por subagente e pelo Codex, sem pendências. Entrega 1 concluída.
 
 ## Decisões fechadas
 

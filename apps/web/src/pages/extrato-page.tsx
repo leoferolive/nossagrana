@@ -11,8 +11,19 @@ import {
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
-import { formatMesLabel, getCurrentMonth, shiftMonth } from '@/utils/date';
+import { formatMesTitulo, getCurrentMonth, shiftMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
+import {
+  IconBusca,
+  IconEditar,
+  IconEntrada,
+  IconExportar,
+  IconExtrato,
+  IconMesAnterior,
+  IconProximoMes,
+  IconSaida,
+} from '../components/icons';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
@@ -40,11 +51,11 @@ const TransacaoDetalheModal = ({
   <div
     role="dialog"
     aria-modal="true"
-    className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center"
+    className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 sm:items-center"
     onClick={onClose}
   >
     <div
-      className="w-full max-w-lg rounded-t-2xl bg-panel p-5 shadow-soft sm:rounded-2xl"
+      className="w-full max-w-lg rounded-t-2xl bg-panel p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft sm:rounded-2xl sm:pb-5"
       onClick={(e) => e.stopPropagation()}
     >
       <h2 className="mb-4 text-base font-bold text-text">{transacao.descricao ?? 'Transação'}</h2>
@@ -71,7 +82,7 @@ const TransacaoBadges = ({ t }: { t: Transacao }) => (
       </span>
     )}
     {t.recorrente && (
-      <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
+      <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
         Recorrente
       </span>
     )}
@@ -136,7 +147,7 @@ export const ExtratoPage = ({
   const handleMesAnterior = useCallback(() => setMesReferencia((m) => shiftMonth(m, -1)), []);
   const handleMesProximo = useCallback(() => setMesReferencia((m) => shiftMonth(m, 1)), []);
 
-  const mesLabel = formatMesLabel(mesReferencia);
+  const mesLabel = formatMesTitulo(mesReferencia);
   const isCurrentMonth = mesReferencia === getCurrentMonth();
 
   const transacoesFiltradas = useMemo(
@@ -182,30 +193,30 @@ export const ExtratoPage = ({
   }, [transacoesFiltradas, mesReferencia, getCategoriaNome, getMetodoNome]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={erro} />
       <FirstTimeTour
         tourKey="extrato"
         steps={[
           {
-            icon: '📋',
+            icon: IconExtrato,
             title: 'Seu extrato',
             description:
-              'Veja todas as transações do mês. Use as setas ◀ ▶ para navegar entre meses.',
+              'Veja todas as transações do mês. Use as setas ao lado do mês para navegar entre meses.',
           },
           {
-            icon: '🔍',
+            icon: IconBusca,
             title: 'Filtros e busca',
             description:
               'Filtre por receitas ou despesas com os chips. Use a barra de busca para encontrar uma transação específica.',
           },
           {
-            icon: '✏️',
+            icon: IconEditar,
             title: 'Editar transação',
             description: 'Toque em qualquer transação para editá-la ou excluí-la.',
           },
           {
-            icon: '📥',
+            icon: IconExportar,
             title: 'Exportar CSV',
             description: 'Use o botão "Exportar CSV" para baixar suas transações em planilha.',
           },
@@ -214,34 +225,32 @@ export const ExtratoPage = ({
 
       {/* Header — título + mês + filtros */}
       <header className="border-b border-border px-4 py-4 md:px-6">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-text md:hidden">Extrato</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={handleMesAnterior}
-              className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text"
+              className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text`}
               aria-label="Mês anterior"
             >
-              ◀
+              <IconMesAnterior size={18} aria-hidden="true" />
             </button>
-            <span className="min-w-[140px] text-center text-sm capitalize text-text-muted">
-              {mesLabel}
-            </span>
+            <span className="min-w-[120px] text-center text-sm text-text-muted">{mesLabel}</span>
             <button
               type="button"
               onClick={handleMesProximo}
               disabled={isCurrentMonth}
-              className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+              className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed`}
               aria-label="Próximo mês"
             >
-              ▶
+              <IconProximoMes size={18} aria-hidden="true" />
             </button>
           </div>
           <button
             type="button"
             onClick={exportarCSV}
-            className="rounded-lg border border-border px-3 py-1 text-xs text-text-muted transition hover:bg-surface hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} shrink-0 whitespace-nowrap rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
             aria-label="Exportar CSV"
           >
             Exportar CSV
@@ -251,9 +260,9 @@ export const ExtratoPage = ({
           <button
             type="button"
             onClick={() => setFiltroTipo('todos')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'todos'
-                ? 'bg-text text-bg'
+                ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
             }`}
           >
@@ -263,9 +272,9 @@ export const ExtratoPage = ({
             type="button"
             aria-label="Filtrar despesas"
             onClick={() => setFiltroTipo(filtroTipo === 'despesa' ? 'todos' : 'despesa')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'despesa'
-                ? 'bg-danger text-white'
+                ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
             }`}
           >
@@ -275,7 +284,7 @@ export const ExtratoPage = ({
             type="button"
             aria-label="Filtrar receitas"
             onClick={() => setFiltroTipo(filtroTipo === 'receita' ? 'todos' : 'receita')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'receita'
                 ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
@@ -292,7 +301,7 @@ export const ExtratoPage = ({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por descrição..."
-              className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={`${CAMPO_CLASSES} pl-9 pr-3`}
             />
           </div>
         </div>
@@ -325,14 +334,16 @@ export const ExtratoPage = ({
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <span
-                  className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
-                >
-                  {t.tipo === 'receita' ? '\u2191' : '\u2193'}
+                <span className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-text'}`}>
+                  {t.tipo === 'receita' ? (
+                    <IconEntrada size={14} aria-hidden="true" />
+                  ) : (
+                    <IconSaida size={14} aria-hidden="true" />
+                  )}
                 </span>
                 <span
                   className={`text-sm font-semibold tabular-nums ${
-                    t.tipo === 'receita' ? 'text-success' : 'text-danger'
+                    t.tipo === 'receita' ? 'text-success' : 'text-text'
                   }`}
                 >
                   {formatValor(t.valor, t.tipo)}
@@ -378,7 +389,7 @@ export const ExtratoPage = ({
                       {getMetodoNome(t.metodoPagamentoId)}
                     </td>
                     <td
-                      className={`py-3.5 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-danger'}`}
+                      className={`py-3.5 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-text'}`}
                     >
                       {formatValor(t.valor, t.tipo)}
                     </td>

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
+import { CAMPO_CLASSES } from './campo-classes';
+
 interface SelectOption {
   value: string;
   label: string;
@@ -100,7 +102,7 @@ export const CustomSelect = ({
             }
           }}
           onKeyDown={handleKeyDown}
-          className="flex w-full items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className={`${CAMPO_CLASSES} flex items-center justify-between`}
         >
           <span className={selectedOption ? 'text-text' : 'text-text-dim'}>
             {selectedOption?.label ?? placeholder}
@@ -115,16 +117,16 @@ export const CustomSelect = ({
           <ul
             ref={listboxRef}
             role="listbox"
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-panel shadow-lg"
+            className="absolute left-0 right-0 top-full z-painel mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-panel shadow-lg"
           >
             {options.map((option, idx) => (
               <li
                 key={option.value}
                 role="option"
                 aria-selected={option.value === value}
-                className={`cursor-pointer px-3 py-2.5 text-sm transition ${
+                className={`flex min-h-11 cursor-pointer items-center px-3 text-base transition ${
                   option.value === value
-                    ? 'bg-success/10 font-semibold text-success'
+                    ? 'bg-accent-soft font-semibold text-success'
                     : idx === highlightedIndex
                       ? 'bg-surface text-text'
                       : 'text-text-muted hover:bg-surface hover:text-text'

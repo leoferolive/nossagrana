@@ -1,11 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
+import { COR_DESPESA } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
-import { IconCofrinho, IconOrcamento, IconRelatorio } from '../components/icons';
+import {
+  IconAdicionar,
+  IconAvancar,
+  IconBoasVindas,
+  IconCofrinho,
+  IconEntrada,
+  IconOrcamento,
+  IconRelatorio,
+  IconSaida,
+  IconSaldo,
+} from '../components/icons';
 import { MonthNav } from '../components/month-nav';
 import { getCurrentMonth, shiftMonth } from '../utils/date';
 import { useCofrinhoStore } from '../stores/cofrinho.store';
@@ -21,7 +32,7 @@ function calcVariacao(atual: string, anterior: string): number | null {
 function TrendBadge({ variacao, invertColor }: { variacao: number | null; invertColor?: boolean }) {
   if (variacao === null) return null;
   const isUp = variacao >= 0;
-  const arrow = isUp ? '\u2191' : '\u2193';
+  const Seta = isUp ? IconEntrada : IconSaida;
   // invertColor: for expenses, going up is bad (red) and going down is good (green)
   const colorClass = invertColor
     ? isUp
@@ -31,8 +42,13 @@ function TrendBadge({ variacao, invertColor }: { variacao: number | null; invert
       ? 'text-success'
       : 'text-danger';
   return (
-    <span className={`ml-1 text-[10px] font-semibold ${colorClass}`}>
-      {arrow} {Math.abs(variacao).toFixed(0)}%
+    <span
+      role="img"
+      aria-label={`${isUp ? 'subiu' : 'caiu'} ${Math.abs(variacao).toFixed(0)}%`}
+      className={`ml-1 inline-flex items-center gap-0.5 text-[10px] font-semibold ${colorClass}`}
+    >
+      <Seta size={10} aria-hidden="true" />
+      {Math.abs(variacao).toFixed(0)}%
     </span>
   );
 }
@@ -94,7 +110,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="flex min-h-full items-center justify-center bg-bg">
         <p className="text-text-muted">Carregando...</p>
       </div>
     );
@@ -107,25 +123,25 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
 
   const dashboardTourSteps = [
     {
-      icon: '👋',
+      icon: IconBoasVindas,
       title: 'Bem-vindo ao NossaGrana!',
       description:
         'Aqui é o seu painel financeiro. Você vê receitas, despesas e saldo do mês de forma rápida.',
     },
     {
-      icon: '💰',
+      icon: IconSaldo,
       title: 'Cards de resumo',
       description:
         'Os três cards no topo mostram o total de receitas, despesas e o saldo. As setas indicam se subiu ou caiu em relação ao mês anterior.',
     },
     {
-      icon: '➕',
+      icon: IconAdicionar,
       title: 'Registrar transação',
       description:
         'Toque no botão "+" (mobile) ou "Nova Transação" (desktop) para registrar uma receita ou despesa.',
     },
     {
-      icon: '📊',
+      icon: IconRelatorio,
       title: 'Gráficos e orçamento',
       description:
         'Acompanhe despesas por categoria, evolução diária e limites de orçamento — tudo nesta mesma tela.',
@@ -133,7 +149,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={error} />
       <FirstTimeTour tourKey="dashboard" steps={dashboardTourSteps} />
 
@@ -161,32 +177,34 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* 3 cards de resumo */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border-l-2 border-success bg-panel p-3 shadow-sm shadow-black/20">
+        {/* Saldo em largura total para o valor não ser cortado em 390px; no desktop volta a 3 colunas */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="col-span-2 rounded-xl border-l-2 border-border-strong bg-panel p-3 shadow-sm shadow-black/20 md:order-3 md:col-span-1">
+            <p className="text-xs font-semibold text-text-muted">
+              Saldo
+              <TrendBadge variacao={varSaldo} />
+            </p>
+            <p className="mt-1 break-words text-lg font-bold tabular-nums text-text">
+              {formatBRL(resumo?.saldo ?? '0')}
+            </p>
+          </div>
+          <div className="rounded-xl border-l-2 border-success bg-panel p-3 shadow-sm shadow-black/20 md:order-1">
             <p className="text-xs font-semibold text-success">
               Receitas
               <TrendBadge variacao={varReceitas} />
             </p>
-            <p className="mt-1 text-lg font-bold text-text">
+            <p className="mt-1 break-words text-lg font-bold tabular-nums text-text">
               {formatBRL(resumo?.totalReceitas ?? '0')}
             </p>
           </div>
-          <div className="rounded-xl border-l-2 border-danger bg-panel p-3 shadow-sm shadow-black/20">
-            <p className="text-xs font-semibold text-danger">
+          <div className="rounded-xl border-l-2 border-border-strong bg-panel p-3 shadow-sm shadow-black/20 md:order-2">
+            <p className="text-xs font-semibold text-text-muted">
               Despesas
               <TrendBadge variacao={varDespesas} invertColor />
             </p>
-            <p className="mt-1 text-lg font-bold text-text">
+            <p className="mt-1 break-words text-lg font-bold tabular-nums text-text">
               {formatBRL(resumo?.totalDespesas ?? '0')}
             </p>
-          </div>
-          <div className="rounded-xl border-l-2 border-primary bg-panel p-3 shadow-sm shadow-black/20">
-            <p className="text-xs font-semibold text-primary">
-              Saldo
-              <TrendBadge variacao={varSaldo} />
-            </p>
-            <p className="mt-1 text-lg font-bold text-text">{formatBRL(resumo?.saldo ?? '0')}</p>
           </div>
         </div>
 
@@ -219,7 +237,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             <MiniChart
               data={miniChartData}
               height={80}
-              color="#EF4444"
+              color={COR_DESPESA}
               fill
               labels={miniChartLabels}
             />
@@ -266,9 +284,10 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             {cofrinhos.length > 0 && (
               <button
                 onClick={() => onNavigate?.('cofrinhos')}
-                className="text-sm text-success hover:underline"
+                className="inline-flex items-center gap-1 text-sm text-success hover:underline"
               >
-                Ver todos →
+                Ver todos
+                <IconAvancar size={14} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -279,7 +298,11 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
               {cofrinhos.map((c) => (
                 <div key={c.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span>{c.emoji || '🐷'}</span>
+                    {c.emoji ? (
+                      <span>{c.emoji}</span>
+                    ) : (
+                      <IconCofrinho size={16} aria-hidden="true" />
+                    )}
                     <span className="text-sm font-medium text-text">{c.nome}</span>
                   </div>
                   <span className="text-sm font-semibold text-primary">

@@ -13,6 +13,14 @@ describe('TipoLancamentoToggle', () => {
     expect(screen.getByRole('button', { name: 'Despesa' }).className).not.toContain('bg-danger');
   });
 
+  it('Despesa selecionada também usa o verde de ação, sem vermelho cheio', () => {
+    render(<TipoLancamentoToggle tipo="despesa" onChange={vi.fn()} />);
+
+    const botao = screen.getByRole('button', { name: 'Despesa' });
+    expect(botao.className).toContain('bg-success');
+    expect(botao.className).not.toContain('bg-danger');
+  });
+
   it('avisa o tipo escolhido', () => {
     const onChange = vi.fn();
     render(<TipoLancamentoToggle tipo="receita" onChange={onChange} />);

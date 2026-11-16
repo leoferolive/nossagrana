@@ -11,7 +11,7 @@ interface FamiliaSelectorPageProps {
 const roleBadge = (role: string) => {
   if (role === 'admin') {
     return (
-      <span className="rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
+      <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-success">
         Admin
       </span>
     );

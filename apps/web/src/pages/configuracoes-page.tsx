@@ -6,6 +6,7 @@ import {
   IconCartao,
   IconChevron,
   IconCofrinho,
+  IconConfiguracoes,
   IconExtrato,
   IconFamilia,
   IconHistorico,
@@ -97,12 +98,12 @@ export const ConfiguracoesPage = ({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
+    <div className="flex min-h-full flex-col bg-bg">
       <FirstTimeTour
         tourKey="configuracoes"
         steps={[
           {
-            icon: '⚙️',
+            icon: IconConfiguracoes,
             title: 'Configurações',
             description:
               'Aqui você acessa categorias, cartões, orçamento, família e perfil. No desktop, tudo aparece na barra lateral.',
@@ -144,7 +145,7 @@ export const ConfiguracoesPage = ({
               type="button"
               aria-label="Sair da conta"
               onClick={onLogout}
-              className="flex w-full items-center gap-4 rounded-xl border border-danger/30 bg-panel px-4 py-4 text-left transition hover:bg-danger/10"
+              className="flex w-full items-center gap-4 rounded-xl border border-danger/30 bg-panel px-4 py-4 text-left transition hover:bg-danger-soft"
             >
               <IconSair size={20} className="shrink-0 text-danger" />
               <div className="flex-1">

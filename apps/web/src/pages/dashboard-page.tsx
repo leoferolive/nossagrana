@@ -162,32 +162,34 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* 3 cards de resumo */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border-l-2 border-success bg-panel p-3 shadow-sm shadow-black/20">
-            <p className="text-xs font-semibold text-success">
-              Receitas
-              <TrendBadge variacao={varReceitas} />
-            </p>
-            <p className="mt-1 text-lg font-bold text-text">
-              {formatBRL(resumo?.totalReceitas ?? '0')}
-            </p>
-          </div>
-          <div className="rounded-xl border-l-2 border-danger bg-panel p-3 shadow-sm shadow-black/20">
-            <p className="text-xs font-semibold text-danger">
-              Despesas
-              <TrendBadge variacao={varDespesas} invertColor />
-            </p>
-            <p className="mt-1 text-lg font-bold text-text">
-              {formatBRL(resumo?.totalDespesas ?? '0')}
-            </p>
-          </div>
-          <div className="rounded-xl border-l-2 border-primary bg-panel p-3 shadow-sm shadow-black/20">
+        {/* Saldo em largura total para o valor não ser cortado em 390px; no desktop volta a 3 colunas */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="col-span-2 rounded-xl border-l-2 border-primary bg-panel p-3 shadow-sm shadow-black/20 md:order-3 md:col-span-1">
             <p className="text-xs font-semibold text-primary">
               Saldo
               <TrendBadge variacao={varSaldo} />
             </p>
-            <p className="mt-1 text-lg font-bold text-text">{formatBRL(resumo?.saldo ?? '0')}</p>
+            <p className="mt-1 break-words text-lg font-bold tabular-nums text-text">
+              {formatBRL(resumo?.saldo ?? '0')}
+            </p>
+          </div>
+          <div className="rounded-xl border-l-2 border-success bg-panel p-3 shadow-sm shadow-black/20 md:order-1">
+            <p className="text-xs font-semibold text-success">
+              Receitas
+              <TrendBadge variacao={varReceitas} />
+            </p>
+            <p className="mt-1 break-words text-lg font-bold tabular-nums text-text">
+              {formatBRL(resumo?.totalReceitas ?? '0')}
+            </p>
+          </div>
+          <div className="rounded-xl border-l-2 border-danger bg-panel p-3 shadow-sm shadow-black/20 md:order-2">
+            <p className="text-xs font-semibold text-danger">
+              Despesas
+              <TrendBadge variacao={varDespesas} invertColor />
+            </p>
+            <p className="mt-1 break-words text-lg font-bold tabular-nums text-text">
+              {formatBRL(resumo?.totalDespesas ?? '0')}
+            </p>
           </div>
         </div>
 

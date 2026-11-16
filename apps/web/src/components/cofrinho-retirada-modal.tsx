@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 interface CofrinhoRetiradaModalProps {
   open: boolean;
@@ -64,7 +65,7 @@ export const CofrinhoRetiradaModal = ({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
             ✕
           </button>
@@ -88,7 +89,7 @@ export const CofrinhoRetiradaModal = ({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
             {valor && valorNum > saldoNum && (
               <span className="text-xs text-danger">Valor excede o saldo disponível.</span>
@@ -104,7 +105,7 @@ export const CofrinhoRetiradaModal = ({
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Comprei o presente"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+              className={CAMPO_CLASSES}
             />
           </label>
 

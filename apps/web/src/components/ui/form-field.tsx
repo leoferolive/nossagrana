@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react';
+import { CAMPO_CLASSES } from './campo-classes';
 
 interface FormFieldProps {
   id: string;
@@ -23,7 +24,7 @@ export const FormField = ({ id, label, type, autoComplete, value, onChange }: Fo
         required
         value={value}
         onChange={onChange}
-        className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none transition focus:border-info focus:ring-2 focus:ring-success"
+        className={CAMPO_CLASSES}
       />
     </div>
   );

@@ -13,6 +13,7 @@ import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
 import { formatMesLabel, getCurrentMonth, shiftMonth } from '@/utils/date';
 import { formatBRL } from '@/utils/formatting';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
@@ -220,7 +221,7 @@ export const ExtratoPage = ({
             <button
               type="button"
               onClick={handleMesAnterior}
-              className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text"
+              className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text`}
               aria-label="Mês anterior"
             >
               ◀
@@ -232,7 +233,7 @@ export const ExtratoPage = ({
               type="button"
               onClick={handleMesProximo}
               disabled={isCurrentMonth}
-              className="rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+              className={`${ALVO_TOQUE_CLASSES} rounded-lg text-text-muted hover:bg-surface hover:text-text disabled:opacity-30 disabled:cursor-not-allowed`}
               aria-label="Próximo mês"
             >
               ▶
@@ -241,7 +242,7 @@ export const ExtratoPage = ({
           <button
             type="button"
             onClick={exportarCSV}
-            className="rounded-lg border border-border px-3 py-1 text-xs text-text-muted transition hover:bg-surface hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
             aria-label="Exportar CSV"
           >
             Exportar CSV
@@ -251,7 +252,7 @@ export const ExtratoPage = ({
           <button
             type="button"
             onClick={() => setFiltroTipo('todos')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'todos'
                 ? 'bg-text text-bg'
                 : 'border border-border text-text-muted hover:text-text'
@@ -263,7 +264,7 @@ export const ExtratoPage = ({
             type="button"
             aria-label="Filtrar despesas"
             onClick={() => setFiltroTipo(filtroTipo === 'despesa' ? 'todos' : 'despesa')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'despesa'
                 ? 'bg-danger text-white'
                 : 'border border-border text-text-muted hover:text-text'
@@ -275,7 +276,7 @@ export const ExtratoPage = ({
             type="button"
             aria-label="Filtrar receitas"
             onClick={() => setFiltroTipo(filtroTipo === 'receita' ? 'todos' : 'receita')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
               filtroTipo === 'receita'
                 ? 'bg-success text-white'
                 : 'border border-border text-text-muted hover:text-text'
@@ -292,7 +293,7 @@ export const ExtratoPage = ({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por descrição..."
-              className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-success"
+              className={`${CAMPO_CLASSES} pl-9 pr-3`}
             />
           </div>
         </div>

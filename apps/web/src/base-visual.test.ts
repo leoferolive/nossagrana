@@ -5,6 +5,7 @@ import tailwindConfig from '../tailwind.config';
 import viteConfig from '../vite.config.ts?raw';
 
 import appShell from './components/app-shell.tsx?raw';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './components/ui/campo-classes';
 import authShell from './components/ui/auth-shell.tsx?raw';
 import authContext from './contexts/auth-context.tsx?raw';
 
@@ -98,5 +99,65 @@ describe('altura do shell', () => {
       expect(conteudo).toContain('min-h-dvh');
       expect(conteudo).not.toContain('min-h-screen');
     }
+  });
+});
+
+/** Devolve o texto de cada tag <input>, <select> e <textarea>, até o `>` que a fecha. */
+function tagsDeCampo(conteudo: string): string[] {
+  const tags: string[] = [];
+  for (const inicio of conteudo.matchAll(/<(input|select|textarea)\b/g)) {
+    let profundidade = 0;
+    let i = inicio.index;
+    for (; i < conteudo.length; i += 1) {
+      const c = conteudo[i];
+      if (c === '{') profundidade += 1;
+      else if (c === '}') profundidade -= 1;
+      else if (c === '>' && profundidade === 0) break;
+    }
+    tags.push(conteudo.slice(inicio.index, i + 1));
+  }
+  return tags;
+}
+
+describe('campos em 16px e alvos de toque com 44px', () => {
+  const arquivosComCampo = Object.keys(fontes).filter(
+    (caminho) => !caminho.endsWith('.test.tsx') && tagsDeCampo(fonte(caminho)).length > 0,
+  );
+  const SEM_CAMPO_DE_TEXTO = /type="(radio|checkbox|range)"/;
+
+  it('encontra os arquivos com campos', () => {
+    expect(arquivosComCampo.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it.each(arquivosComCampo)('%s: nenhum campo de texto usa text-sm ou text-xs', (caminho) => {
+    for (const tag of tagsDeCampo(fonte(caminho)).filter((t) => !SEM_CAMPO_DE_TEXTO.test(t))) {
+      expect(tag).not.toMatch(/\btext-(sm|xs)\b/);
+      expect(tag).toContain('CAMPO_CLASSES');
+    }
+  });
+
+  it('CAMPO_CLASSES tem fonte de 16px, altura mínima de 44px e anel de foco em success', () => {
+    expect(CAMPO_CLASSES).toContain('text-base');
+    expect(CAMPO_CLASSES).toContain('min-h-11');
+    expect(CAMPO_CLASSES).toContain('focus:ring-2 focus:ring-success');
+  });
+
+  it('ALVO_TOQUE_CLASSES garante 44x44', () => {
+    expect(ALVO_TOQUE_CLASSES).toContain('min-h-11');
+    expect(ALVO_TOQUE_CLASSES).toContain('min-w-11');
+  });
+
+  it.each([
+    './components/month-nav.tsx',
+    './pages/extrato-page.tsx',
+    './pages/categorias-page.tsx',
+    './components/transacao-modal.tsx',
+    './components/cofrinho-modal.tsx',
+    './components/cofrinho-aporte-modal.tsx',
+    './components/cofrinho-retirada-modal.tsx',
+    './components/cofrinho-encerrar-modal.tsx',
+    './components/templates-gerenciar-modal.tsx',
+  ])('%s usa ALVO_TOQUE_CLASSES nos controles pequenos', (caminho) => {
+    expect(fonte(caminho)).toContain('ALVO_TOQUE_CLASSES');
   });
 });

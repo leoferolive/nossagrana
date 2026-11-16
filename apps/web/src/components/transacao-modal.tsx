@@ -12,6 +12,7 @@ import { getTodayLocalISO } from '@/utils/date';
 import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
 import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
 import { CustomSelect } from './ui/custom-select';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 export interface DadosVoz {
   tipo: 'receita' | 'despesa' | null;
@@ -199,7 +200,7 @@ export const TransacaoModal = ({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
             ✕
           </button>
@@ -232,7 +233,7 @@ export const TransacaoModal = ({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -265,7 +266,7 @@ export const TransacaoModal = ({
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Mercado do mês"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -277,7 +278,7 @@ export const TransacaoModal = ({
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -345,7 +346,7 @@ export const TransacaoModal = ({
                 max={72}
                 value={numeroParcelas}
                 onChange={(e) => setNumeroParcelas(Number(e.target.value))}
-                className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+                className={CAMPO_CLASSES}
               />
               {valor && numeroParcelas > 1 && (
                 <span className="text-xs text-text-muted">
@@ -376,7 +377,7 @@ export const TransacaoModal = ({
                   type="date"
                   value={dataFimRecorrencia}
                   onChange={(e) => setDataFimRecorrencia(e.target.value)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+                  className={CAMPO_CLASSES}
                 />
               </label>
             </>

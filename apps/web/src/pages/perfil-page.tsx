@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/use-auth';
 
 import { ApiError } from '../services/api-client';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
+import { CAMPO_CLASSES } from '../components/ui/campo-classes';
 
 interface PerfilPageProps {
   onBack: () => void;
@@ -119,7 +120,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={CAMPO_CLASSES}
             />
           </div>
 
@@ -127,13 +128,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-text">
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              disabled
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-muted"
-            />
+            <input id="email" type="email" value={email} disabled className={CAMPO_CLASSES} />
           </div>
 
           <button
@@ -163,7 +158,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
               type="password"
               value={senhaAtual}
               onChange={(e) => setSenhaAtual(e.target.value)}
-              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={CAMPO_CLASSES}
             />
           </div>
 
@@ -176,7 +171,7 @@ export const PerfilPage = ({ onBack }: PerfilPageProps) => {
               type="password"
               value={novaSenha}
               onChange={(e) => setNovaSenha(e.target.value)}
-              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={CAMPO_CLASSES}
             />
           </div>
 

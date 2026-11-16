@@ -7,6 +7,7 @@ import { FirstTimeTour } from '../components/first-time-tour';
 import { coreFinanceiroService, categoriaService } from '../services/core-financeiro.service';
 import { formatMesCurto, getCurrentMonth } from '../utils/date';
 import { formatBRL } from '../utils/formatting';
+import { CAMPO_CLASSES } from '../components/ui/campo-classes';
 
 interface OrcamentoItem {
   id: string;
@@ -191,7 +192,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                   aria-label="Categoria"
                   value={addCategoriaId}
                   onChange={(e) => setAddCategoriaId(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  className={CAMPO_CLASSES}
                 >
                   <option value="">Selecione...</option>
                   {categoriasDisponiveis.map((c) => (
@@ -213,7 +214,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                   placeholder="Ex: 500.00"
                   value={addValorLimite}
                   onChange={(e) => setAddValorLimite(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  className={CAMPO_CLASSES}
                 />
               </div>
               <div className="flex gap-2">
@@ -302,7 +303,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                         pattern="^\d+(\.\d{1,2})?$"
                         value={novoLimite}
                         onChange={(e) => setNovoLimite(e.target.value)}
-                        className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                        className={`${CAMPO_CLASSES} flex-1`}
                       />
                       <button
                         type="button"
@@ -414,7 +415,7 @@ export const OrcamentoPage = ({ familiaId, onBack }: OrcamentoPageProps) => {
                                   inputMode="decimal"
                                   value={novoLimite}
                                   onChange={(e) => setNovoLimite(e.target.value)}
-                                  className="w-24 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                                  className={`${CAMPO_CLASSES} !w-24`}
                                 />
                                 <button
                                   type="button"

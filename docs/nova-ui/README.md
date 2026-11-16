@@ -63,7 +63,7 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — Fundo do `body`, `theme-color` e manifest na paleta nova
 - [x] 2026-11-15 — Altura do shell sem rolagem fantasma
 - [x] 2026-11-15 — Área segura do iPhone na barra inferior
-- [ ] Campos em 16px e alvos de toque com 44px
+- [x] 2026-11-15 — Campos em 16px e alvos de toque com 44px
 - [ ] Escala de z-index: barra, "+", painel/modal, aviso
 - [ ] Valores do dashboard sem corte em 390px
 - [ ] Emojis trocados por ícones lucide
@@ -143,6 +143,7 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
 - 2026-11-15 — `<body>` sem o fundo slate, `theme-color` e manifest em `#F2F4EF`, `viewport-fit=cover`.
 - 2026-11-15 — `pb-safe` passa a existir (`spacing.safe`); o `<main>`, o "+" e o rodapé dos painéis de baixo para cima somam `env(safe-area-inset-bottom)`.
 - 2026-11-15 — `AppShell` em `h-dvh` com `overflow-hidden` (o `<main>` é a única área que rola); páginas do shell trocam `min-h-screen` por `min-h-full` e as telas de autenticação usam `min-h-dvh`.
+- 2026-11-15 — `CAMPO_CLASSES` (16px, 44px de altura, raio 10, anel de foco em `success`) vira a definição única dos 43 campos e do `CustomSelect`; `ALVO_TOQUE_CLASSES` dá 44x44 a fechar de modal, setas do mês, filtros do extrato e editar/desativar em categorias. Medição no navegador fica para a validação.
 
 ## Decisões fechadas
 

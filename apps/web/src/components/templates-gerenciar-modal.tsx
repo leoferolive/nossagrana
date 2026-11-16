@@ -12,6 +12,7 @@ import { useCofrinhoStore } from '@/stores/cofrinho.store';
 import { useTemplateTransacaoStore } from '@/stores/template-transacao.store';
 
 import { IconAdicionar, IconEditar, IconExcluir, IconFechar, IconSalvar } from './icons';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 interface TemplatesGerenciarModalProps {
   open: boolean;
@@ -168,13 +169,13 @@ export function TemplatesGerenciarModal({
               type="text"
               value={editar.form.nome}
               onChange={(e) => editar.setField('nome', e.target.value)}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
             <select
               aria-label="Categoria"
               value={editar.form.categoriaId}
               onChange={(e) => editar.setField('categoriaId', e.target.value)}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+              className={CAMPO_CLASSES}
             >
               <option value="">Sem categoria</option>
               {categoriasParaSelecao(categorias, template.tipo, {
@@ -194,14 +195,14 @@ export function TemplatesGerenciarModal({
               value={editar.form.valorPadrao}
               onChange={(e) => editar.setField('valorPadrao', e.target.value)}
               placeholder="Valor padrão (opcional)"
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
             {template.tipo === 'despesa' && (
               <select
                 aria-label="Cofrinho"
                 value={editar.form.cofrinhoId}
                 onChange={(e) => editar.setField('cofrinhoId', e.target.value)}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+                className={CAMPO_CLASSES}
               >
                 <option value="">Sem cofrinho</option>
                 {cofrinhos.map((c) => (
@@ -331,7 +332,7 @@ export function TemplatesGerenciarModal({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted transition hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted transition hover:text-text`}
           >
             <IconFechar size={18} />
           </button>
@@ -379,13 +380,13 @@ export function TemplatesGerenciarModal({
                 value={criar.form.nome}
                 onChange={(e) => criar.setField('nome', e.target.value)}
                 placeholder="Nome do template"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+                className={CAMPO_CLASSES}
               />
               <select
                 aria-label="Tipo"
                 value={criar.form.tipo}
                 onChange={(e) => trocarTipoCriacao(e.target.value as 'receita' | 'despesa')}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+                className={CAMPO_CLASSES}
               >
                 <option value="receita">Receita</option>
                 <option value="despesa">Despesa</option>
@@ -394,7 +395,7 @@ export function TemplatesGerenciarModal({
                 aria-label="Categoria"
                 value={criar.form.categoriaId}
                 onChange={(e) => criar.setField('categoriaId', e.target.value)}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+                className={CAMPO_CLASSES}
               >
                 <option value="">Sem categoria</option>
                 {categoriasParaSelecao(categorias, criar.form.tipo).map((c) => (
@@ -411,14 +412,14 @@ export function TemplatesGerenciarModal({
                 value={criar.form.valorPadrao}
                 onChange={(e) => criar.setField('valorPadrao', e.target.value)}
                 placeholder="Valor padrão (opcional)"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+                className={CAMPO_CLASSES}
               />
               {criar.form.tipo === 'despesa' && (
                 <select
                   aria-label="Cofrinho"
                   value={criar.form.cofrinhoId}
                   onChange={(e) => criar.setField('cofrinhoId', e.target.value)}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
+                  className={CAMPO_CLASSES}
                 >
                   <option value="">Sem cofrinho</option>
                   {cofrinhos.map((c) => (

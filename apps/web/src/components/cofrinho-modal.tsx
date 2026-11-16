@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 interface CofrinhoModalProps {
   open: boolean;
@@ -75,7 +76,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
             ✕
           </button>
@@ -91,7 +92,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Nome do cofrinho"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -105,7 +106,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               onChange={(e) => setEmoji(e.target.value.slice(0, 10))}
               placeholder="🐷"
               maxLength={10}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -120,7 +121,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               value={metaValor}
               onChange={(e) => setMetaValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -133,7 +134,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Para que serve esse cofrinho?"
               rows={3}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success resize-none"
+              className={`${CAMPO_CLASSES} resize-none`}
             />
           </label>
         </div>

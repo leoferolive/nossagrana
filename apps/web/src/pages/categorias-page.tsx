@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ErrorBanner } from '@/components/error-banner';
 import { categoriaService } from '@/services/core-financeiro.service';
 import { useCategoriaStore } from '@/stores/categoria.store';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
 
 interface CategoriasPageProps {
   familiaId: string;
@@ -126,7 +127,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                 aria-label="Nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+                className={CAMPO_CLASSES}
                 placeholder="Ex: Alimentação"
               />
             </label>
@@ -136,7 +137,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                 aria-label="Tipo"
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as 'receita' | 'despesa')}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                className={CAMPO_CLASSES}
               >
                 <option value="despesa">despesa</option>
                 <option value="receita">receita</option>
@@ -192,7 +193,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => handleOpenEdit(cat.id)}
                         aria-label={`Editar ${cat.nome}`}
-                        className="cursor-pointer text-xs text-text-muted transition hover:text-text"
+                        className={`${ALVO_TOQUE_CLASSES} cursor-pointer px-2 text-xs text-text-muted transition hover:text-text`}
                       >
                         editar
                       </button>
@@ -200,7 +201,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => void handleDesativar(cat.id)}
                         aria-label="Desativar"
-                        className="text-xs text-danger transition hover:text-danger/80"
+                        className={`${ALVO_TOQUE_CLASSES} px-2 text-xs text-danger transition hover:text-danger/80`}
                       >
                         desativar
                       </button>
@@ -232,7 +233,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => handleOpenEdit(cat.id)}
                         aria-label={`Editar ${cat.nome}`}
-                        className="cursor-pointer text-xs text-text-muted transition hover:text-text"
+                        className={`${ALVO_TOQUE_CLASSES} cursor-pointer px-2 text-xs text-text-muted transition hover:text-text`}
                       >
                         editar
                       </button>
@@ -240,7 +241,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                         type="button"
                         onClick={() => void handleDesativar(cat.id)}
                         aria-label="Desativar"
-                        className="text-xs text-danger transition hover:text-danger/80"
+                        className={`${ALVO_TOQUE_CLASSES} px-2 text-xs text-danger transition hover:text-danger/80`}
                       >
                         desativar
                       </button>

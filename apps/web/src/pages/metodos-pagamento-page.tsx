@@ -4,6 +4,7 @@ import { metodoPagamentoService } from '@/services/core-financeiro.service';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 
 import type { MetodoPagamentoCreateRequest } from '@nossagrana/types';
+import { CAMPO_CLASSES } from '../components/ui/campo-classes';
 
 interface MetodosPagamentoPageProps {
   familiaId: string;
@@ -138,7 +139,7 @@ export const MetodosPagamentoPage = ({
                 aria-label="Nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+                className={CAMPO_CLASSES}
                 placeholder="Ex: Nubank, Pix João"
               />
             </label>
@@ -148,7 +149,7 @@ export const MetodosPagamentoPage = ({
                 aria-label="Tipo"
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as TipoMetodo)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                className={CAMPO_CLASSES}
               >
                 <option value="credito">Crédito</option>
                 <option value="debito">Débito</option>
@@ -167,7 +168,7 @@ export const MetodosPagamentoPage = ({
                     aria-label="Dia de fechamento"
                     value={dataFechamento}
                     onChange={(e) => setDataFechamento(e.target.value)}
-                    className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                    className={CAMPO_CLASSES}
                     placeholder="15"
                   />
                 </label>
@@ -180,7 +181,7 @@ export const MetodosPagamentoPage = ({
                     aria-label="Dia de vencimento"
                     value={dataVencimento}
                     onChange={(e) => setDataVencimento(e.target.value)}
-                    className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none"
+                    className={CAMPO_CLASSES}
                     placeholder="22"
                   />
                 </label>

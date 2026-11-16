@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ALVO_TOQUE_CLASSES } from './ui/campo-classes';
 
 interface CofrinhoEncerrarModalProps {
   open: boolean;
@@ -54,7 +55,7 @@ export const CofrinhoEncerrarModal = ({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
             ✕
           </button>

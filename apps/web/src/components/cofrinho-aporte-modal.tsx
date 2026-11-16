@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
 
 interface CofrinhoAporteModalProps {
   open: boolean;
@@ -55,7 +56,7 @@ export const CofrinhoAporteModal = ({
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="text-text-muted hover:text-text"
+            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
           >
             ✕
           </button>
@@ -73,7 +74,7 @@ export const CofrinhoAporteModal = ({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
+              className={CAMPO_CLASSES}
             />
           </label>
 
@@ -86,7 +87,7 @@ export const CofrinhoAporteModal = ({
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Mesada de março"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none"
+              className={CAMPO_CLASSES}
             />
           </label>
 

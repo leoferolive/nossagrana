@@ -16,7 +16,16 @@ const Sonda = () => {
       <button onClick={painel.abrirNova}>nova</button>
       <button onClick={() => painel.abrirEdicao('tx-9')}>editar</button>
       <button onClick={painel.fechar}>fechar</button>
+      <button
+        onClick={() => {
+          painel.fechar();
+          painel.fechar();
+        }}
+      >
+        fechar duas vezes
+      </button>
       <button onClick={() => void navigate(-1)}>atras</button>
+      <button onClick={() => void navigate(1)}>avancar</button>
     </div>
   );
 };
@@ -119,5 +128,28 @@ describe('usePainelLancar', () => {
     expect(local()).toBe('/extrato');
     clicar('atras');
     expect(local()).toBe('/');
+  });
+
+  it('duas chamadas seguidas de fechar andam uma entrada só', () => {
+    montar(['/', '/extrato']);
+    clicar('nova');
+
+    clicar('fechar duas vezes');
+
+    expect(local()).toBe('/extrato');
+    clicar('atras');
+    expect(local()).toBe('/');
+  });
+
+  it('depois de fechado, avançar reabre o painel e fechar volta de novo', () => {
+    montar(['/', '/extrato']);
+    clicar('nova');
+    clicar('fechar');
+
+    clicar('avancar');
+    expect(screen.getByTestId('aberto')).toHaveTextContent('true');
+    clicar('fechar');
+
+    expect(local()).toBe('/extrato');
   });
 });

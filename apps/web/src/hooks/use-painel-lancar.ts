@@ -10,6 +10,21 @@ const MARCA_DE_ABERTURA = { painelLancar: true } as const;
 const abertoPorNavegacao = (state: unknown): boolean =>
   typeof state === 'object' && state !== null && 'painelLancar' in state;
 
+const lerPainel = (search: string) => {
+  const valor = new URLSearchParams(search).get(PARAMETRO);
+  const aberto = valor !== null && valor !== '';
+  return { aberto, transacaoId: aberto && valor !== NOVA ? valor : null };
+};
+
+/** Query string com o parâmetro do painel definido (ou removido, com `null`) e os demais intactos. */
+const buscaCom = (search: string, destino: string | null): string => {
+  const parametros = new URLSearchParams(search);
+  if (destino === null) parametros.delete(PARAMETRO);
+  else parametros.set(PARAMETRO, destino);
+  const resultado = parametros.toString();
+  return resultado ? `?${resultado}` : '';
+};
+
 /**
  * O painel de lançar vive no endereço (`?lancar=nova` ou `?lancar=<id da transação>`), então o
  * voltar do navegador fecha só o painel e a tela de baixo não muda.
@@ -17,53 +32,44 @@ const abertoPorNavegacao = (state: unknown): boolean =>
 export const usePainelLancar = () => {
   const navigate = useNavigate();
   const { pathname, search, state, key } = useLocation();
-  const entradaDescartada = useRef<string | null>(null);
-  const valor = new URLSearchParams(search).get(PARAMETRO);
-  const aberto = valor !== null && valor !== '';
-  const transacaoId = aberto && valor !== NOVA ? valor : null;
+  const { aberto, transacaoId } = lerPainel(search);
+  const entradaEncerrada = useRef<string | null>(null);
 
   const abrir = (destino: string) => {
-    const parametros = new URLSearchParams(search);
-    parametros.set(PARAMETRO, destino);
     // Com o painel aberto troca a entrada: abrir de novo (ex.: voz) não empilha outro passo.
     void navigate(
-      { pathname, search: `?${parametros.toString()}` },
+      { pathname, search: buscaCom(search, destino) },
       { replace: aberto, state: aberto ? state : MARCA_DE_ABERTURA },
     );
   };
 
-  // Idempotente: só substitui a entrada atual, sem andar no histórico. É o que o StrictMode
-  // (efeito rodando duas vezes) e uma recarga sem o que editar exigem, ao contrário de voltar.
-  const descartarAgora = () => {
+  const fecharAgora = () => {
     if (!aberto) return;
-    // Entrada aberta pelo app (marca no history.state, que sobrevive à recarga): a anterior é a
-    // mesma tela sem o parâmetro, então voltar evita deixar duas entradas iguais em sequência.
-    // Uma vez por entrada: o StrictMode roda o efeito duas vezes.
-    if (abertoPorNavegacao(state)) {
-      if (entradaDescartada.current === key) return;
-      entradaDescartada.current = key;
-      void navigate(-1);
+    if (!abertoPorNavegacao(state)) {
+      // Link direto ou recarga: não há entrada anterior sem o painel, só tira o parâmetro.
+      void navigate({ pathname, search: buscaCom(search, null) }, { replace: true });
       return;
     }
-    const parametros = new URLSearchParams(search);
-    parametros.delete(PARAMETRO);
-    const restante = parametros.toString();
-    void navigate({ pathname, search: restante ? `?${restante}` : '' }, { replace: true });
-  };
-
-  const fecharAgora = () => {
-    if (aberto && abertoPorNavegacao(state)) void navigate(-1);
-    else descartarAgora();
+    // Idempotente por entrada: voltar só uma vez por abertura. Fechar e depois reagir ao
+    // fechamento (envio que termina, toque duplo, efeito do StrictMode) chega aqui de novo
+    // enquanto o endereço ainda é o do painel, e não pode voltar uma segunda entrada.
+    if (entradaEncerrada.current === key) return;
+    entradaEncerrada.current = key;
+    void navigate(-1);
   };
 
   // `fechar` fica estável e sempre usa o último render: um envio que termina depois de a
   // pessoa já ter fechado o painel pelo voltar não pode voltar mais uma entrada.
-  const ultimos = useRef({ fecharAgora, descartarAgora });
+  // Painel fechado de verdade: o mesmo registro de histórico pode reabrir (avançar do navegador).
   useEffect(() => {
-    ultimos.current = { fecharAgora, descartarAgora };
+    if (!aberto) entradaEncerrada.current = null;
+  }, [aberto]);
+
+  const ultimoFechar = useRef(fecharAgora);
+  useEffect(() => {
+    ultimoFechar.current = fecharAgora;
   });
-  const fechar = useCallback(() => ultimos.current.fecharAgora(), []);
-  const descartar = useCallback(() => ultimos.current.descartarAgora(), []);
+  const fechar = useCallback(() => ultimoFechar.current(), []);
 
   return {
     aberto,
@@ -71,6 +77,5 @@ export const usePainelLancar = () => {
     abrirNova: () => abrir(NOVA),
     abrirEdicao: (id: string) => abrir(id),
     fechar,
-    descartar,
   };
 };

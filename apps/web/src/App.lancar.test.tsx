@@ -170,3 +170,98 @@ describe('App > painel de lançar no endereço', () => {
     await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
   });
 });
+
+describe('App > encerrar o painel anda no histórico uma única vez', () => {
+  const MODOS: Array<[string, { strict?: boolean; navegador?: boolean }]> = [
+    ['MemoryRouter', {}],
+    ['StrictMode', { strict: true }],
+    ['BrowserRouter', { navegador: true }],
+  ];
+
+  const ENCERRAMENTOS: Array<[string, () => Promise<void>]> = [
+    [
+      'fechar no X',
+      async () => void fireEvent.click(screen.getByRole('button', { name: /fechar modal/i })),
+    ],
+    [
+      'salvar',
+      async () => {
+        fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+        await waitFor(() => expect(transacaoService.editar).toHaveBeenCalled());
+      },
+    ],
+    [
+      'excluir',
+      async () => {
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+        await waitFor(() => expect(transacaoService.excluir).toHaveBeenCalled());
+      },
+    ],
+  ];
+
+  const esperar = (ms = 80) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+
+  beforeEach(() => {
+    vi.mocked(transacaoService.listar).mockResolvedValue({
+      transacoes: [makeTransacao({ id: 'tx-1', descricao: 'Farmácia' })],
+    });
+  });
+
+  const editarPrimeira = async () => {
+    fireEvent.click((await screen.findAllByText('Farmácia'))[0]);
+    await screen.findByText('Editar Transação');
+    expect(local()).toHaveTextContent('/extrato?lancar=tx-1');
+  };
+
+  describe.each(MODOS)('%s', (_nome, opcoes) => {
+    it.each(ENCERRAMENTOS)(
+      'editar e %s termina em /extrato; um voltar leva ao Início',
+      async (_n, encerrar) => {
+        renderApp('/', opcoes);
+        fireEvent.click(await screen.findByRole('button', { name: /ver extrato/i }));
+        await editarPrimeira();
+
+        await encerrar();
+        await esperar();
+
+        expect(local()).toHaveTextContent(/^\/extrato$/);
+        voltar();
+        await esperar();
+        expect(local()).toHaveTextContent(/^\/$/);
+      },
+    );
+
+    it('nova transação salva: mesma tela e um voltar leva à anterior', async () => {
+      renderApp('/', opcoes);
+      fireEvent.click(await screen.findByRole('button', { name: /ver extrato/i }));
+      abrirPainelNovo();
+      fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '10.00' } });
+      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
+      fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+
+      fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+      await waitFor(() => expect(transacaoService.registrar).toHaveBeenCalled());
+      await esperar();
+
+      expect(local()).toHaveTextContent(/^\/extrato$/);
+      voltar();
+      await esperar();
+      expect(local()).toHaveTextContent(/^\/$/);
+    });
+  });
+
+  it.each(ENCERRAMENTOS)(
+    'Extrato aberto por link direto: editar e %s continua em /extrato',
+    async (_n, encerrar) => {
+      renderApp('/extrato');
+      await editarPrimeira();
+
+      await encerrar();
+      await esperar();
+
+      expect(local()).toHaveTextContent(/^\/extrato$/);
+      expect(tituloNoConteudo(/^extrato$/i)).toBeInTheDocument();
+    },
+  );
+});

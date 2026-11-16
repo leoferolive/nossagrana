@@ -26,9 +26,13 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-15:** direção aprovada, nenhuma linha de código do redesenho
-escrita. **Próximo passo:** o usuário confirmar a ordem das entregas e, em seguida,
-o desenho da Entrega 1.
+**Estado em 2026-11-15:** PR 1 da Entrega 1 (Correções) implementado e validado na
+branch `feat/nova-ui-e1-correcoes`: os cinco bugs funcionais da auditoria estão
+corrigidos, com duas migrations de dados (`0013` e `0014`). Nada da base visual
+foi escrito ainda. **Próximo passo:** o usuário revisar e mergear o PR 1; em
+seguida, escrever o plano do PR 2 (Base visual) em `docs/superpowers/plans/`,
+a partir do
+[desenho da Entrega 1](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
 
 ### Descoberta
 
@@ -36,15 +40,22 @@ o desenho da Entrega 1.
 - [x] 2026-11-15 — Três propostas visuais comparadas (A, B e C)
 - [x] 2026-11-15 — Direção escolhida: estrutura da A com a paleta clara da B
 - [x] 2026-11-15 — Rotina mensal da família levantada e regra do lazer confirmada
-- [ ] Ordem das entregas confirmada pelo usuário
+- [x] 2026-11-15 — Ordem das entregas confirmada: 1 → 2 → 3 → 4 (escolha
+      delegada pelo usuário)
 
 ### Entrega 1 — Base e tema claro
 
-- [ ] Data padrão do lançamento em horário local
-- [ ] Primeira parcela com o valor da parcela (depende da pergunta 4)
-- [ ] "Vigente desde" do orçamento no mês certo
-- [ ] Gráfico de pizza com uma única categoria
-- [ ] Acentos nas categorias padrão e nos textos
+Sai em dois PRs em sequência: correções (as cinco primeiras tarefas) e base
+visual (as demais). Desenho em
+[`2026-11-15-nova-ui-entrega-1-design.md`](../superpowers/specs/2026-11-15-nova-ui-entrega-1-design.md).
+
+- [x] 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário
+- [x] 2026-11-15 — Data padrão do lançamento em horário local
+- [x] 2026-11-15 — Primeira parcela com o valor da parcela, corrigindo também
+      os parcelamentos já gravados
+- [x] 2026-11-15 — "Vigente desde" do orçamento no mês certo
+- [x] 2026-11-15 — Gráfico de pizza com uma única categoria
+- [x] 2026-11-15 — Acentos nas categorias padrão e nos textos
 - [ ] Tokens com os valores novos e os tokens adicionais
 - [ ] Manrope carregada pelo próprio app
 - [ ] Fundo do `body`, `theme-color` e manifest na paleta nova
@@ -92,23 +103,54 @@ Histórico em uma tela) e ícones PNG/maskable do PWA.
 ### Diário
 
 - 2026-11-15 — Arquivo criado com a direção aprovada. Nada implementado.
+- 2026-11-15 — O usuário delegou as respostas das perguntas em aberto; ordem das
+  entregas, tema, primeira parcela e fonte decididas (decisões 13 a 16). Desenho
+  da Entrega 1 escrito, aguardando aprovação.
+- 2026-11-15 — Desenho da Entrega 1 aprovado pelo usuário. Plano do PR 1
+  (Correções) escrito.
+- 2026-11-15 — Data padrão do lançamento passa a usar o dia local
+  (`getTodayLocalISO`); os testes do Web rodam com o fuso fixo em São Paulo.
+- 2026-11-15 — O pai de um parcelamento passa a valer a parcela; a migration
+  `0013_parcela_pai_valor` corrige os já gravados e marca como divergentes os
+  snapshots dos meses afetados.
+- 2026-11-15 — "Vigente desde" do orçamento e a data fim do aporte recorrente
+  do cofrinho deixam de voltar um dia por causa do fuso (`formatMesCurto`,
+  `formatDataBR`).
+- 2026-11-15 — Gráfico de pizza desenha o anel completo quando há uma única
+  categoria e deixa de listar categorias zeradas.
+- 2026-11-15 — Categorias padrão com acento (seed e migration
+  `0014_categorias_padrao_acentos` para as famílias existentes) e textos de
+  cofrinho e onboarding acentuados.
+- 2026-11-15 — PR 1 validado no navegador em 390×844 (dashboard, orçamento,
+  categorias, cofrinho, extrato e formulário de lançamento). Os specs E2E de
+  onboarding, família e transações não serviram de validação: já estão
+  desatualizados na `main` (esperam o texto "Como deseja entrar", que não existe
+  mais no app, e usam `selectOption` num seletor que deixou de ser `<select>`).
+  O acerto fica para a tarefa "E2E ajustados à nova navegação" da Entrega 2.
 
 ## Decisões fechadas
 
-| #   | Decisão                                                                                             | Por quê                                                                     |
-| --- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 1   | Celular primeiro, tela de referência 390×844                                                        | É onde a família lança e consulta                                           |
-| 2   | Estrutura "Mês em foco": um número principal por tela, régua do mês, cartões                        | Proposta A, escolhida pelo usuário                                          |
-| 3   | Paleta clara: papel esverdeado, tinta verde-escura, um acento verde                                 | Paleta da proposta B, escolhida pelo usuário                                |
-| 4   | Fonte Manrope em tudo, com números tabulares                                                        | Já é a fonte declarada no app; hoje ela nunca é carregada                   |
-| 5   | Barra inferior: Início · Extrato · + · Planejar · Mais                                              | O "+" flutuante cobria valores e modais                                     |
-| 6   | Toda tela tem URL                                                                                   | Hoje o voltar do Android sai do app e recarregar cai no dashboard           |
-| 7   | Planejar é o **plano do mês** em quatro passos: receitas, contas fixas, cofrinhos, lazer de cada um | É a ordem em que a família preenche a planilha                              |
-| 8   | Lazer disponível = direito fixo da pessoa − lazer dela no cartão, na fatura que vence no mês        | Regra da planilha, confirmada pelo usuário                                  |
-| 9   | Verde é a única cor de ação; vermelho só para alerta; saída em texto neutro, entrada em verde       | Na auditoria, verde, azul, laranja e vermelho disputavam a ação principal   |
-| 10  | Os nomes dos tokens Tailwind ficam (`bg-bg`, `bg-panel`, `text-text-muted`…); mudam os valores      | `.claude/rules/code-style.md` já os define; evita renomear o app inteiro    |
-| 11  | Ícones só de `lucide-react`; nenhum emoji na interface                                              | Regra do projeto de uma biblioteca de ícones                                |
-| 12  | Alvos de toque com 44px, campos em 16px, texto com contraste mínimo de 4,5:1                        | Campos em 14px dão zoom no iPhone; botão verde com texto branco tinha 2,3:1 |
+| #   | Decisão                                                                                                                                                                | Por quê                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 1   | Celular primeiro, tela de referência 390×844                                                                                                                           | É onde a família lança e consulta                                               |
+| 2   | Estrutura "Mês em foco": um número principal por tela, régua do mês, cartões                                                                                           | Proposta A, escolhida pelo usuário                                              |
+| 3   | Paleta clara: papel esverdeado, tinta verde-escura, um acento verde                                                                                                    | Paleta da proposta B, escolhida pelo usuário                                    |
+| 4   | Fonte Manrope em tudo, com números tabulares                                                                                                                           | Já é a fonte declarada no app; hoje ela nunca é carregada                       |
+| 5   | Barra inferior: Início · Extrato · + · Planejar · Mais                                                                                                                 | O "+" flutuante cobria valores e modais                                         |
+| 6   | Toda tela tem URL                                                                                                                                                      | Hoje o voltar do Android sai do app e recarregar cai no dashboard               |
+| 7   | Planejar é o **plano do mês** em quatro passos: receitas, contas fixas, cofrinhos, lazer de cada um                                                                    | É a ordem em que a família preenche a planilha                                  |
+| 8   | Lazer disponível = direito fixo da pessoa − lazer dela no cartão, na fatura que vence no mês                                                                           | Regra da planilha, confirmada pelo usuário                                      |
+| 9   | Verde é a única cor de ação; vermelho só para alerta; saída em texto neutro, entrada em verde                                                                          | Na auditoria, verde, azul, laranja e vermelho disputavam a ação principal       |
+| 10  | Os nomes dos tokens Tailwind ficam (`bg-bg`, `bg-panel`, `text-text-muted`…); mudam os valores                                                                         | `.claude/rules/code-style.md` já os define; evita renomear o app inteiro        |
+| 11  | Ícones só de `lucide-react`; nenhum emoji na interface                                                                                                                 | Regra do projeto de uma biblioteca de ícones                                    |
+| 12  | Alvos de toque com 44px, campos em 16px, texto com contraste mínimo de 4,5:1                                                                                           | Campos em 14px dão zoom no iPhone; botão verde com texto branco tinha 2,3:1     |
+| 13  | Ordem das entregas: 1 → 2 → 3 → 4                                                                                                                                      | Planejar é uma aba da barra nova e seus passos têm URL, então a 4 depende da 2  |
+| 14  | Só o tema claro; o tema escuro deixa de existir                                                                                                                        | O app nunca teve alternador; os tokens são variáveis CSS, dá para voltar depois |
+| 15  | Primeira parcela com o valor total é bug: o pai passa a valer a parcela e os já gravados são corrigidos, com os snapshots dos meses afetados marcados como divergentes | Os totais somam `valor`; R$ 1.299,90 em 10x pesava R$ 2.469,81                  |
+| 16  | Manrope pelo pacote `@fontsource-variable/manrope`, no build do app e no cache offline                                                                                 | O app é um PWA e a fonte precisa funcionar sem rede                             |
+
+As decisões 13 a 16 foram escolhidas pelo Claude em 2026-11-15, por delegação do
+usuário.
 
 `docs/AUDIT-UX.md` (2026-03) e `docs/wireframes/` são anteriores a esta direção;
 onde divergirem, vale este arquivo.
@@ -253,21 +295,32 @@ DATABASE_URL="postgresql://nossagrana_e2e:nossagrana_e2e@localhost:5433/nossagra
 VITE_API_URL="" VITE_WS_URL="" pnpm --filter web exec vite --host 0.0.0.0 --port 5180 --strictPort
 ```
 
+Numa worktree não existe `apps/api/.env`: passe também `JWT_SECRET`,
+`REFRESH_TOKEN_SECRET` e `ADMIN_SECRET` (32 caracteres ou mais; valores
+descartáveis servem), `REFRESH_COOKIE_SECURE=false` e
+`CORS_ORIGIN=http://localhost:5180` no comando da API. A API responde em
+`/api/health`.
+
+Para rodar o E2E contra esse ambiente, use `BASE_URL=http://localhost:5180` e
+`API_URL=http://localhost:3000`. O servidor não sobe com `NODE_ENV=test`, então o
+limite de requisições fica ligado (3 cadastros e 5 logins por minuto): rode um
+teste por vez, com cerca de 30 segundos entre eles; em lote, os logins passam a
+falhar.
+
 Ao terminar, encerre os processos e rode
 `docker compose -f apps/e2e/docker-compose.e2e.yml down -v`.
 
 ## Perguntas em aberto
 
-1. **Ordem das entregas.** A proposta é 1 → 2 → 3 → 4. O usuário ainda não
-   confirmou se o plano do mês deve vir antes.
-2. **O que "Confirmar lazer" gera:** um lançamento por pessoa, uma transferência
-   ou só o registro do valor disponível?
-3. **Tema escuro:** continua como opção ou o app passa a ter só o tema claro?
-4. **Primeira parcela com o valor total** (`transacao.plano-registro.ts:57`): é
-   bug ou regra?
-5. **Biblioteca de rotas** para a Entrega 2.
-6. **Fonte:** arquivos `woff2` no repositório ou pacote `@fontsource`? O app é um
-   PWA, então a fonte precisa funcionar sem rede.
+1. **O que "Confirmar lazer" gera** (Entrega 4): um lançamento por pessoa, uma
+   transferência ou só o registro do valor disponível?
+2. **Biblioteca de rotas** para a Entrega 2.
+3. **Emoji do cofrinho** (Entrega 4): o emoji que a família escolhe para cada
+   cofrinho (`cofrinhos.emoji`) continua, ou vira um seletor de ícones lucide? A
+   Entrega 1 não mexe nele.
+
+Respondidas em 2026-11-15 e movidas para as decisões 13 a 16: ordem das
+entregas, tema escuro, primeira parcela e fonte.
 
 ## Referências
 

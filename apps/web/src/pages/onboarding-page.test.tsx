@@ -76,7 +76,7 @@ describe('OnboardingPage', () => {
         target: { value: 'Oliveira' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /criar famil/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /criar família/i }));
 
       await waitFor(() => {
         expect(familiaService.criar).toHaveBeenCalledWith({ nome: 'Oliveira' });
@@ -106,7 +106,7 @@ describe('OnboardingPage', () => {
         target: { value: 'Oliveira' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /criar famil/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /criar família/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toHaveTextContent(/erro ao criar família/i);
@@ -206,7 +206,7 @@ describe('OnboardingPage', () => {
         target: { value: 'Silv' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /buscar familia/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /buscar família/i }));
 
       await waitFor(() => {
         expect(familiaService.buscar).toHaveBeenCalledWith('Silv');
@@ -240,7 +240,7 @@ describe('OnboardingPage', () => {
         target: { value: 'Silva' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /buscar familia/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /buscar família/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Silva')).toBeInTheDocument();
@@ -268,7 +268,7 @@ describe('OnboardingPage', () => {
         target: { value: 'Test' },
       });
 
-      fireEvent.submit(screen.getByRole('form', { name: /buscar familia/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /buscar família/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('alert')).toBeInTheDocument();

@@ -22,7 +22,7 @@ export default defineConfig({
       manifest: {
         name: 'NossaGrana',
         short_name: 'NossaGrana',
-        description: 'PWA de gestao financeira familiar',
+        description: 'PWA de gestão financeira familiar',
         theme_color: '#0f766e',
         background_color: '#f8fafc',
         display: 'standalone',

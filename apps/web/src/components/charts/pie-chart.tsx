@@ -39,11 +39,12 @@ const describeArc = (
   ].join(' ');
 };
 
-export const PieChart = ({ data, size = 120 }: PieChartProps) => {
+export const PieChart = ({ data: todos, size = 120 }: PieChartProps) => {
+  // Categoria zerada não tem fatia para desenhar nem o que mostrar na legenda.
+  const data = todos.filter((d) => d.value > 0);
   if (!data.length) return null;
 
   const total = data.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return null;
 
   const cx = size / 2;
   const cy = size / 2;
@@ -72,9 +73,20 @@ export const PieChart = ({ data, size = 120 }: PieChartProps) => {
         className="shrink-0"
         aria-hidden="true"
       >
-        {slices.map((s, i) => (
-          <path key={i} d={s.path} fill={s.color} />
-        ))}
+        {slices.length === 1 ? (
+          // Uma fatia de 360° começa e termina no mesmo ponto e o arco do SVG não
+          // desenha nada; o círculo inteiro vira um anel traçado.
+          <circle
+            cx={cx}
+            cy={cy}
+            r={(outerR + innerR) / 2}
+            fill="none"
+            stroke={slices[0].color}
+            strokeWidth={outerR - innerR}
+          />
+        ) : (
+          slices.map((s, i) => <path key={i} d={s.path} fill={s.color} />)
+        )}
       </svg>
       <ul className="flex flex-col gap-1.5">
         {slices.map((s, i) => (

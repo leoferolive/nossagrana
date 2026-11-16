@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { formatMesLabel, getCurrentMonth, shiftMonth } from './date';
+import {
+  formatDataBR,
+  formatMesCurto,
+  formatMesLabel,
+  getCurrentMonth,
+  getTodayLocalISO,
+  shiftMonth,
+} from './date';
 
 describe('getCurrentMonth', () => {
   afterEach(() => {
@@ -73,5 +80,54 @@ describe('formatMesLabel', () => {
 
   it('retorna "março de 2026" para "2026-03"', () => {
     expect(formatMesLabel('2026-03')).toBe('março de 2026');
+  });
+});
+
+describe('getTodayLocalISO', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Regressão: toISOString() devolve a data em UTC; depois das 21h em São Paulo
+  // (GMT-3) isso já é o dia seguinte.
+  it('às 23:11 de 14/11 em São Paulo ainda é dia 14', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-15T02:11:00Z'));
+    expect(getTodayLocalISO()).toBe('2026-11-14');
+  });
+
+  it('às 23:30 de 31/12 não vira o ano', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2027-01-01T02:30:00Z'));
+    expect(getTodayLocalISO()).toBe('2026-12-31');
+  });
+
+  it('preenche mês e dia com zero', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-05T15:00:00Z'));
+    expect(getTodayLocalISO()).toBe('2026-03-05');
+  });
+});
+
+describe('formatMesCurto', () => {
+  // Regressão: new Date("2026-11-01") é UTC; em São Paulo vira 31/10 e o
+  // orçamento criado em novembro aparecia como "out. de 2026".
+  it('retorna "nov. de 2026" para "2026-11"', () => {
+    expect(formatMesCurto('2026-11')).toBe('nov. de 2026');
+  });
+
+  it('retorna "jan. de 2026" para "2026-01"', () => {
+    expect(formatMesCurto('2026-01')).toBe('jan. de 2026');
+  });
+});
+
+describe('formatDataBR', () => {
+  // Regressão: new Date("2026-12-31") é UTC; em São Paulo vira 30/12.
+  it('retorna "31/12/2026" para "2026-12-31"', () => {
+    expect(formatDataBR('2026-12-31')).toBe('31/12/2026');
+  });
+
+  it('retorna "01/03/2026" para "2026-03-01"', () => {
+    expect(formatDataBR('2026-03-01')).toBe('01/03/2026');
   });
 });

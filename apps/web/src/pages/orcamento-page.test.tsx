@@ -53,6 +53,28 @@ describe('OrcamentoPage', () => {
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
   });
 
+  // Regressão: a vigência "2026-03" era lida como UTC e aparecia como fevereiro.
+  it('mostra "vigente desde" com o mês da vigência, não o anterior', async () => {
+    mockService.getOrcamentos.mockResolvedValue({
+      orcamentos: [
+        {
+          id: 'o1',
+          categoriaId: 'c1',
+          categoriaNome: 'Alimentação',
+          valorLimite: '500.00',
+          vigenciaInicio: '2026-03',
+          vigenciaFim: null,
+          totalGasto: '250.00',
+          percentual: 50,
+          status: 'ok',
+        },
+      ],
+    });
+    render(<OrcamentoPage familiaId={familiaId} onBack={vi.fn()} />);
+
+    expect(await screen.findByText('Vigente desde mar. de 2026')).toBeInTheDocument();
+  });
+
   it('renders orcamento rows after load', async () => {
     mockService.getOrcamentos.mockResolvedValue({
       orcamentos: [

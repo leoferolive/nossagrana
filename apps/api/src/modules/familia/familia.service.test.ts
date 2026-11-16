@@ -51,7 +51,7 @@ describe('FamiliaService', () => {
     expect(categorias).toHaveLength(expectedTotal);
 
     const nomes = categorias.map((c) => c.nome);
-    expect(nomes).toContain('Salario');
+    expect(nomes).toContain('Salário');
     expect(nomes).toContain('Moradia');
     expect(nomes).toContain(CATEGORIA_SISTEMA_COFRINHO);
 

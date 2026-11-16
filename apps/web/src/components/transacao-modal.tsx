@@ -8,6 +8,7 @@ import {
 } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
+import { getTodayLocalISO } from '@/utils/date';
 import { IconParcelas, IconRecorrente, IconMicrofone } from './icons';
 import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
 import { CustomSelect } from './ui/custom-select';
@@ -42,8 +43,6 @@ interface TransacaoModalProps {
   onVoiceActivate?: () => void;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
-
 export const TransacaoModal = ({
   open,
   familiaId,
@@ -64,7 +63,7 @@ export const TransacaoModal = ({
   const [valor, setValor] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [data, setData] = useState(today);
+  const [data, setData] = useState(getTodayLocalISO);
   const [metodoPagamentoId, setMetodoPagamentoId] = useState('');
 
   const [parcelado, setParcelado] = useState(false);
@@ -96,7 +95,7 @@ export const TransacaoModal = ({
       setValor('');
       setCategoriaId('');
       setDescricao('');
-      setData(today);
+      setData(getTodayLocalISO());
       setMetodoPagamentoId('');
       setParcelado(false);
       setNumeroParcelas(2);
@@ -120,7 +119,7 @@ export const TransacaoModal = ({
       setValor(dadosVoz.valor ?? '');
       setCategoriaId(dadosVoz.categoriaId ?? '');
       setDescricao(dadosVoz.descricao ?? '');
-      setData(dadosVoz.data ?? today());
+      setData(dadosVoz.data ?? getTodayLocalISO());
       setMetodoPagamentoId('');
       setParcelado(false);
       setRecorrente(false);

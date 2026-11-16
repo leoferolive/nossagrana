@@ -54,7 +54,15 @@ function lancamentoEm(input: RegistrarTransacaoInput, data: string): CreateTrans
 function planejarParcelado(input: RegistrarTransacaoInput, numeroParcelas: number): PlanoRegistro {
   const valorParcela = calcularValorParcela(input.valor, numeroParcelas);
   const parcela = { parcelado: true, numeroParcelas, valorTotal: input.valor, valorParcela };
-  const pai = { ...lancamentoEm(input, input.data), ...parcela, parcelaAtual: 1 };
+  // O pai é a parcela 1 e vale a parcela, como as filhas: os totais (dashboard,
+  // orçamento, fatura, histórico) somam `valor`. O total da compra fica em
+  // `valorTotal`.
+  const pai = {
+    ...lancamentoEm(input, input.data),
+    ...parcela,
+    valor: valorParcela,
+    parcelaAtual: 1,
+  };
   // Parcelas 2..N: a 1ª é o próprio pai
   const filhas = Array.from({ length: numeroParcelas - 1 }, (_, indice) => ({
     ...lancamentoEm(input, adicionarMeses(input.data, indice + 1)),

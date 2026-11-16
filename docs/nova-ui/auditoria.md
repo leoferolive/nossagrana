@@ -7,13 +7,13 @@ de 2026-11-15 (`e8453f7`); confira de novo antes de editar.
 
 ## Bugs funcionais
 
-| Bug                                        | Evidência                                                                                                                    | Onde                                                            | Entrega         |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------- |
-| Data padrão um dia à frente depois das 21h | Às 23:11 de 14/11 o formulário abriu com 15/11; a data vem de `toISOString()`, que é UTC                                     | `apps/web/src/components/transacao-modal.tsx:45`                | 1               |
-| Primeira parcela gravada com o valor total | Compra de R$ 1.299,90 em 10x: novembro com R$ 1.299,90, dezembro com R$ 129,99. Só as parcelas filhas recebem `valorParcela` | `apps/api/src/modules/transacao/transacao.plano-registro.ts:57` | 1 (a confirmar) |
-| Orçamento "vigente desde" o mês anterior   | Criado em novembro, mostra "out. de 2026": `new Date('2026-11-01')` é lido como UTC                                          | `apps/web/src/pages/orcamento-page.tsx:173`                     | 1               |
-| Pizza some com uma categoria só            | Com 100% em uma categoria o arco começa e termina no mesmo ponto                                                             | `describeArc` em `apps/web/src/components/charts/pie-chart.tsx` | 1               |
-| Textos sem acento                          | Categorias padrão (Alimentacao, Saude, Educacao, Salario, Bonus) e frases como "Movimentacoes"                               | Seed de categorias e páginas de cofrinho                        | 1               |
+| Bug                                        | Evidência                                                                                                                    | Onde                                                            | Entrega |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------- |
+| Data padrão um dia à frente depois das 21h | Às 23:11 de 14/11 o formulário abriu com 15/11; a data vem de `toISOString()`, que é UTC                                     | `apps/web/src/components/transacao-modal.tsx:45`                | 1       |
+| Primeira parcela gravada com o valor total | Compra de R$ 1.299,90 em 10x: novembro com R$ 1.299,90, dezembro com R$ 129,99. Só as parcelas filhas recebem `valorParcela` | `apps/api/src/modules/transacao/transacao.plano-registro.ts:57` | 1       |
+| Orçamento "vigente desde" o mês anterior   | Criado em novembro, mostra "out. de 2026": `new Date('2026-11-01')` é lido como UTC                                          | `apps/web/src/pages/orcamento-page.tsx:173`                     | 1       |
+| Pizza some com uma categoria só            | Com 100% em uma categoria o arco começa e termina no mesmo ponto                                                             | `describeArc` em `apps/web/src/components/charts/pie-chart.tsx` | 1       |
+| Textos sem acento                          | Categorias padrão (Alimentacao, Saude, Educacao, Salario, Bonus) e frases como "Movimentacoes"                               | Seed de categorias e páginas de cofrinho                        | 1       |
 
 ## Problemas de interface
 

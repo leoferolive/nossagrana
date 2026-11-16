@@ -78,7 +78,7 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
     fireEvent.change(screen.getByLabelText(/nome da fam/i), {
       target: { value: 'Familia Test' },
     });
-    fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
+    fireEvent.submit(screen.getByRole('form', { name: /criar família/i }));
 
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),
@@ -102,7 +102,7 @@ describe('App > fluxo não autenticado > cadastro e onboarding', () => {
       fireEvent.change(screen.getByLabelText(/nome da fam/i), {
         target: { value: 'Familia Test' },
       });
-      fireEvent.submit(screen.getByRole('form', { name: /criar fam/i }));
+      fireEvent.submit(screen.getByRole('form', { name: /criar família/i }));
 
       await waitFor(() =>
         expect(screen.getByRole('heading', { name: /família/i })).toBeInTheDocument(),

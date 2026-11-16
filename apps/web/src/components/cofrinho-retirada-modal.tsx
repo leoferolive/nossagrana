@@ -91,13 +91,13 @@ export const CofrinhoRetiradaModal = ({
               className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-warning/40"
             />
             {valor && valorNum > saldoNum && (
-              <span className="text-xs text-danger">Valor excede o saldo disponivel.</span>
+              <span className="text-xs text-danger">Valor excede o saldo disponível.</span>
             )}
           </label>
 
           {/* Descrição */}
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Descricao (opcional)</span>
+            <span className="text-xs text-text-muted">Descrição (opcional)</span>
             <input
               aria-label="Descrição"
               type="text"
@@ -124,7 +124,7 @@ export const CofrinhoRetiradaModal = ({
               <span className="text-sm text-text">Voltar ao saldo</span>
             </label>
             <p className="ml-6 text-xs text-text-muted">
-              O valor retorna como receita no mes atual.
+              O valor retorna como receita no mês atual.
             </p>
             <label className="flex items-center gap-2 cursor-pointer">
               <input

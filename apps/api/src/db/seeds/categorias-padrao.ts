@@ -1,14 +1,14 @@
 export const CATEGORIA_SISTEMA_COFRINHO = 'Cofrinho' as const;
 
-export const CATEGORIAS_PADRAO_RECEITA = ['Salario', 'Bonus', 'Investimentos', 'Outros'] as const;
+export const CATEGORIAS_PADRAO_RECEITA = ['Salário', 'Bônus', 'Investimentos', 'Outros'] as const;
 
 export const CATEGORIAS_PADRAO_DESPESA = [
   'Moradia',
-  'Alimentacao',
+  'Alimentação',
   'Transporte',
-  'Saude',
+  'Saúde',
   'Lazer',
-  'Educacao',
+  'Educação',
   'Assinaturas',
   'Compras',
   'Outros',

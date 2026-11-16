@@ -98,6 +98,21 @@ describe('TransacaoModal', () => {
     expect(screen.getByText('Nubank')).toBeInTheDocument();
   });
 
+  describe('data padrão', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('abre com o dia local depois das 21h, e não com o dia seguinte em UTC', () => {
+      // Só o Date é falso, para não travar as esperas da Testing Library.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-15T02:11:00Z')); // 14/11 às 23:11 em São Paulo
+      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+      expect(screen.getByLabelText(/^data$/i)).toHaveValue('2026-11-14');
+    });
+  });
+
   describe('voice input', () => {
     const dadosVoz: DadosVoz = {
       tipo: 'despesa',

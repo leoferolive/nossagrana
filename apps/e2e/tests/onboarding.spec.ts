@@ -3,11 +3,11 @@
  *
  * Onboarding is the screen shown to a newly registered user who does not yet
  * have an active familia. It offers three modes:
- *   - "Criar familia"        — create a brand-new familia
+ *   - "Criar família"        — create a brand-new familia
  *   - "Entrar com convite"   — join an existing familia via invite code
  *   - "Buscar e solicitar"   — search for a familia and request to join
  *
- * The tests in this file focus on the "Criar familia" path which is the most
+ * The tests in this file focus on the "Criar família" path which is the most
  * common first-run experience. A freshly registered user is set up via the API
  * (using `authContext`) and the tokens are injected into localStorage so the
  * app starts in the correct authenticated-but-no-familia state.
@@ -64,7 +64,7 @@ test.describe('Onboarding', () => {
     ).toBeVisible({ timeout: 10_000 });
 
     // The three mode buttons must be present.
-    await expect(page.getByRole('button', { name: 'Criar familia' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Criar família' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Entrar com convite' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Buscar e solicitar' })).toBeVisible();
   });
@@ -77,16 +77,16 @@ test.describe('Onboarding', () => {
       password: authContext.password,
     });
 
-    // "Criar familia" mode is active by default.
-    await expect(page.getByRole('form', { name: 'Criar familia' })).toBeVisible({
+    // "Criar família" mode is active by default.
+    await expect(page.getByRole('form', { name: 'Criar família' })).toBeVisible({
       timeout: 10_000,
     });
 
     // Fill in the family name and submit.
     await page.getByLabel('Nome da familia').fill('Família E2E Onboarding');
     await page
-      .getByRole('form', { name: 'Criar familia' })
-      .getByRole('button', { name: 'Criar familia' })
+      .getByRole('form', { name: 'Criar família' })
+      .getByRole('button', { name: 'Criar família' })
       .click();
 
     // After creating a familia the app transitions to the FamilySettingsPage.
@@ -132,7 +132,7 @@ test.describe('Onboarding', () => {
     await page.getByRole('button', { name: 'Buscar e solicitar' }).click();
 
     // The search form must be visible.
-    await expect(page.getByRole('form', { name: 'Buscar familia' })).toBeVisible();
+    await expect(page.getByRole('form', { name: 'Buscar família' })).toBeVisible();
     await expect(page.getByLabel('Nome da familia')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Buscar', exact: true })).toBeVisible();
   });
@@ -172,8 +172,8 @@ test.describe('Onboarding', () => {
     // Create the familia through the onboarding form.
     await page.getByLabel('Nome da familia').fill('Família E2E Dashboard');
     await page
-      .getByRole('form', { name: 'Criar familia' })
-      .getByRole('button', { name: 'Criar familia' })
+      .getByRole('form', { name: 'Criar família' })
+      .getByRole('button', { name: 'Criar família' })
       .click();
 
     // The FamilySettingsPage is shown after creating a familia. In a real

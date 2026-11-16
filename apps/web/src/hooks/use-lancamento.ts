@@ -1,9 +1,11 @@
 import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { Transacao } from '@/routes/contexto-logado';
 import { transacaoService } from '@/services/core-financeiro.service';
 import { novaChaveIdempotencia } from '@/services/idempotencia';
+
+import { usePainelLancar } from './use-painel-lancar';
 
 interface TransacaoEmEdicao {
   id: string;
@@ -25,21 +27,32 @@ const paraEdicao = (t: Transacao): TransacaoEmEdicao => ({
   metodoPagamentoId: t.metodoPagamentoId,
 });
 
-/** Painel de lançar (nova transação ou edição) e as chamadas de gravação ligadas a ele. */
+/**
+ * Painel de lançar (nova transação ou edição) e as chamadas de gravação ligadas a ele.
+ * Quem está aberto e qual transação vêm do endereço (`usePainelLancar`); os dados da
+ * transação em edição ficam em memória, indexados pelo id do endereço.
+ */
 export const useLancamento = (familiaId: string) => {
-  const [aberto, setAberto] = useState(false);
-  const [emEdicao, setEmEdicao] = useState<TransacaoEmEdicao | null>(null);
+  const painel = usePainelLancar();
+  const [emMemoria, setEmMemoria] = useState<TransacaoEmEdicao | null>(null);
+  const emEdicao = emMemoria?.id === painel.transacaoId ? emMemoria : null;
+
+  // Recarga ou link com o id de uma transação que não está em memória: não há o que editar.
+  const { transacaoId, fechar } = painel;
+  useEffect(() => {
+    if (transacaoId !== null && emMemoria?.id !== transacaoId) fechar();
+  }, [transacaoId, emMemoria, fechar]);
 
   const encerrar = () => {
-    setAberto(false);
-    setEmEdicao(null);
+    painel.fechar();
+    setEmMemoria(null);
   };
 
   const registrar = async (payload: TransacaoCreateRequest) => {
     if (!familiaId) return;
     // Chave nova por envio (#90). Reenvio após falha ainda gera outra: reuso até o sucesso é a #96.
     await transacaoService.registrar(payload, familiaId, novaChaveIdempotencia());
-    setAberto(false);
+    painel.fechar();
   };
 
   const atualizar = async (id: string, payload: TransacaoUpdateRequest) => {
@@ -55,13 +68,13 @@ export const useLancamento = (familiaId: string) => {
   };
 
   return {
-    abrirNova: () => setAberto(true),
+    abrirNova: painel.abrirNova,
     abrirEdicao: (t: Transacao) => {
-      setEmEdicao(paraEdicao(t));
-      setAberto(true);
+      setEmMemoria(paraEdicao(t));
+      painel.abrirEdicao(t.id);
     },
     modal: {
-      open: aberto,
+      open: painel.aberto,
       familiaId,
       onClose: encerrar,
       onSubmit: registrar,

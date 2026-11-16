@@ -181,6 +181,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
   aguardando aprovação do usuário.
 - 2026-11-16 — Desenho da Entrega 2 aprovado pelo usuário (decisões 17 a 23).
   Plano do PR 1 da entrega (Rotas com URL) escrito.
+- 2026-11-16 — Entrega 2, PR 1: entra o mapa de endereços das telas em `apps/web/src/routes/caminhos.ts`, com a tradução nos dois sentidos entre os identificadores de tela de hoje e o endereço.
 
 ## Decisões fechadas
 

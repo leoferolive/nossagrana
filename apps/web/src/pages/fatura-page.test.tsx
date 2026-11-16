@@ -42,6 +42,13 @@ describe('FaturaPage', () => {
     expect(screen.getByText(/2026-03/)).toBeInTheDocument();
   });
 
+  it('com erro mostra só o aviso, sem o estado vazio', async () => {
+    mockService.getFatura.mockRejectedValue(new Error('falhou'));
+    render(<FaturaPage {...props} />);
+    expect(await screen.findByText(/erro ao carregar fatura/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nenhuma transação nesta fatura/i)).not.toBeInTheDocument();
+  });
+
   it('shows loading state', () => {
     mockService.getFatura.mockReturnValue(new Promise(() => {}));
     render(<FaturaPage {...props} />);

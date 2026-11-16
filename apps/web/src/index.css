@@ -4,22 +4,28 @@
 
 :root {
   font-family: 'Manrope', 'Segoe UI', sans-serif;
-  --color-bg: 11 13 17;
-  --color-panel: 22 24 31;
-  --color-sidebar: 17 19 24;
-  --color-surface: 28 31 40;
-  --color-surface-hover: 34 37 48;
-  --color-card-alt: 28 31 40;
-  --color-border: 39 42 53;
-  --color-text: 228 228 234;
-  --color-text-muted: 139 141 154;
-  --color-text-dim: 95 98 112;
-  --color-success: 34 197 94;
-  --color-success-strong: 22 163 74;
-  --color-danger: 239 68 68;
-  --color-warning: 245 158 11;
-  --color-info: 59 130 246;
-  --color-primary: 59 130 246;
+  --color-bg: 242 244 239;
+  --color-panel: 255 255 255;
+  --color-sidebar: 242 244 239;
+  --color-surface: 236 239 233;
+  --color-surface-hover: 226 230 222;
+  --color-card-alt: 248 249 246;
+  --color-border: 217 222 214;
+  --color-border-strong: 201 208 200;
+  --color-border-soft: 230 234 227;
+  --color-text: 23 33 28;
+  --color-text-muted: 69 82 74;
+  --color-text-dim: 90 103 95;
+  --color-success: 15 107 62;
+  --color-success-strong: 11 83 48;
+  --color-danger: 179 38 30;
+  --color-warning: 138 90 0;
+  --color-info: 31 95 139;
+  --color-primary: 15 107 62;
+  --color-accent-soft: 221 235 226;
+  --color-danger-soft: 247 225 222;
+  --color-warning-soft: 246 236 205;
+  --color-warning-fill: 201 138 0;
 }
 
 body {

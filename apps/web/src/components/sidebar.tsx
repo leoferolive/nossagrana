@@ -68,7 +68,7 @@ export const Sidebar = ({ currentScreen, onNavigate, onLogout, familiaNome }: Si
               onClick={() => onNavigate(id)}
               className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                 currentScreen === id
-                  ? 'bg-success/10 font-bold text-success'
+                  ? 'bg-accent-soft font-bold text-success'
                   : 'text-text-muted hover:bg-surface hover:text-text'
               }`}
             >
@@ -85,7 +85,7 @@ export const Sidebar = ({ currentScreen, onNavigate, onLogout, familiaNome }: Si
         type="button"
         aria-label="Sair"
         onClick={onLogout}
-        className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger/10"
+        className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger-soft"
       >
         <LogOut size={16} />
         <span>Sair</span>

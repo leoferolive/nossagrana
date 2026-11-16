@@ -22,8 +22,8 @@ const TIPO_LABEL: Record<TipoMetodo, string> = {
 
 const TIPO_COLOR: Record<TipoMetodo, string> = {
   credito: 'bg-info/10 text-info',
-  debito: 'bg-warning/10 text-warning',
-  pix: 'bg-success/10 text-success',
+  debito: 'bg-warning-soft text-warning',
+  pix: 'bg-accent-soft text-success',
   dinheiro: 'bg-text-dim/10 text-text-muted',
 };
 
@@ -35,10 +35,10 @@ const TIPO_ICON: Record<TipoMetodo, string> = {
 };
 
 const TIPO_ICON_BG: Record<TipoMetodo, string> = {
-  credito: 'bg-[#8B5CF620]',
-  debito: 'bg-warning/10',
-  pix: 'bg-[#06B6D420]',
-  dinheiro: 'bg-success/10',
+  credito: 'bg-accent-soft',
+  debito: 'bg-warning-soft',
+  pix: 'bg-accent-soft',
+  dinheiro: 'bg-accent-soft',
 };
 
 export const MetodosPagamentoPage = ({
@@ -138,7 +138,7 @@ export const MetodosPagamentoPage = ({
                 aria-label="Nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-info/40"
+                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
                 placeholder="Ex: Nubank, Pix João"
               />
             </label>
@@ -268,7 +268,7 @@ export const MetodosPagamentoPage = ({
                   type="button"
                   onClick={() => void handleDesativar(m.id)}
                   aria-label={`Desativar ${m.nome}`}
-                  className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger/10"
+                  className="rounded-lg px-3 py-1 text-xs text-danger transition hover:bg-danger-soft"
                 >
                   Desativar
                 </button>

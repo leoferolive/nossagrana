@@ -144,7 +144,7 @@ export const ConfiguracoesPage = ({
               type="button"
               aria-label="Sair da conta"
               onClick={onLogout}
-              className="flex w-full items-center gap-4 rounded-xl border border-danger/30 bg-panel px-4 py-4 text-left transition hover:bg-danger/10"
+              className="flex w-full items-center gap-4 rounded-xl border border-danger/30 bg-panel px-4 py-4 text-left transition hover:bg-danger-soft"
             >
               <IconSair size={20} className="shrink-0 text-danger" />
               <div className="flex-1">

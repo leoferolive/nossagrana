@@ -19,7 +19,7 @@ interface OnboardingPageProps {
 }
 
 const submitButtonClass =
-  'w-full rounded-lg bg-success px-4 py-2.5 font-semibold text-white transition hover:bg-success-strong focus:outline-none focus:ring-2 focus:ring-success/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'w-full rounded-lg bg-success px-4 py-2.5 font-semibold text-white transition hover:bg-success-strong focus:outline-none focus:ring-2 focus:ring-success disabled:cursor-not-allowed disabled:opacity-60';
 
 /** 409 = convite já consumido por outra pessoa (#67); qualquer outro erro é código inválido/expirado. */
 const mensagemErroConvite = (error: unknown): string =>
@@ -125,13 +125,13 @@ export const OnboardingPage = ({ onOpenLogin, onOpenFamilySettings }: Onboarding
       }
     >
       {erro && (
-        <div role="alert" className="mb-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+        <div role="alert" className="mb-4 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
           {erro}
         </div>
       )}
 
       {solicitacaoEnviada && (
-        <div role="alert" className="mb-4 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
+        <div role="alert" className="mb-4 rounded-lg bg-accent-soft px-3 py-2 text-sm text-success">
           Solicitação enviada com sucesso! Aguarde aprovação do administrador.
         </div>
       )}

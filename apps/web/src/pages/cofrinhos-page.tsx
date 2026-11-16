@@ -134,7 +134,7 @@ export function CofrinhosPage({
 
                   {/* Badge "Meta atingida!" */}
                   {metaAtingida && (
-                    <span className="inline-flex w-fit items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">
+                    <span className="inline-flex w-fit items-center rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-success">
                       Meta atingida!
                     </span>
                   )}

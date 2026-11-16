@@ -168,13 +168,13 @@ export function TemplatesGerenciarModal({
               type="text"
               value={editar.form.nome}
               onChange={(e) => editar.setField('nome', e.target.value)}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
             />
             <select
               aria-label="Categoria"
               value={editar.form.categoriaId}
               onChange={(e) => editar.setField('categoriaId', e.target.value)}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
             >
               <option value="">Sem categoria</option>
               {categoriasParaSelecao(categorias, template.tipo, {
@@ -194,14 +194,14 @@ export function TemplatesGerenciarModal({
               value={editar.form.valorPadrao}
               onChange={(e) => editar.setField('valorPadrao', e.target.value)}
               placeholder="Valor padrão (opcional)"
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
             />
             {template.tipo === 'despesa' && (
               <select
                 aria-label="Cofrinho"
                 value={editar.form.cofrinhoId}
                 onChange={(e) => editar.setField('cofrinhoId', e.target.value)}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
               >
                 <option value="">Sem cofrinho</option>
                 {cofrinhos.map((c) => (
@@ -241,7 +241,7 @@ export function TemplatesGerenciarModal({
 
     if (isConfirmando) {
       return (
-        <div key={template.id} className="rounded-lg border border-danger/30 bg-danger/5 p-3">
+        <div key={template.id} className="rounded-lg border border-danger/30 bg-danger-soft p-3">
           <p className="mb-2 text-xs text-text">
             Desativar <strong>{template.nome}</strong>?
           </p>
@@ -339,7 +339,7 @@ export function TemplatesGerenciarModal({
 
         {/* Error */}
         {erro && (
-          <p className="mb-3 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-xs text-danger">
+          <p className="mb-3 rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-xs text-danger">
             {erro}
           </p>
         )}
@@ -379,13 +379,13 @@ export function TemplatesGerenciarModal({
                 value={criar.form.nome}
                 onChange={(e) => criar.setField('nome', e.target.value)}
                 placeholder="Nome do template"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
               />
               <select
                 aria-label="Tipo"
                 value={criar.form.tipo}
                 onChange={(e) => trocarTipoCriacao(e.target.value as 'receita' | 'despesa')}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
               >
                 <option value="receita">Receita</option>
                 <option value="despesa">Despesa</option>
@@ -394,7 +394,7 @@ export function TemplatesGerenciarModal({
                 aria-label="Categoria"
                 value={criar.form.categoriaId}
                 onChange={(e) => criar.setField('categoriaId', e.target.value)}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
               >
                 <option value="">Sem categoria</option>
                 {categoriasParaSelecao(categorias, criar.form.tipo).map((c) => (
@@ -411,14 +411,14 @@ export function TemplatesGerenciarModal({
                 value={criar.form.valorPadrao}
                 onChange={(e) => criar.setField('valorPadrao', e.target.value)}
                 placeholder="Valor padrão (opcional)"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
               />
               {criar.form.tipo === 'despesa' && (
                 <select
                   aria-label="Cofrinho"
                   value={criar.form.cofrinhoId}
                   onChange={(e) => criar.setField('cofrinhoId', e.target.value)}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-success"
                 >
                   <option value="">Sem cofrinho</option>
                   {cofrinhos.map((c) => (

@@ -58,7 +58,7 @@ visual (as demais). Desenho em
 - [x] 2026-11-15 — "Vigente desde" do orçamento no mês certo
 - [x] 2026-11-15 — Gráfico de pizza com uma única categoria
 - [x] 2026-11-15 — Acentos nas categorias padrão e nos textos
-- [ ] Tokens com os valores novos e os tokens adicionais
+- [x] 2026-11-15 — Tokens com os valores novos e os tokens adicionais
 - [ ] Manrope carregada pelo próprio app
 - [ ] Fundo do `body`, `theme-color` e manifest na paleta nova
 - [ ] Altura do shell sem rolagem fantasma
@@ -138,6 +138,7 @@ R$ 99,99). A sobra deveria ir para a parcela 1.
   O acerto fica para a tarefa "E2E ajustados à nova navegação" da Entrega 2.
 - 2026-11-15 — PR 1 (#183) revisado por subagente e pelo Codex, sem pendências,
   e mergeado. Plano do PR 2 (Base visual) escrito.
+- 2026-11-15 — Paleta clara aplicada nos tokens (tema escuro removido), seis tokens novos (`accent-soft`, `danger-soft`, `warning-soft`, `warning-fill`, `border-strong`, `border-soft`), `shadow-soft` vira anel de 1px e as cores de gráfico passam para `chart-colors.ts`; teste de contraste dos tokens.
 
 ## Decisões fechadas
 

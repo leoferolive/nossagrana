@@ -128,7 +128,7 @@ export function CofrinhoDetalhePage({
           )}
 
           {isEncerrado && (
-            <span className="inline-flex w-fit items-center rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">
+            <span className="inline-flex w-fit items-center rounded-full bg-danger-soft px-2.5 py-0.5 text-xs font-semibold text-danger">
               Encerrado
             </span>
           )}
@@ -168,7 +168,7 @@ export function CofrinhoDetalhePage({
             aria-label="Encerrar"
             onClick={() => setModalAberto('encerrar')}
             disabled={isEncerrado}
-            className="rounded-lg border border-danger px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
+            className="rounded-lg border border-danger px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger-soft disabled:opacity-50"
           >
             Encerrar
           </button>
@@ -205,7 +205,7 @@ export function CofrinhoDetalhePage({
               type="button"
               aria-label="Cancelar recorrência"
               onClick={() => void handleCancelarRecorrente()}
-              className="mt-3 rounded-lg border border-danger px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/10"
+              className="mt-3 rounded-lg border border-danger px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger-soft"
             >
               Cancelar recorrência
             </button>

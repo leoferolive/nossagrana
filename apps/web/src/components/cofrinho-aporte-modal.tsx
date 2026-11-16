@@ -73,7 +73,7 @@ export const CofrinhoAporteModal = ({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
             />
           </label>
 

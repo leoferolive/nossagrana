@@ -71,7 +71,7 @@ const TransacaoBadges = ({ t }: { t: Transacao }) => (
       </span>
     )}
     {t.recorrente && (
-      <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
+      <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
         Recorrente
       </span>
     )}
@@ -292,7 +292,7 @@ export const ExtratoPage = ({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por descrição..."
-              className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-success"
             />
           </div>
         </div>

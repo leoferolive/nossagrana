@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
+import { COR_DESPESA, COR_RECEITA, COR_SALDO } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 
 import type { HistoricoDetalheResponse, HistoricoMesItem } from '@nossagrana/types';
@@ -149,15 +150,15 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
             <div className="space-y-3">
               <div>
                 <p className="mb-1 text-xs text-success">Receitas</p>
-                <MiniChart data={receitas} height={48} color="#22C55E" labels={labels} />
+                <MiniChart data={receitas} height={48} color={COR_RECEITA} labels={labels} />
               </div>
               <div>
                 <p className="mb-1 text-xs text-danger">Despesas</p>
-                <MiniChart data={despesas} height={48} color="#EF4444" labels={labels} />
+                <MiniChart data={despesas} height={48} color={COR_DESPESA} labels={labels} />
               </div>
               <div>
                 <p className="mb-1 text-xs text-primary">Saldo</p>
-                <MiniChart data={saldos} height={48} color="#3B82F6" labels={labels} />
+                <MiniChart data={saldos} height={48} color={COR_SALDO} labels={labels} />
               </div>
             </div>
           </div>
@@ -184,12 +185,12 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                           {formatMes(mes.mesReferencia)}
                         </span>
                         {mes.divergente && (
-                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                             ⚠ divergente
                           </span>
                         )}
                         {mes.temSnapshot && !mes.divergente && (
-                          <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
+                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-success">
                             fechado
                           </span>
                         )}
@@ -262,11 +263,11 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                       </td>
                       <td className="py-3">
                         {mes.divergente ? (
-                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                             ⚠ divergente
                           </span>
                         ) : mes.temSnapshot ? (
-                          <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
+                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-success">
                             fechado
                           </span>
                         ) : (
@@ -361,7 +362,7 @@ export const HistoricoPage = ({ familiaId, onBack }: HistoricoPageProps) => {
                           {new Date(detalhe.snapshot.geradoEm).toLocaleDateString('pt-BR')})
                         </p>
                         {detalhe.snapshot.divergente && (
-                          <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                             divergente
                           </span>
                         )}

@@ -1,6 +1,6 @@
 import { formatBRLNumber } from '../../utils/formatting';
 
-const COLORS = ['#22C55E', '#3B82F6', '#EF4444', '#F59E0B', '#A78BFA', '#FB923C', '#60A5FA'];
+import { CORES_CATEGORIAS } from './chart-colors';
 
 interface PieChartItem {
   label: string;
@@ -59,7 +59,7 @@ export const PieChart = ({ data: todos, size = 120 }: PieChartProps) => {
     return {
       ...d,
       path,
-      color: COLORS[i % COLORS.length],
+      color: CORES_CATEGORIAS[i % CORES_CATEGORIAS.length],
       pct: ((d.value / total) * 100).toFixed(0),
     };
   });

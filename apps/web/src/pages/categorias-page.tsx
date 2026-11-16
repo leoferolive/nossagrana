@@ -126,7 +126,7 @@ export const CategoriasPage = ({ familiaId, onBack }: CategoriasPageProps) => {
                 aria-label="Nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-info/40"
+                className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
                 placeholder="Ex: Alimentação"
               />
             </label>

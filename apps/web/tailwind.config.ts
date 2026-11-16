@@ -21,9 +21,16 @@ const config: Config = {
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
         info: 'rgb(var(--color-info) / <alpha-value>)',
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
+        'accent-soft': 'rgb(var(--color-accent-soft) / <alpha-value>)',
+        'danger-soft': 'rgb(var(--color-danger-soft) / <alpha-value>)',
+        'warning-soft': 'rgb(var(--color-warning-soft) / <alpha-value>)',
+        'warning-fill': 'rgb(var(--color-warning-fill) / <alpha-value>)',
+        'border-strong': 'rgb(var(--color-border-strong) / <alpha-value>)',
+        'border-soft': 'rgb(var(--color-border-soft) / <alpha-value>)',
       },
       boxShadow: {
-        soft: '0 16px 42px rgba(0, 0, 0, 0.42)',
+        // Sem sombra projetada: profundidade vem da troca de superfície mais um anel de 1px.
+        soft: '0 0 0 1px rgb(var(--color-border))',
       },
     },
   },

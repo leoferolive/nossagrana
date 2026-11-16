@@ -91,7 +91,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Nome do cofrinho"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
             />
           </label>
 
@@ -105,7 +105,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               onChange={(e) => setEmoji(e.target.value.slice(0, 10))}
               placeholder="🐷"
               maxLength={10}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
             />
           </label>
 
@@ -120,7 +120,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               value={metaValor}
               onChange={(e) => setMetaValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
             />
           </label>
 
@@ -133,7 +133,7 @@ export const CofrinhoModal = ({ open, onClose, onSubmit, editando }: CofrinhoMod
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Para que serve esse cofrinho?"
               rows={3}
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40 resize-none"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success resize-none"
             />
           </label>
         </div>

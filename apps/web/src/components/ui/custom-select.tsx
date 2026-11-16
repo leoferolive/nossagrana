@@ -100,7 +100,7 @@ export const CustomSelect = ({
             }
           }}
           onKeyDown={handleKeyDown}
-          className="flex w-full items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="flex w-full items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
         >
           <span className={selectedOption ? 'text-text' : 'text-text-dim'}>
             {selectedOption?.label ?? placeholder}
@@ -124,7 +124,7 @@ export const CustomSelect = ({
                 aria-selected={option.value === value}
                 className={`cursor-pointer px-3 py-2.5 text-sm transition ${
                   option.value === value
-                    ? 'bg-success/10 font-semibold text-success'
+                    ? 'bg-accent-soft font-semibold text-success'
                     : idx === highlightedIndex
                       ? 'bg-surface text-text'
                       : 'text-text-muted hover:bg-surface hover:text-text'

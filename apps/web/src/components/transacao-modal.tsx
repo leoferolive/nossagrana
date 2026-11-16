@@ -232,7 +232,7 @@ export const TransacaoModal = ({
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="0,00"
-              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success/40"
+              className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-success"
             />
           </label>
 
@@ -324,7 +324,7 @@ export const TransacaoModal = ({
                 }}
                 className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
                   recorrente
-                    ? 'border-warning bg-warning/10 text-warning'
+                    ? 'border-warning bg-warning-soft text-warning'
                     : 'border-border text-text-muted hover:text-text'
                 }`}
               >
@@ -394,7 +394,7 @@ export const TransacaoModal = ({
                   onClose();
                 }
               }}
-              className="mb-2 w-full rounded-lg border border-danger/30 py-2.5 text-sm text-danger transition hover:bg-danger/10"
+              className="mb-2 w-full rounded-lg border border-danger/30 py-2.5 text-sm text-danger transition hover:bg-danger-soft"
             >
               Excluir transação
             </button>

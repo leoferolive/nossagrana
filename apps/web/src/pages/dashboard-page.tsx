@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { BudgetBar } from '../components/charts/budget-bar';
+import { COR_DESPESA } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { ErrorBanner } from '../components/error-banner';
@@ -219,7 +220,7 @@ export const DashboardPage = ({ familiaId, onNovaTransacao, onNavigate }: Dashbo
             <MiniChart
               data={miniChartData}
               height={80}
-              color="#EF4444"
+              color={COR_DESPESA}
               fill
               labels={miniChartLabels}
             />

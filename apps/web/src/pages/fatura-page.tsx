@@ -83,7 +83,7 @@ export function FaturaPage({
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger">
+        <div className="mb-4 rounded-lg border border-danger bg-danger-soft p-3 text-sm text-danger">
           {error}
         </div>
       )}

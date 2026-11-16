@@ -102,7 +102,7 @@ export const FamilySettingsPage = ({
               key={membro.usuarioId}
               className={`flex items-center gap-3 py-3 ${i < membros.length - 1 ? 'border-b border-border' : ''}`}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-success/15 text-sm font-bold text-success">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-success">
                 {(membro.nome || membro.usuarioId)[0].toUpperCase()}
               </div>
               <div className="flex-1">
@@ -111,7 +111,7 @@ export const FamilySettingsPage = ({
                 </div>
               </div>
               <span
-                className={`rounded px-2 py-0.5 text-[10px] font-bold ${membro.role === 'admin' ? 'bg-success/15 text-success' : 'bg-surface text-text-muted'}`}
+                className={`rounded px-2 py-0.5 text-[10px] font-bold ${membro.role === 'admin' ? 'bg-accent-soft text-success' : 'bg-surface text-text-muted'}`}
               >
                 {membro.role === 'admin' ? 'Admin' : 'Membro'}
               </span>

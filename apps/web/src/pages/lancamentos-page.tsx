@@ -177,14 +177,14 @@ export function LancamentosPage({ familiaId, onNavigate: _onNavigate }: Lancamen
 
             {/* Error */}
             {erro && (
-              <p className="rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
+              <p className="rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-sm text-danger">
                 {erro}
               </p>
             )}
 
             {/* Success */}
             {sucesso && (
-              <p className="rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-sm text-success">
+              <p className="rounded-lg border border-success/20 bg-accent-soft px-3 py-2 text-sm text-success">
                 {sucesso.transacoesCriadas} transações e {sucesso.aportesCriados} aportes criados
                 com sucesso!
               </p>

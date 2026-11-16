@@ -4,6 +4,7 @@ import { ErrorBanner } from '../components/error-banner';
 import { FirstTimeTour } from '../components/first-time-tour';
 import { MonthNav } from '../components/month-nav';
 import { getCurrentMonth, shiftMonth } from '../utils/date';
+import { COR_DESPESA, COR_RECEITA, COR_SALDO } from '../components/charts/chart-colors';
 import { MiniChart } from '../components/charts/mini-chart';
 import { PieChart } from '../components/charts/pie-chart';
 import { coreFinanceiroService } from '../services/core-financeiro.service';
@@ -175,7 +176,7 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
               {porUsuario.map((item) => (
                 <div key={item.usuarioId} className="rounded-xl border border-border bg-panel p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-success/20 text-sm font-bold text-success">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-success">
                       {item.usuarioNome.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -202,15 +203,15 @@ export const RelatoriosPage = ({ familiaId, onBack: _onBack }: RelatoriosPagePro
             <>
               <div className="rounded-xl border border-border bg-panel p-4">
                 <p className="mb-2 text-xs font-semibold text-success">Receitas</p>
-                <MiniChart data={receitas} height={56} color="#22C55E" labels={tendLabels} />
+                <MiniChart data={receitas} height={56} color={COR_RECEITA} labels={tendLabels} />
               </div>
               <div className="rounded-xl border border-border bg-panel p-4">
                 <p className="mb-2 text-xs font-semibold text-danger">Despesas</p>
-                <MiniChart data={despesas} height={56} color="#EF4444" labels={tendLabels} />
+                <MiniChart data={despesas} height={56} color={COR_DESPESA} labels={tendLabels} />
               </div>
               <div className="rounded-xl border border-border bg-panel p-4">
                 <p className="mb-2 text-xs font-semibold text-primary">Saldo</p>
-                <MiniChart data={saldos} height={56} color="#3B82F6" labels={tendLabels} />
+                <MiniChart data={saldos} height={56} color={COR_SALDO} labels={tendLabels} />
               </div>
             </>
           ) : (

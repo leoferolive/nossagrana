@@ -8,6 +8,7 @@ import appShell from './components/app-shell.tsx?raw';
 import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './components/ui/campo-classes';
 import authShell from './components/ui/auth-shell.tsx?raw';
 import authContext from './contexts/auth-context.tsx?raw';
+import css from './index.css?raw';
 
 const fontes = import.meta.glob<string>(['./components/**/*.tsx', './pages/*.tsx'], {
   query: '?raw',
@@ -47,6 +48,7 @@ describe('área segura do iPhone', () => {
   });
 
   it('o AppShell reserva a barra mais a área segura e sobe o "+" na mesma medida', () => {
+    // 144px = barra (68px) + "+" (56px) + folga, para o último item rolar acima do "+".
     expect(appShell).toContain('pb-[calc(68px+env(safe-area-inset-bottom))]');
     expect(appShell).toContain('bottom-[calc(80px+env(safe-area-inset-bottom))]');
   });
@@ -182,5 +184,29 @@ describe('escala de z-index', () => {
 
   it('a barra inferior usa z-barra', () => {
     expect(fonte('./components/bottom-nav.tsx')).toContain('z-barra');
+  });
+});
+
+describe('alvo de toque de 44px garantido pela regra base', () => {
+  const base = css.slice(css.indexOf('@layer base'));
+
+  it('button, tab, select e summary têm altura mínima de 44px', () => {
+    expect(base).toMatch(
+      /button,\s*\[role='tab'\],\s*select,\s*summary\s*\{[^}]*min-height:\s*2\.75rem/,
+    );
+  });
+
+  it('button tem largura mínima de 44px', () => {
+    expect(base).toMatch(/button\s*\{[^}]*min-width:\s*2\.75rem/);
+  });
+
+  it('label de rádio ou checkbox tem altura mínima de 44px', () => {
+    expect(base).toMatch(
+      /label:has\(> input\[type='radio'\]\),\s*label:has\(> input\[type='checkbox'\]\)\s*\{[^}]*min-height:\s*2\.75rem/,
+    );
+  });
+
+  it('a regra base não muda o display dos botões', () => {
+    expect(base).not.toMatch(/display:/);
   });
 });

@@ -28,6 +28,26 @@
   --color-warning-fill: 201 138 0;
 }
 
+/* Alvo de toque de 44px em todo o app (decisão 12), sem depender de cada tela lembrar de pedir.
+   Sem `display` de propósito: o navegador já centraliza o conteúdo de <button> na vertical. */
+@layer base {
+  button,
+  [role='tab'],
+  select,
+  summary {
+    min-height: 2.75rem;
+  }
+
+  button {
+    min-width: 2.75rem;
+  }
+
+  label:has(> input[type='radio']),
+  label:has(> input[type='checkbox']) {
+    min-height: 2.75rem;
+  }
+}
+
 body {
   @apply bg-bg text-text;
   font-variant-numeric: tabular-nums;

@@ -97,7 +97,7 @@ describe('MetodosPagamentoPage', () => {
     mockListar.mockResolvedValue({ metodosPagamento: METODOS });
     renderPagina(<MetodosPagamentoPage familiaId="f1" />, '/mais/metodos-pagamento');
     expect(
-      screen.getByRole('heading', { level: 1, name: /cartões e pagamentos/i }),
+      screen.getByRole('heading', { level: 1, name: /^métodos de pagamento$/i }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(screen.getByTestId('sonda-local')).toHaveTextContent(/^\/mais$/);

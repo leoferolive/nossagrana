@@ -22,7 +22,7 @@ const TELAS_POR_ENDERECO: Array<[string, RegExp]> = [
   ['/mais/historico', /histórico/i],
   ['/mais/familia', /^família$/i],
   ['/mais/categorias', /^categorias$/i],
-  ['/mais/metodos-pagamento', /cartões e pagamentos/i],
+  ['/mais/metodos-pagamento', /^métodos de pagamento$/i],
   ['/mais/perfil', /^perfil$/i],
   ['/mais/ajuda', /^ajuda$/i],
 ];

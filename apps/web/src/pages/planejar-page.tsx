@@ -74,12 +74,14 @@ const Linha = ({ linha }: { linha: LinhaDoPlano }) => {
         className="flex min-h-11 w-full items-center gap-3 px-4 py-3.5 text-[15px] font-semibold text-text transition-colors hover:bg-surface"
       >
         <Icone size={20} className="text-text-muted" aria-hidden="true" />
-        <span className="flex-1">{linha.rotulo}</span>
-        {linha.resumo && (
-          <span className="text-[13px] font-semibold tabular-nums text-text-dim">
-            {linha.resumo}
-          </span>
-        )}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+          <span className="whitespace-nowrap">{linha.rotulo}</span>
+          {linha.resumo && (
+            <span className="text-[13px] font-semibold tabular-nums text-text-dim">
+              {linha.resumo}
+            </span>
+          )}
+        </span>
         <IconChevron size={18} className="text-text-dim" aria-hidden="true" />
       </Link>
     </li>

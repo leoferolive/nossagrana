@@ -111,6 +111,14 @@ describe('BottomNav', () => {
     expect(screen.getByRole('button', { name: 'Lançar' })).toHaveClass('z-lancar');
   });
 
+  it('o "+" sobe 28px acima do topo da barra: a coluna dele é a altura toda da barra', () => {
+    renderBarra('/');
+    const botao = screen.getByRole('button', { name: 'Lançar' });
+    expect(botao).toHaveClass('absolute', '-top-7');
+    // Sem altura própria a coluna ficaria centrada na barra e o "-top-7" contaria a partir do meio.
+    expect(botao.parentElement).toHaveClass('relative', 'self-stretch');
+  });
+
   it('todos os itens têm alvo de toque de 44px', () => {
     renderBarra('/');
     for (const nome of ['Início', 'Extrato', 'Planejar', 'Mais']) {

@@ -13,7 +13,7 @@ const screenTitles: Record<string, string> = {
   relatorios: 'Relatórios',
   historico: 'Histórico',
   categorias: 'Categorias',
-  'metodos-pagamento': 'Cartões e Métodos',
+  'metodos-pagamento': 'Métodos de pagamento',
   orcamento: 'Orçamento',
   'family-settings': 'Família',
   ajuda: 'Ajuda / FAQ',

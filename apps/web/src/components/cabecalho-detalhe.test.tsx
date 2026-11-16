@@ -48,4 +48,17 @@ describe('CabecalhoDetalhe', () => {
     expect(screen.getByText('2026-03')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Gerenciar' })).toBeInTheDocument();
   });
+
+  it('nunca corta o título: sem truncate, quebra em duas linhas se precisar', () => {
+    renderPagina(
+      <CabecalhoDetalhe
+        titulo="Métodos de pagamento"
+        origem="/mais"
+        acao={<button type="button">Novo método</button>}
+      />,
+    );
+    const titulo = screen.getByRole('heading', { level: 1, name: 'Métodos de pagamento' });
+    expect(titulo.className).not.toMatch(/truncate|text-ellipsis|overflow-hidden/);
+    expect(titulo).toHaveClass('break-words');
+  });
 });

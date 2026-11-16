@@ -31,7 +31,7 @@ export const CabecalhoDetalhe = ({ titulo, origem, subtitulo, acao }: CabecalhoD
         <IconVoltar size={22} aria-hidden="true" />
       </button>
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-xl font-extrabold leading-tight tracking-[-0.02em] text-text">
+        <h1 className="break-words text-xl font-extrabold leading-tight tracking-[-0.02em] text-text">
           {titulo}
         </h1>
         {subtitulo && <p className="text-[13px] font-semibold text-text-dim">{subtitulo}</p>}

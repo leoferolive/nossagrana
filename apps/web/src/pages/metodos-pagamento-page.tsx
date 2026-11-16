@@ -125,7 +125,7 @@ export const MetodosPagamentoPage = ({ familiaId }: MetodosPagamentoPageProps) =
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <CabecalhoDetalhe
-        titulo="Cartões e Pagamentos"
+        titulo="Métodos de pagamento"
         origem={CAMINHOS.mais}
         acao={
           <button

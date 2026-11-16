@@ -38,10 +38,14 @@ const RESUMO_VAZIO: ResumoDoPlano = {
 
 type MetodoPagamento = MetodoPagamentoListResponse['metodosPagamento'][number];
 
-const contarLimites = (orcamento: DashboardOrcamentoResponse): ContagemDoMes => ({
-  parcial: orcamento.filter((item) => item.status === 'exceeded').length,
-  total: orcamento.length,
-});
+// Mês sem orçamento não tem o que resumir: "0 de 0" seria ruído, então a linha fica sem resumo.
+const contarLimites = (orcamento: DashboardOrcamentoResponse): ContagemDoMes | null =>
+  orcamento.length === 0
+    ? null
+    : {
+        parcial: orcamento.filter((item) => item.status === 'exceeded').length,
+        total: orcamento.length,
+      };
 
 const faturasDoMes = (metodos: MetodoPagamento[]): FaturaDoMes[] =>
   metodos

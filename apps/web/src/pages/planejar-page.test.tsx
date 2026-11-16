@@ -106,6 +106,25 @@ describe('PlanejarPage', () => {
     expect(coreFinanceiroService.getDashboardOrcamento).toHaveBeenCalledWith('f1', '2026-11');
   });
 
+  it('Limites por categoria: mês sem orçamento fica sem resumo, nunca "0 de 0"', async () => {
+    configurarDados({ limites: [] });
+    renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
+    const limites = await linha(/limites por categoria/i);
+    await waitFor(() => expect(vi.mocked(cofrinhoService.listar)).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.queryByText('Carregando resumos...')).not.toBeInTheDocument(),
+    );
+    expect(limites).toHaveTextContent(/^Limites por categoria$/);
+  });
+
+  it('o título da linha fica numa linha só e o resumo desce quando não cabem lado a lado', async () => {
+    renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
+    const contas = await linha(/contas do mês/i);
+    const titulo = within(contas).getByText('Contas do mês');
+    expect(titulo).toHaveClass('whitespace-nowrap');
+    expect(titulo.parentElement).toHaveClass('flex-wrap');
+  });
+
   it('Cofrinhos: "N ativos"', async () => {
     renderPagina(<PlanejarPage familiaId="f1" />, '/planejar');
     const cofrinhos = await linha(/^cofrinhos/i);

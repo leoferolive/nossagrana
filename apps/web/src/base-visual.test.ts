@@ -52,6 +52,10 @@ describe('área segura do iPhone', () => {
     expect(appShell).toContain('pb-[calc(112px+env(safe-area-inset-bottom))]');
   });
 
+  it('a barra não corta o "+" que sobe acima dela (sem overflow)', () => {
+    expect(fonte('./components/bottom-nav.tsx')).not.toMatch(/overflow-/);
+  });
+
   it('a barra tem 84px de altura mais a área segura (pb-safe)', () => {
     const barra = fonte('./components/bottom-nav.tsx');
     expect(barra).toContain('h-[84px]');

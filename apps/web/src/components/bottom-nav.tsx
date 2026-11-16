@@ -55,7 +55,7 @@ const BotaoLancar = ({
 }: Pick<BottomNavProps, 'onLancar' | 'onSegurarLancar'>) => {
   const toque = useToqueLongo(onSegurarLancar);
   return (
-    <div className="relative flex justify-center">
+    <div className="relative flex justify-center self-stretch">
       <button
         type="button"
         aria-label="Lançar"

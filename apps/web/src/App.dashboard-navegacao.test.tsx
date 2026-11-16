@@ -43,7 +43,7 @@ describe('App > fluxo autenticado com familia > navegação', () => {
     await waitFor(() => within(main).getByRole('link', { name: 'Métodos de pagamento' }));
     fireEvent.click(within(main).getByRole('link', { name: 'Métodos de pagamento' }));
     expect(
-      screen.getAllByRole('heading', { name: /cart.es e pagamentos/i }).length,
+      screen.getAllByRole('heading', { name: /^métodos de pagamento$/i }).length,
     ).toBeGreaterThan(0);
   });
 

@@ -101,7 +101,7 @@ Endereço desconhecido leva ao Início.
 
 **Guardas:** sem login, qualquer endereço protegido leva a `/entrar` e, depois
 do login, o app volta ao endereço pedido. Com login e sem família, leva a
-`/boas-vindas`. Com mais de uma família e nenhuma ativa, leva a `/familias`. O
+`/boas-vindas`. Logo depois do login, com mais de uma família, leva a `/familias` para a pessoa escolher. O
 `familiaId` continua vindo da sessão, nunca do endereço; os ids de cofrinho e de
 método de pagamento no endereço são validados pela API, como já são hoje.
 

@@ -31,26 +31,29 @@ export const usePainelLancar = () => {
     );
   };
 
-  const fecharAgora = () => {
+  // Idempotente: só substitui a entrada atual, sem andar no histórico. É o que o StrictMode
+  // (efeito rodando duas vezes) e uma recarga sem o que editar exigem, ao contrário de voltar.
+  const descartarAgora = () => {
     if (!aberto) return;
-    if (abertoPorNavegacao(state)) {
-      void navigate(-1);
-      return;
-    }
-    // Link direto ou recarga em outro navegador: não há entrada anterior sem o painel.
     const parametros = new URLSearchParams(search);
     parametros.delete(PARAMETRO);
     const restante = parametros.toString();
     void navigate({ pathname, search: restante ? `?${restante}` : '' }, { replace: true });
   };
 
+  const fecharAgora = () => {
+    if (aberto && abertoPorNavegacao(state)) void navigate(-1);
+    else descartarAgora();
+  };
+
   // `fechar` fica estável e sempre usa o último render: um envio que termina depois de a
   // pessoa já ter fechado o painel pelo voltar não pode voltar mais uma entrada.
-  const ultimoFechar = useRef(fecharAgora);
+  const ultimos = useRef({ fecharAgora, descartarAgora });
   useEffect(() => {
-    ultimoFechar.current = fecharAgora;
+    ultimos.current = { fecharAgora, descartarAgora };
   });
-  const fechar = useCallback(() => ultimoFechar.current(), []);
+  const fechar = useCallback(() => ultimos.current.fecharAgora(), []);
+  const descartar = useCallback(() => ultimos.current.descartarAgora(), []);
 
   return {
     aberto,
@@ -58,5 +61,6 @@ export const usePainelLancar = () => {
     abrirNova: () => abrir(NOVA),
     abrirEdicao: (id: string) => abrir(id),
     fechar,
+    descartar,
   };
 };

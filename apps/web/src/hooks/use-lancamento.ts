@@ -38,10 +38,10 @@ export const useLancamento = (familiaId: string) => {
   const emEdicao = emMemoria?.id === painel.transacaoId ? emMemoria : null;
 
   // Recarga ou link com o id de uma transação que não está em memória: não há o que editar.
-  const { transacaoId, fechar } = painel;
+  const { transacaoId, descartar } = painel;
   useEffect(() => {
-    if (transacaoId !== null && emMemoria?.id !== transacaoId) fechar();
-  }, [transacaoId, emMemoria, fechar]);
+    if (transacaoId !== null && emMemoria?.id !== transacaoId) descartar();
+  }, [transacaoId, emMemoria, descartar]);
 
   const encerrar = () => {
     painel.fechar();

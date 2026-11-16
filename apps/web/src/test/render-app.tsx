@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { MemoryRouter, useLocation, useNavigate, type InitialEntry } from 'react-router';
 
 import { App } from '../App';
@@ -26,15 +27,20 @@ const SondaDeRota = () => {
  * uma entrada com `state` (ex.: endereço pedido antes do login) ou uma lista de entradas
  * já visitadas, sendo a última a atual.
  */
-export const renderApp = (entradas: InitialEntry | InitialEntry[] = '/') => {
+export const renderApp = (
+  entradas: InitialEntry | InitialEntry[] = '/',
+  { strict = false }: { strict?: boolean } = {},
+) => {
   const lista = Array.isArray(entradas) ? entradas : [entradas];
   // Função, e não elemento: um elemento idêntico faria o React pular o novo render.
-  const arvore = () => (
+  const roteador = () => (
     <MemoryRouter initialEntries={lista} initialIndex={lista.length - 1}>
       <App />
       <SondaDeRota />
     </MemoryRouter>
   );
+  // O StrictMode do main.tsx roda cada efeito duas vezes em desenvolvimento.
+  const arvore = () => (strict ? <StrictMode>{roteador()}</StrictMode> : roteador());
   const resultado = render(arvore());
   // Renderiza de novo a mesma árvore, sem perder estado, para o App reler a sessão mockada.
   return { ...resultado, reavaliarSessao: () => resultado.rerender(arvore()) };

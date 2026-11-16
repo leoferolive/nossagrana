@@ -127,6 +127,22 @@ describe('App > painel de lançar no endereço', () => {
     expect(screen.queryByText('Editar Transação')).not.toBeInTheDocument();
   });
 
+  it('no StrictMode, recarregar em ?lancar=<id> desconhecido não volta entradas a mais', async () => {
+    renderApp(
+      [
+        '/',
+        '/mais',
+        { pathname: '/extrato', search: '?lancar=desconhecida', state: { painelLancar: true } },
+      ],
+      { strict: true },
+    );
+
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
+    expect(tituloNoConteudo(/^extrato$/i)).toBeInTheDocument();
+    voltar();
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/mais$/));
+  });
+
   it('link direto com ?lancar=nova abre o painel sobre a tela', async () => {
     renderApp('/extrato?lancar=nova');
 

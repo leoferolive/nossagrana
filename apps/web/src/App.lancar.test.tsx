@@ -97,8 +97,7 @@ describe('App > painel de lançar no endereço', () => {
     await waitFor(() => tituloNoConteudo(/^extrato$/i));
     abrirPainelNovo();
     fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
-    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
 
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
@@ -299,8 +298,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
       fireEvent.click(await barraInferior().findByRole('link', { name: 'Extrato' }));
       abrirPainelNovo();
       fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '10.00' } });
-      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-      fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
 
       fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
       await waitFor(() => expect(transacaoService.registrar).toHaveBeenCalled());
@@ -334,8 +332,7 @@ describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
   const preencherEGravarNova = async () => {
     abrirPainelNovo();
     fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
-    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
   };
 
@@ -359,7 +356,8 @@ describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
     await preencherEGravarNova();
 
     expect((await screen.findAllByText('Salário de novembro')).length).toBeGreaterThan(0);
-    expect(local()).toHaveTextContent(/^\/extrato$/);
+    // O painel fecha quando a gravação termina, junto com a atualização da lista.
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
   });
 
   it('editar o valor muda a linha', async () => {

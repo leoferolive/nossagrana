@@ -140,10 +140,14 @@ describe('campos em 16px e alvos de toque com 44px', () => {
     expect(arquivosComCampo.length).toBeGreaterThanOrEqual(12);
   });
 
+  // O valor do lançamento (56/800, sem borda) é a única exceção ao estilo de campo padrão.
+  const CAMPO_DE_VALOR = './components/lancar/valor-do-lancamento.tsx';
+
   it.each(arquivosComCampo)('%s: nenhum campo de texto usa text-sm ou text-xs', (caminho) => {
     for (const tag of tagsDeCampo(fonte(caminho)).filter((t) => !SEM_CAMPO_DE_TEXTO.test(t))) {
       expect(tag).not.toMatch(/\btext-(sm|xs)\b/);
-      expect(tag).toContain('CAMPO_CLASSES');
+      if (caminho === CAMPO_DE_VALOR) expect(tag).toContain('text-[56px]');
+      else expect(tag).toContain('CAMPO_CLASSES');
     }
   });
 

@@ -9,22 +9,23 @@ interface TipoLancamentoToggleProps {
   onChange: (tipo: TipoLancamento) => void;
 }
 
-const BOTOES: { tipo: TipoLancamento; nome: string; icone: LucideIcon; ativo: string }[] = [
-  { tipo: 'receita', nome: 'Receita', icone: IconEntrada, ativo: 'bg-success text-white' },
-  { tipo: 'despesa', nome: 'Despesa', icone: IconSaida, ativo: 'bg-success text-white' },
+const BOTOES: { tipo: TipoLancamento; nome: string; icone: LucideIcon }[] = [
+  { tipo: 'despesa', nome: 'Despesa', icone: IconSaida },
+  { tipo: 'receita', nome: 'Receita', icone: IconEntrada },
 ];
 
-/** Toggle Receita/Despesa do formulário de lançamento. */
+/** Alternador Despesa/Receita do painel de lançar: pílula com a opção ativa em verde. */
 export const TipoLancamentoToggle = ({ tipo, onChange }: TipoLancamentoToggleProps) => (
-  <div className="mb-5 flex gap-2">
+  <div className="inline-flex gap-1 rounded-full bg-surface p-1">
     {BOTOES.map((b) => (
       <button
         key={b.tipo}
         type="button"
         aria-label={b.nome}
+        aria-pressed={tipo === b.tipo}
         onClick={() => onChange(b.tipo)}
-        className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg text-sm font-semibold transition ${
-          tipo === b.tipo ? b.ativo : 'border border-border text-text-muted hover:text-text'
+        className={`inline-flex min-h-11 items-center justify-center gap-1 rounded-full px-4 text-sm font-semibold transition ${
+          tipo === b.tipo ? 'bg-success text-white' : 'text-text-muted hover:text-text'
         }`}
       >
         <b.icone size={16} aria-hidden="true" />

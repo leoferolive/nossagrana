@@ -98,9 +98,9 @@ Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
 - [x] 2026-11-17 — Lista do Extrato atualizada logo depois de salvar ou excluir um
       lançamento
 - [x] 2026-11-17 — Resumo do período, filtros e busca
-- [ ] Lançar com valor primeiro e chips de categoria, data e pagamento
-- [ ] Salvar fixo no rodapé e "Mais opções" para descrição, parcelas e repetição
-- [ ] Botão de voz visível
+- [x] 2026-11-17 — Lançar com valor primeiro e chips de categoria, data e pagamento
+- [x] 2026-11-17 — Salvar fixo no rodapé e "Mais opções" para descrição, parcelas e repetição
+- [x] 2026-11-17 — Botão de voz visível
 - [ ] Aviso "lançado" com desfazer e confirmação própria de exclusão
 
 ### Entrega 4 — Plano do mês e Início
@@ -254,6 +254,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-17 — Entrega 3, PR 2 (Extrato), correções da revisão: o estado da busca (aberta ou não, e o texto) passa a viver na página, então sobrevive a trocar de mês e a "Tentar de novo" (campo reaberto com o texto, botão "Limpar busca"); a carga do mês só marca a chave como boa no sucesso (`hooks/use-transacoes-do-mes.ts`) e toda falha, inclusive a recarga depois de gravar, mostra o erro com "Tentar de novo" em vez de lista vazia ou velha; menu "Mais ações" fecha com Escape de qualquer elemento do menu, leva o foco ao primeiro item ao abrir e devolve ao botão ao fechar; o nome acessível da linha inclui o metadado; nomes de categoria e forma de pagamento e a ação de abrir descem por um contexto do Extrato (`extrato-contexto.ts`) e não por props; `familiaDaCategoria` deixou de ser exportada.
 - 2026-11-17 — Entrega 3, PR 2 (Extrato): o teste de falha de carga sob StrictMode passou a montar o `<StrictMode>` na raiz (opção `strict` do `renderPagina`), porque dentro do roteador o efeito rodava uma vez só e o teste não pegava o defeito. Com a lógica antiga da chave de carga ele falha mostrando "Nenhum lançamento em novembro"; com a correção, mostra "Tentar de novo".
 - 2026-11-17 — Entrega 3, PR 3 (Lançar), categorias mais usadas: `categoriasMaisUsadas` conta os lançamentos dos últimos 60 dias (hoje incluído, futuro de fora), só de categorias ativas do tipo, e completa com as primeiras da lista até seis; `useCategoriasMaisUsadas` busca o mês atual e os dois anteriores uma vez por família (a busca fica guardada e `limparDadosDaFamilia` a esquece; falha não fica guardada). `somarDias` em `utils/date.ts` faz a conta de datas com ano, mês e dia numéricos.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), painel novo: `TransacaoModal` virou a composição de partes em `components/lancar/` (valor com microfone, chips de categoria com "Todas", chips de data, chips de pagamento, "Mais opções" e rodapé), com os campos em `useFormularioLancamento`. O painel só monta quando aberto (campos limpos a cada abertura e a busca das categorias mais usadas só roda com ele aberto). O botão fica fixo num rodapé fora da área que rola e o painel usa a altura do `visualViewport` (`useViewportVisivel`), porque o teclado virtual encolhe só ele e o `dvh` deixaria o botão atrás do teclado. Mudanças de comportamento: salvar exige valor maior que zero (antes só a categoria), parcelas só existem com cartão de crédito (trocar para outra forma desfaz o parcelamento), o painel espera a gravação terminar (botão "Salvando...", um envio só) e, se ela falhar, fica aberto com "Não foi possível salvar. Tente de novo."; o "Cancelar" saiu (o X fecha) e o título virou texto só para leitor de tela. O campo de valor é a exceção documentada em `base-visual.test.ts` ao estilo padrão de campo. A confirmação de exclusão ainda é a do navegador, e sai na próxima tarefa.
 
 ## Decisões fechadas
 

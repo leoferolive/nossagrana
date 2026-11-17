@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { transacaoService } from '@/services/core-financeiro.service';
+import { respostaDeGravacao } from '@/test/fabricas-transacao';
 import { useAvisoStore } from '@/stores/aviso.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
 
@@ -47,21 +48,21 @@ describe('useLancamento > sinal de mudança', () => {
   });
 
   it('registrar com sucesso sinaliza a mudança', async () => {
-    vi.mocked(transacaoService.registrar).mockResolvedValue({ transacao: { id: 't' } } as never);
+    vi.mocked(transacaoService.registrar).mockResolvedValue(respostaDeGravacao('t'));
     const { result } = montar();
     await act(() => Promise.resolve(result.current.modal.onSubmit(payload)));
     expect(versao()).toBe(1);
   });
 
   it('atualizar com sucesso sinaliza a mudança', async () => {
-    vi.mocked(transacaoService.editar).mockResolvedValue({ transacao: { id: 't' } } as never);
+    vi.mocked(transacaoService.editar).mockResolvedValue(respostaDeGravacao('t'));
     const { result } = montar();
     await act(() => Promise.resolve(result.current.modal.onUpdate?.('t', edicao)));
     expect(versao()).toBe(1);
   });
 
   it('excluir com sucesso sinaliza a mudança', async () => {
-    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined as never);
+    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined);
     const { result } = montar();
     await act(() => Promise.resolve(result.current.modal.onDelete?.('t')));
     expect(versao()).toBe(1);
@@ -94,7 +95,7 @@ describe('useLancamento > aviso depois de gravar', () => {
 
   const aviso = () => useAvisoStore.getState().aviso;
   const registrarCom = async (extra: Partial<TransacaoCreateRequest> = {}, id = 'novo-1') => {
-    vi.mocked(transacaoService.registrar).mockResolvedValue({ transacao: { id } } as never);
+    vi.mocked(transacaoService.registrar).mockResolvedValue(respostaDeGravacao(id));
     const { result } = montar();
     await act(() => Promise.resolve(result.current.modal.onSubmit({ ...payload, ...extra })));
   };
@@ -122,7 +123,7 @@ describe('useLancamento > aviso depois de gravar', () => {
   });
 
   it('desfazer exclui o lançamento recém-criado, uma vez só, e sinaliza o Extrato', async () => {
-    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined as never);
+    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined);
     await registrarCom({}, 'novo-42');
     const desfazer = aviso()?.desfazer;
     const antes = versao();
@@ -147,8 +148,8 @@ describe('useLancamento > aviso depois de gravar', () => {
   });
 
   it('desfazer ainda funciona depois de o painel e a tela terem desmontado', async () => {
-    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined as never);
-    vi.mocked(transacaoService.registrar).mockResolvedValue({ transacao: { id: 'x' } } as never);
+    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined);
+    vi.mocked(transacaoService.registrar).mockResolvedValue(respostaDeGravacao('x'));
     const montado = montar();
     await act(() => Promise.resolve(montado.result.current.modal.onSubmit(payload)));
     montado.unmount();
@@ -158,7 +159,7 @@ describe('useLancamento > aviso depois de gravar', () => {
   });
 
   it('editar mostra "Alterações salvas", sem "Desfazer"', async () => {
-    vi.mocked(transacaoService.editar).mockResolvedValue({ transacao: { id: 't' } } as never);
+    vi.mocked(transacaoService.editar).mockResolvedValue(respostaDeGravacao('t'));
     const { result } = montar();
     await act(() => Promise.resolve(result.current.modal.onUpdate?.('t', edicao)));
     expect(aviso()?.mensagem).toBe('Alterações salvas');
@@ -166,7 +167,7 @@ describe('useLancamento > aviso depois de gravar', () => {
   });
 
   it('excluir mostra "Lançamento excluído", sem "Desfazer"', async () => {
-    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined as never);
+    vi.mocked(transacaoService.excluir).mockResolvedValue(undefined);
     const { result } = montar();
     await act(() => Promise.resolve(result.current.modal.onDelete?.('t')));
     expect(aviso()?.mensagem).toBe('Lançamento excluído');

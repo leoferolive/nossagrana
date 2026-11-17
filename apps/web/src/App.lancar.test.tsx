@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, mockSessao, resetAppMocks } from '@/test/app-mocks';
 import { barraInferior } from '@/test/barra-inferior';
+import { respostaDeGravacao } from '@/test/fabricas-transacao';
 import { excluirPeloPainel } from '@/test/excluir-pelo-painel';
 import { renderApp } from '@/test/render-app';
 
@@ -405,9 +406,7 @@ describe('App > aviso depois de lançar e confirmação de exclusão', () => {
   };
 
   beforeEach(() => {
-    vi.mocked(transacaoService.registrar).mockResolvedValue({
-      transacao: { id: 'tx-novo' },
-    } as never);
+    vi.mocked(transacaoService.registrar).mockResolvedValue(respostaDeGravacao('tx-novo'));
   });
 
   it('mostra "Despesa lançada" e Desfazer exclui o lançamento criado, uma vez só', async () => {
@@ -456,7 +455,8 @@ describe('App > aviso depois de lançar e confirmação de exclusão', () => {
     );
     await avisoComTexto('Lançamento excluído');
     expect(confirmar).not.toHaveBeenCalled();
-    expect(local()).toHaveTextContent(/^\/extrato$/);
+    // O painel fecha pelo histórico, que é assíncrono.
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
     confirmar.mockRestore();
   });
 });
@@ -465,7 +465,7 @@ describe('App > falha ao gravar não perde o lançamento', () => {
   it('gravação que rejeita deixa o painel aberto com o valor e o erro, sem mexer no histórico; tentar de novo fecha uma vez', async () => {
     vi.mocked(transacaoService.registrar)
       .mockRejectedValueOnce(new Error('rede'))
-      .mockResolvedValue({ transacao: { id: 'tx-novo' } } as never);
+      .mockResolvedValue(respostaDeGravacao('tx-novo'));
     renderApp(['/', '/extrato']);
     await waitFor(() => tituloNoConteudo(/^extrato$/i));
     abrirPainelNovo();

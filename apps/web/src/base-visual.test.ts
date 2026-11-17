@@ -183,7 +183,7 @@ describe('campos em 16px e alvos de toque com 44px', () => {
     './components/bottom-nav.tsx',
     './components/extrato/filtros-do-extrato.tsx',
     './pages/categorias-page.tsx',
-    './components/transacao-modal.tsx',
+    './components/lancar/cabecalho-do-painel.tsx',
     './components/cofrinho-modal.tsx',
     './components/cofrinho-aporte-modal.tsx',
     './components/cofrinho-retirada-modal.tsx',

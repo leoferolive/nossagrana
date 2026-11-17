@@ -54,7 +54,7 @@ const camposDaVoz = (v: DadosVoz): CamposLancamento => ({
   data: v.data ?? getTodayLocalISO(),
 });
 
-/** Edição tem prioridade sobre voz, como sempre teve; sem nenhuma das duas, o painel abre vazio. */
+/** A voz tem prioridade sobre a edição (como na `main`); sem nenhuma das duas, o painel abre vazio. */
 const camposIniciais = (
   edicao: TransacaoParaEditar | null | undefined,
   voz: DadosVoz | null | undefined,

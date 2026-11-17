@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { esquecerBuscasDeCategorias } from '@/hooks/use-categorias-mais-usadas';
 
+import { useAvisoStore } from './aviso.store';
 import { useCategoriaStore } from './categoria.store';
 import { useCofrinhoStore } from './cofrinho.store';
 import { useDashboardStore } from './dashboard.store';
@@ -16,6 +17,12 @@ describe('limparDadosDaFamilia', () => {
   it('esquece as buscas das categorias mais usadas da família anterior', () => {
     limparDadosDaFamilia();
     expect(esquecerBuscasDeCategorias).toHaveBeenCalled();
+  });
+
+  it('fecha o aviso com "Desfazer" da família anterior', () => {
+    useAvisoStore.getState().mostrar({ mensagem: 'Despesa lançada', desfazer: async () => {} });
+    limparDadosDaFamilia();
+    expect(useAvisoStore.getState().aviso).toBeNull();
   });
 
   it('zera todas as stores que guardam dado de família', () => {

@@ -585,18 +585,58 @@ describe('TransacaoModal', () => {
   });
 
   describe('excluir', () => {
-    it('fica em "Mais opções" na edição e pede confirmação antes de excluir', () => {
+    const abrirConfirmacao = (onDelete = vi.fn()) => {
       poremCategorias();
-      const onDelete = vi.fn();
-      const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true);
       abrir({ onDelete, transacaoParaEditar: EDICAO });
-
-      expect(screen.queryByRole('button', { name: 'Excluir lançamento' })).not.toBeInTheDocument();
       maisOpcoes();
       fireEvent.click(chip('Excluir lançamento'));
-      expect(confirmar).toHaveBeenCalled();
-      expect(onDelete).toHaveBeenCalledWith('t1');
+      return onDelete;
+    };
+
+    it('fica em "Mais opções" na edição', () => {
+      poremCategorias();
+      abrir({ onDelete: vi.fn(), transacaoParaEditar: EDICAO });
+      expect(screen.queryByRole('button', { name: 'Excluir lançamento' })).not.toBeInTheDocument();
+      maisOpcoes();
+      expect(chip('Excluir lançamento')).toBeInTheDocument();
+    });
+
+    it('abre o painel de confirmação do app, sem window.confirm, e ainda não exclui', () => {
+      const confirmar = vi.spyOn(window, 'confirm');
+      const onDelete = abrirConfirmacao();
+
+      const painel = screen.getByRole('dialog', { name: 'Excluir lançamento?' });
+      // Sem descrição, o nome do lançamento é o da categoria.
+      expect(painel).toHaveTextContent('Mercado');
+      expect(painel).toHaveTextContent('R$ 80,00');
+      expect(confirmar).not.toHaveBeenCalled();
+      expect(onDelete).not.toHaveBeenCalled();
       confirmar.mockRestore();
+    });
+
+    it('Cancelar fecha a confirmação e não exclui', () => {
+      const onDelete = abrirConfirmacao();
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+      expect(screen.queryByRole('dialog', { name: 'Excluir lançamento?' })).not.toBeInTheDocument();
+      expect(onDelete).not.toHaveBeenCalled();
+    });
+
+    it('confirmar exclui o lançamento uma vez só', async () => {
+      let terminar: () => void = () => {};
+      const onDelete = abrirConfirmacao(vi.fn(() => new Promise<void>((r) => (terminar = r))));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+      fireEvent.click(screen.getByRole('button', { name: /excluindo/i }));
+      expect(onDelete).toHaveBeenCalledTimes(1);
+      expect(onDelete).toHaveBeenCalledWith('t1');
+      await act(async () => terminar());
+    });
+
+    it('se excluir falha, mantém a confirmação aberta e avisa', async () => {
+      abrirConfirmacao(vi.fn().mockRejectedValue(new Error('rede')));
+      fireEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível excluir');
+      expect(screen.getByRole('button', { name: 'Excluir' })).toBeEnabled();
     });
   });
 

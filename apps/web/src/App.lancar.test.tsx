@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, mockSessao, resetAppMocks } from '@/test/app-mocks';
 import { barraInferior } from '@/test/barra-inferior';
+import { excluirPeloPainel } from '@/test/excluir-pelo-painel';
 import { renderApp } from '@/test/render-app';
 
 import { categoriaService, transacaoService } from './services/core-financeiro.service';
+import { useAvisoStore } from './stores/aviso.store';
 import { useCategoriaStore } from './stores/categoria.store';
 
 // Fala controlada pelo teste: troca o reconhecimento de voz do navegador, que o jsdom não tem.
@@ -47,6 +49,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  useAvisoStore.getState().fechar();
   resetAppMocks();
   vi.mocked(categoriaService.listar).mockResolvedValue({ categorias: [] });
   useCategoriaStore.setState({ categorias: [] });
@@ -254,8 +257,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
     [
       'excluir',
       async () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
-        fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+        await excluirPeloPainel();
         await waitFor(() => expect(transacaoService.excluir).toHaveBeenCalled());
       },
     ],
@@ -375,15 +377,86 @@ describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
   });
 
   it('excluir tira a linha', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(transacaoService.listar)
       .mockResolvedValueOnce({ transacoes: [FARMACIA] })
       .mockResolvedValue({ transacoes: [] });
     renderApp('/extrato');
     await abrirEdicaoDaFarmacia();
 
-    fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+    await excluirPeloPainel();
 
     await waitFor(() => expect(screen.queryByText('Farmácia')).not.toBeInTheDocument());
+  });
+});
+
+describe('App > aviso depois de lançar e confirmação de exclusão', () => {
+  // Outras partes da tela também usam role="status"; o aviso se acha pelo texto.
+  const avisoComTexto = async (texto: string) => {
+    const aviso = (await screen.findByText(texto)).closest<HTMLElement>('[role="status"]');
+    if (!aviso) throw new Error(`"${texto}" não está num aviso`);
+    return aviso;
+  };
+
+  const lancarMercado = async () => {
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar despesa' }));
+  };
+
+  beforeEach(() => {
+    vi.mocked(transacaoService.registrar).mockResolvedValue({
+      transacao: { id: 'tx-novo' },
+    } as never);
+  });
+
+  it('mostra "Despesa lançada" e Desfazer exclui o lançamento criado, uma vez só', async () => {
+    renderApp('/extrato');
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    await lancarMercado();
+
+    const aviso = await avisoComTexto('Despesa lançada');
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Desfazer' }));
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Desfazer' }));
+
+    await avisoComTexto('Lançamento desfeito');
+    expect(transacaoService.excluir).toHaveBeenCalledTimes(1);
+    expect(transacaoService.excluir).toHaveBeenCalledWith('tx-novo', 'fam-test');
+  });
+
+  it('Desfazer ainda funciona depois de navegar para outra tela', async () => {
+    renderApp(['/', '/extrato']);
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    await lancarMercado();
+    const aviso = await avisoComTexto('Despesa lançada');
+
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Planejar' }));
+    await waitFor(() => tituloNoConteudo(/^planejar$/i));
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Desfazer' }));
+
+    await waitFor(() =>
+      expect(transacaoService.excluir).toHaveBeenCalledWith('tx-novo', 'fam-test'),
+    );
+    expect(transacaoService.excluir).toHaveBeenCalledTimes(1);
+  });
+
+  it('excluir pelo painel de confirmação do app, sem window.confirm', async () => {
+    const confirmar = vi.spyOn(window, 'confirm');
+    vi.mocked(transacaoService.listar).mockResolvedValue({
+      transacoes: [makeTransacao({ id: 'tx-edit-1', descricao: 'Mercado do mês' })],
+    });
+    renderApp('/extrato');
+    fireEvent.click((await screen.findAllByText('Mercado do mês'))[0]);
+    await screen.findByText('Editar Transação');
+
+    await excluirPeloPainel();
+
+    await waitFor(() =>
+      expect(transacaoService.excluir).toHaveBeenCalledWith('tx-edit-1', 'fam-test'),
+    );
+    await avisoComTexto('Lançamento excluído');
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(local()).toHaveTextContent(/^\/extrato$/);
+    confirmar.mockRestore();
   });
 });

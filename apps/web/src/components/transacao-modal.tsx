@@ -19,6 +19,7 @@ import { IconFechar } from './icons';
 import { ChipsDeCategoria } from './lancar/chips-de-categoria';
 import { ChipsDeData } from './lancar/chips-de-data';
 import { ChipsDePagamento } from './lancar/chips-de-pagamento';
+import { ConfirmarExclusao } from './lancar/confirmar-exclusao';
 import { MaisOpcoes } from './lancar/mais-opcoes';
 import { RodapeSalvar } from './lancar/rodape-salvar';
 import type { DadosVoz, TransacaoParaEditar } from './lancar/tipos-lancar';
@@ -36,12 +37,14 @@ interface TransacaoModalProps {
   onSubmit: (payload: TransacaoCreateRequest) => void | Promise<void>;
   transacaoParaEditar?: TransacaoParaEditar | null;
   onUpdate?: (id: string, payload: TransacaoUpdateRequest) => void | Promise<void>;
-  onDelete?: (id: string) => void;
+  /** Como `onSubmit`: quem chama fecha o painel quando a exclusão dá certo. */
+  onDelete?: (id: string) => void | Promise<void>;
   dadosVoz?: DadosVoz | null;
   onVoiceActivate?: () => void;
 }
 
 const ERRO_AO_SALVAR = 'Não foi possível salvar. Tente de novo.';
+const ERRO_AO_EXCLUIR = 'Não foi possível excluir. Tente de novo.';
 
 /** Carrega categorias e formas de pagamento da família se as stores ainda estão vazias. */
 const useReferenciasDaFamilia = (familiaId: string) => {
@@ -86,7 +89,11 @@ const motivoDoBloqueio = (
  * Estado da gravação: `salvar` roda uma gravação por vez (o ref barra o segundo toque que chega
  * antes de o botão desabilitar na tela) e, se ela rejeitar, guarda o aviso e libera tentar de novo.
  */
-const useGravacao = (podeGravar: boolean, gravar: () => void | Promise<void>) => {
+const useGravacao = (
+  podeGravar: boolean,
+  gravar: () => void | Promise<void>,
+  mensagemDeErro: string,
+) => {
   const emAndamento = useRef(false);
   const [gravando, setGravando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -99,7 +106,7 @@ const useGravacao = (podeGravar: boolean, gravar: () => void | Promise<void>) =>
     try {
       await gravar();
     } catch {
-      setErro(ERRO_AO_SALVAR);
+      setErro(mensagemDeErro);
     } finally {
       emAndamento.current = false;
       setGravando(false);
@@ -148,18 +155,22 @@ const PainelDeLancar = ({
     return onSubmit(montarCriacao(entrada));
   };
 
-  const { gravando, erro, salvar } = useGravacao(motivo === null, gravar);
+  const { gravando, erro, salvar } = useGravacao(motivo === null, gravar, ERRO_AO_SALVAR);
 
-  const excluir = () => {
-    if (!transacaoParaEditar || !onDelete) return;
-    if (!window.confirm('Tem certeza que deseja excluir esta transação?')) return;
-    onDelete(transacaoParaEditar.id);
-    onClose();
-  };
+  const [confirmando, setConfirmando] = useState(false);
+  const exclusao = useGravacao(
+    true,
+    async () => {
+      if (transacaoParaEditar && onDelete) await onDelete(transacaoParaEditar.id);
+    },
+    ERRO_AO_EXCLUIR,
+  );
 
   const opcoesDeCategoria = categoriasParaSelecao(categorias, campos.tipo, {
     id: campos.tipo === tipoOriginal ? (transacaoParaEditar?.categoriaId ?? null) : null,
   });
+  const nomeDaCategoria =
+    categorias.find((c) => c.id === transacaoParaEditar?.categoriaId)?.nome ?? 'Lançamento';
   const rotuloDoBotao = editando ? 'Salvar alterações' : `Salvar ${campos.tipo}`;
 
   return (
@@ -222,7 +233,7 @@ const PainelDeLancar = ({
               mudar={mudar}
               editando={editando}
               ehCredito={ehCredito}
-              onExcluir={onDelete ? excluir : undefined}
+              onExcluir={onDelete ? () => setConfirmando(true) : undefined}
             />
           </div>
         </div>
@@ -237,6 +248,16 @@ const PainelDeLancar = ({
           />
         </footer>
       </div>
+      {confirmando && transacaoParaEditar && (
+        <ConfirmarExclusao
+          nome={transacaoParaEditar.descricao || nomeDaCategoria}
+          valor={transacaoParaEditar.valor}
+          excluindo={exclusao.gravando}
+          erro={exclusao.erro}
+          onCancelar={() => setConfirmando(false)}
+          onConfirmar={() => void exclusao.salvar()}
+        />
+      )}
     </div>
   );
 };

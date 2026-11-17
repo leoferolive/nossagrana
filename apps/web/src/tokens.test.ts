@@ -27,6 +27,16 @@ const ESPERADOS: Record<string, string> = {
   'warning-soft': '246 236 205',
   'warning-fill': '201 138 0',
   'border-soft': '230 234 227',
+  'cat-alimentacao-bg': '246 236 205',
+  'cat-alimentacao-ink': '138 90 0',
+  'cat-saude-bg': '247 225 222',
+  'cat-saude-ink': '179 38 30',
+  'cat-lazer-bg': '236 230 246',
+  'cat-lazer-ink': '91 63 166',
+  'cat-compras-bg': '225 236 245',
+  'cat-compras-ink': '31 95 139',
+  'cat-outros-bg': '230 233 227',
+  'cat-outros-ink': '69 82 74',
 };
 
 function token(nome: string): Rgb {
@@ -88,6 +98,11 @@ describe('tokens da paleta clara', () => {
       ['danger', 'danger-soft'],
       ['warning', 'warning-soft'],
       ['info', 'panel'],
+      ['cat-alimentacao-ink', 'cat-alimentacao-bg'],
+      ['cat-saude-ink', 'cat-saude-bg'],
+      ['cat-lazer-ink', 'cat-lazer-bg'],
+      ['cat-compras-ink', 'cat-compras-bg'],
+      ['cat-outros-ink', 'cat-outros-bg'],
     ];
     for (const [texto, fundo] of pares) {
       it(`${texto} sobre ${fundo}`, () => {

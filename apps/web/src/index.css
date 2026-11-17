@@ -26,6 +26,17 @@
   --color-danger-soft: 247 225 222;
   --color-warning-soft: 246 236 205;
   --color-warning-fill: 201 138 0;
+  /* Ícone de categoria: fundo claro e tinta escura da mesma família (README, "Ícone de categoria"). */
+  --color-cat-alimentacao-bg: 246 236 205;
+  --color-cat-alimentacao-ink: 138 90 0;
+  --color-cat-saude-bg: 247 225 222;
+  --color-cat-saude-ink: 179 38 30;
+  --color-cat-lazer-bg: 236 230 246;
+  --color-cat-lazer-ink: 91 63 166;
+  --color-cat-compras-bg: 225 236 245;
+  --color-cat-compras-ink: 31 95 139;
+  --color-cat-outros-bg: 230 233 227;
+  --color-cat-outros-ink: 69 82 74;
 }
 
 /* Alvo de toque de 44px em todo o app (decisão 12), sem depender de cada tela lembrar de pedir.

@@ -487,3 +487,26 @@ describe('App > falha ao gravar não perde o lançamento', () => {
     expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
   });
 });
+
+describe('App > Escape dentro do painel de lançar', () => {
+  it('Escape com a lista "Frequência" aberta fecha só a lista; o painel e o rascunho continuam, e o segundo Escape fecha o painel', async () => {
+    renderApp(['/', '/extrato']);
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Descrição, parcelas e repetição' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Recorrente' }));
+    const frequencia = screen.getByRole('combobox', { name: 'Frequência' });
+    frequencia.focus();
+    fireEvent.click(frequencia);
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/valor/i)).toHaveValue(100);
+    expect(local()).toHaveTextContent('/extrato?lancar=nova');
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
+  });
+});

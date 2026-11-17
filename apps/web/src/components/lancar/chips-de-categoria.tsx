@@ -37,10 +37,10 @@ const ListaCompleta = ({
   onEscolher,
   onFechar,
 }: ListaCompletaProps) => {
-  const raiz = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape: onFechar });
+  const armadilha = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape: onFechar });
   return (
     <div
-      ref={raiz}
+      {...armadilha}
       role="dialog"
       aria-modal="true"
       aria-label="Todas as categorias"

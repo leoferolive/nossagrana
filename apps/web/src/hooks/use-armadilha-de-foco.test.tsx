@@ -13,9 +13,9 @@ interface CaixaProps {
 }
 
 const Caixa = ({ aoEscape, devolverPara, comCampoFocado }: CaixaProps) => {
-  const ref = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape, devolverPara });
+  const armadilha = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape, devolverPara });
   return (
-    <div ref={ref}>
+    <div {...armadilha}>
       <button>primeiro</button>
       <input aria-label="campo" ref={(el) => void (comCampoFocado && el?.focus())} />
       <button>ultimo</button>

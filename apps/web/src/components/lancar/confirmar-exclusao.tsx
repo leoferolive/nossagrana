@@ -27,13 +27,13 @@ export const ConfirmarExclusao = ({
   devolverFocoPara,
 }: ConfirmarExclusaoProps) => {
   const idTitulo = useId();
-  const raiz = useArmadilhaDeFoco<HTMLDivElement>({
+  const armadilha = useArmadilhaDeFoco<HTMLDivElement>({
     aoEscape: excluindo ? undefined : onCancelar,
     devolverPara: devolverFocoPara,
   });
   return (
     <div
-      ref={raiz}
+      {...armadilha}
       role="dialog"
       aria-modal="true"
       aria-labelledby={idTitulo}

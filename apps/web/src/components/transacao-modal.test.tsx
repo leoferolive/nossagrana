@@ -5,6 +5,7 @@ import { TransacaoModal } from '@/components/transacao-modal';
 import { useAvisoStore } from '@/stores/aviso.store';
 import {
   configurarPainelDeTeste,
+  maisOpcoes,
   poremCategorias,
   poremMetodos,
   abrir,
@@ -98,6 +99,37 @@ describe('TransacaoModal', () => {
       const { onClose } = abrir();
       teclar('Escape');
       expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('Escape com a lista "Frequência" aberta fecha só a lista; o segundo fecha o painel', () => {
+      poremCategorias();
+      const { onClose } = abrir();
+      digitarValor('10');
+      maisOpcoes();
+      fireEvent.click(chip('Recorrente'));
+      const frequencia = screen.getByRole('combobox', { name: 'Frequência' });
+      frequencia.focus();
+      fireEvent.click(frequencia);
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+      teclar('Escape');
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(screen.getByLabelText('Valor')).toHaveValue(10);
+
+      teclar('Escape');
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('Escape com a lista "Todas" aberta fecha só a lista', () => {
+      poremCategorias();
+      const { onClose } = abrir();
+      fireEvent.click(chip('Todas'));
+      expect(screen.getByRole('dialog', { name: 'Todas as categorias' })).toBeInTheDocument();
+
+      teclar('Escape');
+      expect(screen.queryByRole('dialog', { name: 'Todas as categorias' })).not.toBeInTheDocument();
+      expect(onClose).not.toHaveBeenCalled();
     });
 
     it('ao fechar, o foco volta a quem abriu o painel', () => {

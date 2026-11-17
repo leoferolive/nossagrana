@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 const FOCAVEIS =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -17,7 +17,7 @@ const focaveisDe = (raiz: HTMLElement): HTMLElement[] =>
   Array.from(raiz.querySelectorAll<HTMLElement>(FOCAVEIS)).filter((el) => !el.closest('[inert]'));
 
 /** Tab e Shift+Tab dão a volta dentro de `raiz`, sem deixar o foco sair. */
-const prenderTab = (raiz: HTMLElement, e: KeyboardEvent): void => {
+const prenderTab = (raiz: HTMLElement, e: KeyboardEvent<HTMLElement>): void => {
   const itens = focaveisDe(raiz);
   e.preventDefault();
   if (itens.length === 0) return;
@@ -38,40 +38,42 @@ const prenderTab = (raiz: HTMLElement, e: KeyboardEvent): void => {
 /**
  * Prende o foco do teclado num painel (diálogo): ao abrir leva o foco para dentro (se ainda não
  * está), Tab e Shift+Tab dão a volta, Escape avisa, e ao sair o foco volta a quem o tinha.
- * `aria-modal` sozinho não torna o fundo inerte. Devolve o `ref` do elemento que contém o painel.
+ * `aria-modal` sozinho não torna o fundo inerte.
+ *
+ * Devolve `{ ref, onKeyDown }` para espalhar no elemento do painel. As teclas são tratadas no
+ * `onKeyDown` do React (fase de borbulhamento, depois dos filhos), e não num ouvinte nativo que
+ * correria antes deles: assim o controle mais interno que usa Escape (uma lista aberta, uma
+ * confirmação sobre o painel) o consome com `preventDefault` e o painel de fora não reage.
  */
 export const useArmadilhaDeFoco = <T extends HTMLElement>({
   aoEscape,
   devolverPara,
 }: OpcoesDaArmadilha = {}) => {
-  const raiz = useRef<T>(null);
+  const ref = useRef<T>(null);
   // Lido na primeira renderização, antes de qualquer efeito (inclusive o de um campo filho que
   // se foca sozinho) mover o foco.
   const [origem] = useState(() => devolverPara ?? document.activeElement);
-  const escape = useRef(aoEscape);
-  useEffect(() => {
-    escape.current = aoEscape;
-  });
 
   useEffect(() => {
-    const el = raiz.current;
-    if (!el) return;
-    if (!el.contains(document.activeElement)) focaveisDe(el)[0]?.focus();
-    const aoTeclar = (e: KeyboardEvent) => {
-      // Um painel dentro de outro trata a tecla primeiro; o de fora não age de novo.
-      if (e.defaultPrevented) return;
-      if (e.key === 'Tab') prenderTab(el, e);
-      else if (e.key === 'Escape' && escape.current) {
-        e.preventDefault();
-        escape.current();
-      }
-    };
-    el.addEventListener('keydown', aoTeclar);
+    const el = ref.current;
+    if (el && !el.contains(document.activeElement)) focaveisDe(el)[0]?.focus();
     return () => {
-      el.removeEventListener('keydown', aoTeclar);
       if (origem instanceof HTMLElement && origem.isConnected) origem.focus();
     };
   }, [origem]);
 
-  return raiz;
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLElement>) => {
+      const el = ref.current;
+      if (!el || e.defaultPrevented) return;
+      if (e.key === 'Tab') prenderTab(el, e);
+      else if (e.key === 'Escape' && aoEscape) {
+        e.preventDefault();
+        aoEscape();
+      }
+    },
+    [aoEscape],
+  );
+
+  return { ref, onKeyDown };
 };

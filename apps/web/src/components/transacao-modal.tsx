@@ -54,7 +54,7 @@ const PainelDeLancar = (props: TransacaoModalProps) => {
   const exclusao = useExclusao(transacaoParaEditar, onDelete);
   // Fechar durante a gravação descartaria o resultado em silêncio.
   const ocupado = gravacao.gravando || exclusao.gravando;
-  const painel = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape: ocupado ? undefined : onClose });
+  const armadilha = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape: ocupado ? undefined : onClose });
 
   // O aviso de 6 s (z-aviso) ficaria por cima do painel e interceptaria toques nele.
   useEffect(() => useAvisoStore.getState().fechar(), []);
@@ -73,7 +73,7 @@ const PainelDeLancar = (props: TransacaoModalProps) => {
       {/* Painel de baixo para cima no celular, centrado no desktop; só o miolo rola, o rodapé fica. */}
       {/* Inerte enquanto a confirmação de exclusão está aberta: `aria-modal` não tira o fundo do Tab. */}
       <div
-        ref={painel}
+        {...armadilha}
         inert={confirmando}
         className="flex max-h-full w-full max-w-[520px] flex-col overflow-hidden rounded-t-[28px] bg-panel md:rounded-[28px] md:border md:border-border"
       >

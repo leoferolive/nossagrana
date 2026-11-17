@@ -1,5 +1,4 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { StrictMode } from 'react';
 import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -331,9 +330,9 @@ describe('ExtratoPage', () => {
     it('falha na carga dentro do StrictMode mostra "Tentar de novo"', async () => {
       vi.mocked(transacaoService.listar).mockRejectedValue(new Error('rede'));
       renderPagina(
-        <StrictMode>
-          <ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} onEditarTransacao={vi.fn()} />
-        </StrictMode>,
+        <ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} onEditarTransacao={vi.fn()} />,
+        '/',
+        { strict: true },
       );
       expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
       expect(screen.queryByText(/Nenhum lançamento em/)).not.toBeInTheDocument();

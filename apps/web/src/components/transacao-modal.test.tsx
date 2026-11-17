@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { esquecerBuscasDeCategorias } from '@/hooks/use-categorias-mais-usadas';
 import { transacaoService } from '@/services/core-financeiro.service';
+import { useAvisoStore } from '@/stores/aviso.store';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import type { DadosVoz } from './transacao-modal';
@@ -18,6 +19,7 @@ vi.mock('@/services/core-financeiro.service', () => ({
 
 beforeEach(() => {
   esquecerBuscasDeCategorias();
+  useAvisoStore.getState().fechar();
   vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
 });
 
@@ -73,8 +75,10 @@ const poremMetodos = (lista = METODOS) =>
 const abrir = (props: Partial<Parameters<typeof TransacaoModal>[0]> = {}) => {
   const onClose = vi.fn();
   const onSubmit = vi.fn();
-  render(<TransacaoModal open familiaId="f1" onClose={onClose} onSubmit={onSubmit} {...props} />);
-  return { onClose, onSubmit };
+  const utils = render(
+    <TransacaoModal open familiaId="f1" onClose={onClose} onSubmit={onSubmit} {...props} />,
+  );
+  return { onClose, onSubmit, ...utils };
 };
 
 const digitarValor = (v: string) =>
@@ -397,7 +401,7 @@ describe('TransacaoModal', () => {
       expect(screen.getByLabelText('Parcelas')).toBeInTheDocument();
     });
 
-    it('parcelado no crédito envia número de parcelas; trocar a forma desfaz o parcelamento', async () => {
+    it('parcelado no crédito envia o número de parcelas', () => {
       poremCategorias();
       poremMetodos();
       const { onSubmit } = abrir();
@@ -408,14 +412,23 @@ describe('TransacaoModal', () => {
       fireEvent.click(chip('Parcelado'));
       fireEvent.change(screen.getByLabelText('Parcelas'), { target: { value: '3' } });
       fireEvent.click(chip('Salvar despesa'));
-      expect(onSubmit).toHaveBeenLastCalledWith(
+      expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ parcelado: true, numeroParcelas: 3, metodoPagamentoId: 'm1' }),
       );
+    });
 
-      await screen.findByRole('button', { name: 'Salvar despesa' });
+    it('trocar a forma para outra que não é crédito desfaz o parcelamento', () => {
+      poremCategorias();
+      poremMetodos();
+      const { onSubmit } = abrir();
+      digitarValor('120');
+      fireEvent.click(chip('Mercado'));
+      fireEvent.click(chip('Nubank'));
+      maisOpcoes();
+      fireEvent.click(chip('Parcelado'));
       fireEvent.click(chip('Pix'));
       fireEvent.click(chip('Salvar despesa'));
-      expect(onSubmit).toHaveBeenLastCalledWith(
+      expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
           parcelado: false,
           numeroParcelas: null,
@@ -545,7 +558,7 @@ describe('TransacaoModal', () => {
       expect(screen.queryByText(/escolha uma categoria/i)).not.toBeInTheDocument();
     });
 
-    it('tocar duas vezes seguidas grava uma vez só', async () => {
+    it('tocar duas vezes durante a gravação grava uma vez só', async () => {
       poremCategorias();
       let terminar: () => void = () => {};
       const onSubmit = vi.fn(() => new Promise<void>((resolve) => (terminar = resolve)));
@@ -555,12 +568,63 @@ describe('TransacaoModal', () => {
 
       fireEvent.click(chip('Salvar despesa'));
       fireEvent.click(screen.getByRole('button', { name: /salvando/i }));
-      fireEvent.click(screen.getByRole('button', { name: /salvando/i }));
       expect(onSubmit).toHaveBeenCalledTimes(1);
       expect(screen.getByRole('button', { name: /salvando/i })).toBeDisabled();
-
       await act(async () => terminar());
-      expect(chip('Salvar despesa')).toBeEnabled();
+    });
+
+    it('depois do sucesso o botão segue travado até o painel fechar: um toque na janela não grava de novo', async () => {
+      poremCategorias();
+      let terminar: () => void = () => {};
+      const onSubmit = vi.fn(() => new Promise<void>((resolve) => (terminar = resolve)));
+      abrir({ onSubmit });
+      digitarValor('10');
+      fireEvent.click(chip('Mercado'));
+      const salvar = chip('Salvar despesa');
+      fireEvent.click(salvar);
+
+      // A gravação terminou, mas o painel ainda não fechou (o voltar do histórico é assíncrono).
+      await act(async () => terminar());
+      fireEvent.click(salvar);
+
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(salvar).toBeDisabled();
+    });
+
+    it('enquanto grava, o X e o fundo não fecham o painel', async () => {
+      poremCategorias();
+      let terminar: () => void = () => {};
+      const onSubmit = vi.fn(() => new Promise<void>((resolve) => (terminar = resolve)));
+      const { onClose } = abrir({ onSubmit });
+      digitarValor('10');
+      fireEvent.click(chip('Mercado'));
+      fireEvent.click(chip('Salvar despesa'));
+
+      expect(chip('Fechar modal')).toBeDisabled();
+      fireEvent.click(chip('Fechar modal'));
+      fireEvent.click(screen.getByRole('dialog', { name: 'Nova Transação' }));
+      expect(onClose).not.toHaveBeenCalled();
+      await act(async () => terminar());
+    });
+
+    it('se a gravação falha depois de o painel ter fechado (voltar), o erro vira aviso', async () => {
+      poremCategorias();
+      let falhar: (erro: Error) => void = () => {};
+      const onSubmit = vi.fn(() => new Promise<void>((_, rejeitar) => (falhar = rejeitar)));
+      const { rerender } = abrir({ onSubmit });
+      digitarValor('10');
+      fireEvent.click(chip('Mercado'));
+      fireEvent.click(chip('Salvar despesa'));
+
+      rerender(
+        <TransacaoModal open={false} familiaId="f1" onClose={vi.fn()} onSubmit={onSubmit} />,
+      );
+      await act(async () => falhar(new Error('rede')));
+
+      expect(useAvisoStore.getState().aviso).toMatchObject({
+        mensagem: 'Não foi possível salvar. Tente de novo.',
+        tom: 'erro',
+      });
     });
 
     it('se gravar falha, mantém o painel aberto, avisa e deixa tentar de novo', async () => {
@@ -629,6 +693,7 @@ describe('TransacaoModal', () => {
       fireEvent.click(screen.getByRole('button', { name: /excluindo/i }));
       expect(onDelete).toHaveBeenCalledTimes(1);
       expect(onDelete).toHaveBeenCalledWith('t1');
+      expect(chip('Fechar modal')).toBeDisabled();
       await act(async () => terminar());
     });
 

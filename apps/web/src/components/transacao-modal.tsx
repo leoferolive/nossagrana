@@ -14,6 +14,7 @@ import {
   categoriasParaSelecao,
   useCategoriaStore,
 } from '@/stores/categoria.store';
+import { useAvisoStore } from '@/stores/aviso.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { IconFechar } from './icons';
 import { ChipsDeCategoria } from './lancar/chips-de-categoria';
@@ -86,8 +87,10 @@ const motivoDoBloqueio = (
 };
 
 /**
- * Estado da gravação: `salvar` roda uma gravação por vez (o ref barra o segundo toque que chega
- * antes de o botão desabilitar na tela) e, se ela rejeitar, guarda o aviso e libera tentar de novo.
+ * Estado da gravação: `salvar` roda uma gravação por vez. No sucesso o botão segue travado até o
+ * painel fechar (o voltar do histórico é assíncrono, e um toque nessa janela gravaria de novo);
+ * só a falha libera de novo. Falha com o painel já fechado (voltar durante a gravação) vira aviso,
+ * porque o erro no painel ninguém mais veria.
  */
 const useGravacao = (
   podeGravar: boolean,
@@ -95,8 +98,16 @@ const useGravacao = (
   mensagemDeErro: string,
 ) => {
   const emAndamento = useRef(false);
+  const montado = useRef(true);
   const [gravando, setGravando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+    };
+  }, []);
 
   const salvar = async () => {
     if (!podeGravar || emAndamento.current) return;
@@ -106,10 +117,10 @@ const useGravacao = (
     try {
       await gravar();
     } catch {
-      setErro(mensagemDeErro);
-    } finally {
       emAndamento.current = false;
       setGravando(false);
+      if (montado.current) setErro(mensagemDeErro);
+      else useAvisoStore.getState().mostrar({ mensagem: mensagemDeErro, tom: 'erro' });
     }
   };
 
@@ -166,6 +177,8 @@ const PainelDeLancar = ({
     ERRO_AO_EXCLUIR,
   );
 
+  // Fechar durante a gravação descartaria o resultado em silêncio.
+  const ocupado = gravando || exclusao.gravando;
   const opcoesDeCategoria = categoriasParaSelecao(categorias, campos.tipo, {
     id: campos.tipo === tipoOriginal ? (transacaoParaEditar?.categoriaId ?? null) : null,
   });
@@ -181,7 +194,7 @@ const PainelDeLancar = ({
       style={areaVisivel ? { top: areaVisivel.top, height: areaVisivel.height } : undefined}
       className="fixed inset-x-0 top-0 z-painel flex h-dvh items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ocupado) onClose();
       }}
     >
       {/* Painel de baixo para cima no celular, centrado no desktop; só o miolo rola, o rodapé fica. */}
@@ -200,7 +213,8 @@ const PainelDeLancar = ({
               type="button"
               aria-label="Fechar modal"
               onClick={onClose}
-              className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
+              disabled={ocupado}
+              className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text disabled:opacity-50`}
             >
               <IconFechar size={20} aria-hidden="true" />
             </button>

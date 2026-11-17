@@ -26,14 +26,14 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 
 ## Checkpoint
 
-**Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
-e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
-Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. Entregas 1, 2 e 3 concluídas. Entrega 3: #191 (correções), #192 (Extrato) e o
-PR do Lançar. **Próximo passo:** o desenho da Entrega 4 (plano do mês e Início),
-que precisa de aprovação do usuário antes de qualquer código. Ele depende de duas
-decisões em aberto: o que "Confirmar lazer" gera e como converter "fatura que
-vence no mês" no mês de referência (seção "Plano do mês").
+**Estado em 2026-11-17:** Entregas 1, 2 e 3 concluídas e em dev (`v1.0.63`).
+Entrega 1: #183 (correções) e #186 (base visual). Entrega 2: #188 (rotas com
+URL), #189 (barra de cinco, Mais, Planejar, cabeçalhos e tour) e #190 (testes
+E2E). Entrega 3: #191 (correções), #192 (Extrato) e #193 (Lançar). O Início
+ainda é o antigo. **Próximo passo:** o desenho da Entrega 4 (plano do mês e
+Início), que precisa de aprovação do usuário antes de qualquer código. Ele
+depende de duas decisões em aberto: o que "Confirmar lazer" gera e como
+converter "fatura que vence no mês" no mês de referência (seção "Plano do mês").
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -270,6 +270,8 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-17 — Entrega 3, PR 3 (Lançar), foco do teclado: `useArmadilhaDeFoco` prende Tab e Shift+Tab num painel, trata o Escape e devolve o foco a quem o tinha (ou ao botão indicado, porque o Safari não foca botão no clique). A confirmação "Excluir lançamento?" abre com o foco em "Cancelar", cancela no Escape e deixa o painel de trás inerte (`inert`) enquanto está aberta; ao fechar o foco volta ao botão "Excluir lançamento". O próprio painel de lançar tinha o mesmo problema em relação à tela de trás (`aria-modal` não tira o fundo do Tab): agora também prende o foco, fecha no Escape (não durante a gravação) e devolve o foco a quem o abriu; a lista "Todas" ganhou o mesmo tratamento.
 - 2026-11-17 — Entrega 3, PR 3 (Lançar), Escape: `useArmadilhaDeFoco` passou a devolver `{ ref, onKeyDown }` e a tratar Tab e Escape no `onKeyDown` do React (borbulhamento, depois dos filhos), e não num ouvinte nativo que corria antes dos controles internos; com isso o Escape de "Frequência" aberta fechava o painel e descartava o rascunho. O `CustomSelect` aberto consome o Escape (`preventDefault` e `stopPropagation`), e a lista "Todas" e a confirmação de exclusão também: o mais interno consome e o de fora não reage; o segundo Escape fecha o painel.
 - 2026-11-17 — Entrega 3, PR 3 (Lançar), forma de pagamento inativa: na edição, a forma de pagamento que o lançamento já tem aparece como chip mesmo desativada ("Nome (inativo)", ou "Forma de pagamento (inativa)" quando a lista só traz as ativas), e tocar nela a desmarca (`metodoPagamentoId: null`); o bloco "Pago com" aparece sempre que houver forma ativa ou essa. A API aceita as duas coisas (`PATCH` mantém o mesmo vínculo inativo e aceita nulo; só vínculo novo ou alterado exige método ativo). Lançamento novo continua sem oferecer forma inativa.
+- 2026-11-17 — Entrega 3 concluída: #191, #192 e #193 mergeados e em dev
+  (`v1.0.63`).
 
 ## Decisões fechadas
 

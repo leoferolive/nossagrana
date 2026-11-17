@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 
 import { CabecalhoAba } from '../components/cabecalho-aba';
@@ -87,6 +87,8 @@ export const ExtratoPage = ({
   const { transacoes, carregando } = useTransacaoStore();
   const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
   const setCarregando = useTransacaoStore((s) => s.setCarregando);
+  const versao = useTransacaoStore((s) => s.versao);
+  const chaveCarregada = useRef('');
 
   const { metodos } = useMetodoPagamentoStore();
   const { categorias } = useCategoriaStore();
@@ -122,16 +124,30 @@ export const ExtratoPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familiaId]);
 
-  // Load transactions for selected month
+  // Carrega o mês. Depois de uma gravação (`versao` muda) recarrega o mesmo mês em silêncio, sem
+  // trocar a lista por "Carregando"; uma resposta de mês ou família antigos é descartada.
   useEffect(() => {
     if (!familiaId) return;
-    setCarregando(true);
+    const chave = `${familiaId}|${mesReferencia}`;
+    const silencioso = chaveCarregada.current === chave;
+    chaveCarregada.current = chave;
+    let ativo = true;
+    if (!silencioso) setCarregando(true);
     transacaoService
       .listar({ mesReferencia }, familiaId)
-      .then((res) => setTransacoes(res.transacoes))
-      .catch(() => setTransacoes([]))
-      .finally(() => setCarregando(false));
-  }, [familiaId, mesReferencia, setCarregando, setTransacoes]);
+      .then((res) => {
+        if (ativo) setTransacoes(res.transacoes);
+      })
+      .catch(() => {
+        if (ativo && !silencioso) setTransacoes([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [familiaId, mesReferencia, versao, setCarregando, setTransacoes]);
 
   const transacoesFiltradas = useMemo(
     () =>

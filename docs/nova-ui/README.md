@@ -87,7 +87,7 @@ cabeçalhos e tour; E2E. Desenho em
 ### Entrega 3 — Extrato e Lançar
 
 - [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
-- [ ] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
+- [x] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
       (hoje só atualiza ao sair e voltar à tela; visto na validação do #188)
 - [ ] Resumo do período, filtros e busca
 - [ ] Lançar com valor primeiro e chips de categoria, data e pagamento
@@ -225,6 +225,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 2, PR 2, correções da revisão de código: a área logada passou a carimbar a família em toda entrada de histórico com id (fatura aberta por Planejar escapava; os chamadores deixaram de passar `state`), com `semEntradaAnterior` no state para o Voltar de link direto; o aviso de falha da lista de famílias some ao tentar de novo; títulos alinhados à navegação ("Contas do mês", "Limites por categoria") e a Ajuda descreve o "+" da barra; no desktop o título da aba fica na TopBar e o de detalhe no próprio cabeçalho (a TopBar não o repete), e o menu lateral ganhou o link Planejar; nome de cartão comprido quebra linha em Planejar.
 - 2026-11-16 — Entrega 2, PR 3: os seis specs do E2E rodam na navegação nova, em 390×844, e a suíte cabe no limite de requisições da API (um login por teste, janela deslizante gravada em arquivo, cerca de 10 minutos, 30 cadastros e 32 logins por execução). Passam 29; três ficam em `test.fixme`, um por defeito do app: o Extrato não atualiza a lista depois de salvar na própria tela (Entrega 3), editar o limite de uma categoria na mesma vigência duplica a categoria na lista de limites e aprovar uma solicitação de entrada não mostra o novo membro sem recarregar. Também anotado: a API não tem rota de exclusão de conta.
 - 2026-11-17 — Entrega 3, PR 2 (Extrato), cálculo: `utils/extrato.ts` agrupa por dia (do mais recente ao mais antigo), totaliza em centavos inteiros, monta o rótulo do dia ("Hoje · seg, 16 nov") a partir de `getTodayLocalISO` e resume o período, sem converter fuso.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), lista viva: a store de transações ganhou `versao` e `sinalizarMudanca`; `useLancamento` sinaliza depois de registrar, editar e excluir com sucesso (falha não sinaliza) e o Extrato recarrega o mês em silêncio, sem trocar a lista por "Carregando". A resposta de mês ou família que já mudou é descartada, então gravar em outro mês não põe o lançamento na lista errada. O histórico do painel de lançar não mudou. Falha ao gravar segue sem tratamento visual no modal (rejeição sem captura), fora do escopo deste PR.
 
 ## Decisões fechadas
 

@@ -327,3 +327,65 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
     },
   );
 });
+
+describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
+  const FARMACIA = makeTransacao({ id: 'tx-1', descricao: 'Farmácia', valor: '75.00' });
+
+  const preencherEGravarNova = async () => {
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+  };
+
+  const abrirEdicaoDaFarmacia = async () => {
+    fireEvent.click((await screen.findAllByText('Farmácia'))[0]);
+    await screen.findByText('Editar Transação');
+  };
+
+  it('lançar uma receita pelo "+" mostra a linha nova sem sair da tela', async () => {
+    vi.mocked(transacaoService.listar)
+      .mockResolvedValueOnce({ transacoes: [FARMACIA] })
+      .mockResolvedValue({
+        transacoes: [
+          makeTransacao({ id: 'tx-2', descricao: 'Salário de novembro', tipo: 'receita' }),
+          FARMACIA,
+        ],
+      });
+    renderApp('/extrato');
+    await screen.findAllByText('Farmácia');
+
+    await preencherEGravarNova();
+
+    expect((await screen.findAllByText('Salário de novembro')).length).toBeGreaterThan(0);
+    expect(local()).toHaveTextContent(/^\/extrato$/);
+  });
+
+  it('editar o valor muda a linha', async () => {
+    vi.mocked(transacaoService.listar)
+      .mockResolvedValueOnce({ transacoes: [FARMACIA] })
+      .mockResolvedValue({ transacoes: [{ ...FARMACIA, valor: '99.00' }] });
+    renderApp('/extrato');
+    await abrirEdicaoDaFarmacia();
+
+    fireEvent.change(screen.getByLabelText(/valor/i), { target: { value: '99.00' } });
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    expect((await screen.findAllByText(/99,00/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/75,00/)).not.toBeInTheDocument();
+  });
+
+  it('excluir tira a linha', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(transacaoService.listar)
+      .mockResolvedValueOnce({ transacoes: [FARMACIA] })
+      .mockResolvedValue({ transacoes: [] });
+    renderApp('/extrato');
+    await abrirEdicaoDaFarmacia();
+
+    fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+
+    await waitFor(() => expect(screen.queryByText('Farmácia')).not.toBeInTheDocument());
+  });
+});

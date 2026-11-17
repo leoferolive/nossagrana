@@ -29,10 +29,11 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. Entrega 3 em andamento: correções (#191) e Extrato (#192) entregues.
-**Próximo passo:** o PR do Lançar, com plano em
-`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr3-lancar.md` na branch
-`feat/nova-ui-e3-lancar` (criada sobre a do Extrato).
+Lançar e Início ainda é o antigo. Entregas 1, 2 e 3 concluídas. Entrega 3: #191 (correções), #192 (Extrato) e o
+PR do Lançar. **Próximo passo:** o desenho da Entrega 4 (plano do mês e Início),
+que precisa de aprovação do usuário antes de qualquer código. Ele depende de duas
+decisões em aberto: o que "Confirmar lazer" gera e como converter "fatura que
+vence no mês" no mês de referência (seção "Plano do mês").
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -98,10 +99,10 @@ Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
 - [x] 2026-11-17 — Lista do Extrato atualizada logo depois de salvar ou excluir um
       lançamento
 - [x] 2026-11-17 — Resumo do período, filtros e busca
-- [ ] Lançar com valor primeiro e chips de categoria, data e pagamento
-- [ ] Salvar fixo no rodapé e "Mais opções" para descrição, parcelas e repetição
-- [ ] Botão de voz visível
-- [ ] Aviso "lançado" com desfazer e confirmação própria de exclusão
+- [x] 2026-11-17 — Lançar com valor primeiro e chips de categoria, data e pagamento
+- [x] 2026-11-17 — Salvar fixo no rodapé e "Mais opções" para descrição, parcelas e repetição
+- [x] 2026-11-17 — Botão de voz visível
+- [x] 2026-11-17 — Aviso "lançado" com desfazer e confirmação própria de exclusão
 
 ### Entrega 4 — Plano do mês e Início
 
@@ -128,12 +129,19 @@ correção:
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
 
+Pontos menores do PR do Lançar:
+
+- Com o painel aberto, tocar no microfone e usar o voltar do navegador fecha o
+  painel, mas deixa a gravação de voz aberta sobre a tela; ela só fecha tocando
+  fora, e Escape não fecha.
+- Os campos numéricos mostram o valor com ponto ("33.00"), e o Extrato usa
+  vírgula.
+
 Pontos menores do PR do Extrato:
 
 - A linha tocada fica com fundo cinza depois do toque.
 - A pílula de mês continua navegável durante o erro de carga.
-- Salvar com a rede fora fecha o painel de lançar sem aviso e perde o que foi
-  digitado (comportamento antigo; corrigido no PR do Lançar).
+- Salvar com a rede fora fechava o painel sem aviso; corrigido no PR do Lançar.
 
 Pontos menores do PR de correções da Entrega 3:
 
@@ -253,6 +261,15 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-17 — Entrega 3, PR 2 (Extrato), E2E: `transacoes.spec.ts` sai do `test.fixme` em "lançar com o Extrato aberto atualiza a lista" (agora também confere o resumo do período) e passa a esperar o sinal "−" (U+2212) nas saídas e a mensagem "Nenhum lançamento em <mês>" no mês vazio. Specs não rodados por quem desenvolveu (ambiente isolado em uso); a validação roda `transacoes.spec.ts`.
 - 2026-11-17 — Entrega 3, PR 2 (Extrato), correções da revisão: o estado da busca (aberta ou não, e o texto) passa a viver na página, então sobrevive a trocar de mês e a "Tentar de novo" (campo reaberto com o texto, botão "Limpar busca"); a carga do mês só marca a chave como boa no sucesso (`hooks/use-transacoes-do-mes.ts`) e toda falha, inclusive a recarga depois de gravar, mostra o erro com "Tentar de novo" em vez de lista vazia ou velha; menu "Mais ações" fecha com Escape de qualquer elemento do menu, leva o foco ao primeiro item ao abrir e devolve ao botão ao fechar; o nome acessível da linha inclui o metadado; nomes de categoria e forma de pagamento e a ação de abrir descem por um contexto do Extrato (`extrato-contexto.ts`) e não por props; `familiaDaCategoria` deixou de ser exportada.
 - 2026-11-17 — Entrega 3, PR 2 (Extrato): o teste de falha de carga sob StrictMode passou a montar o `<StrictMode>` na raiz (opção `strict` do `renderPagina`), porque dentro do roteador o efeito rodava uma vez só e o teste não pegava o defeito. Com a lógica antiga da chave de carga ele falha mostrando "Nenhum lançamento em novembro"; com a correção, mostra "Tentar de novo".
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), categorias mais usadas: `categoriasMaisUsadas` conta os lançamentos dos últimos 60 dias (hoje incluído, futuro de fora), só de categorias ativas do tipo, e completa com as primeiras da lista até seis; `useCategoriasMaisUsadas` busca o mês atual e os dois anteriores uma vez por família (a busca fica guardada e `limparDadosDaFamilia` a esquece; falha não fica guardada). `somarDias` em `utils/date.ts` faz a conta de datas com ano, mês e dia numéricos.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), painel novo: `TransacaoModal` virou a composição de partes em `components/lancar/` (valor com microfone, chips de categoria com "Todas", chips de data, chips de pagamento, "Mais opções" e rodapé), com os campos em `useFormularioLancamento`. O painel só monta quando aberto (campos limpos a cada abertura e a busca das categorias mais usadas só roda com ele aberto). O botão fica fixo num rodapé fora da área que rola e o painel usa a altura do `visualViewport` (`useViewportVisivel`), porque o teclado virtual encolhe só ele e o `dvh` deixaria o botão atrás do teclado. Mudanças de comportamento: salvar exige valor maior que zero (antes só a categoria), parcelas só existem com cartão de crédito (trocar para outra forma desfaz o parcelamento), o painel espera a gravação terminar (botão "Salvando...", um envio só) e, se ela falhar, fica aberto com "Não foi possível salvar. Tente de novo."; o "Cancelar" saiu (o X fecha) e o título virou texto só para leitor de tela. O campo de valor é a exceção documentada em `base-visual.test.ts` ao estilo padrão de campo. A confirmação de exclusão ainda é a do navegador, e sai na próxima tarefa.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), aviso e exclusão: `useAvisoStore` guarda o aviso e a contagem de 6 segundos (um aviso novo substitui o anterior), então "Desfazer" continua valendo depois de trocar de tela; `AvisoLancado` fica na área logada, acima da barra (`z-aviso`, 48px, `role="status"`). Depois de lançar, "Despesa lançada" ou "Receita lançada"; "Desfazer" só para lançamento simples (excluir o pai não leva as parcelas nem as repetições, que ficam com `transacao_pai_id` nulo) e exclui exatamente o id devolvido pela API, uma vez só; se falhar, "Não foi possível desfazer". Editar mostra "Alterações salvas" e excluir, "Lançamento excluído", sem desfazer. `limparDadosDaFamilia` fecha o aviso, porque o desfazer pertence à família em que o lançamento foi criado. O `window.confirm` saiu: "Excluir lançamento?" é um painel do app (`z-painel`, acima do de lançar) com nome, valor e os botões Cancelar e Excluir (`danger`); se a exclusão falha, o painel fica aberto com aviso.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), E2E: o passo a passo do painel novo (valor, tipo, chips de categoria com "Todas", data, pagamento, "Mais opções", salvar) foi para `apps/e2e/helpers/lancar.ts`, e os seis cenários de `transacoes.spec.ts` que lançam pela tela passaram a usá-lo; `abrirPainelLancar` e `salvarLancamento` saíram de `navegacao.ts`. Dois cenários novos: lançar uma despesa e desfazer pelo aviso (a linha some do Extrato aberto) e excluir pelo painel de confirmação (com Cancelar antes de confirmar). Specs não rodados por quem desenvolveu (ambiente isolado em uso); a validação roda `transacoes.spec.ts`.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), correções da revisão: o botão de salvar só volta a habilitar na falha (no sucesso fica travado até o painel fechar, porque o voltar do histórico é assíncrono e um toque nessa janela gravava de novo); durante a gravação o X e o fundo ficam desabilitados, e se a gravação falha depois de o painel fechar pelo voltar do navegador (que não dá para bloquear) o erro vira o aviso "Não foi possível salvar"; abrir o painel fecha o aviso de 6 segundos, que ficava por cima dele. `PainelDeLancar` foi dividido (`useDadosDoPainel`, `useGravacao`, `CabecalhoDoPainel`, `CamposDoLancamento`) e o teste do modal, que passava de 500 linhas, virou quatro arquivos por assunto com apoio em `src/test/painel-de-lancar.tsx`; os mocks `as never` deram lugar a fábricas tipadas (`src/test/fabricas-transacao.ts`).
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), correção de revisão do Codex: a busca das categorias mais usadas passou a incluir o mês de referência seguinte (mês seguinte, atual e os dois anteriores), porque compra no cartão depois do fechamento tem `mesReferencia` do mês seguinte e a API filtra por ele; o filtro de 60 dias continua pela `data`, e a virada de ano (dezembro para janeiro) está coberta.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), foco do teclado: `useArmadilhaDeFoco` prende Tab e Shift+Tab num painel, trata o Escape e devolve o foco a quem o tinha (ou ao botão indicado, porque o Safari não foca botão no clique). A confirmação "Excluir lançamento?" abre com o foco em "Cancelar", cancela no Escape e deixa o painel de trás inerte (`inert`) enquanto está aberta; ao fechar o foco volta ao botão "Excluir lançamento". O próprio painel de lançar tinha o mesmo problema em relação à tela de trás (`aria-modal` não tira o fundo do Tab): agora também prende o foco, fecha no Escape (não durante a gravação) e devolve o foco a quem o abriu; a lista "Todas" ganhou o mesmo tratamento.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), Escape: `useArmadilhaDeFoco` passou a devolver `{ ref, onKeyDown }` e a tratar Tab e Escape no `onKeyDown` do React (borbulhamento, depois dos filhos), e não num ouvinte nativo que corria antes dos controles internos; com isso o Escape de "Frequência" aberta fechava o painel e descartava o rascunho. O `CustomSelect` aberto consome o Escape (`preventDefault` e `stopPropagation`), e a lista "Todas" e a confirmação de exclusão também: o mais interno consome e o de fora não reage; o segundo Escape fecha o painel.
+- 2026-11-17 — Entrega 3, PR 3 (Lançar), forma de pagamento inativa: na edição, a forma de pagamento que o lançamento já tem aparece como chip mesmo desativada ("Nome (inativo)", ou "Forma de pagamento (inativa)" quando a lista só traz as ativas), e tocar nela a desmarca (`metodoPagamentoId: null`); o bloco "Pago com" aparece sempre que houver forma ativa ou essa. A API aceita as duas coisas (`PATCH` mantém o mesmo vínculo inativo e aceita nulo; só vínculo novo ou alterado exige método ativo). Lançamento novo continua sem oferecer forma inativa.
 
 ## Decisões fechadas
 

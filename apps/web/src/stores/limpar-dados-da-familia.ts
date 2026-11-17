@@ -1,3 +1,6 @@
+import { esquecerBuscasDeCategorias } from '@/hooks/use-categorias-mais-usadas';
+
+import { useAvisoStore } from './aviso.store';
 import { useCategoriaStore } from './categoria.store';
 import { useCofrinhoStore } from './cofrinho.store';
 import { useDashboardStore } from './dashboard.store';
@@ -12,6 +15,9 @@ import { useTransacaoStore } from './transacao.store';
  * sessão (`auth-session`) e conexão (`websocket`). Nova store com dado de família entra aqui.
  */
 export const limparDadosDaFamilia = (): void => {
+  esquecerBuscasDeCategorias();
+  // O "Desfazer" de um aviso pertence à família em que o lançamento foi criado.
+  useAvisoStore.getState().fechar();
   useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
   useCofrinhoStore.getState().reset();
   useDashboardStore.setState({

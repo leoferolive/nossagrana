@@ -1,468 +1,236 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, act, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useCategoriaStore } from '@/stores/categoria.store';
-import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
-import type { DadosVoz } from './transacao-modal';
-import { TransacaoModal } from './transacao-modal';
+import { TransacaoModal } from '@/components/transacao-modal';
+import { useAvisoStore } from '@/stores/aviso.store';
+import {
+  configurarPainelDeTeste,
+  maisOpcoes,
+  poremCategorias,
+  poremMetodos,
+  abrir,
+  digitarValor,
+  chip,
+  grupo,
+  EDICAO,
+} from '@/test/painel-de-lancar';
 
-afterEach(() => {
-  cleanup();
-  useCategoriaStore.setState({ categorias: [], carregando: false, erro: null });
-  useMetodoPagamentoStore.setState({ metodos: [], carregando: false, erro: null });
-});
+vi.mock(
+  '@/services/core-financeiro.service',
+  async () => (await import('@/test/servicos-financeiros-falsos')).servicosFinanceirosFalsos,
+);
 
-const CATEGORIAS = [
-  {
-    id: 'c1',
-    nome: 'Mercado',
-    tipo: 'despesa' as const,
-    ativo: true,
-    familiaId: 'f1',
-    criadoPor: 'u1',
-    criadoEm: '2026-01-01',
-  },
-  {
-    id: 'c2',
-    nome: 'Salario',
-    tipo: 'receita' as const,
-    ativo: true,
-    familiaId: 'f1',
-    criadoPor: 'u1',
-    criadoEm: '2026-01-01',
-  },
-];
-
-const METODOS = [
-  {
-    id: 'm1',
-    nome: 'Nubank',
-    tipo: 'credito' as const,
-    dataFechamento: 15,
-    dataVencimento: 22,
-    usuarioDonoId: 'u1',
-    ativo: true,
-    familiaId: 'f1',
-    criadoEm: '2026-01-01',
-  },
-];
+configurarPainelDeTeste();
 
 describe('TransacaoModal', () => {
   it('não renderiza quando fechado', () => {
-    render(<TransacaoModal open={false} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+    abrir({ open: false });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('renderiza campos quando aberto', () => {
-    useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
-    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+  it('é um diálogo com título acessível para nova transação e para edição', () => {
+    poremCategorias();
+    abrir();
+    expect(screen.getByRole('dialog', { name: 'Nova Transação' })).toBeInTheDocument();
+    cleanup();
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByLabelText(/valor/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/categoria/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/data/i)).toBeInTheDocument();
+    abrir({ transacaoParaEditar: EDICAO });
+    expect(screen.getByRole('dialog', { name: 'Editar Transação' })).toBeInTheDocument();
   });
 
-  it('toggle entre receita e despesa', () => {
-    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-    const receitaBtn = screen.getByRole('button', { name: /receita/i });
+  it('mostra os blocos na ordem: tipo, valor, categoria, quando, pago com, mais opções, salvar', () => {
+    poremCategorias();
+    poremMetodos();
+    abrir();
 
-    fireEvent.click(receitaBtn);
-    expect(receitaBtn.className).toContain('success');
-  });
-
-  it('exibe campos de parcelamento ao ativar toggle', () => {
-    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /parcelado/i }));
-    expect(screen.getByLabelText(/parcelas/i)).toBeInTheDocument();
-  });
-
-  it('exibe campos de recorrência ao ativar toggle', () => {
-    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /recorrente/i }));
-    expect(screen.getByLabelText(/frequência/i)).toBeInTheDocument();
-  });
-
-  it('chama onClose ao clicar em cancelar', () => {
-    const onClose = vi.fn();
-    render(<TransacaoModal open={true} familiaId="f1" onClose={onClose} onSubmit={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it('exibe lista de métodos de pagamento no select', () => {
-    useMetodoPagamentoStore.setState({ metodos: METODOS, carregando: false, erro: null });
-    render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-    // Open the custom select dropdown
-    fireEvent.click(screen.getByRole('combobox', { name: /método de pagamento/i }));
-    expect(screen.getByText('Nubank')).toBeInTheDocument();
-  });
-
-  describe('data padrão', () => {
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('abre com o dia local depois das 21h, e não com o dia seguinte em UTC', () => {
-      // Só o Date é falso, para não travar as esperas da Testing Library.
-      vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(new Date('2026-11-15T02:11:00Z')); // 14/11 às 23:11 em São Paulo
-      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-
-      expect(screen.getByLabelText(/^data$/i)).toHaveValue('2026-11-14');
+    const blocos = [
+      chip('Despesa'),
+      screen.getByLabelText('Valor'),
+      grupo('Categoria'),
+      grupo('Quando'),
+      grupo('Pago com'),
+      chip('Descrição, parcelas e repetição'),
+      chip('Salvar despesa'),
+    ];
+    blocos.slice(1).forEach((bloco, i) => {
+      expect(
+        blocos[i].compareDocumentPosition(bloco) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
   });
 
-  describe('voice input', () => {
-    const dadosVoz: DadosVoz = {
-      tipo: 'despesa',
-      valor: '42.50',
-      categoriaId: 'c1',
-      descricao: 'Almoço no restaurante',
-      data: '2026-03-20',
-    };
+  it('o valor recebe o foco ao abrir uma transação nova, mas não na edição', () => {
+    poremCategorias();
+    abrir();
+    expect(screen.getByLabelText('Valor')).toHaveFocus();
+    cleanup();
 
-    it('pre-fills form from dadosVoz', () => {
-      useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          dadosVoz={dadosVoz}
-        />,
-      );
-
-      expect(screen.getByLabelText(/valor/i)).toHaveValue(42.5);
-      expect(screen.getByLabelText(/descrição/i)).toHaveValue('Almoço no restaurante');
-      expect(screen.getByLabelText(/^data$/i)).toHaveValue('2026-03-20');
-    });
-
-    it('shows mic button when onVoiceActivate provided', () => {
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onVoiceActivate={vi.fn()}
-        />,
-      );
-
-      expect(screen.getByRole('button', { name: /preencher por voz/i })).toBeInTheDocument();
-    });
-
-    it('does NOT show mic button when editing', () => {
-      const transacaoParaEditar = {
-        id: 't1',
-        tipo: 'despesa' as const,
-        valor: '100',
-        categoriaId: 'c1',
-        descricao: 'Teste',
-        data: '2026-03-20',
-        metodoPagamentoId: null,
-      };
-
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          transacaoParaEditar={transacaoParaEditar}
-          onVoiceActivate={vi.fn()}
-        />,
-      );
-
-      expect(screen.queryByRole('button', { name: /preencher por voz/i })).not.toBeInTheDocument();
-    });
-
-    it('calls onVoiceActivate when mic button clicked', () => {
-      const onVoiceActivate = vi.fn();
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onVoiceActivate={onVoiceActivate}
-        />,
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: /preencher por voz/i }));
-      expect(onVoiceActivate).toHaveBeenCalledOnce();
-    });
+    abrir({ transacaoParaEditar: EDICAO });
+    expect(screen.getByLabelText('Valor')).not.toHaveFocus();
   });
 
-  describe('filtro de categorias por tipo', () => {
-    const abrirCategorias = () =>
-      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-    const opcoes = () => screen.getAllByRole('option').map((o) => o.textContent);
-
-    beforeEach(() => {
-      useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
-    });
-
-    it('lista só categorias do tipo selecionado', () => {
-      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-
-      abrirCategorias();
-      expect(opcoes()).toEqual(['Mercado']);
-      abrirCategorias(); // fecha o dropdown (fireEvent.click não dispara mousedown externo)
-
-      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
-      abrirCategorias();
-      expect(opcoes()).toEqual(['Salario']);
-    });
-
-    it('limpa a categoria escolhida ao trocar para um tipo incompatível', () => {
-      const onSubmit = vi.fn();
-      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={onSubmit} />);
-
-      abrirCategorias();
-      fireEvent.click(screen.getByRole('option', { name: 'Mercado' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Despesa' }));
-
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
-      fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
-      expect(onSubmit).not.toHaveBeenCalled();
-    });
-
-    it('edição mantém a categoria atual da transação', () => {
-      const onUpdate = vi.fn();
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onUpdate={onUpdate}
-          transacaoParaEditar={{
-            id: 't1',
-            tipo: 'receita',
-            valor: '5000',
-            categoriaId: 'c2',
-            descricao: null,
-            data: '2026-03-05',
-            metodoPagamentoId: null,
-          }}
-        />,
-      );
-
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Salario');
-      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
-      expect(onUpdate).toHaveBeenCalledWith(
-        't1',
-        expect.objectContaining({ tipo: 'receita', categoriaId: 'c2' }),
-      );
-    });
-
-    const TRANSACAO_CATEGORIA_INATIVA = {
-      id: 't1',
-      tipo: 'despesa' as const,
-      valor: '80',
-      categoriaId: 'c-inativa',
-      descricao: null,
-      data: '2026-03-05',
-      metodoPagamentoId: null,
-    };
-
-    it('edição com categoria fora da lista (inativa) reenvia o mesmo id', () => {
-      const onUpdate = vi.fn();
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onUpdate={onUpdate}
-          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
-        />,
-      );
-
-      fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Ajuste' } });
-      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
-      expect(onUpdate).toHaveBeenCalledWith(
-        't1',
-        expect.objectContaining({ categoriaId: 'c-inativa', descricao: 'Ajuste' }),
-      );
-    });
-
-    it('edição exibe a categoria inativa atual no seletor', () => {
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onUpdate={vi.fn()}
-          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
-        />,
-      );
-
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent(
-        'Categoria inativa',
-      );
-    });
-
-    it('trocar o tipo na edição descarta a categoria inativa', () => {
-      const onUpdate = vi.fn();
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onUpdate={onUpdate}
-          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
-        />,
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
-      abrirCategorias();
-      expect(opcoes()).toEqual(['Salario']);
-
-      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
-      expect(onUpdate).not.toHaveBeenCalled();
-
-      fireEvent.click(screen.getByRole('option', { name: 'Salario' }));
-      fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
-      expect(onUpdate).toHaveBeenCalledWith(
-        't1',
-        expect.objectContaining({ tipo: 'receita', categoriaId: 'c2' }),
-      );
-    });
-
-    it('voltar ao tipo original reoferece a categoria inativa, sem selecioná-la', () => {
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onUpdate={vi.fn()}
-          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
-        />,
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Despesa' }));
-
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
-      abrirCategorias();
-      expect(opcoes()).toEqual(['Mercado', 'Categoria inativa']);
-    });
-
-    it('clicar no tipo já ativo não descarta a categoria inativa', () => {
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          onUpdate={vi.fn()}
-          transacaoParaEditar={TRANSACAO_CATEGORIA_INATIVA}
-        />,
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: 'Despesa' }));
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent(
-        'Categoria inativa',
-      );
-    });
-
-    it('criação não oferece categoria inativa', () => {
-      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
-
-      abrirCategorias();
-      expect(opcoes()).not.toContain('Categoria inativa');
-    });
-
-    it('voz com categoria de outro tipo não deixa categoria incoerente', () => {
-      const onSubmit = vi.fn();
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={onSubmit}
-          dadosVoz={{
-            tipo: 'receita',
-            valor: '100',
-            categoriaId: 'c1',
-            descricao: null,
-            data: '2026-03-20',
-          }}
-        />,
-      );
-
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Selecione...');
-      fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
-      expect(onSubmit).not.toHaveBeenCalled();
-    });
-
-    it('voz com categoria do mesmo tipo mantém a seleção', () => {
-      render(
-        <TransacaoModal
-          open={true}
-          familiaId="f1"
-          onClose={vi.fn()}
-          onSubmit={vi.fn()}
-          dadosVoz={{
-            tipo: 'despesa',
-            valor: '42',
-            categoriaId: 'c1',
-            descricao: null,
-            data: '2026-03-20',
-          }}
-        />,
-      );
-
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveTextContent('Mercado');
-    });
+  it('ao abrir o painel o aviso de 6 segundos some, para não ficar por cima dele', () => {
+    useAvisoStore.getState().mostrar({ mensagem: 'Despesa lançada', desfazer: async () => {} });
+    abrir();
+    expect(useAvisoStore.getState().aviso).toBeNull();
   });
 
-  describe('categoria obrigatória', () => {
-    beforeEach(() => {
-      useCategoriaStore.setState({ categorias: CATEGORIAS, carregando: false, erro: null });
-    });
+  describe('teclado no painel', () => {
+    const ativo = () => document.activeElement;
+    const teclar = (key: string, shiftKey = false) =>
+      fireEvent.keyDown(document.activeElement ?? document.body, { key, shiftKey });
 
-    it('sem categoria desabilita salvar e explica o motivo', () => {
-      const onSubmit = vi.fn();
-      const onClose = vi.fn();
-      render(<TransacaoModal open={true} familiaId="f1" onClose={onClose} onSubmit={onSubmit} />);
-
-      const salvar = screen.getByRole('button', { name: /salvar transação/i });
+    it('Tab no último foco do painel volta ao primeiro, e Shift+Tab no primeiro vai ao último: o foco não vaza para a tela de trás', () => {
+      poremCategorias();
+      abrir();
+      const salvar = chip('Salvar despesa');
+      const primeiro = chip('Despesa');
+      // O motivo bloqueia o salvar: o último focável é a linha de "Mais opções".
+      const ultimo = chip('Descrição, parcelas e repetição');
       expect(salvar).toBeDisabled();
-      expect(screen.getByRole('combobox', { name: 'Categoria' })).toHaveAccessibleDescription(
-        'Escolha uma categoria de despesa',
-      );
+      ultimo.focus();
+      teclar('Tab');
+      expect(ativo()).toBe(primeiro);
+      teclar('Tab', true);
+      expect(ativo()).toBe(ultimo);
+    });
 
-      fireEvent.click(salvar);
-      expect(onSubmit).not.toHaveBeenCalled();
+    it('Escape fecha o painel', () => {
+      const { onClose } = abrir();
+      teclar('Escape');
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('Escape com a lista "Frequência" aberta fecha só a lista; o segundo fecha o painel', () => {
+      poremCategorias();
+      const { onClose } = abrir();
+      digitarValor('10');
+      maisOpcoes();
+      fireEvent.click(chip('Recorrente'));
+      const frequencia = screen.getByRole('combobox', { name: 'Frequência' });
+      frequencia.focus();
+      fireEvent.click(frequencia);
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+      teclar('Escape');
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(screen.getByLabelText('Valor')).toHaveValue(10);
+
+      teclar('Escape');
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('Escape com a lista "Todas" aberta fecha só a lista', () => {
+      poremCategorias();
+      const { onClose } = abrir();
+      fireEvent.click(chip('Todas'));
+      expect(screen.getByRole('dialog', { name: 'Todas as categorias' })).toBeInTheDocument();
+
+      teclar('Escape');
+      expect(screen.queryByRole('dialog', { name: 'Todas as categorias' })).not.toBeInTheDocument();
       expect(onClose).not.toHaveBeenCalled();
     });
 
-    it('mensagem acompanha o tipo selecionado', () => {
-      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={vi.fn()} />);
+    it('ao fechar, o foco volta a quem abriu o painel', () => {
+      const props = { familiaId: 'f1', onClose: vi.fn(), onSubmit: vi.fn() };
+      const { rerender } = render(
+        <>
+          <button>abridor</button>
+          <TransacaoModal open={false} {...props} />
+        </>,
+      );
+      const abridor = screen.getByRole('button', { name: 'abridor' });
+      abridor.focus();
+      rerender(
+        <>
+          <button>abridor</button>
+          <TransacaoModal open {...props} />
+        </>,
+      );
+      expect(ativo()).not.toBe(abridor);
+      rerender(
+        <>
+          <button>abridor</button>
+          <TransacaoModal open={false} {...props} />
+        </>,
+      );
+      expect(ativo()).toBe(abridor);
+    });
+  });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Receita' }));
-      expect(screen.getByText('Escolha uma categoria de receita')).toBeInTheDocument();
+  it('o botão de fechar chama onClose', () => {
+    const { onClose } = abrir();
+    fireEvent.click(chip('Fechar modal'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('a área visível acompanha o teclado: o painel usa a altura do visualViewport', () => {
+    const fake = Object.assign(new EventTarget(), { height: 480, offsetTop: 0 });
+    Object.defineProperty(window, 'visualViewport', { value: fake, configurable: true });
+    try {
+      abrir();
+      const raiz = screen.getByRole('dialog');
+      expect(raiz).toHaveStyle({ height: '480px', top: '0px' });
+      act(() => {
+        fake.height = 300;
+        fake.dispatchEvent(new Event('resize'));
+      });
+      expect(raiz).toHaveStyle({ height: '300px' });
+    } finally {
+      Reflect.deleteProperty(window, 'visualViewport');
+    }
+  });
+
+  it('o rodapé com o botão fica fora da área que rola', () => {
+    abrir();
+    const salvar = chip('Salvar despesa');
+    const rolagem = screen.getByLabelText('Valor').closest('.overflow-y-auto');
+    expect(rolagem).not.toBeNull();
+    expect(rolagem).not.toContainElement(salvar);
+  });
+
+  describe('data', () => {
+    beforeEach(() => {
+      // Só o Date é falso, para não travar as esperas da Testing Library.
+      vi.useFakeTimers({ toFake: ['Date'] });
     });
 
-    it('com categoria escolhida habilita salvar e envia o id', () => {
-      const onSubmit = vi.fn();
-      render(<TransacaoModal open={true} familiaId="f1" onClose={vi.fn()} onSubmit={onSubmit} />);
+    const salvarCom = (valor: string) => {
+      digitarValor(valor);
+      fireEvent.click(chip('Mercado'));
+      fireEvent.click(chip('Salvar despesa'));
+    };
 
-      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-      fireEvent.click(screen.getByRole('option', { name: 'Mercado' }));
+    it('abre em Hoje com o dia local depois das 21h, e não com o dia seguinte em UTC', () => {
+      vi.setSystemTime(new Date('2026-11-15T02:11:00Z')); // 14/11 às 23:11 em São Paulo
+      poremCategorias();
+      const { onSubmit } = abrir();
 
-      expect(screen.queryByText(/escolha uma categoria/i)).not.toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: /salvar transação/i }));
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoriaId: 'c1' }));
+      expect(chip('Hoje')).toHaveAttribute('aria-pressed', 'true');
+      salvarCom('10');
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ data: '2026-11-14' }));
+    });
+
+    it('Ontem em 1º de janeiro é 31 de dezembro do ano anterior', () => {
+      vi.setSystemTime(new Date('2027-01-01T15:00:00Z'));
+      poremCategorias();
+      const { onSubmit } = abrir();
+
+      fireEvent.click(chip('Ontem'));
+      salvarCom('10');
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ data: '2026-12-31' }));
+    });
+
+    it('Outra data usa a data escolhida no campo', () => {
+      vi.setSystemTime(new Date('2026-11-17T15:00:00Z'));
+      poremCategorias();
+      const { onSubmit } = abrir();
+
+      fireEvent.click(chip(/outra data/i));
+      fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-10-05' } });
+      salvarCom('10');
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ data: '2026-10-05' }));
     });
   });
 });

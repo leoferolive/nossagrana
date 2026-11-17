@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, mockSessao, resetAppMocks } from '@/test/app-mocks';
 import { barraInferior } from '@/test/barra-inferior';
+import { respostaDeGravacao } from '@/test/fabricas-transacao';
+import { excluirPeloPainel } from '@/test/excluir-pelo-painel';
 import { renderApp } from '@/test/render-app';
 
 import { categoriaService, transacaoService } from './services/core-financeiro.service';
+import { useAvisoStore } from './stores/aviso.store';
 import { useCategoriaStore } from './stores/categoria.store';
 
 // Fala controlada pelo teste: troca o reconhecimento de voz do navegador, que o jsdom não tem.
@@ -47,6 +50,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  useAvisoStore.getState().fechar();
   resetAppMocks();
   vi.mocked(categoriaService.listar).mockResolvedValue({ categorias: [] });
   useCategoriaStore.setState({ categorias: [] });
@@ -97,8 +101,7 @@ describe('App > painel de lançar no endereço', () => {
     await waitFor(() => tituloNoConteudo(/^extrato$/i));
     abrirPainelNovo();
     fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
-    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
 
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
@@ -255,8 +258,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
     [
       'excluir',
       async () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
-        fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+        await excluirPeloPainel();
         await waitFor(() => expect(transacaoService.excluir).toHaveBeenCalled());
       },
     ],
@@ -299,8 +301,7 @@ describe('App > encerrar o painel anda no histórico uma única vez', () => {
       fireEvent.click(await barraInferior().findByRole('link', { name: 'Extrato' }));
       abrirPainelNovo();
       fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '10.00' } });
-      fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-      fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
 
       fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
       await waitFor(() => expect(transacaoService.registrar).toHaveBeenCalled());
@@ -334,8 +335,7 @@ describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
   const preencherEGravarNova = async () => {
     abrirPainelNovo();
     fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
-    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
   };
 
@@ -359,7 +359,8 @@ describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
     await preencherEGravarNova();
 
     expect((await screen.findAllByText('Salário de novembro')).length).toBeGreaterThan(0);
-    expect(local()).toHaveTextContent(/^\/extrato$/);
+    // O painel fecha quando a gravação termina, junto com a atualização da lista.
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
   });
 
   it('editar o valor muda a linha', async () => {
@@ -377,15 +378,135 @@ describe('App > o Extrato aberto atualiza a lista depois de gravar', () => {
   });
 
   it('excluir tira a linha', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(transacaoService.listar)
       .mockResolvedValueOnce({ transacoes: [FARMACIA] })
       .mockResolvedValue({ transacoes: [] });
     renderApp('/extrato');
     await abrirEdicaoDaFarmacia();
 
-    fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+    await excluirPeloPainel();
 
     await waitFor(() => expect(screen.queryByText('Farmácia')).not.toBeInTheDocument());
+  });
+});
+
+describe('App > aviso depois de lançar e confirmação de exclusão', () => {
+  // Outras partes da tela também usam role="status"; o aviso se acha pelo texto.
+  const avisoComTexto = async (texto: string) => {
+    const aviso = (await screen.findByText(texto)).closest<HTMLElement>('[role="status"]');
+    if (!aviso) throw new Error(`"${texto}" não está num aviso`);
+    return aviso;
+  };
+
+  const lancarMercado = async () => {
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar despesa' }));
+  };
+
+  beforeEach(() => {
+    vi.mocked(transacaoService.registrar).mockResolvedValue(respostaDeGravacao('tx-novo'));
+  });
+
+  it('mostra "Despesa lançada" e Desfazer exclui o lançamento criado, uma vez só', async () => {
+    renderApp('/extrato');
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    await lancarMercado();
+
+    const aviso = await avisoComTexto('Despesa lançada');
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Desfazer' }));
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Desfazer' }));
+
+    await avisoComTexto('Lançamento desfeito');
+    expect(transacaoService.excluir).toHaveBeenCalledTimes(1);
+    expect(transacaoService.excluir).toHaveBeenCalledWith('tx-novo', 'fam-test');
+  });
+
+  it('Desfazer ainda funciona depois de navegar para outra tela', async () => {
+    renderApp(['/', '/extrato']);
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    await lancarMercado();
+    const aviso = await avisoComTexto('Despesa lançada');
+
+    fireEvent.click(barraInferior().getByRole('link', { name: 'Planejar' }));
+    await waitFor(() => tituloNoConteudo(/^planejar$/i));
+    fireEvent.click(within(aviso).getByRole('button', { name: 'Desfazer' }));
+
+    await waitFor(() =>
+      expect(transacaoService.excluir).toHaveBeenCalledWith('tx-novo', 'fam-test'),
+    );
+    expect(transacaoService.excluir).toHaveBeenCalledTimes(1);
+  });
+
+  it('excluir pelo painel de confirmação do app, sem window.confirm', async () => {
+    const confirmar = vi.spyOn(window, 'confirm');
+    vi.mocked(transacaoService.listar).mockResolvedValue({
+      transacoes: [makeTransacao({ id: 'tx-edit-1', descricao: 'Mercado do mês' })],
+    });
+    renderApp('/extrato');
+    fireEvent.click((await screen.findAllByText('Mercado do mês'))[0]);
+    await screen.findByText('Editar Transação');
+
+    await excluirPeloPainel();
+
+    await waitFor(() =>
+      expect(transacaoService.excluir).toHaveBeenCalledWith('tx-edit-1', 'fam-test'),
+    );
+    await avisoComTexto('Lançamento excluído');
+    expect(confirmar).not.toHaveBeenCalled();
+    // O painel fecha pelo histórico, que é assíncrono.
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
+    confirmar.mockRestore();
+  });
+});
+
+describe('App > falha ao gravar não perde o lançamento', () => {
+  it('gravação que rejeita deixa o painel aberto com o valor e o erro, sem mexer no histórico; tentar de novo fecha uma vez', async () => {
+    vi.mocked(transacaoService.registrar)
+      .mockRejectedValueOnce(new Error('rede'))
+      .mockResolvedValue(respostaDeGravacao('tx-novo'));
+    renderApp(['/', '/extrato']);
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
+    const aposAbrir = local().textContent;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar despesa' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar');
+    expect(screen.getByLabelText(/valor/i)).toHaveValue(100);
+    expect(local().textContent).toBe(aposAbrir);
+    expect(screen.queryByText('Despesa lançada')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar despesa' }));
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
+    expect(transacaoService.registrar).toHaveBeenCalledTimes(2);
+    voltar();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
+  });
+});
+
+describe('App > Escape dentro do painel de lançar', () => {
+  it('Escape com a lista "Frequência" aberta fecha só a lista; o painel e o rascunho continuam, e o segundo Escape fecha o painel', async () => {
+    renderApp(['/', '/extrato']);
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Descrição, parcelas e repetição' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Recorrente' }));
+    const frequencia = screen.getByRole('combobox', { name: 'Frequência' });
+    frequencia.focus();
+    fireEvent.click(frequencia);
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/valor/i)).toHaveValue(100);
+    expect(local()).toHaveTextContent('/extrato?lancar=nova');
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
   });
 });

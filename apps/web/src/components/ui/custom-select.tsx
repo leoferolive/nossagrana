@@ -49,6 +49,11 @@ export const CustomSelect = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Aberto, o Escape é da lista: um painel em volta (ex.: o de lançar) não deve reagir.
+        if (isOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         setIsOpen(false);
         return;
       }

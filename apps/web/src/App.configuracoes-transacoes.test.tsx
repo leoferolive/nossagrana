@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeTransacao, resetAppMocks } from '@/test/app-mocks';
 import { barraInferior } from '@/test/barra-inferior';
+import { excluirPeloPainel } from '@/test/excluir-pelo-painel';
 import { renderApp } from '@/test/render-app';
 
 import { useAuth } from './contexts/use-auth';
@@ -158,9 +159,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     fireEvent.click(screen.getAllByText('Salário')[0]);
     await waitFor(() => expect(screen.getByText('Editar Transação')).toBeInTheDocument());
 
-    // Mock window.confirm
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    fireEvent.click(screen.getByRole('button', { name: /excluir/i }));
+    await excluirPeloPainel();
 
     await waitFor(() => {
       expect(transacaoService.excluir).toHaveBeenCalledWith('tx-del-1', 'fam-test');
@@ -227,8 +226,7 @@ describe('App > fluxo autenticado com familia > configurações e transações',
     // Fill required fields and submit
     const valorInput = screen.getByLabelText(/valor/i);
     fireEvent.change(valorInput, { target: { value: '100.00' } });
-    fireEvent.click(screen.getByRole('combobox', { name: 'Categoria' }));
-    fireEvent.click(await screen.findByRole('option', { name: 'Mercado' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     await waitFor(() => {

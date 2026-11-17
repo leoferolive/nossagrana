@@ -2,8 +2,8 @@
  * E2E das transações: criar (receita, despesa, parcelada, recorrente), editar e excluir.
  *
  * O projeto roda em 390x844: o "+" da barra inferior ("Lançar") abre o painel de lançar, e as
- * telas se alcançam pela barra (Início, Extrato). Categoria e método de pagamento são
- * `CustomSelect` (ver `helpers/custom-select.ts`).
+ * telas se alcançam pela barra (Início, Extrato). O passo a passo do painel (valor, chips de
+ * categoria, data e pagamento, "Mais opções", salvar) está em `helpers/lancar.ts`.
  *
  * Estratégia:
  *  - Os dados de apoio (categorias, lançamentos a editar ou excluir) são criados pela API antes
@@ -14,13 +14,8 @@
 import { expect, test } from '../fixtures/base.js';
 import * as api from '../helpers/api-client.js';
 import { hojeEmSaoPaulo } from '../helpers/data.js';
-import { escolherOpcao } from '../helpers/custom-select.js';
-import {
-  abrirInicio,
-  abrirPainelLancar,
-  irParaAba,
-  salvarLancamento,
-} from '../helpers/navegacao.js';
+import { abrirMaisOpcoes, avisoDeLancamento, lancar } from '../helpers/lancar.js';
+import { abrirInicio, irParaAba } from '../helpers/navegacao.js';
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -38,13 +33,12 @@ test.describe('Transações', () => {
 
     // Lança pelo Início (como a despesa) e confere no Extrato, que busca a lista ao abrir.
     await abrirInicio(page, authContext, familiaId);
-    const painel = await abrirPainelLancar(page);
-
-    await painel.getByRole('button', { name: 'Receita', exact: true }).click();
-    await painel.getByRole('spinbutton', { name: 'Valor' }).fill('1500.00');
-    await escolherOpcao(page, painel, 'Categoria', 'Salário E2E');
-    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Salário mês E2E');
-    await salvarLancamento(page, painel);
+    await lancar(page, {
+      tipo: 'receita',
+      valor: '1500.00',
+      categoria: 'Salário E2E',
+      descricao: 'Salário mês E2E',
+    });
 
     await irParaAba(page, 'Extrato');
     const linha = page.getByRole('listitem').filter({ hasText: 'Salário mês E2E' });
@@ -61,13 +55,12 @@ test.describe('Transações', () => {
 
     await abrirInicio(page, authContext, familiaId);
     await irParaAba(page, 'Extrato');
-    const painel = await abrirPainelLancar(page);
-
-    await painel.getByRole('button', { name: 'Receita', exact: true }).click();
-    await painel.getByRole('spinbutton', { name: 'Valor' }).fill('1500.00');
-    await escolherOpcao(page, painel, 'Categoria', 'Salário aberto E2E');
-    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Salário aberto E2E');
-    await salvarLancamento(page, painel);
+    await lancar(page, {
+      tipo: 'receita',
+      valor: '1500.00',
+      categoria: 'Salário aberto E2E',
+      descricao: 'Salário aberto E2E',
+    });
 
     // O lançamento aparece na lista do Extrato, como receita, e o resumo do período o soma.
     const linha = page.getByRole('listitem').filter({ hasText: 'Salário aberto E2E' });
@@ -85,14 +78,12 @@ test.describe('Transações', () => {
     });
 
     await abrirInicio(page, authContext, familiaId);
-    const painel = await abrirPainelLancar(page);
-
-    // "Despesa" já vem escolhida; clicar confirma o tipo.
-    await painel.getByRole('button', { name: 'Despesa', exact: true }).click();
-    await painel.getByRole('spinbutton', { name: 'Valor' }).fill('200.00');
-    await escolherOpcao(page, painel, 'Categoria', 'Alimentação E2E');
-    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Supermercado E2E');
-    await salvarLancamento(page, painel);
+    // "Despesa" já vem escolhida; o auxiliar clica nela para confirmar o tipo.
+    await lancar(page, {
+      valor: '200.00',
+      categoria: 'Alimentação E2E',
+      descricao: 'Supermercado E2E',
+    });
 
     // Vai ao Extrato para conferir que o lançamento foi registrado.
     await irParaAba(page, 'Extrato');
@@ -120,20 +111,17 @@ test.describe('Transações', () => {
     });
 
     await abrirInicio(page, authContext, familiaId);
-    const painel = await abrirPainelLancar(page);
+    // As parcelas só existem com cartão de crédito: o chip do cartão vem antes de "Parcelado".
+    await lancar(page, {
+      valor: '900.00',
+      categoria: 'Eletronicos E2E',
+      pagamento: 'Cartão Visa E2E',
+      descricao: 'Notebook parcelado E2E',
+      parcelas: 3,
+    });
 
-    await painel.getByRole('button', { name: 'Despesa', exact: true }).click();
-    await painel.getByRole('spinbutton', { name: 'Valor' }).fill('900.00');
-    await escolherOpcao(page, painel, 'Categoria', 'Eletronicos E2E');
-    await escolherOpcao(page, painel, 'Método de pagamento', 'Cartão Visa E2E');
-    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Notebook parcelado E2E');
-
-    await painel.getByRole('button', { name: 'Parcelado', exact: true }).click();
-    await painel.getByRole('spinbutton', { name: 'Parcelas' }).fill('3');
-    await salvarLancamento(page, painel);
-
-    // O Extrato lista só o mês corrente; as 3 parcelas se confirmam pela API. O painel fecha antes
-    // de a gravação terminar, então a conferência repete até as parcelas aparecerem.
+    // O Extrato lista só o mês corrente; as 3 parcelas se confirmam pela API (a conferência
+    // repete até elas aparecerem).
     const numeroDeParcelas = async (): Promise<number[]> => {
       const res = await page.request.get(`${BASE_URL}/api/transacoes`, {
         headers: {
@@ -166,18 +154,15 @@ test.describe('Transações', () => {
     });
 
     await abrirInicio(page, authContext, familiaId);
-    const painel = await abrirPainelLancar(page);
-
-    await painel.getByRole('button', { name: 'Despesa', exact: true }).click();
-    await painel.getByRole('spinbutton', { name: 'Valor' }).fill('50.00');
-    await escolherOpcao(page, painel, 'Categoria', 'Assinaturas E2E');
-    await painel.getByRole('textbox', { name: 'Descrição' }).fill('Netflix E2E');
-
-    await painel.getByRole('button', { name: 'Recorrente', exact: true }).click();
-
-    // "Mensal" é a frequência padrão.
-    await expect(painel.getByRole('combobox', { name: 'Frequência' })).toContainText('Mensal');
-    await salvarLancamento(page, painel);
+    await lancar(page, {
+      valor: '50.00',
+      categoria: 'Assinaturas E2E',
+      descricao: 'Netflix E2E',
+      recorrente: true,
+      // "Mensal" é a frequência padrão.
+      antesDeSalvar: (painel) =>
+        expect(painel.getByRole('combobox', { name: 'Frequência' })).toContainText('Mensal'),
+    });
 
     // No Extrato, o lançamento traz o selo "Recorrente".
     await irParaAba(page, 'Extrato');
@@ -291,5 +276,82 @@ test.describe('Transações', () => {
     // Era o único lançamento da família: a lista carregada está vazia, e não só ainda carregando.
     await expect(page.getByText(/Nenhum lançamento em/)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('Cinema E2E para excluir')).toHaveCount(0);
+  });
+
+  // ── 7. Desfazer pelo aviso depois de lançar ───────────────────────────────
+  test('lançar uma despesa e desfazer pelo aviso tira a linha do Extrato', async ({
+    page,
+    authContext,
+    familiaId,
+  }) => {
+    await api.criarCategoria(authContext.accessToken, familiaId, {
+      nome: 'Padaria E2E',
+      tipo: 'despesa',
+    });
+
+    await abrirInicio(page, authContext, familiaId);
+    await irParaAba(page, 'Extrato');
+    await lancar(page, {
+      valor: '25.00',
+      categoria: 'Padaria E2E',
+      descricao: 'Pão para desfazer E2E',
+    });
+
+    // O aviso aparece acima da barra, e a linha entra no Extrato que já estava aberto.
+    const aviso = avisoDeLancamento(page, 'Despesa lançada');
+    await expect(aviso).toBeVisible({ timeout: 5_000 });
+    const linha = page.getByRole('listitem').filter({ hasText: 'Pão para desfazer E2E' });
+    await expect(linha).toBeVisible({ timeout: 10_000 });
+
+    await aviso.getByRole('button', { name: 'Desfazer' }).click();
+
+    await expect(avisoDeLancamento(page, 'Lançamento desfeito')).toBeVisible({ timeout: 5_000 });
+    await expect(linha).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  // ── 8. Excluir pelo painel de confirmação do app ──────────────────────────
+  test('excluir pelo painel de confirmação remove o lançamento do Extrato', async ({
+    page,
+    authContext,
+    familiaId,
+  }) => {
+    const categoria = await api.criarCategoria(authContext.accessToken, familiaId, {
+      nome: 'Streaming E2E',
+      tipo: 'despesa',
+    });
+    await api.criarTransacao(authContext.accessToken, familiaId, {
+      tipo: 'despesa',
+      valor: '39.90',
+      categoriaId: categoria.id,
+      descricao: 'Streaming para excluir E2E',
+      data: hoje(),
+    });
+
+    await abrirInicio(page, authContext, familiaId);
+    await irParaAba(page, 'Extrato');
+    const linha = page.getByRole('listitem').filter({ hasText: 'Streaming para excluir E2E' });
+    await linha.getByRole('button').click();
+
+    const painel = page.getByRole('dialog', { name: 'Editar Transação' });
+    await expect(painel).toBeVisible({ timeout: 5_000 });
+    await abrirMaisOpcoes(painel);
+    await painel.getByRole('button', { name: 'Excluir lançamento', exact: true }).click();
+
+    // A confirmação é um painel do app (não o diálogo do navegador): mostra nome e valor.
+    const confirmacao = page.getByRole('dialog', { name: 'Excluir lançamento?' });
+    await expect(confirmacao).toContainText('Streaming para excluir E2E');
+    await expect(confirmacao).toContainText(/R\$\s*39,90/);
+
+    // Cancelar mantém o lançamento.
+    await confirmacao.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(confirmacao).toHaveCount(0);
+    await expect(painel).toBeVisible();
+
+    await painel.getByRole('button', { name: 'Excluir lançamento', exact: true }).click();
+    await confirmacao.getByRole('button', { name: 'Excluir', exact: true }).click();
+
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 5_000 });
+    await expect(avisoDeLancamento(page, 'Lançamento excluído')).toBeVisible({ timeout: 5_000 });
+    await expect(linha).toHaveCount(0, { timeout: 10_000 });
   });
 });

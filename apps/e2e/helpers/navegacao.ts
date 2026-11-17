@@ -51,19 +51,3 @@ export async function abrirLinha(page: Page, rotulo: string, titulo: string): Pr
   await page.getByRole('main').getByRole('link', { name: inicioDoNome }).click();
   await esperarTela(page, titulo);
 }
-
-/** Abre o painel de lançar pelo "+" da barra e devolve o painel. */
-export async function abrirPainelLancar(page: Page): Promise<Locator> {
-  await barraPrincipal(page).getByRole('button', { name: 'Lançar', exact: true }).click();
-  const painel = page.getByRole('dialog');
-  await expect(painel.getByRole('heading', { name: 'Nova Transação' })).toBeVisible({
-    timeout: 5_000,
-  });
-  return painel;
-}
-
-/** Salva o lançamento do painel e espera o painel fechar. */
-export async function salvarLancamento(page: Page, painel: Locator): Promise<void> {
-  await painel.getByRole('button', { name: 'Salvar Transação', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 5_000 });
-}

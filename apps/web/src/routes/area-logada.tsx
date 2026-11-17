@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { AppShell } from '@/components/app-shell';
+import { AvisoLancado } from '@/components/aviso-lancado';
 import { TransacaoModal } from '@/components/transacao-modal';
 import { VoiceRecordingSheet } from '@/components/voice-recording-sheet';
 import { useAuth } from '@/contexts/use-auth';
@@ -121,6 +122,7 @@ const AreaLogadaConteudo = ({ fluxo, familiaId }: AreaLogadaProps & { familiaId:
         <Outlet context={contexto} />
       </AppShell>
       <PaineisDeLancar lancamento={lancamento} voz={voz} />
+      <AvisoLancado />
     </>
   );
 };

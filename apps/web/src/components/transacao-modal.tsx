@@ -1,425 +1,133 @@
+import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
 import { useEffect, useId, useState } from 'react';
 
-import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
-import {
-  categoriaIdCompativel,
-  categoriasParaSelecao,
-  useCategoriaStore,
-} from '@/stores/categoria.store';
-import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
-import { categoriaService, metodoPagamentoService } from '@/services/core-financeiro.service';
-import { getTodayLocalISO } from '@/utils/date';
-import { IconFechar, IconMicrofone, IconParcelas, IconRecorrente } from './icons';
-import { TipoLancamentoToggle } from './tipo-lancamento-toggle';
-import { CustomSelect } from './ui/custom-select';
-import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from './ui/campo-classes';
+import { useArmadilhaDeFoco } from '@/hooks/use-armadilha-de-foco';
+import { useDadosDoPainel } from '@/hooks/use-dados-do-painel';
+import { useGravacao } from '@/hooks/use-gravacao';
+import { useViewportVisivel } from '@/hooks/use-viewport-visivel';
+import { useAvisoStore } from '@/stores/aviso.store';
+import { CabecalhoDoPainel } from './lancar/cabecalho-do-painel';
+import { CamposDoLancamento } from './lancar/campos-do-lancamento';
+import { ConfirmarExclusao } from './lancar/confirmar-exclusao';
+import { RodapeSalvar } from './lancar/rodape-salvar';
+import type { DadosVoz, TransacaoParaEditar } from './lancar/tipos-lancar';
 
-export interface DadosVoz {
-  tipo: 'receita' | 'despesa' | null;
-  valor: string | null;
-  categoriaId: string | null;
-  descricao: string | null;
-  data: string | null;
-}
-
-interface TransacaoParaEditar {
-  id: string;
-  tipo: 'receita' | 'despesa';
-  valor: string;
-  categoriaId: string;
-  descricao: string | null;
-  data: string;
-  metodoPagamentoId: string | null;
-}
+export type { DadosVoz } from './lancar/tipos-lancar';
 
 interface TransacaoModalProps {
   open: boolean;
   familiaId: string;
   onClose: () => void;
-  onSubmit: (payload: TransacaoCreateRequest) => void;
+  /** Quem chama fecha o painel quando a gravação dá certo; se rejeitar, o painel segue aberto. */
+  onSubmit: (payload: TransacaoCreateRequest) => void | Promise<void>;
   transacaoParaEditar?: TransacaoParaEditar | null;
-  onUpdate?: (id: string, payload: TransacaoUpdateRequest) => void;
-  onDelete?: (id: string) => void;
+  onUpdate?: (id: string, payload: TransacaoUpdateRequest) => void | Promise<void>;
+  /** Como `onSubmit`: quem chama fecha o painel quando a exclusão dá certo. */
+  onDelete?: (id: string) => void | Promise<void>;
   dadosVoz?: DadosVoz | null;
   onVoiceActivate?: () => void;
 }
 
-export const TransacaoModal = ({
-  open,
-  familiaId,
-  onClose,
-  onSubmit,
-  transacaoParaEditar,
-  onUpdate,
-  onDelete,
-  dadosVoz,
-  onVoiceActivate,
-}: TransacaoModalProps) => {
-  const categorias = useCategoriaStore((s) => s.categorias);
-  const setCategorias = useCategoriaStore((s) => s.setCategorias);
-  const metodos = useMetodoPagamentoStore((s) => s.metodos);
-  const setMetodos = useMetodoPagamentoStore((s) => s.setMetodos);
+const ERRO_AO_SALVAR = 'Não foi possível salvar. Tente de novo.';
+const ERRO_AO_EXCLUIR = 'Não foi possível excluir. Tente de novo.';
 
-  const [tipo, setTipo] = useState<'receita' | 'despesa'>('despesa');
-  const [valor, setValor] = useState('');
-  const [categoriaId, setCategoriaId] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [data, setData] = useState(getTodayLocalISO);
-  const [metodoPagamentoId, setMetodoPagamentoId] = useState('');
+const useExclusao = (
+  transacaoParaEditar: TransacaoParaEditar | null | undefined,
+  onDelete: TransacaoModalProps['onDelete'],
+) =>
+  useGravacao(
+    true,
+    async () => {
+      if (transacaoParaEditar && onDelete) await onDelete(transacaoParaEditar.id);
+    },
+    ERRO_AO_EXCLUIR,
+  );
 
-  const [parcelado, setParcelado] = useState(false);
-  const [numeroParcelas, setNumeroParcelas] = useState(2);
+const PainelDeLancar = (props: TransacaoModalProps) => {
+  const { onClose, transacaoParaEditar, onDelete } = props;
+  const dados = useDadosDoPainel(props);
+  const areaVisivel = useViewportVisivel();
+  const idTitulo = useId();
+  const [confirmando, setConfirmando] = useState(false);
+  const [botaoExcluir, setBotaoExcluir] = useState<HTMLElement | null>(null);
+  const gravacao = useGravacao(dados.motivo === null, dados.gravar, ERRO_AO_SALVAR);
+  const exclusao = useExclusao(transacaoParaEditar, onDelete);
+  // Fechar durante a gravação descartaria o resultado em silêncio.
+  const ocupado = gravacao.gravando || exclusao.gravando;
+  const armadilha = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape: ocupado ? undefined : onClose });
 
-  const [recorrente, setRecorrente] = useState(false);
-  const [frequencia, setFrequencia] = useState<'mensal' | 'semanal' | 'quinzenal'>('mensal');
-  const [dataFimRecorrencia, setDataFimRecorrencia] = useState('');
-
-  useEffect(() => {
-    if (!open || !familiaId) return;
-    if (categorias.length === 0) {
-      categoriaService
-        .listar(familiaId)
-        .then((res) => setCategorias(res.categorias))
-        .catch(() => {});
-    }
-    if (metodos.length === 0) {
-      metodoPagamentoService
-        .listar(familiaId)
-        .then((res) => setMetodos(res.metodosPagamento))
-        .catch(() => {});
-    }
-  }, [open, familiaId, categorias.length, metodos.length, setCategorias, setMetodos]);
-
-  useEffect(() => {
-    if (!open) {
-      setTipo('despesa');
-      setValor('');
-      setCategoriaId('');
-      setDescricao('');
-      setData(getTodayLocalISO());
-      setMetodoPagamentoId('');
-      setParcelado(false);
-      setNumeroParcelas(2);
-      setRecorrente(false);
-      setFrequencia('mensal');
-      setDataFimRecorrencia('');
-      return;
-    }
-    if (transacaoParaEditar) {
-      setTipo(transacaoParaEditar.tipo);
-      setValor(transacaoParaEditar.valor);
-      setCategoriaId(transacaoParaEditar.categoriaId);
-      setDescricao(transacaoParaEditar.descricao ?? '');
-      setData(transacaoParaEditar.data);
-      setMetodoPagamentoId(transacaoParaEditar.metodoPagamentoId ?? '');
-      setParcelado(false);
-      setRecorrente(false);
-    }
-    if (dadosVoz) {
-      setTipo(dadosVoz.tipo ?? 'despesa');
-      setValor(dadosVoz.valor ?? '');
-      setCategoriaId(dadosVoz.categoriaId ?? '');
-      setDescricao(dadosVoz.descricao ?? '');
-      setData(dadosVoz.data ?? getTodayLocalISO());
-      setMetodoPagamentoId('');
-      setParcelado(false);
-      setRecorrente(false);
-    }
-  }, [open, transacaoParaEditar, dadosVoz]);
-
-  const isEditing = !!transacaoParaEditar;
-  // Derivado para cobrir voz/edição preenchidas antes das categorias carregarem.
-  const categoriaIdValido = categoriaIdCompativel(categorias, tipo, categoriaId);
-
-  const tipoOriginal = transacaoParaEditar?.tipo;
-  const categoriaAjudaId = useId();
-
-  // Troca de tipo só preserva categoria ativa do novo tipo: uma inativa (fora
-  // da lista) tem tipo desconhecido e a API rejeitaria a combinação.
-  const trocarTipo = (novoTipo: 'receita' | 'despesa') => {
-    if (novoTipo === tipo) return;
-    setTipo(novoTipo);
-    const serve = categorias.some((c) => c.id === categoriaId && c.tipo === novoTipo);
-    setCategoriaId(serve ? categoriaId : '');
-  };
-
-  const handleSubmit = () => {
-    if (!categoriaIdValido) return;
-    if (isEditing && onUpdate) {
-      const payload: TransacaoUpdateRequest = {
-        tipo,
-        valor,
-        categoriaId: categoriaIdValido,
-        descricao: descricao || null,
-        data,
-        metodoPagamentoId: metodoPagamentoId || null,
-      };
-      onUpdate(transacaoParaEditar.id, payload);
-    } else {
-      const payload: TransacaoCreateRequest = {
-        tipo,
-        valor,
-        categoriaId: categoriaIdValido,
-        descricao: descricao || null,
-        data,
-        metodoPagamentoId: metodoPagamentoId || null,
-        parcelado,
-        numeroParcelas: parcelado ? numeroParcelas : null,
-        recorrente,
-        frequencia: recorrente ? frequencia : null,
-        dataFimRecorrencia: recorrente && dataFimRecorrencia ? dataFimRecorrencia : null,
-      };
-      onSubmit(payload);
-    }
-    onClose();
-  };
-
-  if (!open) return null;
+  // O aviso de 6 s (z-aviso) ficaria por cima do painel e interceptaria toques nele.
+  useEffect(() => useAvisoStore.getState().fechar(), []);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 md:items-center"
+      aria-labelledby={idTitulo}
+      style={areaVisivel ? { top: areaVisivel.top, height: areaVisivel.height } : undefined}
+      className="fixed inset-x-0 top-0 z-painel flex h-dvh items-end justify-center bg-black/60 md:items-center"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ocupado) onClose();
       }}
     >
-      {/* Bottom-sheet mobile / modal centrado desktop */}
-      <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-bg p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft md:rounded-2xl md:border md:border-border md:pb-5">
-        {/* Handle bar mobile */}
-        <div className="mb-4 flex justify-center md:hidden">
-          <div className="h-1 w-10 rounded-full bg-border" />
-        </div>
-
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-text">
-            {isEditing ? 'Editar Transação' : 'Nova Transação'}
-          </h2>
-          <button
-            type="button"
-            aria-label="Fechar modal"
-            onClick={onClose}
-            className={`${ALVO_TOQUE_CLASSES} text-text-muted hover:text-text`}
-          >
-            <IconFechar size={18} aria-hidden="true" />
-          </button>
-        </div>
-
-        <TipoLancamentoToggle tipo={tipo} onChange={trocarTipo} />
-
-        {/* Voice input button (only when creating, not editing) */}
-        {!isEditing && onVoiceActivate && (
-          <button
-            type="button"
-            aria-label="Preencher por voz"
-            onClick={onVoiceActivate}
-            className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm text-text-muted transition hover:border-danger hover:text-danger"
-          >
-            <IconMicrofone size={16} />
-            Preencher por voz
-          </button>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {/* Valor */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Valor</span>
-            <input
-              aria-label="Valor"
-              type="number"
-              min="0"
-              step="0.01"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="0,00"
-              className={CAMPO_CLASSES}
-            />
-          </label>
-
-          {/* Categoria */}
-          <CustomSelect
-            label="Categoria"
-            aria-label="Categoria"
-            placeholder="Selecione..."
-            options={categoriasParaSelecao(categorias, tipo, {
-              id: tipo === tipoOriginal ? (transacaoParaEditar?.categoriaId ?? null) : null,
-            }).map((c) => ({
-              value: c.id,
-              label: c.nome,
-            }))}
-            value={categoriaIdValido}
-            onChange={setCategoriaId}
-            aria-describedby={categoriaIdValido ? undefined : categoriaAjudaId}
+      {/* Painel de baixo para cima no celular, centrado no desktop; só o miolo rola, o rodapé fica. */}
+      {/* Inerte enquanto a confirmação de exclusão está aberta: `aria-modal` não tira o fundo do Tab. */}
+      <div
+        {...armadilha}
+        inert={confirmando}
+        className="flex max-h-full w-full max-w-[520px] flex-col overflow-hidden rounded-t-[28px] bg-panel md:rounded-[28px] md:border md:border-border"
+      >
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-2.5">
+          <CabecalhoDoPainel
+            idTitulo={idTitulo}
+            editando={dados.editando}
+            tipo={dados.campos.tipo}
+            onTrocarTipo={dados.trocarTipo}
+            onFechar={onClose}
+            fecharBloqueado={ocupado}
           />
-          {!categoriaIdValido && (
-            <p id={categoriaAjudaId} className="-mt-2 text-xs text-warning">
-              Escolha uma categoria de {tipo}
-            </p>
-          )}
-
-          {/* Descrição */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Descrição (opcional)</span>
-            <input
-              aria-label="Descrição"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Ex: Mercado do mês"
-              className={CAMPO_CLASSES}
-            />
-          </label>
-
-          {/* Data */}
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-text-muted">Data</span>
-            <input
-              aria-label="Data"
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-              className={CAMPO_CLASSES}
-            />
-          </label>
-
-          {/* Método de pagamento */}
-          <CustomSelect
-            label="Método de pagamento"
-            aria-label="Método de pagamento"
-            placeholder="Sem método"
-            options={[
-              { value: '', label: 'Sem método' },
-              ...metodos.map((m) => ({ value: m.id, label: m.nome })),
-            ]}
-            value={metodoPagamentoId}
-            onChange={setMetodoPagamentoId}
+          <CamposDoLancamento
+            dados={dados}
+            onVoz={props.onVoiceActivate}
+            onExcluir={
+              onDelete
+                ? (botao) => {
+                    setBotaoExcluir(botao);
+                    setConfirmando(true);
+                  }
+                : undefined
+            }
           />
-
-          {/* Toggles: parcelado / recorrente (hidden when editing) */}
-          {!isEditing && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label="Parcelado"
-                title="Parcelado divide o valor em N meses. Cada parcela aparece no mês correspondente do cartão."
-                onClick={() => {
-                  setParcelado(!parcelado);
-                  setRecorrente(false);
-                }}
-                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
-                  parcelado
-                    ? 'border-info bg-info/10 text-info'
-                    : 'border-border text-text-muted hover:text-text'
-                }`}
-              >
-                <IconParcelas size={14} />
-                Parcelado
-              </button>
-              <button
-                type="button"
-                aria-label="Recorrente"
-                title="Recorrente repete a transação automaticamente (mensal, quinzenal ou semanal) até a data de encerramento ou indefinidamente."
-                onClick={() => {
-                  setRecorrente(!recorrente);
-                  setParcelado(false);
-                }}
-                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition ${
-                  recorrente
-                    ? 'border-warning bg-warning-soft text-warning'
-                    : 'border-border text-text-muted hover:text-text'
-                }`}
-              >
-                <IconRecorrente size={14} />
-                Recorrente
-              </button>
-            </div>
-          )}
-
-          {/* Campos condicionais: parcelamento */}
-          {!isEditing && parcelado && (
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-text-muted">Número de parcelas</span>
-              <input
-                aria-label="Parcelas"
-                type="number"
-                min={2}
-                max={72}
-                value={numeroParcelas}
-                onChange={(e) => setNumeroParcelas(Number(e.target.value))}
-                className={CAMPO_CLASSES}
-              />
-              {valor && numeroParcelas > 1 && (
-                <span className="text-xs text-text-muted">
-                  = {(parseFloat(valor) / numeroParcelas).toFixed(2)} por parcela
-                </span>
-              )}
-            </label>
-          )}
-
-          {/* Campos condicionais: recorrência */}
-          {!isEditing && recorrente && (
-            <>
-              <CustomSelect
-                label="Frequência"
-                aria-label="Frequência"
-                options={[
-                  { value: 'mensal', label: 'Mensal' },
-                  { value: 'semanal', label: 'Semanal' },
-                  { value: 'quinzenal', label: 'Quinzenal' },
-                ]}
-                value={frequencia}
-                onChange={(v) => setFrequencia(v as typeof frequencia)}
-              />
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-text-muted">Data fim (opcional)</span>
-                <input
-                  aria-label="Data fim recorrência"
-                  type="date"
-                  value={dataFimRecorrencia}
-                  onChange={(e) => setDataFimRecorrencia(e.target.value)}
-                  className={CAMPO_CLASSES}
-                />
-              </label>
-            </>
-          )}
         </div>
 
-        {/* Ações */}
-        <div className="mt-5">
-          {isEditing && onDelete && (
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-                  onDelete(transacaoParaEditar.id);
-                  onClose();
-                }
-              }}
-              className="mb-2 w-full rounded-lg border border-danger/30 py-2.5 text-sm text-danger transition hover:bg-danger-soft"
-            >
-              Excluir transação
-            </button>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              aria-label="Cancelar"
-              onClick={onClose}
-              className="flex-1 rounded-lg border border-border py-2.5 text-sm text-text-muted transition hover:text-text"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!categoriaIdValido}
-              className="flex-1 rounded-lg bg-success py-2.5 text-sm font-semibold text-white transition hover:bg-success-strong disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isEditing ? 'Salvar Alterações' : 'Salvar Transação'}
-            </button>
-          </div>
-        </div>
+        <footer className="shrink-0 border-t border-border bg-panel px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-3">
+          <RodapeSalvar
+            rotulo={dados.editando ? 'Salvar alterações' : `Salvar ${dados.campos.tipo}`}
+            motivo={dados.motivo}
+            gravando={gravacao.gravando}
+            erro={gravacao.erro}
+            onSalvar={() => void gravacao.salvar()}
+          />
+        </footer>
       </div>
+      {confirmando && transacaoParaEditar && (
+        <ConfirmarExclusao
+          nome={transacaoParaEditar.descricao || dados.nomeDaCategoria}
+          valor={transacaoParaEditar.valor}
+          excluindo={exclusao.gravando}
+          erro={exclusao.erro}
+          onCancelar={() => setConfirmando(false)}
+          onConfirmar={() => void exclusao.salvar()}
+          devolverFocoPara={botaoExcluir}
+        />
+      )}
     </div>
   );
 };
+
+/**
+ * Painel de lançar (nova transação ou edição). Só monta o painel quando aberto, então os campos
+ * começam limpos a cada abertura e as buscas dele (categorias mais usadas) só rodam com ele aberto.
+ */
+export const TransacaoModal = (props: TransacaoModalProps) =>
+  props.open ? <PainelDeLancar {...props} /> : null;

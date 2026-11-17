@@ -117,4 +117,30 @@ describe('CustomSelect', () => {
     // Selecting first option
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
+
+  describe('Escape', () => {
+    const montarDentroDeUmPai = () => {
+      const noPai = vi.fn();
+      render(
+        <div onKeyDown={noPai}>
+          <CustomSelect options={OPTIONS} value="" onChange={vi.fn()} aria-label="Test" />
+        </div>,
+      );
+      return { noPai, combo: screen.getByRole('combobox', { name: 'Test' }) };
+    };
+
+    it('aberto: fecha só a lista e consome a tecla, para um painel em volta não reagir', () => {
+      const { noPai, combo } = montarDentroDeUmPai();
+      fireEvent.click(combo);
+      fireEvent.keyDown(combo, { key: 'Escape' });
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      expect(noPai).not.toHaveBeenCalled();
+    });
+
+    it('fechado: deixa a tecla passar para quem está em volta', () => {
+      const { noPai, combo } = montarDentroDeUmPai();
+      fireEvent.keyDown(combo, { key: 'Escape' });
+      expect(noPai).toHaveBeenCalledOnce();
+    });
+  });
 });

@@ -8,6 +8,7 @@ import {
   getCurrentMonth,
   getTodayLocalISO,
   shiftMonth,
+  somarDias,
 } from './date';
 
 describe('getCurrentMonth', () => {
@@ -140,5 +141,19 @@ describe('formatDataBR', () => {
 
   it('retorna "01/03/2026" para "2026-03-01"', () => {
     expect(formatDataBR('2026-03-01')).toBe('01/03/2026');
+  });
+});
+
+describe('somarDias', () => {
+  it('volta um dia em 1º de janeiro para 31 de dezembro do ano anterior', () => {
+    expect(somarDias('2026-01-01', -1)).toBe('2025-12-31');
+  });
+
+  it('atravessa fevereiro de ano bissexto', () => {
+    expect(somarDias('2028-03-01', -1)).toBe('2028-02-29');
+  });
+
+  it('avança além do fim do mês', () => {
+    expect(somarDias('2026-11-30', 2)).toBe('2026-12-02');
   });
 });

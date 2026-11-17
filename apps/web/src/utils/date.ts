@@ -76,3 +76,16 @@ export function formatDataBR(dataISO: string): string {
   const [year, month, day] = dataISO.slice(0, 10).split('-').map(Number);
   return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
 }
+
+/**
+ * Soma (ou subtrai, com número negativo) dias a uma data AAAA-MM-DD e devolve AAAA-MM-DD.
+ *
+ * Monta a data com ano, mês e dia numéricos e usa o meio-dia, para não depender do fuso nem da
+ * virada de horário de verão (`toISOString` devolveria a data UTC).
+ */
+export function somarDias(dataISO: string, dias: number): string {
+  const [year, month, day] = dataISO.split('-').map(Number);
+  const d = new Date(year, month - 1, day + dias, 12);
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${String(d.getDate()).padStart(2, '0')}`;
+}

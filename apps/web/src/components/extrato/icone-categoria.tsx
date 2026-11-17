@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type FamiliaDeCategoria = 'alimentacao' | 'saude' | 'lazer' | 'compras' | 'outros';
+type FamiliaDeCategoria = 'alimentacao' | 'saude' | 'lazer' | 'compras' | 'outros';
 
 /** Classes completas (o Tailwind só gera o que aparece escrito por inteiro no código). */
 const CORES: Record<FamiliaDeCategoria, string> = {
@@ -64,7 +64,7 @@ const casa = (nome: string, trechos: readonly string[]): boolean =>
   trechos.some((trecho) => nome.includes(trecho));
 
 /** Família visual de uma categoria pelo nome; o que não casa cai em "outros". */
-export const familiaDaCategoria = (nome: string): FamiliaDeCategoria => {
+const familiaDaCategoria = (nome: string): FamiliaDeCategoria => {
   const limpo = normalizar(nome);
   return FAMILIAS.find(([, trechos]) => casa(limpo, trechos))?.[0] ?? 'outros';
 };

@@ -2,6 +2,7 @@ import type { TransacaoListResponse } from '@nossagrana/types';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ExtratoContexto, type DadosDoExtrato } from './extrato-contexto';
 import { LinhaDeLancamento } from './linha-de-lancamento';
 
 type Transacao = TransacaoListResponse['transacoes'][number];
@@ -24,15 +25,17 @@ const T = (extra: Partial<Transacao> = {}): Transacao =>
 
 const montar = (t: Transacao, categoria = 'Alimentação', metodo: string | null = 'Pix') => {
   const onAbrir = vi.fn();
+  const dados: DadosDoExtrato = {
+    nomeDaCategoria: () => categoria,
+    nomeDoMetodo: () => metodo,
+    onAbrir,
+  };
   render(
-    <ul>
-      <LinhaDeLancamento
-        transacao={t}
-        categoriaNome={categoria}
-        metodoNome={metodo}
-        onAbrir={onAbrir}
-      />
-    </ul>,
+    <ExtratoContexto.Provider value={dados}>
+      <ul>
+        <LinhaDeLancamento transacao={t} />
+      </ul>
+    </ExtratoContexto.Provider>,
   );
   return onAbrir;
 };
@@ -42,6 +45,15 @@ describe('LinhaDeLancamento', () => {
     montar(T());
     const linha = screen.getByRole('button', { name: /Mercado do mês.*R\$\s*150,00/ });
     expect(linha).toHaveClass('min-h-[52px]');
+  });
+
+  it('o nome acessível inclui categoria, forma de pagamento, parcela e recorrência', () => {
+    montar(T({ parcelado: true, parcelaAtual: 3, numeroParcelas: 10, recorrente: true }));
+    expect(
+      screen.getByRole('button', {
+        name: /Mercado do mês, Alimentação · Pix · 3\/10 · Recorrente, \u2212R\$\s*150,00/,
+      }),
+    ).toBeInTheDocument();
   });
 
   it('o título é a descrição; sem descrição, o nome da categoria', () => {

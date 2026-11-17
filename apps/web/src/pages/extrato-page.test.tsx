@@ -1,4 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { transacaoService } from '@/services/core-financeiro.service';
@@ -290,6 +292,100 @@ describe('ExtratoPage', () => {
       listaDoMes(T({ descricao: 'Mercado' }));
       fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
       expect(await screen.findByText('Mercado')).toBeInTheDocument();
+    });
+  });
+
+  describe('busca que sobrevive à troca de mês', () => {
+    it('o campo volta aberto com o texto e o resumo bate com o filtrado; limpar volta tudo', async () => {
+      listaDoMes(
+        T({ id: 'a', valor: '40.00', descricao: 'Mercado do bairro' }),
+        T({ id: 'b', valor: '10.00', descricao: 'Ônibus' }),
+      );
+      abrir();
+      await screen.findByText('Ônibus');
+      fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+      fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'mercado' } });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Mês anterior' }));
+      const campo = await screen.findByRole('searchbox');
+
+      expect(campo).toHaveValue('mercado');
+      expect(screen.queryByText('Ônibus')).not.toBeInTheDocument();
+      expect(valorDoResumo('Saídas')).toHaveTextContent(/R\$\s*40,00/);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Limpar busca' }));
+      expect(screen.getByText('Ônibus')).toBeInTheDocument();
+      expect(valorDoResumo('Saídas')).toHaveTextContent(/R\$\s*50,00/);
+    });
+  });
+
+  describe('carga robusta', () => {
+    const adiada = () => {
+      let resolver!: (v: { transacoes: ReturnType<typeof T>[] }) => void;
+      const promessa = new Promise<{ transacoes: ReturnType<typeof T>[] }>((r) => {
+        resolver = r;
+      });
+      return { promessa, resolver };
+    };
+
+    it('falha na carga dentro do StrictMode mostra "Tentar de novo"', async () => {
+      vi.mocked(transacaoService.listar).mockRejectedValue(new Error('rede'));
+      renderPagina(
+        <StrictMode>
+          <ExtratoPage familiaId="f1" onNovaTransacao={vi.fn()} onEditarTransacao={vi.fn()} />
+        </StrictMode>,
+      );
+      expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
+      expect(screen.queryByText(/Nenhum lançamento em/)).not.toBeInTheDocument();
+    });
+
+    it('resposta fora de ordem (a do mês anterior chega depois) não substitui a lista', async () => {
+      const novembro = adiada();
+      const outubro = adiada();
+      vi.mocked(transacaoService.listar)
+        .mockReturnValueOnce(novembro.promessa)
+        .mockReturnValueOnce(outubro.promessa);
+      abrir();
+      fireEvent.click(screen.getByRole('button', { name: 'Mês anterior' }));
+
+      await act(async () => {
+        outubro.resolver({ transacoes: [T({ id: 'o', descricao: 'Compra de outubro' })] });
+      });
+      await act(async () => {
+        novembro.resolver({ transacoes: [T({ id: 'n', descricao: 'Compra de novembro' })] });
+      });
+
+      expect(await screen.findByText('Compra de outubro')).toBeInTheDocument();
+      expect(screen.queryByText('Compra de novembro')).not.toBeInTheDocument();
+    });
+
+    it('gravar durante uma carga em andamento termina mostrando os dados novos', async () => {
+      const velha = adiada();
+      vi.mocked(transacaoService.listar)
+        .mockReturnValueOnce(velha.promessa)
+        .mockResolvedValueOnce({ transacoes: [T({ id: 'n', descricao: 'Lançamento novo' })] });
+      abrir();
+
+      act(() => useTransacaoStore.getState().sinalizarMudanca());
+      await screen.findByText('Lançamento novo');
+      await act(async () => {
+        velha.resolver({ transacoes: [T({ id: 'v', descricao: 'Lançamento velho' })] });
+      });
+
+      expect(screen.getByText('Lançamento novo')).toBeInTheDocument();
+      expect(screen.queryByText('Lançamento velho')).not.toBeInTheDocument();
+    });
+
+    it('recarga depois de gravar que falha mostra o erro, não a lista velha', async () => {
+      listaDoMes(T({ descricao: 'Mercado' }));
+      abrir();
+      await screen.findByText('Mercado');
+
+      vi.mocked(transacaoService.listar).mockRejectedValue(new Error('rede'));
+      act(() => useTransacaoStore.getState().sinalizarMudanca());
+
+      expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
+      expect(screen.queryByText('Mercado')).not.toBeInTheDocument();
     });
   });
 

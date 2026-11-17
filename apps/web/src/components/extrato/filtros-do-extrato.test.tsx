@@ -6,9 +6,15 @@ import { FiltrosDoExtrato, type FiltroTipo } from './filtros-do-extrato';
 
 afterEach(cleanup);
 
-const Montagem = ({ onExportar }: { onExportar: () => void }) => {
+const Montagem = ({
+  onExportar,
+  buscaInicial = null,
+}: {
+  onExportar: () => void;
+  buscaInicial?: string | null;
+}) => {
   const [filtro, setFiltro] = useState<FiltroTipo>('todos');
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState<string | null>(buscaInicial);
   return (
     <FiltrosDoExtrato
       filtro={filtro}
@@ -20,8 +26,8 @@ const Montagem = ({ onExportar }: { onExportar: () => void }) => {
   );
 };
 
-const montar = (onExportar = vi.fn()) => {
-  render(<Montagem onExportar={onExportar} />);
+const montar = (onExportar = vi.fn(), buscaInicial: string | null = null) => {
+  render(<Montagem onExportar={onExportar} buscaInicial={buscaInicial} />);
   return onExportar;
 };
 
@@ -81,10 +87,46 @@ describe('FiltrosDoExtrato', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('Escape fecha o menu de mais ações', () => {
+  it('com texto de busca o campo já aparece aberto, com o texto, sem roubar o foco', () => {
+    montar(vi.fn(), 'mercado');
+    const campo = screen.getByRole('searchbox', { name: 'Buscar por descrição' });
+    expect(campo).toHaveValue('mercado');
+    expect(campo).not.toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Buscar' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('"Limpar busca" esvazia o texto e mantém o campo aberto com o foco', () => {
+    montar(vi.fn(), 'mercado');
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar busca' }));
+    expect(screen.getByRole('searchbox')).toHaveValue('');
+    expect(screen.getByRole('searchbox')).toHaveFocus();
+    expect(screen.queryByRole('button', { name: 'Limpar busca' })).not.toBeInTheDocument();
+  });
+
+  it('Escape no elemento com foco fecha o menu e devolve o foco ao botão', () => {
+    montar();
+    const botao = screen.getByRole('button', { name: 'Mais ações' });
+    fireEvent.click(botao);
+    expect(screen.getByRole('menuitem', { name: 'Exportar CSV' })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(botao).toHaveFocus();
+  });
+
+  it('Escape também fecha com o foco no botão', () => {
+    montar();
+    const botao = screen.getByRole('button', { name: 'Mais ações' });
+    fireEvent.click(botao);
+    botao.focus();
+    fireEvent.keyDown(botao, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(botao).toHaveFocus();
+  });
+
+  it('escolher "Exportar CSV" devolve o foco ao botão', () => {
     montar();
     fireEvent.click(screen.getByRole('button', { name: 'Mais ações' }));
-    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Exportar CSV' }));
+    expect(screen.getByRole('button', { name: 'Mais ações' })).toHaveFocus();
   });
 });

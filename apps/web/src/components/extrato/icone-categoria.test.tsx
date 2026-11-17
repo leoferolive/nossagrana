@@ -1,11 +1,14 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { IconeCategoria, familiaDaCategoria } from './icone-categoria';
+import { IconeCategoria } from './icone-categoria';
 
 afterEach(cleanup);
 
-describe('familiaDaCategoria', () => {
+const familiaDe = (nome: string) =>
+  render(<IconeCategoria nome={nome} />).container.firstElementChild?.getAttribute('data-familia');
+
+describe('família pelo nome', () => {
   it.each([
     ['Alimentação', 'alimentacao'],
     ['Alimentacao', 'alimentacao'],
@@ -17,16 +20,15 @@ describe('familiaDaCategoria', () => {
     ['Lazer', 'lazer'],
     ['Compras', 'compras'],
     ['compra online', 'compras'],
+    ['Moradia', 'outros'],
+    ['Transporte', 'outros'],
+    ['Educação', 'outros'],
+    ['Salário', 'outros'],
+    ['Categoria inventada', 'outros'],
+    ['', 'outros'],
   ])('"%s" cai em %s', (nome, familia) => {
-    expect(familiaDaCategoria(nome)).toBe(familia);
+    expect(familiaDe(nome)).toBe(familia);
   });
-
-  it.each(['Moradia', 'Transporte', 'Educação', 'Salário', 'Categoria inventada', ''])(
-    '"%s" cai em outros',
-    (nome) => {
-      expect(familiaDaCategoria(nome)).toBe('outros');
-    },
-  );
 });
 
 describe('IconeCategoria', () => {

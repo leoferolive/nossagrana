@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull, lte, gte, or, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
+import type { ExecutorDrizzle } from '../../db/executor.types.js';
 import { categorias, orcamentoCategoria, transacoes } from '../../db/schema.js';
 import { LimiteVigenciaDuplicadaError, violaIndiceDaVigencia } from './orcamento.errors.js';
 import type {
@@ -104,6 +105,16 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
     }
   }
 
+  async substituirVigente(
+    idVigente: string,
+    vigenciaFimVigente: string,
+    input: OrcamentoSetInput,
+  ): Promise<void> {
+    // Insere antes de encerrar: se a inserção recusar, nada foi alterado (como o rollback).
+    await this.insert(input);
+    await this.encerrar(idVigente, input.familiaId, vigenciaFimVigente);
+  }
+
   async atualizarValor(id: string, familiaId: string, valorLimite: string): Promise<void> {
     const record = this._orcamentos.find((o) => o.id === id && o.familiaId === familiaId);
     if (record) {
@@ -160,8 +171,11 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
 // ─── Drizzle ──────────────────────────────────────────────────────────────────
 
 export class DrizzleOrcamentoRepository implements OrcamentoRepository {
+  /** O `db` da app ou o `tx` de uma transação (mesmo padrão dos outros repositórios Drizzle). */
+  constructor(private readonly executor: ExecutorDrizzle = db) {}
+
   async listVigentes(familiaId: string, mesReferencia: string): Promise<OrcamentoVigenteRow[]> {
-    return db
+    return this.executor
       .select({
         id: orcamentoCategoria.id,
         categoriaId: orcamentoCategoria.categoriaId,
@@ -188,7 +202,7 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
     familiaId: string,
     mesReferencia: string,
   ): Promise<Map<string, string>> {
-    const rows = await db
+    const rows = await this.executor
       .select({
         categoriaId: transacoes.categoriaId,
         totalGasto: sql<string>`SUM(${transacoes.valor}::numeric)::text`,
@@ -211,7 +225,7 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
   }
 
   async findAberto(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow | null> {
-    const rows = await db
+    const rows = await this.executor
       .select({
         id: orcamentoCategoria.id,
         categoriaId: orcamentoCategoria.categoriaId,
@@ -235,14 +249,27 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
   }
 
   async encerrar(id: string, familiaId: string, vigenciaFim: string): Promise<void> {
-    await db
+    await this.executor
       .update(orcamentoCategoria)
       .set({ vigenciaFim })
       .where(and(eq(orcamentoCategoria.id, id), eq(orcamentoCategoria.familiaId, familiaId)));
   }
 
+  async substituirVigente(
+    idVigente: string,
+    vigenciaFimVigente: string,
+    input: OrcamentoSetInput,
+  ): Promise<void> {
+    // Uma transação: se a inserção falhar (ex.: índice único), o vigente não fica encerrado.
+    await this.executor.transaction(async (tx) => {
+      const naTransacao = new DrizzleOrcamentoRepository(tx);
+      await naTransacao.encerrar(idVigente, input.familiaId, vigenciaFimVigente);
+      await naTransacao.insert(input);
+    });
+  }
+
   async atualizarValor(id: string, familiaId: string, valorLimite: string): Promise<void> {
-    await db
+    await this.executor
       .update(orcamentoCategoria)
       .set({ valorLimite })
       .where(and(eq(orcamentoCategoria.id, id), eq(orcamentoCategoria.familiaId, familiaId)));
@@ -260,7 +287,7 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
   }
 
   private async inserirLinha(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
-    const rows = await db
+    const rows = await this.executor
       .insert(orcamentoCategoria)
       .values({
         familiaId: input.familiaId,
@@ -282,7 +309,7 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
   }
 
   async listHistorico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow[]> {
-    return db
+    return this.executor
       .select({
         id: orcamentoCategoria.id,
         categoriaId: orcamentoCategoria.categoriaId,

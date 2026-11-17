@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
-import { LimiteVigenciaAnteriorError } from './orcamento.errors.js';
+import { LimiteVigenciaAnteriorError, LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
 import { InMemoryOrcamentoRepository } from './orcamento.repository.js';
 import type { OrcamentoHistoricoRow } from './orcamento.types.js';
 import { OrcamentoService } from './orcamento.service.js';
@@ -233,6 +233,24 @@ describe('OrcamentoService', () => {
         vigenciaFim: '2026-02',
         valorLimite: '500.00',
       });
+    });
+
+    it('linha encerrada com a vigência pedida (defeito antigo) vira 409 e o limite aberto fica intacto', async () => {
+      const encerrada = await repo.insert({
+        ...base,
+        vigenciaInicio: '2026-11',
+        valorLimite: '300.00',
+      });
+      await repo.encerrar(encerrada.id, familiaId, '2026-11');
+      await repo.insert({ ...base, vigenciaInicio: '2026-10', valorLimite: '500.00' });
+
+      await expect(
+        service.set({ ...base, vigenciaInicio: '2026-11', valorLimite: '900.00' }),
+      ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+
+      const aberto = await repo.findAberto(familiaId, categoriaId);
+      expect(aberto).toMatchObject({ vigenciaInicio: '2026-10', valorLimite: '500.00' });
+      expect((await service.historico(familiaId, categoriaId)).historico).toHaveLength(2);
     });
   });
 });

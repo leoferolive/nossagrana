@@ -1,6 +1,9 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import type postgres from 'postgres';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { LimiteVigenciaDuplicadaError } from '../../modules/orcamento/orcamento.errors.js';
+import { DrizzleOrcamentoRepository } from '../../modules/orcamento/orcamento.repository.js';
 import { inserirId, semearFamilia, type FamiliaSemeada } from './pg-fixtures.js';
 import {
   aplicarMigrations,
@@ -213,5 +216,73 @@ describe('migration 0015: um limite por vigência (pg)', () => {
     expect(await idsDe(banco.sql, f)).toEqual([atual]);
     expect((await idsMovidos(banco.sql)).length).toBe(1);
     expect(await existeIndiceUnico(banco.sql)).toBe(true);
+  });
+});
+
+describe('DrizzleOrcamentoRepository.substituirVigente no PostgreSQL', () => {
+  let banco: BancoDescartavel;
+
+  afterEach(async () => {
+    await banco.descartar();
+  });
+
+  async function limiteAberto(sql: postgres.Sql, id: string) {
+    const [row] = await sql`SELECT vigencia_fim FROM orcamento_categoria WHERE id = ${id}`;
+    return row!.vigencia_fim as string | null;
+  }
+
+  it('se a inserção viola o índice, o limite aberto não fica encerrado (rollback)', async () => {
+    banco = await criarBancoDescartavel();
+    await aplicarMigrations(banco.url);
+    const f = await semearFamilia(banco.sql, 'Atomica');
+    const aberto = await inserirLimite(banco.sql, f, {
+      inicio: '2026-10',
+      fim: null,
+      valor: '500.00',
+      criadoEm: '2026-10-01T10:00:00Z',
+    });
+    await inserirLimite(banco.sql, f, {
+      inicio: '2026-11',
+      fim: '2026-11',
+      valor: '300.00',
+      criadoEm: '2026-11-01T10:00:00Z',
+    });
+    const repo = new DrizzleOrcamentoRepository(drizzle(banco.sql));
+
+    await expect(
+      repo.substituirVigente(aberto, '2026-10', {
+        familiaId: f.familiaId,
+        categoriaId: f.categoriaId,
+        usuarioId: f.usuarioId,
+        valorLimite: '900.00',
+        vigenciaInicio: '2026-11',
+      }),
+    ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+
+    expect(await limiteAberto(banco.sql, aberto)).toBeNull();
+  });
+
+  it('com a vigência livre, encerra o vigente e insere o novo na mesma transação', async () => {
+    banco = await criarBancoDescartavel();
+    await aplicarMigrations(banco.url);
+    const f = await semearFamilia(banco.sql, 'Troca');
+    const aberto = await inserirLimite(banco.sql, f, {
+      inicio: '2026-10',
+      fim: null,
+      valor: '500.00',
+      criadoEm: '2026-10-01T10:00:00Z',
+    });
+    const repo = new DrizzleOrcamentoRepository(drizzle(banco.sql));
+
+    await repo.substituirVigente(aberto, '2026-10', {
+      familiaId: f.familiaId,
+      categoriaId: f.categoriaId,
+      usuarioId: f.usuarioId,
+      valorLimite: '900.00',
+      vigenciaInicio: '2026-11',
+    });
+
+    expect(await limiteAberto(banco.sql, aberto)).toBe('2026-10');
+    expect((await idsDe(banco.sql, f)).length).toBe(2);
   });
 });

@@ -3,11 +3,7 @@ import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagr
 import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { mesAnterior } from '../../utils/date.js';
 import { LimiteVigenciaAnteriorError, LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
-import type {
-  OrcamentoHistoricoRow,
-  OrcamentoRepository,
-  OrcamentoSetInput,
-} from './orcamento.types.js';
+import type { OrcamentoRepository, OrcamentoSetInput } from './orcamento.types.js';
 
 function calcularStatus(percentual: number): 'ok' | 'warning' | 'exceeded' {
   if (percentual >= 100) return 'exceeded';
@@ -73,23 +69,25 @@ export class OrcamentoService {
       await this.repo.atualizarValor(aberto.id, input.familiaId, input.valorLimite);
       return;
     }
-    if (aberto) {
-      // Antes de qualquer escrita: recusar depois de encerrar deixaria estado parcial.
-      if (input.vigenciaInicio < aberto.vigenciaInicio) {
-        throw new LimiteVigenciaAnteriorError(input.vigenciaInicio, aberto.vigenciaInicio);
-      }
-      await this.encerrarAberto(aberto, input);
+    if (!aberto) {
+      await this.repo.insert(input);
+      return;
     }
-    await this.repo.insert(input);
+    // Todas as recusas vêm antes de qualquer escrita; a troca em si é atômica.
+    if (input.vigenciaInicio < aberto.vigenciaInicio) {
+      throw new LimiteVigenciaAnteriorError(input.vigenciaInicio, aberto.vigenciaInicio);
+    }
+    await this.garantirVigenciaLivre(input);
+    // vigenciaInicio > aberto.vigenciaInicio, então o mês anterior nunca precede o início do aberto.
+    await this.repo.substituirVigente(aberto.id, mesAnterior(input.vigenciaInicio), input);
   }
 
-  private async encerrarAberto(
-    aberto: OrcamentoHistoricoRow,
-    input: OrcamentoSetInput,
-  ): Promise<void> {
-    // vigenciaInicio > aberto.vigenciaInicio (garantido por gravar), então o mês anterior
-    // nunca precede o início do próprio limite.
-    await this.repo.encerrar(aberto.id, input.familiaId, mesAnterior(input.vigenciaInicio));
+  /** Linha da mesma vigência (ex.: encerrada pelo defeito antigo) vira 409 em vez de encerrar o aberto. */
+  private async garantirVigenciaLivre(input: OrcamentoSetInput): Promise<void> {
+    const historico = await this.repo.listHistorico(input.familiaId, input.categoriaId);
+    if (historico.some((h) => h.vigenciaInicio === input.vigenciaInicio)) {
+      throw new LimiteVigenciaDuplicadaError(input.categoriaId, input.vigenciaInicio);
+    }
   }
 
   async historico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoResponse> {

@@ -4,6 +4,7 @@ const mockDb = vi.hoisted(() => ({
   select: vi.fn(),
   insert: vi.fn(),
   update: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock('../../db/client.js', () => ({ db: mockDb }));
@@ -101,6 +102,21 @@ describe('InMemoryOrcamentoRepository', () => {
     await expect(repo.insert(baseInput)).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
     await repo.insert({ ...baseInput, familiaId: 'f2' });
     await repo.insert({ ...baseInput, vigenciaInicio: '2026-04' });
+  });
+
+  it('substituirVigente encerra o vigente e insere o novo; se a inserção falha, nada muda', async () => {
+    const vigente = await repo.insert(baseInput);
+    await repo.substituirVigente(vigente.id, '2026-04', {
+      ...baseInput,
+      vigenciaInicio: '2026-05',
+    });
+    expect((await repo.findAberto('f1', 'cat-1'))?.vigenciaInicio).toBe('2026-05');
+
+    const aberto = await repo.findAberto('f1', 'cat-1');
+    await expect(
+      repo.substituirVigente(aberto!.id, '2026-02', { ...baseInput, vigenciaInicio: '2026-03' }),
+    ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+    expect((await repo.findAberto('f1', 'cat-1'))?.id).toBe(aberto!.id);
   });
 
   it('listHistorico retorna historico em ordem decrescente', async () => {
@@ -249,6 +265,35 @@ describe('DrizzleOrcamentoRepository', () => {
         vigenciaInicio: '2026-03',
       }),
     ).rejects.toBe(outra);
+  });
+
+  it('substituirVigente encerra e insere dentro de uma única transação', async () => {
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const tx = {
+      update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: mockWhere }) }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([fakeHistorico]),
+        }),
+      }),
+    };
+    mockDb.transaction.mockImplementation(async (trabalho: (t: typeof tx) => Promise<void>) =>
+      trabalho(tx),
+    );
+
+    await repo.substituirVigente('oc1', '2026-02', {
+      familiaId: 'f1',
+      categoriaId: 'cat-1',
+      usuarioId: 'u1',
+      valorLimite: '800.00',
+      vigenciaInicio: '2026-03',
+    });
+
+    expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    expect(tx.update).toHaveBeenCalled();
+    expect(tx.insert).toHaveBeenCalled();
+    expect(mockDb.update).not.toHaveBeenCalled();
+    expect(mockDb.insert).not.toHaveBeenCalled();
   });
 
   it('insert persiste e retorna novo registro', async () => {

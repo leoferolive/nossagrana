@@ -230,10 +230,9 @@ test.describe('Família', () => {
     }
   });
 
-  // DEFEITO DO APP (não corrigido neste PR): ao aprovar, a tela só tira a solicitação da lista de
-  // pendentes e não recarrega os membros. O teste acima confere o membro depois de recarregar;
-  // este fixa o comportamento certo, sem recarregar. Remover o `fixme` quando a tela atualizar.
-  test.fixme('aprovar solicitação mostra o novo membro sem recarregar', async ({
+  // O teste acima confere o membro depois de recarregar; este fixa que a tela atualiza sozinha
+  // ao aprovar, sem recarregar.
+  test('aprovar solicitação mostra o novo membro sem recarregar', async ({
     page,
     authContext,
     familiaId,

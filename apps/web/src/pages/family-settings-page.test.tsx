@@ -210,6 +210,64 @@ describe('FamilySettingsPage', () => {
       expect(screen.queryByRole('button', { name: /^aprovar$/i })).not.toBeInTheDocument();
     });
   });
+  describe('revisar solicitação atualiza a tela sem recarregar', () => {
+    const NOVO_MEMBRO = {
+      usuarioId: 'u3',
+      familiaId: 'f1',
+      nome: 'Maria',
+      role: 'membro' as const,
+      dataEntrada: '2026-01-04',
+    };
+
+    it('depois de aprovar, o novo membro aparece na lista e a solicitação some', async () => {
+      mockListarMembros
+        .mockResolvedValueOnce({ membros: MEMBROS })
+        .mockResolvedValueOnce({ membros: [...MEMBROS, NOVO_MEMBRO] });
+      mockListarSolicitacoes.mockResolvedValue({ solicitacoes: SOLICITACOES });
+      mockRevisarSolicitacao.mockResolvedValue({});
+
+      renderPagina(<FamilySettingsPage familiaId="f1" />);
+      fireEvent.click(await screen.findByRole('button', { name: /^aprovar$/i }));
+
+      expect(await screen.findByText('Maria')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^aprovar$/i })).not.toBeInTheDocument();
+      expect(mockListarMembros).toHaveBeenCalledTimes(2);
+      expect(mockListarMembros).toHaveBeenLastCalledWith('f1');
+    });
+
+    it('depois de rejeitar, a solicitação some e a lista de membros não muda', async () => {
+      mockListarMembros.mockResolvedValue({ membros: MEMBROS });
+      mockListarSolicitacoes.mockResolvedValue({ solicitacoes: SOLICITACOES });
+      mockRevisarSolicitacao.mockResolvedValue({});
+
+      renderPagina(<FamilySettingsPage familiaId="f1" />);
+      fireEvent.click(await screen.findByRole('button', { name: /^rejeitar$/i }));
+
+      await waitFor(() => {
+        expect(mockRevisarSolicitacao).toHaveBeenCalledWith('s1', 'rejeitar', 'f1');
+        expect(screen.queryByRole('button', { name: /^rejeitar$/i })).not.toBeInTheDocument();
+      });
+      expect(mockListarMembros).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText('Maria')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /remover u2/i })).toBeInTheDocument();
+    });
+
+    it('se a recarga dos membros falhar, mostra o erro e mantém a lista anterior', async () => {
+      mockListarMembros
+        .mockResolvedValueOnce({ membros: MEMBROS })
+        .mockRejectedValueOnce(new Error('Falha'));
+      mockListarSolicitacoes.mockResolvedValue({ solicitacoes: SOLICITACOES });
+      mockRevisarSolicitacao.mockResolvedValue({});
+
+      renderPagina(<FamilySettingsPage familiaId="f1" />);
+      fireEvent.click(await screen.findByRole('button', { name: /^aprovar$/i }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(/erro ao carregar membros/i);
+      expect(screen.getByRole('button', { name: /remover u2/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^aprovar$/i })).not.toBeInTheDocument();
+    });
+  });
+
   it('mostra o título como heading de nível 1 e o Voltar leva a Mais (link direto)', async () => {
     mockListarMembros.mockResolvedValue({ membros: MEMBROS });
     mockListarSolicitacoes.mockResolvedValue({ solicitacoes: [] });

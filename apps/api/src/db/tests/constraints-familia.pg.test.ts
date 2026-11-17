@@ -132,7 +132,8 @@ function linhaValida(tabela: Tabela, f: FamiliaSemeada): Record<string, unknown>
       familia_id: f.familiaId,
       categoria_id: f.categoriaId,
       valor_limite: '100.00',
-      vigencia_inicio: '2026-09',
+      // Único por chamada: o índice orcamento_categoria_vigencia_uq (0015) barra a repetição.
+      vigencia_inicio: `2100-${randomUUID()}`,
       criado_por: f.usuarioId,
     },
     templates_transacao: {

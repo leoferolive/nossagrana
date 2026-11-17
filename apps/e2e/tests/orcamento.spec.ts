@@ -91,8 +91,8 @@ test.describe('Orçamento', () => {
     await input.fill('800');
     await cartao.getByRole('button', { name: 'Salvar', exact: true }).click();
 
-    // O campo some (formulário fecha) e a lista passa a mostrar o limite novo. Não se afirma
-    // "um só cartão" aqui: ver o `test.fixme` logo abaixo (a lista duplica a categoria).
+    // O campo some (formulário fecha) e a lista passa a mostrar o limite novo. A contagem de
+    // cartões fica no teste seguinte.
     await expect(input).not.toBeVisible({ timeout: 5_000 });
     await expect(
       page
@@ -105,11 +105,9 @@ test.describe('Orçamento', () => {
     ).toBeVisible();
   });
 
-  // DEFEITO DO APP/API (não corrigido neste PR): definir de novo o limite de uma categoria na
-  // mesma vigência grava outra linha em `orcamento_categoria` (500 e 800 para o mês) e a lista
-  // mostra as duas, com o limite antigo e o novo, em vez de só o vigente. O teste acima usa o
-  // limite novo na lista e deixa de afirmar a contagem; este fixa o comportamento correto.
-  test.fixme('editar o limite não duplica a categoria na lista', async ({
+  // Definir de novo o limite de uma categoria na mesma vigência atualiza a linha existente: a
+  // lista mostra um só cartão, com o limite novo.
+  test('editar o limite não duplica a categoria na lista', async ({
     page,
     authContext,
     familiaId,

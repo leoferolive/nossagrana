@@ -24,6 +24,7 @@ import { sessaoRevogacaoPlugin } from './plugins/sessao-revogacao.plugin.js';
 import { websocketPlugin } from './plugins/websocket.plugin.js';
 import { wsTicketPlugin } from './plugins/ws-ticket.plugin.js';
 import type { VerificadorAcessoFamilia } from './shared/familia-access/verificador-acesso-familia.js';
+import { construirErroDeLimite } from './shared/http/limite-requisicoes.js';
 import { opcoesDoLogger } from './shared/http/log-redaction.js';
 import { registrarRespostaReferenciaInvalida } from './shared/referencia-ownership/referencia-ownership.http.js';
 import { decorarRepositoriosInMemoryDeTeste } from './shared/repositorios-in-memory.js';
@@ -31,6 +32,8 @@ import { decorarRepositoriosInMemoryDeTeste } from './shared/repositorios-in-mem
 export interface OpcoesDoApp {
   /** Verificador de posse de família; padrão PostgreSQL. Testes injetam uma fake nomeada. */
   verificadorAcessoFamilia?: VerificadorAcessoFamilia;
+  /** Liga ou desliga o limite de requisições; padrão: ligado, exceto com NODE_ENV=test. */
+  limiteDeRequisicoes?: boolean;
 }
 
 export const buildApp = (opcoes: OpcoesDoApp = {}) => {
@@ -47,16 +50,12 @@ export const buildApp = (opcoes: OpcoesDoApp = {}) => {
   app.setSerializerCompiler(serializerCompiler);
 
   // Rate limiting global: 100 req/min por IP (desabilitado em testes)
-  if (env.NODE_ENV !== 'test') {
+  if (opcoes.limiteDeRequisicoes ?? env.NODE_ENV !== 'test') {
     app.register(import('@fastify/rate-limit'), {
       max: 100,
       timeWindow: '1 minute',
       allowList: (req) => req.url === '/api/health' || req.url === '/metrics',
-      errorResponseBuilder: (_req, context) => ({
-        error: {
-          message: `Muitas tentativas. Tente novamente em ${Math.ceil(context.ttl / 1000)} segundos.`,
-        },
-      }),
+      errorResponseBuilder: construirErroDeLimite,
     });
   }
 

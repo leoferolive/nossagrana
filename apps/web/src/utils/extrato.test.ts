@@ -1,7 +1,16 @@
 import type { TransacaoListResponse } from '@nossagrana/types';
 import { describe, expect, it } from 'vitest';
 
-import { agruparPorDia, paraCentavos, resumoDoPeriodo, rotuloDoDia } from './extrato';
+import {
+  agruparPorDia,
+  formatarComSinal,
+  montarCsv,
+  nomeDoMes,
+  paraCentavos,
+  resumoDoPeriodo,
+  rotuloDoDia,
+  valorAssinadoCentavos,
+} from './extrato';
 
 type Transacao = TransacaoListResponse['transacoes'][number];
 
@@ -89,5 +98,57 @@ describe('resumoDoPeriodo', () => {
       saidasCentavos: 0,
       saldoCentavos: 0,
     });
+  });
+});
+
+describe('formatarComSinal', () => {
+  it('entrada leva "+", saída leva "−" e zero fica sem sinal', () => {
+    expect(formatarComSinal(500000)).toBe('+R$\u00a05.000,00');
+    expect(formatarComSinal(-15050)).toBe('\u2212R$\u00a0150,50');
+    expect(formatarComSinal(0)).toBe('R$\u00a00,00');
+  });
+});
+
+describe('valorAssinadoCentavos', () => {
+  it('receita positiva, despesa negativa', () => {
+    expect(valorAssinadoCentavos(T('a', '2026-11-10', '12.34', 'receita'))).toBe(1234);
+    expect(valorAssinadoCentavos(T('b', '2026-11-10', '12.34', 'despesa'))).toBe(-1234);
+  });
+});
+
+describe('nomeDoMes', () => {
+  it('devolve só o nome do mês, em minúsculo', () => {
+    expect(nomeDoMes('2026-11')).toBe('novembro');
+    expect(nomeDoMes('2026-03')).toBe('março');
+  });
+});
+
+describe('montarCsv', () => {
+  it('gera o mesmo CSV de sempre: cabeçalho e células entre aspas', () => {
+    const csv = montarCsv(
+      [
+        {
+          ...T('a', '2026-11-10', '150.00', 'despesa'),
+          descricao: 'Mercado',
+          categoriaId: 'c1',
+          metodoPagamentoId: 'm1',
+        } as Transacao,
+        {
+          ...T('b', '2026-11-11', '5000.00', 'receita'),
+          descricao: null,
+          categoriaId: 'c2',
+          metodoPagamentoId: null,
+        } as Transacao,
+      ],
+      (id) => (id === 'c1' ? 'Alimentação' : '—'),
+      (id) => (id === 'm1' ? 'Pix' : '—'),
+    );
+    expect(csv).toBe(
+      [
+        '"Data","Descrição","Categoria","Pagamento","Tipo","Valor"',
+        '"2026-11-10","Mercado","Alimentação","Pix","despesa","150.00"',
+        '"2026-11-11","","—","—","receita","5000.00"',
+      ].join('\n'),
+    );
   });
 });

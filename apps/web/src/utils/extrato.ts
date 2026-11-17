@@ -1,5 +1,7 @@
 import type { TransacaoListResponse } from '@nossagrana/types';
 
+import { formatBRLNumber } from './formatting';
+
 type Transacao = TransacaoListResponse['transacoes'][number];
 
 export interface DiaDoExtrato {
@@ -21,7 +23,8 @@ export interface ResumoDoPeriodo {
  */
 export const paraCentavos = (valor: string): number => Math.round(parseFloat(valor) * 100);
 
-const centavosComSinal = (t: Transacao): number =>
+/** Valor do lançamento em centavos, positivo na receita e negativo na despesa. */
+export const valorAssinadoCentavos = (t: Transacao): number =>
   t.tipo === 'receita' ? paraCentavos(t.valor) : -paraCentavos(t.valor);
 
 /**
@@ -39,7 +42,7 @@ export const agruparPorDia = (transacoes: Transacao[]): DiaDoExtrato[] => {
     .sort((a, b) => (a < b ? 1 : a > b ? -1 : 0))
     .map((data) => {
       const doDia = porData.get(data) ?? [];
-      const totalCentavos = doDia.reduce((soma, t) => soma + centavosComSinal(t), 0);
+      const totalCentavos = doDia.reduce((soma, t) => soma + valorAssinadoCentavos(t), 0);
       return { data, transacoes: doDia, totalCentavos };
     });
 };
@@ -83,4 +86,37 @@ export const resumoDoPeriodo = (transacoes: Transacao[]): ResumoDoPeriodo => {
     else saidasCentavos += paraCentavos(t.valor);
   }
   return { entradasCentavos, saidasCentavos, saldoCentavos: entradasCentavos - saidasCentavos };
+};
+
+const formatarCentavos = (centavos: number): string => formatBRLNumber(centavos / 100);
+
+/** "+R$ 120,00" para entrada, "−R$ 45,50" para saída e "R$ 0,00" para zero. */
+export const formatarComSinal = (centavos: number): string => {
+  if (centavos > 0) return `+${formatarCentavos(centavos)}`;
+  if (centavos < 0) return `\u2212${formatarCentavos(-centavos)}`;
+  return formatarCentavos(0);
+};
+
+/** Nome do mês por extenso e em minúsculo ("novembro"), a partir de AAAA-MM. */
+export const nomeDoMes = (mesReferencia: string): string => {
+  const [ano, mes] = mesReferencia.split('-').map(Number);
+  return new Date(ano, mes - 1, 1, 12).toLocaleDateString('pt-BR', { month: 'long' });
+};
+
+/** CSV do extrato (sem o BOM, que quem grava o arquivo acrescenta): uma linha por lançamento. */
+export const montarCsv = (
+  transacoes: Transacao[],
+  nomeDaCategoria: (id: string | null) => string,
+  nomeDoMetodo: (id: string | null) => string,
+): string => {
+  const cabecalho = ['Data', 'Descrição', 'Categoria', 'Pagamento', 'Tipo', 'Valor'];
+  const linhas = transacoes.map((t) => [
+    t.data,
+    t.descricao ?? '',
+    nomeDaCategoria(t.categoriaId),
+    nomeDoMetodo(t.metodoPagamentoId),
+    t.tipo,
+    t.valor,
+  ]);
+  return [cabecalho, ...linhas].map((linha) => linha.map((c) => `"${c}"`).join(',')).join('\n');
 };

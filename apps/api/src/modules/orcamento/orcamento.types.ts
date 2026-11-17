@@ -29,6 +29,7 @@ export interface OrcamentoRepository {
   getGastosPorCategoria(familiaId: string, mesReferencia: string): Promise<Map<string, string>>;
   findAberto(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow | null>;
   encerrar(id: string, familiaId: string, vigenciaFim: string): Promise<void>;
+  atualizarValor(id: string, familiaId: string, valorLimite: string): Promise<void>;
   insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow>;
   listHistorico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoRow[]>;
 }

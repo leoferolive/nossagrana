@@ -107,4 +107,64 @@ describe('OrcamentoService', () => {
     expect(result.historico[0].valorLimite).toBe('500.00');
     expect(result.historico[1].valorLimite).toBe('300.00');
   });
+
+  describe('editar o limite na mesma vigência', () => {
+    const base = { familiaId, categoriaId, usuarioId, vigenciaInicio: '2026-03' };
+
+    it('editar duas vezes no mesmo mês deixa uma linha só, com o último valor', async () => {
+      await service.set({ ...base, valorLimite: '500.00' });
+      await service.set({ ...base, valorLimite: '650.00' });
+      await service.set({ ...base, valorLimite: '700.00' });
+
+      const doMes = await service.list(familiaId, '2026-03');
+      expect(doMes.orcamentos).toHaveLength(1);
+      expect(doMes.orcamentos[0].valorLimite).toBe('700.00');
+      const historico = await service.historico(familiaId, categoriaId);
+      expect(historico.historico).toHaveLength(1);
+      expect(historico.historico[0].vigenciaFim).toBeNull();
+    });
+
+    it('editar em mês novo encerra o anterior e o histórico mostra os dois', async () => {
+      await service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '500.00' });
+      await service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '550.00' });
+      await service.set({ ...base, vigenciaInicio: '2026-03', valorLimite: '800.00' });
+
+      const historico = await service.historico(familiaId, categoriaId);
+      expect(historico.historico).toHaveLength(2);
+      expect(historico.historico[0]).toMatchObject({
+        valorLimite: '800.00',
+        vigenciaInicio: '2026-03',
+        vigenciaFim: null,
+      });
+      expect(historico.historico[1]).toMatchObject({
+        valorLimite: '550.00',
+        vigenciaInicio: '2026-01',
+        vigenciaFim: '2026-02',
+      });
+    });
+
+    it('não altera o limite de outra família com a mesma categoria', async () => {
+      await service.set({ ...base, valorLimite: '500.00' });
+      await service.set({ ...base, familiaId: 'fam-2', valorLimite: '900.00' });
+
+      await service.set({ ...base, valorLimite: '650.00' });
+
+      const outra = await service.list('fam-2', '2026-03');
+      expect(outra.orcamentos).toHaveLength(1);
+      expect(outra.orcamentos[0].valorLimite).toBe('900.00');
+    });
+
+    it('categoria inativa com limite aberto continua podendo ser ajustada na mesma vigência', async () => {
+      const referencias = new ReferenciasSempreValidasFake();
+      service = new OrcamentoService(repo, referencias);
+      await service.set({ ...base, valorLimite: '500.00' });
+
+      await service.set({ ...base, valorLimite: '650.00' });
+
+      const doMes = await service.list(familiaId, '2026-03');
+      expect(doMes.orcamentos).toHaveLength(1);
+      expect(doMes.orcamentos[0].valorLimite).toBe('650.00');
+      expect(referencias.chamadas.at(-1)?.categoria).toMatchObject({ exigirAtiva: false });
+    });
+  });
 });

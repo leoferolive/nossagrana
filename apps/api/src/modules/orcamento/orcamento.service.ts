@@ -51,9 +51,15 @@ export class OrcamentoService {
       familiaId: input.familiaId,
       categoria: { id: input.categoriaId, exigirAtiva: !aberto },
     });
+    // Mesma vigência: atualiza no lugar. Encerrar e inserir deixaria duas linhas
+    // do mesmo mês (a encerrada com início e fim iguais) na lista.
+    if (aberto?.vigenciaInicio === input.vigenciaInicio) {
+      await this.repo.atualizarValor(aberto.id, input.familiaId, input.valorLimite);
+      return;
+    }
     if (aberto) {
       const vigFimCandidate = mesAnterior(input.vigenciaInicio);
-      // Guard: vigenciaFim must not precede the record's own start (same-month edge case)
+      // Guard: vigenciaFim must not precede the record's own start
       const vigFim =
         vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
       await this.repo.encerrar(aberto.id, input.familiaId, vigFim);

@@ -106,6 +106,13 @@
       "when": 1794776506322,
       "tag": "0014_categorias_padrao_acentos",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794883109740,
+      "tag": "0015_orcamento_vigencia_unica",
+      "breakpoints": true
     }
   ]
 }

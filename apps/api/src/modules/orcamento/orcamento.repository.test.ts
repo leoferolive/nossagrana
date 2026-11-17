@@ -84,6 +84,17 @@ describe('InMemoryOrcamentoRepository', () => {
     expect(found).toBeNull();
   });
 
+  it('atualizarValor troca o valor só do registro da própria família', async () => {
+    const dela = await repo.insert(baseInput);
+    const deOutra = await repo.insert({ ...baseInput, familiaId: 'f2' });
+    await repo.atualizarValor(dela.id, 'f2', '999.00');
+    expect((await repo.findAberto('f1', 'cat-1'))?.valorLimite).toBe('500.00');
+    await repo.atualizarValor(dela.id, 'f1', '650.00');
+    expect((await repo.findAberto('f1', 'cat-1'))?.valorLimite).toBe('650.00');
+    expect((await repo.findAberto('f2', 'cat-1'))?.id).toBe(deOutra.id);
+    expect((await repo.findAberto('f2', 'cat-1'))?.valorLimite).toBe('500.00');
+  });
+
   it('listHistorico retorna historico em ordem decrescente', async () => {
     await repo.insert({ ...baseInput, vigenciaInicio: '2026-01' });
     await repo.insert({ ...baseInput, vigenciaInicio: '2026-03' });
@@ -180,6 +191,15 @@ describe('DrizzleOrcamentoRepository', () => {
     });
     await repo.encerrar('oc1', 'f1', '2026-02');
     expect(mockDb.update).toHaveBeenCalled();
+    expect(mockWhere).toHaveBeenCalled();
+  });
+
+  it('atualizarValor executa update com o valor novo e familiaId', async () => {
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+    mockDb.update.mockReturnValue({ set: mockSet });
+    await repo.atualizarValor('oc1', 'f1', '650.00');
+    expect(mockSet).toHaveBeenCalledWith({ valorLimite: '650.00' });
     expect(mockWhere).toHaveBeenCalled();
   });
 

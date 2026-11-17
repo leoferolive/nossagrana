@@ -103,6 +103,13 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
     }
   }
 
+  async atualizarValor(id: string, familiaId: string, valorLimite: string): Promise<void> {
+    const record = this._orcamentos.find((o) => o.id === id && o.familiaId === familiaId);
+    if (record) {
+      record.valorLimite = valorLimite;
+    }
+  }
+
   async insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
     const record: InMemoryOrcamento = {
       id: crypto.randomUUID(),
@@ -222,6 +229,13 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
     await db
       .update(orcamentoCategoria)
       .set({ vigenciaFim })
+      .where(and(eq(orcamentoCategoria.id, id), eq(orcamentoCategoria.familiaId, familiaId)));
+  }
+
+  async atualizarValor(id: string, familiaId: string, valorLimite: string): Promise<void> {
+    await db
+      .update(orcamentoCategoria)
+      .set({ valorLimite })
       .where(and(eq(orcamentoCategoria.id, id), eq(orcamentoCategoria.familiaId, familiaId)));
   }
 

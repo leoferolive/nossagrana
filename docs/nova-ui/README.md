@@ -29,10 +29,11 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. Entrega 3 em andamento: correções (#191) e Extrato (#192) entregues.
-**Próximo passo:** o PR do Lançar, com plano em
-`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr3-lancar.md` na branch
-`feat/nova-ui-e3-lancar` (criada sobre a do Extrato).
+Lançar e Início ainda é o antigo. Entregas 1, 2 e 3 concluídas. Entrega 3: #191 (correções), #192 (Extrato) e o
+PR do Lançar. **Próximo passo:** o desenho da Entrega 4 (plano do mês e Início),
+que precisa de aprovação do usuário antes de qualquer código. Ele depende de duas
+decisões em aberto: o que "Confirmar lazer" gera e como converter "fatura que
+vence no mês" no mês de referência (seção "Plano do mês").
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -128,12 +129,19 @@ correção:
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
 
+Pontos menores do PR do Lançar:
+
+- Com o painel aberto, tocar no microfone e usar o voltar do navegador fecha o
+  painel, mas deixa a gravação de voz aberta sobre a tela; ela só fecha tocando
+  fora, e Escape não fecha.
+- Os campos numéricos mostram o valor com ponto ("33.00"), e o Extrato usa
+  vírgula.
+
 Pontos menores do PR do Extrato:
 
 - A linha tocada fica com fundo cinza depois do toque.
 - A pílula de mês continua navegável durante o erro de carga.
-- Salvar com a rede fora fecha o painel de lançar sem aviso e perde o que foi
-  digitado (comportamento antigo; corrigido no PR do Lançar).
+- Salvar com a rede fora fechava o painel sem aviso; corrigido no PR do Lançar.
 
 Pontos menores do PR de correções da Entrega 3:
 

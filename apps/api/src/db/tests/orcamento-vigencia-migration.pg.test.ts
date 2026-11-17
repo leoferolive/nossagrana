@@ -11,9 +11,11 @@ import {
 } from './pg-harness.js';
 
 // Nova UI, Entrega 3 (PR 1): editar o limite na mesma vigência gravava outra
-// linha. A migration remove só a duplicata exata (família + categoria + início),
-// mantendo a mais recente, sem tocar em limites de outras vigências.
+// linha. A migration MOVE só a duplicata exata (família + categoria + início) para
+// "orcamento_categoria_duplicados", mantendo a mais recente, e cria o índice único
+// que impede a duplicata de voltar. Limites de outras vigências não são tocados.
 const MIGRATION = '0015_orcamento_vigencia_unica';
+const INDICE = 'orcamento_categoria_vigencia_uq';
 
 interface Limite {
   inicio: string;
@@ -36,6 +38,18 @@ async function idsDe(sql: postgres.Sql, f: FamiliaSemeada): Promise<string[]> {
   return rows.map((r) => r.id as string);
 }
 
+async function existeIndiceUnico(sql: postgres.Sql): Promise<boolean> {
+  const rows = await sql`SELECT 1 FROM pg_indexes
+    WHERE tablename = 'orcamento_categoria' AND indexname = ${INDICE}
+      AND indexdef LIKE 'CREATE UNIQUE INDEX%'`;
+  return rows.length === 1;
+}
+
+async function idsMovidos(sql: postgres.Sql): Promise<string[]> {
+  const rows = await sql`SELECT id FROM orcamento_categoria_duplicados ORDER BY criado_em`;
+  return rows.map((r) => r.id as string);
+}
+
 async function semearAntes(): Promise<{ banco: BancoDescartavel; f: FamiliaSemeada }> {
   const banco = await criarBancoDescartavel();
   await aplicarMigrationsAntesDe(banco.url, MIGRATION);
@@ -49,7 +63,41 @@ describe('migration 0015: um limite por vigência (pg)', () => {
     await banco.descartar();
   });
 
-  it('remove a duplicata da mesma vigência e mantém a mais recente', async () => {
+  it('aplica em banco limpo e cria a tabela de auditoria e o índice único', async () => {
+    banco = await criarBancoDescartavel();
+    await aplicarMigrations(banco.url);
+
+    expect(await existeIndiceUnico(banco.sql)).toBe(true);
+    const [tabela] = await banco.sql`SELECT to_regclass('orcamento_categoria_duplicados') AS t`;
+    expect(tabela!.t).not.toBeNull();
+  });
+
+  it('o índice impede inserir outro limite da mesma família, categoria e vigência', async () => {
+    banco = await criarBancoDescartavel();
+    await aplicarMigrationsAntesDe(banco.url, MIGRATION);
+    const f = await semearFamilia(banco.sql, 'Nova');
+    await aplicarMigrations(banco.url);
+    await inserirLimite(banco.sql, f, {
+      inicio: '2026-11',
+      fim: null,
+      valor: '500.00',
+      criadoEm: '2026-11-01T10:00:00Z',
+    });
+
+    const erro = await inserirLimite(banco.sql, f, {
+      inicio: '2026-11',
+      fim: null,
+      valor: '600.00',
+      criadoEm: '2026-11-02T10:00:00Z',
+    }).then(
+      () => null,
+      (e: { code?: string; constraint_name?: string }) => e,
+    );
+
+    expect(erro).toMatchObject({ code: '23505', constraint_name: INDICE });
+  });
+
+  it('mantém a mais recente da mesma vigência e move as demais com os valores intactos', async () => {
     const semeado = await semearAntes();
     banco = semeado.banco;
     const { f } = semeado;
@@ -74,10 +122,21 @@ describe('migration 0015: um limite por vigência (pg)', () => {
 
     await aplicarMigrations(banco.url);
 
-    const restantes = await idsDe(banco.sql, f);
-    expect(restantes).toEqual([atual]);
-    expect(restantes).not.toContain(velha);
-    expect(restantes).not.toContain(meio);
+    expect(await idsDe(banco.sql, f)).toEqual([atual]);
+    expect(await idsMovidos(banco.sql)).toEqual([velha, meio]);
+    const [movido] = await banco.sql`SELECT * FROM orcamento_categoria_duplicados
+      WHERE id = ${velha}`;
+    expect(movido).toMatchObject({
+      familia_id: f.familiaId,
+      categoria_id: f.categoriaId,
+      valor_limite: '500.00',
+      vigencia_inicio: '2026-11',
+      vigencia_fim: '2026-11',
+      criado_por: f.usuarioId,
+    });
+    expect(movido!.criado_em).toEqual(new Date('2026-11-01T10:00:00Z'));
+    expect(movido!.movido_em).toBeInstanceOf(Date);
+    expect(await existeIndiceUnico(banco.sql)).toBe(true);
   });
 
   it('não toca em limites de outras vigências, de outra categoria nem de outra família', async () => {
@@ -124,7 +183,7 @@ describe('migration 0015: um limite por vigência (pg)', () => {
 
     const daFamilia = await idsDe(banco.sql, f);
     expect(daFamilia.sort()).toEqual([anterior, atual, deOutraCategoria].sort());
-    expect(daFamilia).not.toContain(dupDoMes);
+    expect(await idsMovidos(banco.sql)).toEqual([dupDoMes]);
     expect(await idsDe(banco.sql, vizinha)).toEqual([mesmoInicioOutraFamilia]);
     const [preservado] = await banco.sql`
       SELECT vigencia_fim, valor_limite FROM orcamento_categoria WHERE id = ${anterior}`;
@@ -152,5 +211,7 @@ describe('migration 0015: um limite por vigência (pg)', () => {
     await reaplicarMigration(banco.sql, MIGRATION);
 
     expect(await idsDe(banco.sql, f)).toEqual([atual]);
+    expect((await idsMovidos(banco.sql)).length).toBe(1);
+    expect(await existeIndiceUnico(banco.sql)).toBe(true);
   });
 });

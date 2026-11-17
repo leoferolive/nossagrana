@@ -237,6 +237,13 @@ export const orcamentoCategoria = pgTable(
   },
   (table) => [
     index('orcamento_categoria_familia_categoria_idx').on(table.familiaId, table.categoriaId),
+    // Um limite por família, categoria e vigência (migration 0015): editar no mesmo mês
+    // atualiza a linha; a violação deste índice vira erro tratável no repositório.
+    uniqueIndex('orcamento_categoria_vigencia_uq').on(
+      table.familiaId,
+      table.categoriaId,
+      table.vigenciaInicio,
+    ),
     foreignKey({
       name: 'orcamento_categoria_categoria_familia_fk',
       columns: [table.categoriaId, table.familiaId],
@@ -244,6 +251,20 @@ export const orcamentoCategoria = pgTable(
     }),
   ],
 );
+
+// Auditoria da deduplicação da migration 0015: limites duplicados na mesma vigência
+// são movidos para cá (nunca apagados). Sem FK/índices: é arquivo morto de consulta manual.
+export const orcamentoCategoriaDuplicados = pgTable('orcamento_categoria_duplicados', {
+  id: uuid('id').primaryKey(),
+  familiaId: uuid('familia_id').notNull(),
+  categoriaId: uuid('categoria_id').notNull(),
+  valorLimite: numeric('valor_limite', { precision: 14, scale: 2 }).notNull(),
+  vigenciaInicio: text('vigencia_inicio').notNull(),
+  vigenciaFim: text('vigencia_fim'),
+  criadoPor: uuid('criado_por').notNull(),
+  criadoEm: timestamp('criado_em', { withTimezone: true }).notNull(),
+  movidoEm: timestamp('movido_em', { withTimezone: true }).defaultNow().notNull(),
+});
 
 export const snapshotsMensais = pgTable(
   'snapshots_mensais',

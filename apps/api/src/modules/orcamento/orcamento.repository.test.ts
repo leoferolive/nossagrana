@@ -8,6 +8,7 @@ const mockDb = vi.hoisted(() => ({
 
 vi.mock('../../db/client.js', () => ({ db: mockDb }));
 
+import { LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
 import { DrizzleOrcamentoRepository, InMemoryOrcamentoRepository } from './orcamento.repository.js';
 
 // ─── InMemory ────────────────────────────────────────────────────────────────
@@ -93,6 +94,13 @@ describe('InMemoryOrcamentoRepository', () => {
     expect((await repo.findAberto('f1', 'cat-1'))?.valorLimite).toBe('650.00');
     expect((await repo.findAberto('f2', 'cat-1'))?.id).toBe(deOutra.id);
     expect((await repo.findAberto('f2', 'cat-1'))?.valorLimite).toBe('500.00');
+  });
+
+  it('insert recusa segundo limite da mesma família, categoria e vigência', async () => {
+    await repo.insert(baseInput);
+    await expect(repo.insert(baseInput)).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+    await repo.insert({ ...baseInput, familiaId: 'f2' });
+    await repo.insert({ ...baseInput, vigenciaInicio: '2026-04' });
   });
 
   it('listHistorico retorna historico em ordem decrescente', async () => {
@@ -201,6 +209,46 @@ describe('DrizzleOrcamentoRepository', () => {
     await repo.atualizarValor('oc1', 'f1', '650.00');
     expect(mockSet).toHaveBeenCalledWith({ valorLimite: '650.00' });
     expect(mockWhere).toHaveBeenCalled();
+  });
+
+  it('insert traduz a violação do índice único da vigência em LimiteVigenciaDuplicadaError', async () => {
+    const violacao = Object.assign(new Error('duplicate key'), {
+      code: '23505',
+      constraint_name: 'orcamento_categoria_vigencia_uq',
+    });
+    mockDb.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockRejectedValue(new Error('query falhou', { cause: violacao })),
+      }),
+    });
+    await expect(
+      repo.insert({
+        familiaId: 'f1',
+        categoriaId: 'cat-1',
+        usuarioId: 'u1',
+        valorLimite: '500.00',
+        vigenciaInicio: '2026-03',
+      }),
+    ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+  });
+
+  it('insert não traduz outras violações de unicidade', async () => {
+    const outra = Object.assign(new Error('duplicate key'), {
+      code: '23505',
+      constraint_name: 'outra_uq',
+    });
+    mockDb.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({ returning: vi.fn().mockRejectedValue(outra) }),
+    });
+    await expect(
+      repo.insert({
+        familiaId: 'f1',
+        categoriaId: 'cat-1',
+        usuarioId: 'u1',
+        valorLimite: '500.00',
+        vigenciaInicio: '2026-03',
+      }),
+    ).rejects.toBe(outra);
   });
 
   it('insert persiste e retorna novo registro', async () => {

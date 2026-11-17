@@ -1,8 +1,34 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
+import { LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
 import { InMemoryOrcamentoRepository } from './orcamento.repository.js';
+import type { OrcamentoHistoricoRow } from './orcamento.types.js';
 import { OrcamentoService } from './orcamento.service.js';
+
+/**
+ * Repositório que imita uma requisição concorrente: na primeira consulta ao limite
+ * aberto, outra requisição acaba de gravar o mesmo limite, e a consulta ainda não o vê.
+ */
+class RepositorioComCorridaFake extends InMemoryOrcamentoRepository {
+  private corridaPendente = true;
+
+  override async findAberto(
+    familiaId: string,
+    categoriaId: string,
+  ): Promise<OrcamentoHistoricoRow | null> {
+    if (!this.corridaPendente) return super.findAberto(familiaId, categoriaId);
+    this.corridaPendente = false;
+    await this.insert({
+      familiaId,
+      categoriaId,
+      usuarioId: 'usr-concorrente',
+      valorLimite: '600.00',
+      vigenciaInicio: '2026-03',
+    });
+    return null;
+  }
+}
 
 describe('OrcamentoService', () => {
   let repo: InMemoryOrcamentoRepository;
@@ -165,6 +191,38 @@ describe('OrcamentoService', () => {
       expect(doMes.orcamentos).toHaveLength(1);
       expect(doMes.orcamentos[0].valorLimite).toBe('650.00');
       expect(referencias.chamadas.at(-1)?.categoria).toMatchObject({ exigirAtiva: false });
+    });
+
+    it('duas requisições ao mesmo tempo no mesmo mês deixam uma linha só, com o último valor', async () => {
+      repo = new RepositorioComCorridaFake();
+      service = new OrcamentoService(repo, new ReferenciasSempreValidasFake());
+
+      await service.set({ ...base, valorLimite: '700.00' });
+
+      const historico = await service.historico(familiaId, categoriaId);
+      expect(historico.historico).toHaveLength(1);
+      expect(historico.historico[0]).toMatchObject({ valorLimite: '700.00', vigenciaFim: null });
+    });
+
+    it('vigência que já existe encerrada vira erro 409 sem encerrar o limite aberto', async () => {
+      await service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '500.00' });
+      await service.set({ ...base, vigenciaInicio: '2026-03', valorLimite: '800.00' });
+
+      await expect(
+        service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '900.00' }),
+      ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+
+      const historico = await service.historico(familiaId, categoriaId);
+      expect(historico.historico).toHaveLength(2);
+      expect(historico.historico[0]).toMatchObject({
+        vigenciaInicio: '2026-03',
+        vigenciaFim: null,
+      });
+      expect(historico.historico[1]).toMatchObject({
+        vigenciaInicio: '2026-01',
+        vigenciaFim: '2026-02',
+        valorLimite: '500.00',
+      });
     });
   });
 });

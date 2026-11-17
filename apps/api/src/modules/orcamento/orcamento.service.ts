@@ -2,7 +2,12 @@ import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagr
 
 import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { mesAnterior } from '../../utils/date.js';
-import type { OrcamentoRepository, OrcamentoSetInput } from './orcamento.types.js';
+import { LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
+import type {
+  OrcamentoHistoricoRow,
+  OrcamentoRepository,
+  OrcamentoSetInput,
+} from './orcamento.types.js';
 
 function calcularStatus(percentual: number): 'ok' | 'warning' | 'exceeded' {
   if (percentual >= 100) return 'exceeded';
@@ -45,6 +50,17 @@ export class OrcamentoService {
   }
 
   async set(input: OrcamentoSetInput): Promise<void> {
+    try {
+      await this.gravar(input);
+    } catch (erro) {
+      if (!(erro instanceof LimiteVigenciaDuplicadaError)) throw erro;
+      // Outra requisição gravou esta vigência entre a consulta e a escrita: tenta
+      // uma vez de novo, agora achando a linha dela para atualizar no lugar.
+      await this.gravar(input);
+    }
+  }
+
+  private async gravar(input: OrcamentoSetInput): Promise<void> {
     const aberto = await this.repo.findAberto(input.familiaId, input.categoriaId);
     // Orçamento novo exige categoria ativa; ajustar um já vigente não.
     await this.referencias.validar({
@@ -58,13 +74,29 @@ export class OrcamentoService {
       return;
     }
     if (aberto) {
-      const vigFimCandidate = mesAnterior(input.vigenciaInicio);
-      // Guard: vigenciaFim must not precede the record's own start
-      const vigFim =
-        vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
-      await this.repo.encerrar(aberto.id, input.familiaId, vigFim);
+      await this.garantirVigenciaLivre(input);
+      await this.encerrarAberto(aberto, input);
     }
     await this.repo.insert(input);
+  }
+
+  /** Falha antes de encerrar o limite aberto, para não deixar estado parcial. */
+  private async garantirVigenciaLivre(input: OrcamentoSetInput): Promise<void> {
+    const historico = await this.repo.listHistorico(input.familiaId, input.categoriaId);
+    if (historico.some((h) => h.vigenciaInicio === input.vigenciaInicio)) {
+      throw new LimiteVigenciaDuplicadaError(input.categoriaId, input.vigenciaInicio);
+    }
+  }
+
+  private async encerrarAberto(
+    aberto: OrcamentoHistoricoRow,
+    input: OrcamentoSetInput,
+  ): Promise<void> {
+    const vigFimCandidate = mesAnterior(input.vigenciaInicio);
+    // Guard: vigenciaFim must not precede the record's own start
+    const vigFim =
+      vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
+    await this.repo.encerrar(aberto.id, input.familiaId, vigFim);
   }
 
   async historico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoResponse> {

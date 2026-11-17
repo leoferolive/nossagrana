@@ -2,6 +2,7 @@ import { and, desc, eq, isNull, lte, gte, or, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { categorias, orcamentoCategoria, transacoes } from '../../db/schema.js';
+import { LimiteVigenciaDuplicadaError, violaIndiceDaVigencia } from './orcamento.errors.js';
 import type {
   OrcamentoHistoricoRow,
   OrcamentoRepository,
@@ -111,6 +112,14 @@ export class InMemoryOrcamentoRepository implements OrcamentoRepository {
   }
 
   async insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
+    const repetido = this._orcamentos.some(
+      (o) =>
+        o.familiaId === input.familiaId &&
+        o.categoriaId === input.categoriaId &&
+        o.vigenciaInicio === input.vigenciaInicio,
+    );
+    // Imita o índice único orcamento_categoria_vigencia_uq do PostgreSQL.
+    if (repetido) throw new LimiteVigenciaDuplicadaError(input.categoriaId, input.vigenciaInicio);
     const record: InMemoryOrcamento = {
       id: crypto.randomUUID(),
       familiaId: input.familiaId,
@@ -240,6 +249,17 @@ export class DrizzleOrcamentoRepository implements OrcamentoRepository {
   }
 
   async insert(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
+    try {
+      return await this.inserirLinha(input);
+    } catch (erro) {
+      if (violaIndiceDaVigencia(erro)) {
+        throw new LimiteVigenciaDuplicadaError(input.categoriaId, input.vigenciaInicio);
+      }
+      throw erro;
+    }
+  }
+
+  private async inserirLinha(input: OrcamentoSetInput): Promise<OrcamentoHistoricoRow> {
     const rows = await db
       .insert(orcamentoCategoria)
       .values({

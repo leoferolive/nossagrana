@@ -1,5 +1,5 @@
 {
-  "id": "ec73ad68-1200-4ffb-8184-caf2e520001d",
+  "id": "2f12b6fb-eb94-4b89-b73f-0695a0becab6",
   "prevId": "caf93085-20f3-4d68-a28f-11f3e88b30cb",
   "version": "7",
   "dialect": "postgresql",
@@ -67,28 +67,28 @@
         "categorias_familia_id_familias_id_fk": {
           "name": "categorias_familia_id_familias_id_fk",
           "tableFrom": "categorias",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "categorias_criado_por_users_id_fk": {
           "name": "categorias_criado_por_users_id_fk",
           "tableFrom": "categorias",
-          "columnsFrom": ["criado_por"],
           "tableTo": "users",
+          "columnsFrom": ["criado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "categorias_id_familia_id_unique": {
           "name": "categorias_id_familia_id_unique",
-          "columns": ["id", "familia_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["id", "familia_id"]
         }
       },
       "policies": {},
@@ -155,20 +155,20 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "chaves_idempotencia_familia_id_familias_id_fk": {
           "name": "chaves_idempotencia_familia_id_familias_id_fk",
           "tableFrom": "chaves_idempotencia",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -275,37 +275,37 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "cofrinhos_familia_id_familias_id_fk": {
           "name": "cofrinhos_familia_id_familias_id_fk",
           "tableFrom": "cofrinhos",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cofrinhos_criado_por_users_id_fk": {
           "name": "cofrinhos_criado_por_users_id_fk",
           "tableFrom": "cofrinhos",
-          "columnsFrom": ["criado_por"],
           "tableTo": "users",
+          "columnsFrom": ["criado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "cofrinhos_id_familia_id_unique": {
           "name": "cofrinhos_id_familia_id_unique",
-          "columns": ["id", "familia_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["id", "familia_id"]
         }
       },
       "policies": {},
@@ -377,37 +377,37 @@
         "convites_familia_id_familias_id_fk": {
           "name": "convites_familia_id_familias_id_fk",
           "tableFrom": "convites",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "convites_criado_por_users_id_fk": {
           "name": "convites_criado_por_users_id_fk",
           "tableFrom": "convites",
-          "columnsFrom": ["criado_por"],
           "tableTo": "users",
+          "columnsFrom": ["criado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "convites_usado_por_users_id_fk": {
           "name": "convites_usado_por_users_id_fk",
           "tableFrom": "convites",
-          "columnsFrom": ["usado_por"],
           "tableTo": "users",
+          "columnsFrom": ["usado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "convites_codigo_unique": {
           "name": "convites_codigo_unique",
-          "columns": ["codigo"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["codigo"]
         }
       },
       "policies": {},
@@ -521,28 +521,28 @@
         "metodos_pagamento_familia_id_familias_id_fk": {
           "name": "metodos_pagamento_familia_id_familias_id_fk",
           "tableFrom": "metodos_pagamento",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "metodos_pagamento_usuario_dono_id_users_id_fk": {
           "name": "metodos_pagamento_usuario_dono_id_users_id_fk",
           "tableFrom": "metodos_pagamento",
-          "columnsFrom": ["usuario_dono_id"],
           "tableTo": "users",
+          "columnsFrom": ["usuario_dono_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "metodos_pagamento_id_familia_id_unique": {
           "name": "metodos_pagamento_id_familia_id_unique",
-          "columns": ["id", "familia_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["id", "familia_id"]
         }
       },
       "policies": {},
@@ -629,9 +629,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "movimentacoes_cofrinho_familia_id_idx": {
           "name": "movimentacoes_cofrinho_familia_id_idx",
@@ -644,47 +644,47 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "movimentacoes_cofrinho_familia_id_familias_id_fk": {
           "name": "movimentacoes_cofrinho_familia_id_familias_id_fk",
           "tableFrom": "movimentacoes_cofrinho",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "movimentacoes_cofrinho_registrado_por_users_id_fk": {
           "name": "movimentacoes_cofrinho_registrado_por_users_id_fk",
           "tableFrom": "movimentacoes_cofrinho",
-          "columnsFrom": ["registrado_por"],
           "tableTo": "users",
+          "columnsFrom": ["registrado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "movimentacoes_cofrinho_cofrinho_familia_fk": {
           "name": "movimentacoes_cofrinho_cofrinho_familia_fk",
           "tableFrom": "movimentacoes_cofrinho",
-          "columnsFrom": ["cofrinho_id", "familia_id"],
           "tableTo": "cofrinhos",
+          "columnsFrom": ["cofrinho_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "movimentacoes_cofrinho_transacao_familia_fk": {
           "name": "movimentacoes_cofrinho_transacao_familia_fk",
           "tableFrom": "movimentacoes_cofrinho",
-          "columnsFrom": ["transacao_id", "familia_id"],
           "tableTo": "transacoes",
+          "columnsFrom": ["transacao_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -766,40 +766,135 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
+        },
+        "orcamento_categoria_vigencia_uq": {
+          "name": "orcamento_categoria_vigencia_uq",
+          "columns": [
+            {
+              "expression": "familia_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "categoria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vigencia_inicio",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
         "orcamento_categoria_familia_id_familias_id_fk": {
           "name": "orcamento_categoria_familia_id_familias_id_fk",
           "tableFrom": "orcamento_categoria",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "orcamento_categoria_criado_por_users_id_fk": {
           "name": "orcamento_categoria_criado_por_users_id_fk",
           "tableFrom": "orcamento_categoria",
-          "columnsFrom": ["criado_por"],
           "tableTo": "users",
+          "columnsFrom": ["criado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "orcamento_categoria_categoria_familia_fk": {
           "name": "orcamento_categoria_categoria_familia_fk",
           "tableFrom": "orcamento_categoria",
-          "columnsFrom": ["categoria_id", "familia_id"],
           "tableTo": "categorias",
+          "columnsFrom": ["categoria_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.orcamento_categoria_duplicados": {
+      "name": "orcamento_categoria_duplicados",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "familia_id": {
+          "name": "familia_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria_id": {
+          "name": "categoria_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_limite": {
+          "name": "valor_limite",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vigencia_inicio": {
+          "name": "vigencia_inicio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vigencia_fim": {
+          "name": "vigencia_fim",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criado_por": {
+          "name": "criado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "movido_em": {
+          "name": "movido_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -862,9 +957,9 @@
             }
           ],
           "isUnique": true,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "password_reset_tokens_user_id_idx": {
           "name": "password_reset_tokens_user_id_idx",
@@ -877,20 +972,20 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "password_reset_tokens_user_id_users_id_fk": {
           "name": "password_reset_tokens_user_id_users_id_fk",
           "tableFrom": "password_reset_tokens",
-          "columnsFrom": ["user_id"],
           "tableTo": "users",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -948,9 +1043,9 @@
             }
           ],
           "isUnique": true,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "revoked_refresh_tokens_user_id_idx": {
           "name": "revoked_refresh_tokens_user_id_idx",
@@ -963,20 +1058,20 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "revoked_refresh_tokens_user_id_users_id_fk": {
           "name": "revoked_refresh_tokens_user_id_users_id_fk",
           "tableFrom": "revoked_refresh_tokens",
-          "columnsFrom": ["user_id"],
           "tableTo": "users",
+          "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1099,9 +1194,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "snapshots_mensais_mes_referencia_idx": {
           "name": "snapshots_mensais_mes_referencia_idx",
@@ -1114,9 +1209,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "snapshots_mensais_familia_mes_uq": {
           "name": "snapshots_mensais_familia_mes_uq",
@@ -1135,20 +1230,20 @@
             }
           ],
           "isUnique": true,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "snapshots_mensais_familia_id_familias_id_fk": {
           "name": "snapshots_mensais_familia_id_familias_id_fk",
           "tableFrom": "snapshots_mensais",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1293,29 +1388,29 @@
         "solicitacoes_entrada_familia_id_familias_id_fk": {
           "name": "solicitacoes_entrada_familia_id_familias_id_fk",
           "tableFrom": "solicitacoes_entrada",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "solicitacoes_entrada_usuario_id_users_id_fk": {
           "name": "solicitacoes_entrada_usuario_id_users_id_fk",
           "tableFrom": "solicitacoes_entrada",
-          "columnsFrom": ["usuario_id"],
           "tableTo": "users",
+          "columnsFrom": ["usuario_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "solicitacoes_entrada_respondido_por_users_id_fk": {
           "name": "solicitacoes_entrada_respondido_por_users_id_fk",
           "tableFrom": "solicitacoes_entrada",
-          "columnsFrom": ["respondido_por"],
           "tableTo": "users",
+          "columnsFrom": ["respondido_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1425,9 +1520,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "uq_templates_transacao_familia_nome_tipo": {
           "name": "uq_templates_transacao_familia_nome_tipo",
@@ -1452,57 +1547,57 @@
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
           "where": "\"templates_transacao\".\"ativo\" = $1",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
         "templates_transacao_familia_id_familias_id_fk": {
           "name": "templates_transacao_familia_id_familias_id_fk",
           "tableFrom": "templates_transacao",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "templates_transacao_criado_por_users_id_fk": {
           "name": "templates_transacao_criado_por_users_id_fk",
           "tableFrom": "templates_transacao",
-          "columnsFrom": ["criado_por"],
           "tableTo": "users",
+          "columnsFrom": ["criado_por"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "templates_transacao_categoria_familia_fk": {
           "name": "templates_transacao_categoria_familia_fk",
           "tableFrom": "templates_transacao",
-          "columnsFrom": ["categoria_id", "familia_id"],
           "tableTo": "categorias",
+          "columnsFrom": ["categoria_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "templates_transacao_metodo_pagamento_familia_fk": {
           "name": "templates_transacao_metodo_pagamento_familia_fk",
           "tableFrom": "templates_transacao",
-          "columnsFrom": ["metodo_pagamento_id", "familia_id"],
           "tableTo": "metodos_pagamento",
+          "columnsFrom": ["metodo_pagamento_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "templates_transacao_cofrinho_familia_fk": {
           "name": "templates_transacao_cofrinho_familia_fk",
           "tableFrom": "templates_transacao",
-          "columnsFrom": ["cofrinho_id", "familia_id"],
           "tableTo": "cofrinhos",
+          "columnsFrom": ["cofrinho_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1667,9 +1762,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "transacoes_mes_referencia_idx": {
           "name": "transacoes_mes_referencia_idx",
@@ -1682,9 +1777,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "transacoes_usuario_registrou_id_idx": {
           "name": "transacoes_usuario_registrou_id_idx",
@@ -1697,9 +1792,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "transacoes_categoria_id_idx": {
           "name": "transacoes_categoria_id_idx",
@@ -1712,9 +1807,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "transacoes_metodo_pagamento_id_idx": {
           "name": "transacoes_metodo_pagamento_id_idx",
@@ -1727,9 +1822,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "transacoes_transacao_pai_id_idx": {
           "name": "transacoes_transacao_pai_id_idx",
@@ -1742,73 +1837,73 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "transacoes_familia_id_familias_id_fk": {
           "name": "transacoes_familia_id_familias_id_fk",
           "tableFrom": "transacoes",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "transacoes_usuario_registrou_id_users_id_fk": {
           "name": "transacoes_usuario_registrou_id_users_id_fk",
           "tableFrom": "transacoes",
-          "columnsFrom": ["usuario_registrou_id"],
           "tableTo": "users",
+          "columnsFrom": ["usuario_registrou_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "transacoes_categoria_familia_fk": {
           "name": "transacoes_categoria_familia_fk",
           "tableFrom": "transacoes",
-          "columnsFrom": ["categoria_id", "familia_id"],
           "tableTo": "categorias",
+          "columnsFrom": ["categoria_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "transacoes_metodo_pagamento_familia_fk": {
           "name": "transacoes_metodo_pagamento_familia_fk",
           "tableFrom": "transacoes",
-          "columnsFrom": ["metodo_pagamento_id", "familia_id"],
           "tableTo": "metodos_pagamento",
+          "columnsFrom": ["metodo_pagamento_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "transacoes_cofrinho_familia_fk": {
           "name": "transacoes_cofrinho_familia_fk",
           "tableFrom": "transacoes",
-          "columnsFrom": ["cofrinho_id", "familia_id"],
           "tableTo": "cofrinhos",
+          "columnsFrom": ["cofrinho_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "transacoes_transacao_pai_familia_fk": {
           "name": "transacoes_transacao_pai_familia_fk",
           "tableFrom": "transacoes",
-          "columnsFrom": ["transacao_pai_id", "familia_id"],
           "tableTo": "transacoes",
+          "columnsFrom": ["transacao_pai_id", "familia_id"],
           "columnsTo": ["id", "familia_id"],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "transacoes_id_familia_id_unique": {
           "name": "transacoes_id_familia_id_unique",
-          "columns": ["id", "familia_id"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["id", "familia_id"]
         }
       },
       "policies": {},
@@ -1858,8 +1953,8 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": ["email"],
-          "nullsNotDistinct": false
+          "nullsNotDistinct": false,
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1903,20 +1998,20 @@
         "usuario_familia_usuario_id_users_id_fk": {
           "name": "usuario_familia_usuario_id_users_id_fk",
           "tableFrom": "usuario_familia",
-          "columnsFrom": ["usuario_id"],
           "tableTo": "users",
+          "columnsFrom": ["usuario_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "usuario_familia_familia_id_familias_id_fk": {
           "name": "usuario_familia_familia_id_familias_id_fk",
           "tableFrom": "usuario_familia",
-          "columnsFrom": ["familia_id"],
           "tableTo": "familias",
+          "columnsFrom": ["familia_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1974,10 +2069,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

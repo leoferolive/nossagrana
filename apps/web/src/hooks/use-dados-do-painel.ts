@@ -60,6 +60,28 @@ const motivoDoBloqueio = (
   return frase.charAt(0).toUpperCase() + frase.slice(1);
 };
 
+interface OpcaoDePagamento {
+  id: string;
+  nome: string;
+}
+
+/**
+ * Formas de pagamento oferecidas: as ativas e, na edição, a que o lançamento já tem mesmo se foi
+ * desativada (a API aceita manter o mesmo vínculo inativo, e remover). Sem ela o chip sumiria e o
+ * id inativo ficaria no payload sem como tirar. A loja só traz as ativas, então o nome pode ser
+ * desconhecido.
+ */
+const opcoesDePagamento = (
+  metodos: { id: string; nome: string; ativo: boolean }[],
+  idAtual: string | null | undefined,
+): OpcaoDePagamento[] => {
+  const ativas = metodos.filter((m) => m.ativo);
+  if (!idAtual || ativas.some((m) => m.id === idAtual)) return ativas;
+  const atual = metodos.find((m) => m.id === idAtual);
+  const nome = atual ? `${atual.nome} (inativo)` : 'Forma de pagamento (inativa)';
+  return [...ativas, { id: idAtual, nome }];
+};
+
 /** Tudo o que o painel de lançar mostra e decide: campos, categorias, bloqueio e a gravação. */
 export const useDadosDoPainel = ({
   familiaId,
@@ -95,7 +117,7 @@ export const useDadosDoPainel = ({
   return {
     ...formulario,
     editando,
-    metodos: metodos.filter((m) => m.ativo),
+    metodos: opcoesDePagamento(metodos, transacaoParaEditar?.metodoPagamentoId),
     maisUsadas,
     categoriaIdValido,
     ehCredito,

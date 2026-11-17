@@ -7,7 +7,10 @@ interface ChipsDePagamentoProps {
   onEscolher: (metodoId: string) => void;
 }
 
-/** Pago com: um chip por forma de pagamento ativa; tocar na escolhida desmarca. */
+/**
+ * Pago com: um chip por forma de pagamento ativa (e, na edição, a atual mesmo inativa, vinda da
+ * lista que o painel monta); tocar na escolhida desmarca.
+ */
 export const ChipsDePagamento = ({ metodos, selecionadoId, onEscolher }: ChipsDePagamentoProps) => {
   if (metodos.length === 0) return null;
   return (

@@ -11,6 +11,9 @@ import {
   chip,
   maisOpcoes,
   nomesDosChips,
+  grupo,
+  metodo,
+  METODOS,
   EDICAO,
 } from '@/test/painel-de-lancar';
 import { TransacaoModal } from '@/components/transacao-modal';
@@ -34,6 +37,71 @@ describe('TransacaoModal', () => {
       fireEvent.click(chip('Mercado'));
       fireEvent.click(chip('Salvar despesa'));
       expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ metodoPagamentoId: null }));
+    });
+
+    describe('forma de pagamento inativa na edição', () => {
+      const COM_FORMA = { ...EDICAO, metodoPagamentoId: 'm-velho' };
+      const editar = () => {
+        const onUpdate = vi.fn();
+        abrir({ onUpdate, transacaoParaEditar: COM_FORMA });
+        return onUpdate;
+      };
+
+      it('sem nenhuma forma ativa, a atual aparece como chip selecionado', () => {
+        poremCategorias();
+        editar();
+        expect(grupo('Pago com')).toBeInTheDocument();
+        expect(chip('Forma de pagamento (inativa)')).toHaveAttribute('aria-pressed', 'true');
+      });
+
+      it('se a loja tem a forma inativa, o chip leva o nome dela com "(inativo)"', () => {
+        poremCategorias();
+        poremMetodos([
+          ...METODOS,
+          { ...metodo('m-velho', 'Cartão antigo', 'credito'), ativo: false },
+        ]);
+        editar();
+        expect(chip('Cartão antigo (inativo)')).toHaveAttribute('aria-pressed', 'true');
+        expect(nomesDosChips('Pago com')).toEqual(['Nubank', 'Pix', 'Cartão antigo (inativo)']);
+      });
+
+      it('manter envia o mesmo id', () => {
+        poremCategorias();
+        const onUpdate = editar();
+        fireEvent.click(chip('Salvar alterações'));
+        expect(onUpdate).toHaveBeenCalledWith(
+          't1',
+          expect.objectContaining({ metodoPagamentoId: 'm-velho' }),
+        );
+      });
+
+      it('tocar no chip selecionado desmarca e envia metodoPagamentoId nulo', () => {
+        poremCategorias();
+        const onUpdate = editar();
+        fireEvent.click(chip('Forma de pagamento (inativa)'));
+        expect(chip('Forma de pagamento (inativa)')).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(chip('Salvar alterações'));
+        expect(onUpdate).toHaveBeenCalledWith(
+          't1',
+          expect.objectContaining({ metodoPagamentoId: null }),
+        );
+      });
+
+      it('lançamento novo não oferece forma inativa', () => {
+        poremCategorias();
+        poremMetodos([
+          ...METODOS,
+          { ...metodo('m-velho', 'Cartão antigo', 'credito'), ativo: false },
+        ]);
+        abrir();
+        expect(nomesDosChips('Pago com')).toEqual(['Nubank', 'Pix']);
+      });
+
+      it('edição de lançamento sem forma e sem formas ativas não mostra o bloco', () => {
+        poremCategorias();
+        abrir({ onUpdate: vi.fn(), transacaoParaEditar: EDICAO });
+        expect(screen.queryByRole('group', { name: 'Pago com' })).not.toBeInTheDocument();
+      });
     });
 
     it('parcelas só aparecem em "Mais opções" quando a forma é cartão de crédito', () => {

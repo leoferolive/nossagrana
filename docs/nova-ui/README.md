@@ -29,11 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. O desenho da Entrega 3 (Extrato e Lançar) está aprovado e o plano do primeiro PR
-dela está escrito. **Próximo passo:** executar o
-[plano do PR 1 da Entrega 3 (Correções)](../superpowers/plans/2026-11-16-nova-ui-entrega-3-pr1-correcoes.md)
-na branch `feat/nova-ui-e3-correcoes`. Depois, os PRs do Extrato e do Lançar,
-cada um com plano próprio.
+Lançar e Início ainda é o antigo. Entrega 3 em andamento: o PR de correções (limite duplicado, membros, 429) está
+pronto. **Próximo passo:** o PR do Extrato, com plano em
+`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr2-extrato.md` na branch
+`feat/nova-ui-e3-extrato`; depois, o do Lançar, sobre a branch do Extrato.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -128,6 +127,13 @@ correção:
 
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
+
+Pontos menores do PR de correções da Entrega 3:
+
+- As solicitações de entrada pendentes, em Mais › Família, mostram o id do
+  usuário em vez do nome.
+- A pílula de mês não passa do mês atual, então um limite para o mês seguinte só
+  pode ser criado pela API.
 
 Pontos menores que ficaram do PR 2 da Entrega 2 (validação no navegador):
 

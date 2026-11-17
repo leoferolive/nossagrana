@@ -29,10 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. Entrega 3 em andamento: o PR de correções (limite duplicado, membros, 429) está
-pronto. **Próximo passo:** o PR do Extrato, com plano em
-`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr2-extrato.md` na branch
-`feat/nova-ui-e3-extrato`; depois, o do Lançar, sobre a branch do Extrato.
+Lançar e Início ainda é o antigo. Entrega 3 em andamento: correções (#191) e Extrato (#192) entregues.
+**Próximo passo:** o PR do Lançar, com plano em
+`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr3-lancar.md` na branch
+`feat/nova-ui-e3-lancar` (criada sobre a do Extrato).
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -127,6 +127,13 @@ correção:
 
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
+
+Pontos menores do PR do Extrato:
+
+- A linha tocada fica com fundo cinza depois do toque.
+- A pílula de mês continua navegável durante o erro de carga.
+- Salvar com a rede fora fecha o painel de lançar sem aviso e perde o que foi
+  digitado (comportamento antigo; corrigido no PR do Lançar).
 
 Pontos menores do PR de correções da Entrega 3:
 

@@ -4,10 +4,12 @@ const mockDb = vi.hoisted(() => ({
   select: vi.fn(),
   insert: vi.fn(),
   update: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock('../../db/client.js', () => ({ db: mockDb }));
 
+import { LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
 import { DrizzleOrcamentoRepository, InMemoryOrcamentoRepository } from './orcamento.repository.js';
 
 // ─── InMemory ────────────────────────────────────────────────────────────────
@@ -82,6 +84,39 @@ describe('InMemoryOrcamentoRepository', () => {
     await repo.encerrar(inserted.id, 'f1', '2026-02');
     const found = await repo.findAberto('f1', 'cat-1');
     expect(found).toBeNull();
+  });
+
+  it('atualizarValor troca o valor só do registro da própria família', async () => {
+    const dela = await repo.insert(baseInput);
+    const deOutra = await repo.insert({ ...baseInput, familiaId: 'f2' });
+    await repo.atualizarValor(dela.id, 'f2', '999.00');
+    expect((await repo.findAberto('f1', 'cat-1'))?.valorLimite).toBe('500.00');
+    await repo.atualizarValor(dela.id, 'f1', '650.00');
+    expect((await repo.findAberto('f1', 'cat-1'))?.valorLimite).toBe('650.00');
+    expect((await repo.findAberto('f2', 'cat-1'))?.id).toBe(deOutra.id);
+    expect((await repo.findAberto('f2', 'cat-1'))?.valorLimite).toBe('500.00');
+  });
+
+  it('insert recusa segundo limite da mesma família, categoria e vigência', async () => {
+    await repo.insert(baseInput);
+    await expect(repo.insert(baseInput)).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+    await repo.insert({ ...baseInput, familiaId: 'f2' });
+    await repo.insert({ ...baseInput, vigenciaInicio: '2026-04' });
+  });
+
+  it('substituirVigente encerra o vigente e insere o novo; se a inserção falha, nada muda', async () => {
+    const vigente = await repo.insert(baseInput);
+    await repo.substituirVigente(vigente.id, '2026-04', {
+      ...baseInput,
+      vigenciaInicio: '2026-05',
+    });
+    expect((await repo.findAberto('f1', 'cat-1'))?.vigenciaInicio).toBe('2026-05');
+
+    const aberto = await repo.findAberto('f1', 'cat-1');
+    await expect(
+      repo.substituirVigente(aberto!.id, '2026-02', { ...baseInput, vigenciaInicio: '2026-03' }),
+    ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+    expect((await repo.findAberto('f1', 'cat-1'))?.id).toBe(aberto!.id);
   });
 
   it('listHistorico retorna historico em ordem decrescente', async () => {
@@ -181,6 +216,84 @@ describe('DrizzleOrcamentoRepository', () => {
     await repo.encerrar('oc1', 'f1', '2026-02');
     expect(mockDb.update).toHaveBeenCalled();
     expect(mockWhere).toHaveBeenCalled();
+  });
+
+  it('atualizarValor executa update com o valor novo e familiaId', async () => {
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+    mockDb.update.mockReturnValue({ set: mockSet });
+    await repo.atualizarValor('oc1', 'f1', '650.00');
+    expect(mockSet).toHaveBeenCalledWith({ valorLimite: '650.00' });
+    expect(mockWhere).toHaveBeenCalled();
+  });
+
+  it('insert traduz a violação do índice único da vigência em LimiteVigenciaDuplicadaError', async () => {
+    const violacao = Object.assign(new Error('duplicate key'), {
+      code: '23505',
+      constraint_name: 'orcamento_categoria_vigencia_uq',
+    });
+    mockDb.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockRejectedValue(new Error('query falhou', { cause: violacao })),
+      }),
+    });
+    await expect(
+      repo.insert({
+        familiaId: 'f1',
+        categoriaId: 'cat-1',
+        usuarioId: 'u1',
+        valorLimite: '500.00',
+        vigenciaInicio: '2026-03',
+      }),
+    ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+  });
+
+  it('insert não traduz outras violações de unicidade', async () => {
+    const outra = Object.assign(new Error('duplicate key'), {
+      code: '23505',
+      constraint_name: 'outra_uq',
+    });
+    mockDb.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({ returning: vi.fn().mockRejectedValue(outra) }),
+    });
+    await expect(
+      repo.insert({
+        familiaId: 'f1',
+        categoriaId: 'cat-1',
+        usuarioId: 'u1',
+        valorLimite: '500.00',
+        vigenciaInicio: '2026-03',
+      }),
+    ).rejects.toBe(outra);
+  });
+
+  it('substituirVigente encerra e insere dentro de uma única transação', async () => {
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const tx = {
+      update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: mockWhere }) }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([fakeHistorico]),
+        }),
+      }),
+    };
+    mockDb.transaction.mockImplementation(async (trabalho: (t: typeof tx) => Promise<void>) =>
+      trabalho(tx),
+    );
+
+    await repo.substituirVigente('oc1', '2026-02', {
+      familiaId: 'f1',
+      categoriaId: 'cat-1',
+      usuarioId: 'u1',
+      valorLimite: '800.00',
+      vigenciaInicio: '2026-03',
+    });
+
+    expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    expect(tx.update).toHaveBeenCalled();
+    expect(tx.insert).toHaveBeenCalled();
+    expect(mockDb.update).not.toHaveBeenCalled();
+    expect(mockDb.insert).not.toHaveBeenCalled();
   });
 
   it('insert persiste e retorna novo registro', async () => {

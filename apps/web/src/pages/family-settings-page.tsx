@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { ErrorBanner } from '@/components/error-banner';
 import { CabecalhoDetalhe } from '@/components/cabecalho-detalhe';
@@ -22,21 +22,25 @@ export const FamilySettingsPage = ({ familiaId }: FamilySettingsPageProps) => {
   const [isInviteCopied, setIsInviteCopied] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!familiaId) return;
-    familiaService
+  const carregarMembros = useCallback(() => {
+    return familiaService
       .listarMembros(familiaId)
       .then((res) => setMembros(res.membros))
       .catch(() => {
         setErro('Erro ao carregar membros');
       });
+  }, [familiaId]);
+
+  useEffect(() => {
+    if (!familiaId) return;
+    void carregarMembros();
     familiaService
       .listarSolicitacoes(familiaId)
       .then((res) => setSolicitacoesPendentes(res.solicitacoes))
       .catch(() => {
         setErro('Erro ao carregar solicitações');
       });
-  }, [familiaId]);
+  }, [familiaId, carregarMembros]);
 
   const removeMember = async (usuarioId: string) => {
     if (!familiaId) return;
@@ -55,6 +59,8 @@ export const FamilySettingsPage = ({ familiaId }: FamilySettingsPageProps) => {
     try {
       await familiaService.revisarSolicitacao(id, acao, familiaId);
       setSolicitacoesPendentes((current) => current.filter((s) => s.id !== id));
+      // Aprovar cria um membro novo; rejeitar não muda a lista de membros.
+      if (acao === 'aprovar') await carregarMembros();
     } catch {
       setErro('Erro ao revisar solicitação');
     }

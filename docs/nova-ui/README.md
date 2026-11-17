@@ -29,8 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. **Próximo passo:** escrever o desenho curto da
-Entrega 3 (Extrato e Lançar) e levá-lo ao usuário para aprovação.
+Lançar e Início ainda é o antigo. Entrega 3 em andamento: o PR de correções (limite duplicado, membros, 429) está
+pronto. **Próximo passo:** o PR do Extrato, com plano em
+`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr2-extrato.md` na branch
+`feat/nova-ui-e3-extrato`; depois, o do Lançar, sobre a branch do Extrato.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -86,6 +88,12 @@ cabeçalhos e tour; E2E. Desenho em
 
 ### Entrega 3 — Extrato e Lançar
 
+Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
+[`2026-11-16-nova-ui-entrega-3-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-3-design.md).
+
+- [x] 2026-11-16 — Desenho da Entrega 3 aprovado pelo usuário
+- [x] 2026-11-16 — Correções: limite duplicado, membros que não recarregam e erro 500 no
+      limite de login
 - [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
 - [ ] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
       (hoje só atualiza ao sair e voltar à tela; visto na validação do #188)
@@ -114,17 +122,18 @@ Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
 parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
 R$ 99,99). A sobra deveria ir para a parcela 1.
 
-Defeitos do app achados ao ajustar os testes E2E (PR 3 da Entrega 2), ainda sem
+Defeito do app achado ao ajustar os testes E2E (PR 3 da Entrega 2), ainda sem
 correção:
 
-- Editar o limite de uma categoria na mesma vigência grava outra linha, e a
-  tela de limites mostra a categoria duas vezes (teste em `test.fixme` em
-  `orcamento.spec.ts`).
-- Aprovar uma solicitação de entrada não recarrega a lista de membros na tela
-  da família; o novo membro só aparece ao recarregar.
-- Estourar o limite de requisições no login devolve erro 500 em vez de 429.
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
+
+Pontos menores do PR de correções da Entrega 3:
+
+- As solicitações de entrada pendentes, em Mais › Família, mostram o id do
+  usuário em vez do nome.
+- A pílula de mês não passa do mês atual, então um limite para o mês seguinte só
+  pode ser criado pela API.
 
 Pontos menores que ficaram do PR 2 da Entrega 2 (validação no navegador):
 
@@ -224,6 +233,12 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 2, PR 2, correções da validação no navegador: o "+" agora sobe 28px acima da barra (a coluna dele estava sem altura e o `-top-7` contava a partir do meio da barra; ganhou `self-stretch`); `CabecalhoDetalhe` não corta mais o título (quebra em duas linhas) e Cartões e Pagamentos virou "Métodos de pagamento"; se a lista de famílias falha, quem tem família ativa fica no seletor com aviso (antes ia ao onboarding), e o seletor marca a família "Atual"; Planejar não mostra "0 de 0" em mês sem orçamento e mantém o título da linha em uma linha, com o resumo descendo quando não couber.
 - 2026-11-16 — Entrega 2, PR 2, correções da revisão de código: a área logada passou a carimbar a família em toda entrada de histórico com id (fatura aberta por Planejar escapava; os chamadores deixaram de passar `state`), com `semEntradaAnterior` no state para o Voltar de link direto; o aviso de falha da lista de famílias some ao tentar de novo; títulos alinhados à navegação ("Contas do mês", "Limites por categoria") e a Ajuda descreve o "+" da barra; no desktop o título da aba fica na TopBar e o de detalhe no próprio cabeçalho (a TopBar não o repete), e o menu lateral ganhou o link Planejar; nome de cartão comprido quebra linha em Planejar.
 - 2026-11-16 — Entrega 2, PR 3: os seis specs do E2E rodam na navegação nova, em 390×844, e a suíte cabe no limite de requisições da API (um login por teste, janela deslizante gravada em arquivo, cerca de 10 minutos, 30 cadastros e 32 logins por execução). Passam 29; três ficam em `test.fixme`, um por defeito do app: o Extrato não atualiza a lista depois de salvar na própria tela (Entrega 3), editar o limite de uma categoria na mesma vigência duplica a categoria na lista de limites e aprovar uma solicitação de entrada não mostra o novo membro sem recarregar. Também anotado: a API não tem rota de exclusão de conta.
+- 2026-11-16 — Entrega 3, PR 1, limite de categoria: editar o limite na mesma vigência atualiza a linha existente em vez de encerrar e inserir outra (`atualizarValor` no repositório); em vigência nova o limite anterior continua sendo encerrado e o histórico mostra os dois. A migration `0015_orcamento_vigencia_unica` move as duplicatas exatas já gravadas (mesma família, categoria e `vigencia_inicio`) para `orcamento_categoria_duplicados`, mantendo a mais recente, e cria o índice único `orcamento_categoria_vigencia_uq`; limites de outros meses não são tocados. Uma violação do índice (corrida entre duas requisições) refaz a gravação uma vez, atualizando a linha que a outra criou; vigência já encerrada responde 409 `LIMITE_VIGENCIA_DUPLICADA`. Teste na suíte PostgreSQL.
+- 2026-11-16 — Entrega 3, PR 1, tela da família: aprovar uma solicitação recarrega a lista de membros (o novo membro aparece sem recarregar a página); se a recarga falhar, a tela mostra o erro e mantém a lista anterior. Rejeitar só tira a solicitação dos pendentes e não busca os membros de novo.
+- 2026-11-16 — Entrega 3, PR 1, limite de requisições: estourar o limite (por exemplo, o do login) devolve 429 com `{ error: { message: "Muitas tentativas. Tente novamente em N segundos.", code: "LIMITE_REQUISICOES" } }` e o cabeçalho `retry-after`, em vez de 500. O `@fastify/rate-limit` 10.3.0 lança o que o `errorResponseBuilder` devolve; ele agora devolve um `ErroComEnvelopeHttp` (`LimiteRequisicoesError`), que o handler central já serializa. `buildApp` ganhou a opção `limiteDeRequisicoes` para os testes ligarem o limite.
+- 2026-11-16 — Entrega 3, PR 1, testes E2E: os specs `orcamento` e `familia` rodam sem `test.fixme` (limite sem duplicar e membro novo sem recarregar); a suíte passa a ter 31 testes rodando e 1 em `test.fixme` (o Extrato, da Entrega 3 PR 2).
+- 2026-11-16 — Entrega 3, PR 1, ajustes da revisão: pedir um limite com início anterior ao do limite vigente responde 409 `LIMITE_VIGENCIA_ANTERIOR` (mês pedido e início vigente na mensagem) antes de qualquer escrita, em vez de encerrar o vigente e criar uma segunda linha válida no mesmo mês; a leitura do erro do PostgreSQL embrulhado pelo Drizzle (`cause`) virou `encontrarErroPostgres`, em `shared/postgres/`, usada pela tradução de FK composta e pelo índice de vigência.
+- 2026-11-16 — Entrega 3, PR 1, sem estado parcial ao trocar o limite vigente: o serviço confere antes de escrever se já existe linha da mesma família e categoria com a vigência pedida (409 `LIMITE_VIGENCIA_DUPLICADA`, caso de linha encerrada deixada pelo defeito antigo) e a troca (encerrar o vigente e inserir o novo) roda numa transação única em `substituirVigente`; se a inserção falhar, o vigente continua aberto. Teste no PostgreSQL.
 
 ## Decisões fechadas
 
@@ -252,10 +267,16 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 | 21  | Um único tour de boas-vindas, mostrado uma vez a todos                                                                                                                 | Eram oito tours, um por tela; a navegação mudou para todo mundo                                                                                                                                                                                       |
 | 22  | O mês selecionado não vai para o endereço; só a fatura leva o mês                                                                                                      | O mês identifica a fatura; nas outras telas seria custo sem ganho agora                                                                                                                                                                               |
 | 23  | Troca de família em Mais › Família; a troca rápida no topo do Início vem com o Início novo (Entrega 4)                                                                 | O topo do Início é redesenhado na Entrega 4                                                                                                                                                                                                           |
+| 24  | Extrato do mais recente para o mais antigo, agrupado por dia, com o total do dia                                                                                       | É como a família confere o mês; hoje a lista vem na ordem de criação                                                                                                                                                                                  |
+| 25  | "Mais usadas" no Lançar: as seis categorias com mais lançamentos nos últimos 60 dias, calculadas no app                                                                | Não muda a API; família nova vê as seis primeiras categorias padrão                                                                                                                                                                                   |
+| 26  | Aviso "lançado" com "Desfazer" por 6 segundos; exclusão confirmada num painel do app                                                                                   | Hoje nada avisa que salvou, e a exclusão usa a confirmação nativa do navegador                                                                                                                                                                        |
+| 27  | Microfone visível ao lado do valor, além do toque longo no "+"                                                                                                         | O toque longo ninguém descobre sozinho                                                                                                                                                                                                                |
+| 28  | "Lazer de quem" fica para a Entrega 4                                                                                                                                  | Depende do direito de lazer por pessoa, que é backend da Entrega 4                                                                                                                                                                                    |
 
 As decisões 13 a 16 foram escolhidas pelo Claude em 2026-11-15, por delegação do
 usuário. As decisões 17 a 23 foram propostas pelo Claude no desenho da Entrega 2,
-que o usuário aprovou em 2026-11-16.
+que o usuário aprovou em 2026-11-16. As decisões 24 a 28 vieram do desenho da Entrega 3,
+aprovado no mesmo dia.
 
 `docs/AUDIT-UX.md` (2026-03) e `docs/wireframes/` são anteriores a esta direção;
 onde divergirem, vale este arquivo.

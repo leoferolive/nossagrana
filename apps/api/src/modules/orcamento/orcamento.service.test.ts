@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ReferenciasSempreValidasFake } from '../../shared/referencia-ownership/referencia-ownership.fakes.js';
-import { LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
+import { LimiteVigenciaAnteriorError } from './orcamento.errors.js';
 import { InMemoryOrcamentoRepository } from './orcamento.repository.js';
 import type { OrcamentoHistoricoRow } from './orcamento.types.js';
 import { OrcamentoService } from './orcamento.service.js';
@@ -204,13 +204,23 @@ describe('OrcamentoService', () => {
       expect(historico.historico[0]).toMatchObject({ valorLimite: '700.00', vigenciaFim: null });
     });
 
-    it('vigência que já existe encerrada vira erro 409 sem encerrar o limite aberto', async () => {
+    it('vigência anterior ao início do limite aberto vira erro 409 sem escrever nada', async () => {
       await service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '500.00' });
       await service.set({ ...base, vigenciaInicio: '2026-03', valorLimite: '800.00' });
 
       await expect(
         service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '900.00' }),
-      ).rejects.toBeInstanceOf(LimiteVigenciaDuplicadaError);
+      ).rejects.toMatchObject({
+        statusHttp: 409,
+        code: 'LIMITE_VIGENCIA_ANTERIOR',
+        message: expect.stringContaining('2026-01'),
+      });
+      await expect(
+        service.set({ ...base, vigenciaInicio: '2026-01', valorLimite: '900.00' }),
+      ).rejects.toBeInstanceOf(LimiteVigenciaAnteriorError);
+      await expect(
+        service.set({ ...base, vigenciaInicio: '2026-02', valorLimite: '900.00' }),
+      ).rejects.toThrow(/2026-02.*2026-03/);
 
       const historico = await service.historico(familiaId, categoriaId);
       expect(historico.historico).toHaveLength(2);

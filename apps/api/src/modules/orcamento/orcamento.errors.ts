@@ -1,4 +1,5 @@
 import { ErroComEnvelopeHttp } from '../../shared/http/erro-com-envelope.js';
+import { encontrarErroPostgres } from '../../shared/postgres/encontrar-erro-postgres.js';
 
 export const INDICE_VIGENCIA_UNICA = 'orcamento_categoria_vigencia_uq';
 const SQLSTATE_UNIQUE_VIOLATION = '23505';
@@ -19,21 +20,24 @@ export class LimiteVigenciaDuplicadaError extends ErroComEnvelopeHttp {
   }
 }
 
-interface ErroDoDriver {
-  code?: unknown;
-  constraint_name?: unknown;
-  cause?: unknown;
+/** Violação (23505) do índice único da vigência; outros índices únicos não contam. */
+export function violaIndiceDaVigencia(erro: unknown): boolean {
+  const driver = encontrarErroPostgres(erro, SQLSTATE_UNIQUE_VIOLATION);
+  return driver?.constraint_name === INDICE_VIGENCIA_UNICA;
 }
 
-/** O Drizzle embrulha o erro do driver em `cause`; confere SQLSTATE 23505 e o nome do índice. */
-export function violaIndiceDaVigencia(erro: unknown): boolean {
-  let atual: unknown = erro;
-  for (let nivel = 0; nivel < 3 && atual instanceof Error; nivel++) {
-    const candidato = atual as ErroDoDriver;
-    if (candidato.code === SQLSTATE_UNIQUE_VIOLATION) {
-      return candidato.constraint_name === INDICE_VIGENCIA_UNICA;
-    }
-    atual = candidato.cause;
+/**
+ * A vigência pedida começa antes do limite vigente. Encerrar o vigente e inserir
+ * outro faria os dois valerem no mês do vigente (a lista mostraria dois cartões);
+ * por isso nada é escrito. O 409 diz os dois meses para o cliente corrigir.
+ */
+export class LimiteVigenciaAnteriorError extends ErroComEnvelopeHttp {
+  readonly statusHttp = 409;
+  readonly code = 'LIMITE_VIGENCIA_ANTERIOR';
+
+  constructor(vigenciaPedida: string, inicioVigente: string) {
+    super(
+      `Vigência inválida: recebido início em ${vigenciaPedida}, esperado ${inicioVigente} ou posterior (o limite vigente começa em ${inicioVigente})`,
+    );
   }
-  return false;
 }

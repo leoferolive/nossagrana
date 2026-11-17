@@ -2,7 +2,7 @@ import type { OrcamentoHistoricoResponse, OrcamentoListResponse } from '@nossagr
 
 import type { ReferenciaOwnershipChecker } from '../../shared/referencia-ownership/referencia-ownership.types.js';
 import { mesAnterior } from '../../utils/date.js';
-import { LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
+import { LimiteVigenciaAnteriorError, LimiteVigenciaDuplicadaError } from './orcamento.errors.js';
 import type {
   OrcamentoHistoricoRow,
   OrcamentoRepository,
@@ -74,29 +74,22 @@ export class OrcamentoService {
       return;
     }
     if (aberto) {
-      await this.garantirVigenciaLivre(input);
+      // Antes de qualquer escrita: recusar depois de encerrar deixaria estado parcial.
+      if (input.vigenciaInicio < aberto.vigenciaInicio) {
+        throw new LimiteVigenciaAnteriorError(input.vigenciaInicio, aberto.vigenciaInicio);
+      }
       await this.encerrarAberto(aberto, input);
     }
     await this.repo.insert(input);
-  }
-
-  /** Falha antes de encerrar o limite aberto, para não deixar estado parcial. */
-  private async garantirVigenciaLivre(input: OrcamentoSetInput): Promise<void> {
-    const historico = await this.repo.listHistorico(input.familiaId, input.categoriaId);
-    if (historico.some((h) => h.vigenciaInicio === input.vigenciaInicio)) {
-      throw new LimiteVigenciaDuplicadaError(input.categoriaId, input.vigenciaInicio);
-    }
   }
 
   private async encerrarAberto(
     aberto: OrcamentoHistoricoRow,
     input: OrcamentoSetInput,
   ): Promise<void> {
-    const vigFimCandidate = mesAnterior(input.vigenciaInicio);
-    // Guard: vigenciaFim must not precede the record's own start
-    const vigFim =
-      vigFimCandidate >= aberto.vigenciaInicio ? vigFimCandidate : aberto.vigenciaInicio;
-    await this.repo.encerrar(aberto.id, input.familiaId, vigFim);
+    // vigenciaInicio > aberto.vigenciaInicio (garantido por gravar), então o mês anterior
+    // nunca precede o início do próprio limite.
+    await this.repo.encerrar(aberto.id, input.familiaId, mesAnterior(input.vigenciaInicio));
   }
 
   async historico(familiaId: string, categoriaId: string): Promise<OrcamentoHistoricoResponse> {

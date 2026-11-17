@@ -1,6 +1,7 @@
-import { cleanup, act, fireEvent, screen } from '@testing-library/react';
+import { cleanup, act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TransacaoModal } from '@/components/transacao-modal';
 import { useAvisoStore } from '@/stores/aviso.store';
 import {
   configurarPainelDeTeste,
@@ -71,6 +72,59 @@ describe('TransacaoModal', () => {
     useAvisoStore.getState().mostrar({ mensagem: 'Despesa lançada', desfazer: async () => {} });
     abrir();
     expect(useAvisoStore.getState().aviso).toBeNull();
+  });
+
+  describe('teclado no painel', () => {
+    const ativo = () => document.activeElement;
+    const teclar = (key: string, shiftKey = false) =>
+      fireEvent.keyDown(document.activeElement ?? document.body, { key, shiftKey });
+
+    it('Tab no último foco do painel volta ao primeiro, e Shift+Tab no primeiro vai ao último: o foco não vaza para a tela de trás', () => {
+      poremCategorias();
+      abrir();
+      const salvar = chip('Salvar despesa');
+      const primeiro = chip('Despesa');
+      // O motivo bloqueia o salvar: o último focável é a linha de "Mais opções".
+      const ultimo = chip('Descrição, parcelas e repetição');
+      expect(salvar).toBeDisabled();
+      ultimo.focus();
+      teclar('Tab');
+      expect(ativo()).toBe(primeiro);
+      teclar('Tab', true);
+      expect(ativo()).toBe(ultimo);
+    });
+
+    it('Escape fecha o painel', () => {
+      const { onClose } = abrir();
+      teclar('Escape');
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('ao fechar, o foco volta a quem abriu o painel', () => {
+      const props = { familiaId: 'f1', onClose: vi.fn(), onSubmit: vi.fn() };
+      const { rerender } = render(
+        <>
+          <button>abridor</button>
+          <TransacaoModal open={false} {...props} />
+        </>,
+      );
+      const abridor = screen.getByRole('button', { name: 'abridor' });
+      abridor.focus();
+      rerender(
+        <>
+          <button>abridor</button>
+          <TransacaoModal open {...props} />
+        </>,
+      );
+      expect(ativo()).not.toBe(abridor);
+      rerender(
+        <>
+          <button>abridor</button>
+          <TransacaoModal open={false} {...props} />
+        </>,
+      );
+      expect(ativo()).toBe(abridor);
+    });
   });
 
   it('o botão de fechar chama onClose', () => {

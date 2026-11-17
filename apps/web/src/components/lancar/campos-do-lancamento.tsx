@@ -9,7 +9,7 @@ import { ValorDoLancamento } from './valor-do-lancamento';
 interface CamposDoLancamentoProps {
   dados: DadosDoPainel;
   onVoz?: () => void;
-  onExcluir?: () => void;
+  onExcluir?: (botao: HTMLElement) => void;
 }
 
 /** Os blocos do painel, de cima para baixo: valor, categoria, quando, pago com e mais opções. */

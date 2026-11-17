@@ -49,6 +49,73 @@ describe('TransacaoModal', () => {
       confirmar.mockRestore();
     });
 
+    describe('teclado com a confirmação aberta', () => {
+      const ativo = () => document.activeElement;
+      const teclar = (key: string, shiftKey = false) =>
+        fireEvent.keyDown(document.activeElement ?? document.body, { key, shiftKey });
+      const abrirComTeclado = () => {
+        poremCategorias();
+        abrir({ onDelete: vi.fn(), transacaoParaEditar: EDICAO });
+        maisOpcoes();
+        const excluir = chip('Excluir lançamento');
+        excluir.focus();
+        fireEvent.click(excluir);
+        return excluir;
+      };
+
+      it('o foco vai para "Cancelar" e o painel de trás fica inerte', () => {
+        abrirComTeclado();
+        expect(ativo()).toBe(screen.getByRole('button', { name: 'Cancelar' }));
+        const confirmacao = screen.getByRole('dialog', { name: 'Excluir lançamento?' });
+        const painel = screen.getByRole('button', { name: 'Salvar alterações' });
+        expect(painel.closest('[inert]')).not.toBeNull();
+        expect(confirmacao.closest('[inert]')).toBeNull();
+      });
+
+      it('Tab e Shift+Tab não saem da confirmação: "Salvar alterações" não é alcançado', () => {
+        abrirComTeclado();
+        const salvar = screen.getByRole('button', { name: 'Salvar alterações' });
+        const visitados = new Set<Element | null>();
+        for (let i = 0; i < 4; i += 1) {
+          teclar('Tab');
+          visitados.add(ativo());
+        }
+        for (let i = 0; i < 4; i += 1) {
+          teclar('Tab', true);
+          visitados.add(ativo());
+        }
+        expect(visitados.has(salvar)).toBe(false);
+        const confirmacao = screen.getByRole('dialog', { name: 'Excluir lançamento?' });
+        visitados.forEach((el) => expect(confirmacao).toContainElement(el as HTMLElement));
+      });
+
+      it('Escape cancela só a confirmação e o painel segue aberto', () => {
+        abrirComTeclado();
+        teclar('Escape');
+        expect(
+          screen.queryByRole('dialog', { name: 'Excluir lançamento?' }),
+        ).not.toBeInTheDocument();
+        expect(screen.getByRole('dialog', { name: 'Editar Transação' })).toBeInTheDocument();
+      });
+
+      it('ao cancelar, o foco volta ao botão "Excluir lançamento" e o painel deixa de ser inerte', () => {
+        const excluir = abrirComTeclado();
+        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+        expect(ativo()).toBe(excluir);
+        expect(excluir.closest('[inert]')).toBeNull();
+      });
+
+      it('o foco volta ao botão mesmo se o navegador não o focou no clique (Safari)', () => {
+        poremCategorias();
+        abrir({ onDelete: vi.fn(), transacaoParaEditar: EDICAO });
+        maisOpcoes();
+        const excluir = chip('Excluir lançamento');
+        fireEvent.click(excluir);
+        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+        expect(ativo()).toBe(excluir);
+      });
+    });
+
     it('Cancelar fecha a confirmação e não exclui', () => {
       const onDelete = abrirConfirmacao();
       fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));

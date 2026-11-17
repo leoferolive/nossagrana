@@ -54,4 +54,36 @@ describe('ConfirmarExclusao', () => {
     montar({ erro: 'Não foi possível excluir. Tente de novo.' });
     expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível excluir');
   });
+
+  describe('teclado', () => {
+    const ativo = () => document.activeElement;
+    const teclar = (key: string, shiftKey = false) =>
+      fireEvent.keyDown(document.activeElement ?? document.body, { key, shiftKey });
+
+    it('abre com o foco em "Cancelar", a ação segura', () => {
+      montar();
+      expect(ativo()).toBe(screen.getByRole('button', { name: 'Cancelar' }));
+    });
+
+    it('Tab e Shift+Tab ficam presos entre Cancelar e Excluir', () => {
+      montar();
+      screen.getByRole('button', { name: 'Excluir' }).focus();
+      teclar('Tab');
+      expect(ativo()).toBe(screen.getByRole('button', { name: 'Cancelar' }));
+      teclar('Tab', true);
+      expect(ativo()).toBe(screen.getByRole('button', { name: 'Excluir' }));
+    });
+
+    it('Escape cancela', () => {
+      const { onCancelar } = montar();
+      teclar('Escape');
+      expect(onCancelar).toHaveBeenCalledOnce();
+    });
+
+    it('Escape não cancela enquanto exclui', () => {
+      const { onCancelar } = montar({ excluindo: true });
+      teclar('Escape');
+      expect(onCancelar).not.toHaveBeenCalled();
+    });
+  });
 });

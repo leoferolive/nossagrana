@@ -1,6 +1,7 @@
 import type { TransacaoCreateRequest, TransacaoUpdateRequest } from '@nossagrana/types';
 import { useEffect, useId, useState } from 'react';
 
+import { useArmadilhaDeFoco } from '@/hooks/use-armadilha-de-foco';
 import { useDadosDoPainel } from '@/hooks/use-dados-do-painel';
 import { useGravacao } from '@/hooks/use-gravacao';
 import { useViewportVisivel } from '@/hooks/use-viewport-visivel';
@@ -48,10 +49,12 @@ const PainelDeLancar = (props: TransacaoModalProps) => {
   const areaVisivel = useViewportVisivel();
   const idTitulo = useId();
   const [confirmando, setConfirmando] = useState(false);
+  const [botaoExcluir, setBotaoExcluir] = useState<HTMLElement | null>(null);
   const gravacao = useGravacao(dados.motivo === null, dados.gravar, ERRO_AO_SALVAR);
   const exclusao = useExclusao(transacaoParaEditar, onDelete);
   // Fechar durante a gravação descartaria o resultado em silêncio.
   const ocupado = gravacao.gravando || exclusao.gravando;
+  const painel = useArmadilhaDeFoco<HTMLDivElement>({ aoEscape: ocupado ? undefined : onClose });
 
   // O aviso de 6 s (z-aviso) ficaria por cima do painel e interceptaria toques nele.
   useEffect(() => useAvisoStore.getState().fechar(), []);
@@ -68,7 +71,12 @@ const PainelDeLancar = (props: TransacaoModalProps) => {
       }}
     >
       {/* Painel de baixo para cima no celular, centrado no desktop; só o miolo rola, o rodapé fica. */}
-      <div className="flex max-h-full w-full max-w-[520px] flex-col overflow-hidden rounded-t-[28px] bg-panel md:rounded-[28px] md:border md:border-border">
+      {/* Inerte enquanto a confirmação de exclusão está aberta: `aria-modal` não tira o fundo do Tab. */}
+      <div
+        ref={painel}
+        inert={confirmando}
+        className="flex max-h-full w-full max-w-[520px] flex-col overflow-hidden rounded-t-[28px] bg-panel md:rounded-[28px] md:border md:border-border"
+      >
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-2.5">
           <CabecalhoDoPainel
             idTitulo={idTitulo}
@@ -81,7 +89,14 @@ const PainelDeLancar = (props: TransacaoModalProps) => {
           <CamposDoLancamento
             dados={dados}
             onVoz={props.onVoiceActivate}
-            onExcluir={onDelete ? () => setConfirmando(true) : undefined}
+            onExcluir={
+              onDelete
+                ? (botao) => {
+                    setBotaoExcluir(botao);
+                    setConfirmando(true);
+                  }
+                : undefined
+            }
           />
         </div>
 
@@ -103,6 +118,7 @@ const PainelDeLancar = (props: TransacaoModalProps) => {
           erro={exclusao.erro}
           onCancelar={() => setConfirmando(false)}
           onConfirmar={() => void exclusao.salvar()}
+          devolverFocoPara={botaoExcluir}
         />
       )}
     </div>

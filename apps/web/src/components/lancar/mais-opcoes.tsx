@@ -14,8 +14,8 @@ interface MaisOpcoesProps {
   editando: boolean;
   /** Parcelas só existem para a forma de pagamento de cartão de crédito. */
   ehCredito: boolean;
-  /** Presente só na edição: mostra "Excluir lançamento". */
-  onExcluir?: () => void;
+  /** Presente só na edição: mostra "Excluir lançamento" e recebe o botão, para devolver o foco a ele. */
+  onExcluir?: (botao: HTMLElement) => void;
 }
 
 const BOTAO_ALTERNAVEL =
@@ -150,7 +150,7 @@ export const MaisOpcoes = ({
         {editando && onExcluir && (
           <button
             type="button"
-            onClick={onExcluir}
+            onClick={(e) => onExcluir(e.currentTarget)}
             className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-danger/30 py-2 text-sm font-semibold text-danger transition hover:bg-danger-soft"
           >
             <IconExcluir size={16} aria-hidden="true" />

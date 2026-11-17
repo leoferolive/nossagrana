@@ -1,5 +1,6 @@
 import { useId } from 'react';
 
+import { useArmadilhaDeFoco } from '@/hooks/use-armadilha-de-foco';
 import { formatBRL } from '@/utils/formatting';
 
 interface ConfirmarExclusaoProps {
@@ -11,6 +12,8 @@ interface ConfirmarExclusaoProps {
   erro?: string | null;
   onCancelar: () => void;
   onConfirmar: () => void;
+  /** O botão que abriu a confirmação: o foco volta a ele ao fechar. */
+  devolverFocoPara?: HTMLElement | null;
 }
 
 /** Painel de confirmação de exclusão, no lugar do `window.confirm`; aparece acima do painel de lançar. */
@@ -21,10 +24,16 @@ export const ConfirmarExclusao = ({
   erro,
   onCancelar,
   onConfirmar,
+  devolverFocoPara,
 }: ConfirmarExclusaoProps) => {
   const idTitulo = useId();
+  const raiz = useArmadilhaDeFoco<HTMLDivElement>({
+    aoEscape: excluindo ? undefined : onCancelar,
+    devolverPara: devolverFocoPara,
+  });
   return (
     <div
+      ref={raiz}
       role="dialog"
       aria-modal="true"
       aria-labelledby={idTitulo}

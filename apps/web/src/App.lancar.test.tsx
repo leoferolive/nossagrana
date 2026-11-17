@@ -460,3 +460,30 @@ describe('App > aviso depois de lançar e confirmação de exclusão', () => {
     confirmar.mockRestore();
   });
 });
+
+describe('App > falha ao gravar não perde o lançamento', () => {
+  it('gravação que rejeita deixa o painel aberto com o valor e o erro, sem mexer no histórico; tentar de novo fecha uma vez', async () => {
+    vi.mocked(transacaoService.registrar)
+      .mockRejectedValueOnce(new Error('rede'))
+      .mockResolvedValue({ transacao: { id: 'tx-novo' } } as never);
+    renderApp(['/', '/extrato']);
+    await waitFor(() => tituloNoConteudo(/^extrato$/i));
+    abrirPainelNovo();
+    fireEvent.change(await screen.findByLabelText(/valor/i), { target: { value: '100.00' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Mercado' }));
+    const aposAbrir = local().textContent;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar despesa' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar');
+    expect(screen.getByLabelText(/valor/i)).toHaveValue(100);
+    expect(local().textContent).toBe(aposAbrir);
+    expect(screen.queryByText('Despesa lançada')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar despesa' }));
+    await waitFor(() => expect(local()).toHaveTextContent(/^\/extrato$/));
+    expect(transacaoService.registrar).toHaveBeenCalledTimes(2);
+    voltar();
+    expect(await waitFor(() => tituloNoConteudo(/^início$/i))).toBeInTheDocument();
+  });
+});

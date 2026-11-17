@@ -1,7 +1,7 @@
 # E2E (Playwright)
 
 Os testes E2E não rodam no CI: rodam à mão, contra um ambiente isolado. São 32 testes em seis
-specs (`tests/`), 29 rodando e 3 em `test.fixme` (um defeito do app em cada um, comentado no teste): `auth`, `onboarding`, `familia`, `transacoes`, `orcamento` e `relatorios`.
+specs (`tests/`), 31 rodando e 1 em `test.fixme` (o Extrato não atualiza a lista depois de salvar, comentado no teste; sai na Entrega 3): `auth`, `onboarding`, `familia`, `transacoes`, `orcamento` e `relatorios`.
 
 ## Subir o ambiente
 
@@ -41,7 +41,7 @@ rode em segundo plano se for o caso.
 A API do ambiente isolado roda com o limite de requisições de produção: **3 cadastros, 5 logins
 e 10 refreshes por minuto por IP** (e 100 requisições por minuto no total). O servidor recusa
 `NODE_ENV=test`, que desligaria o limite, então a suíte não o contorna: ela espera a sua vez.
-Estourar o limite não dá um 429 limpo (o login devolve 500; é defeito conhecido da API).
+Estourar o limite devolve 429 com a mensagem "Muitas tentativas…" e o cabeçalho `retry-after`.
 
 Cada teste é independente e cria o próprio usuário, então gasta **1 cadastro e 1 login**. Os
 testes de família criam um segundo usuário (mais 1 cadastro e 1 login), e os de `auth` que passam

@@ -93,8 +93,8 @@ Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
 [`2026-11-16-nova-ui-entrega-3-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-3-design.md).
 
 - [x] 2026-11-16 — Desenho da Entrega 3 aprovado pelo usuário
-- [ ] Correções: limite duplicado, membros que não recarregam e erro 500 no
-      limite de login
+- [x] 2026-11-16 — Correções: limite duplicado, membros que não recarregam e erro 500 no
+      limite de login (PR 1; falta revisar e mergear)
 - [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
 - [ ] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
       (hoje só atualiza ao sair e voltar à tela; visto na validação do #188)
@@ -123,15 +123,9 @@ Achado na revisão do PR 1, sem relação com a interface: quando a divisão das
 parcelas não é exata, a soma fica centavos abaixo do total (R$ 100,00 em 3x soma
 R$ 99,99). A sobra deveria ir para a parcela 1.
 
-Defeitos do app achados ao ajustar os testes E2E (PR 3 da Entrega 2), ainda sem
+Defeito do app achado ao ajustar os testes E2E (PR 3 da Entrega 2), ainda sem
 correção:
 
-- Editar o limite de uma categoria na mesma vigência grava outra linha, e a
-  tela de limites mostra a categoria duas vezes (teste em `test.fixme` em
-  `orcamento.spec.ts`).
-- Aprovar uma solicitação de entrada não recarrega a lista de membros na tela
-  da família; o novo membro só aparece ao recarregar.
-- Estourar o limite de requisições no login devolve erro 500 em vez de 429.
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
 
@@ -236,6 +230,7 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 3, PR 1, limite de categoria: editar o limite na mesma vigência atualiza a linha existente em vez de encerrar e inserir outra (`atualizarValor` no repositório); em vigência nova o limite anterior continua sendo encerrado e o histórico mostra os dois. A migration `0015_orcamento_vigencia_unica` remove só as duplicatas exatas já gravadas (mesma família, categoria e `vigencia_inicio`), mantendo a mais recente; limites de outros meses não são tocados. Teste na suíte PostgreSQL.
 - 2026-11-16 — Entrega 3, PR 1, tela da família: aprovar uma solicitação recarrega a lista de membros (o novo membro aparece sem recarregar a página); se a recarga falhar, a tela mostra o erro e mantém a lista anterior. Rejeitar só tira a solicitação dos pendentes e não busca os membros de novo.
 - 2026-11-16 — Entrega 3, PR 1, limite de requisições: estourar o limite (por exemplo, o do login) devolve 429 com `{ error: { message: "Muitas tentativas. Tente novamente em N segundos.", code: "LIMITE_REQUISICOES" } }` e o cabeçalho `retry-after`, em vez de 500. O `@fastify/rate-limit` 10.3.0 lança o que o `errorResponseBuilder` devolve; ele agora devolve um `ErroComEnvelopeHttp` (`LimiteRequisicoesError`), que o handler central já serializa. `buildApp` ganhou a opção `limiteDeRequisicoes` para os testes ligarem o limite.
+- 2026-11-16 — Entrega 3, PR 1, testes E2E: os specs `orcamento` e `familia` rodam sem `test.fixme` (limite sem duplicar e membro novo sem recarregar); a suíte passa a ter 31 testes rodando e 1 em `test.fixme` (o Extrato, da Entrega 3 PR 2).
 
 ## Decisões fechadas
 

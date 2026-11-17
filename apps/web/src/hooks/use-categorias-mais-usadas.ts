@@ -8,7 +8,10 @@ import { getCurrentMonth, shiftMonth, getTodayLocalISO } from '@/utils/date';
 
 type Transacao = TransacaoListResponse['transacoes'][number];
 
-const MESES_DA_BUSCA = 3;
+// O mês seguinte entra porque compra no cartão depois do fechamento tem `mesReferencia` do mês
+// seguinte (e a API filtra por ele); o atual e os dois anteriores cobrem os 60 dias de `data`.
+const MESES_ANTES = 2;
+const MESES_DEPOIS = 1;
 
 // Uma busca por família enquanto o app está aberto: reabrir o painel não refaz as três chamadas.
 const buscasPorFamilia = new Map<string, Promise<Transacao[]>>();
@@ -18,7 +21,9 @@ export const esquecerBuscasDeCategorias = (): void => buscasPorFamilia.clear();
 
 const buscarUltimosMeses = async (familiaId: string): Promise<Transacao[]> => {
   const atual = getCurrentMonth();
-  const meses = Array.from({ length: MESES_DA_BUSCA }, (_, i) => shiftMonth(atual, -i));
+  const meses = Array.from({ length: MESES_ANTES + MESES_DEPOIS + 1 }, (_, i) =>
+    shiftMonth(atual, MESES_DEPOIS - i),
+  );
   const respostas = await Promise.all(
     meses.map((mesReferencia) => transacaoService.listar({ mesReferencia }, familiaId)),
   );

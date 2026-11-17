@@ -42,12 +42,34 @@ afterEach(() => {
 });
 
 describe('useCategoriasMaisUsadas', () => {
-  it('busca o mês atual e os dois anteriores', async () => {
+  it('busca o mês seguinte, o atual e os dois anteriores', async () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
     renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
-    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(4));
     const meses = vi.mocked(transacaoService.listar).mock.calls.map(([f]) => f.mesReferencia);
-    expect(meses.sort()).toEqual(['2026-09', '2026-10', '2026-11']);
+    expect(meses.sort()).toEqual(['2026-09', '2026-10', '2026-11', '2026-12']);
+  });
+
+  it('na virada de ano o mês seguinte é janeiro do ano que vem', async () => {
+    vi.setSystemTime(new Date('2026-12-17T15:00:00Z'));
+    vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
+    renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
+    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(4));
+    const meses = vi.mocked(transacaoService.listar).mock.calls.map(([f]) => f.mesReferencia);
+    expect(meses.sort()).toEqual(['2026-10', '2026-11', '2026-12', '2027-01']);
+  });
+
+  it('compra de hoje no cartão, já com mês de referência do mês seguinte, entra na contagem', async () => {
+    vi.mocked(transacaoService.listar).mockImplementation(async ({ mesReferencia }) => ({
+      transacoes:
+        mesReferencia === '2026-12'
+          ? [lanc('b', '2026-11-17'), lanc('b', '2026-11-16')]
+          : mesReferencia === '2026-11'
+            ? [lanc('a', '2026-11-10')]
+            : [],
+    }));
+    const { result } = renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
+    await waitFor(() => expect(nomes(result.current)).toEqual(['Mercado', 'Alimentação']));
   });
 
   it('devolve a lista calculada depois da busca', async () => {
@@ -62,19 +84,19 @@ describe('useCategoriasMaisUsadas', () => {
   it('não repete a busca ao reabrir (montar de novo) para a mesma família', async () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
     const primeira = renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
-    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(4));
     primeira.unmount();
     renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
     renderHook(() => useCategoriasMaisUsadas('f1', 'receita'));
     await Promise.resolve();
-    expect(transacaoService.listar).toHaveBeenCalledTimes(3);
+    expect(transacaoService.listar).toHaveBeenCalledTimes(4);
   });
 
   it('busca de novo para outra família', async () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
     renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
     renderHook(() => useCategoriasMaisUsadas('f2', 'despesa'));
-    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(6));
+    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(8));
   });
 
   it('se a busca falha, devolve as primeiras do tipo e tenta de novo na próxima vez', async () => {
@@ -88,7 +110,7 @@ describe('useCategoriasMaisUsadas', () => {
     vi.mocked(transacaoService.listar).mockResolvedValue({ transacoes: [] });
     vi.mocked(transacaoService.listar).mockClear();
     renderHook(() => useCategoriasMaisUsadas('f1', 'despesa'));
-    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(transacaoService.listar).toHaveBeenCalledTimes(4));
   });
 
   it('sem família não busca', () => {

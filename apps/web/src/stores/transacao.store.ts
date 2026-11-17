@@ -9,6 +9,8 @@ interface TransacaoState {
   carregando: boolean;
   erro: string | null;
   filtros: TransacaoListQuery;
+  /** Sobe a cada gravação (registrar, editar, excluir); quem exibe a lista observa e recarrega. */
+  versao: number;
   setTransacoes: (transacoes: Transacao[]) => void;
   addTransacao: (transacao: Transacao) => void;
   updateTransacao: (transacao: Transacao) => void;
@@ -16,6 +18,7 @@ interface TransacaoState {
   setFiltros: (filtros: Partial<TransacaoListQuery>) => void;
   setCarregando: (v: boolean) => void;
   setErro: (erro: string | null) => void;
+  sinalizarMudanca: () => void;
 }
 
 export const useTransacaoStore = create<TransacaoState>((set) => ({
@@ -23,6 +26,7 @@ export const useTransacaoStore = create<TransacaoState>((set) => ({
   carregando: false,
   erro: null,
   filtros: {},
+  versao: 0,
   setTransacoes: (transacoes) => set({ transacoes }),
   addTransacao: (transacao) => set((state) => ({ transacoes: [transacao, ...state.transacoes] })),
   updateTransacao: (transacao) =>
@@ -34,4 +38,5 @@ export const useTransacaoStore = create<TransacaoState>((set) => ({
   setFiltros: (filtros) => set((state) => ({ filtros: { ...state.filtros, ...filtros } })),
   setCarregando: (carregando) => set({ carregando }),
   setErro: (erro) => set({ erro }),
+  sinalizarMudanca: () => set((state) => ({ versao: state.versao + 1 })),
 }));

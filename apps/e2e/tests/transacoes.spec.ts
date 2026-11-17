@@ -52,15 +52,8 @@ test.describe('Transações', () => {
     await expect(linha).toContainText(/\+\s*R\$\s*1\.500,00/);
   });
 
-  // DEFEITO DO APP (Entrega 3 da nova UI, ver docs/nova-ui/README.md): o Extrato não atualiza a
-  // lista depois de salvar um lançamento feito na própria tela; só atualiza ao sair e voltar. O
-  // lançamento é gravado (confirmado no banco), mas a lista segue em "Nenhuma transação
-  // encontrada.". Remover o `fixme` quando a Entrega 3 entregar a atualização imediata.
-  test.fixme('lançar com o Extrato aberto atualiza a lista', async ({
-    page,
-    authContext,
-    familiaId,
-  }) => {
+  // O Extrato recarrega o mês depois de salvar, sem sair da tela (Entrega 3 da nova UI).
+  test('lançar com o Extrato aberto atualiza a lista', async ({ page, authContext, familiaId }) => {
     await api.criarCategoria(authContext.accessToken, familiaId, {
       nome: 'Salário aberto E2E',
       tipo: 'receita',
@@ -76,10 +69,12 @@ test.describe('Transações', () => {
     await painel.getByRole('textbox', { name: 'Descrição' }).fill('Salário aberto E2E');
     await salvarLancamento(page, painel);
 
-    // O lançamento aparece na lista do Extrato, como receita.
+    // O lançamento aparece na lista do Extrato, como receita, e o resumo do período o soma.
     const linha = page.getByRole('listitem').filter({ hasText: 'Salário aberto E2E' });
     await expect(linha).toBeVisible({ timeout: 10_000 });
     await expect(linha).toContainText(/\+\s*R\$\s*1\.500,00/);
+    const resumo = page.getByRole('group', { name: 'Resumo do período' });
+    await expect(resumo.getByText('Entradas').locator('..')).toContainText(/R\$\s*1\.500,00/);
   });
 
   // ── 2. Criar despesa simples → aparece no extrato ──────────────────────────
@@ -103,7 +98,7 @@ test.describe('Transações', () => {
     await irParaAba(page, 'Extrato');
     const linha = page.getByRole('listitem').filter({ hasText: 'Supermercado E2E' });
     await expect(linha).toBeVisible({ timeout: 10_000 });
-    await expect(linha).toContainText(/-\s*R\$\s*200,00/);
+    await expect(linha).toContainText(/[-\u2212]\s*R\$\s*200,00/);
   });
 
   // ── 3. Criar transação parcelada (3x) → parcelas geradas ─────────────────
@@ -248,7 +243,7 @@ test.describe('Transações', () => {
 
     const linha = page.getByRole('listitem').filter({ hasText: 'Uber E2E editado' });
     await expect(linha).toBeVisible({ timeout: 10_000 });
-    await expect(linha).toContainText(/-\s*R\$\s*45,00/);
+    await expect(linha).toContainText(/[-\u2212]\s*R\$\s*45,00/);
     await expect(original).toHaveCount(0);
   });
 
@@ -294,7 +289,7 @@ test.describe('Transações', () => {
     await irParaAba(page, 'Extrato');
 
     // Era o único lançamento da família: a lista carregada está vazia, e não só ainda carregando.
-    await expect(page.getByText('Nenhuma transação encontrada.')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Nenhum lançamento em/)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('Cinema E2E para excluir')).toHaveCount(0);
   });
 });

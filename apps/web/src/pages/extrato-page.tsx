@@ -1,83 +1,105 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { CabecalhoAba } from '../components/cabecalho-aba';
 import { ErrorBanner } from '../components/error-banner';
-import {
-  transacaoService,
-  metodoPagamentoService,
-  categoriaService,
-} from '@/services/core-financeiro.service';
+import { CabecalhoDoDia } from '../components/extrato/cabecalho-do-dia';
+import { FiltrosDoExtrato, type FiltroTipo } from '../components/extrato/filtros-do-extrato';
+import { ExtratoContexto, type DadosDoExtrato } from '../components/extrato/extrato-contexto';
+import { LinhaDeLancamento } from '../components/extrato/linha-de-lancamento';
+import { ResumoDoPeriodo } from '../components/extrato/resumo-do-periodo';
+import { metodoPagamentoService, categoriaService } from '@/services/core-financeiro.service';
+import { useTransacoesDoMes } from '@/hooks/use-transacoes-do-mes';
 import { useCategoriaStore } from '@/stores/categoria.store';
 import { useMetodoPagamentoStore } from '@/stores/metodo-pagamento.store';
 import { useTransacaoStore } from '@/stores/transacao.store';
-import { getCurrentMonth } from '@/utils/date';
-import { formatBRL } from '@/utils/formatting';
-import { ALVO_TOQUE_CLASSES, CAMPO_CLASSES } from '../components/ui/campo-classes';
-import { IconEntrada, IconSaida } from '../components/icons';
+import { getCurrentMonth, getTodayLocalISO } from '@/utils/date';
+import { agruparPorDia, montarCsv, nomeDoMes, resumoDoPeriodo, rotuloDoDia } from '@/utils/extrato';
 
 type Transacao = ReturnType<typeof useTransacaoStore.getState>['transacoes'][number];
 
 interface ExtratoPageProps {
   familiaId: string;
   onNovaTransacao: () => void;
-  onEditarTransacao?: (transacao: Transacao) => void;
+  onEditarTransacao: (transacao: Transacao) => void;
 }
 
-type FiltroTipo = 'todos' | 'receita' | 'despesa';
+const SEM_CATEGORIA = 'Sem categoria';
 
-const formatValor = (valor: string, tipo: 'receita' | 'despesa') => {
-  const formatted = formatBRL(valor);
-  return tipo === 'receita' ? `+ ${formatted}` : `- ${formatted}`;
+const baixarCsv = (conteudo: string, nomeDoArquivo: string) => {
+  const blob = new Blob([`\uFEFF${conteudo}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeDoArquivo;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
-const TransacaoDetalheModal = ({
-  transacao,
-  onClose,
-}: {
-  transacao: Transacao;
-  onClose: () => void;
-}) => (
-  <div
-    role="dialog"
-    aria-modal="true"
-    className="fixed inset-0 z-painel flex items-end justify-center bg-black/60 sm:items-center"
-    onClick={onClose}
-  >
-    <div
-      className="w-full max-w-lg rounded-t-2xl bg-panel p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-soft sm:rounded-2xl sm:pb-5"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h2 className="mb-4 text-base font-bold text-text">{transacao.descricao ?? 'Transação'}</h2>
-      <p className="text-sm text-text-muted">{formatValor(transacao.valor, transacao.tipo)}</p>
-      <p className="mt-1 text-xs text-text-muted">{transacao.data}</p>
-      <div className="mt-5">
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full rounded-lg border border-border py-2.5 text-sm text-text-muted transition hover:text-text"
-        >
-          Fechar
-        </button>
-      </div>
-    </div>
-  </div>
+const Mensagem = ({ children }: { children: string }) => (
+  <p className="px-5 py-8 text-center text-sm text-text-muted">{children}</p>
 );
 
-const TransacaoBadges = ({ t }: { t: Transacao }) => (
-  <div className="flex flex-wrap gap-1">
-    {t.parcelado && t.parcelaAtual != null && t.numeroParcelas != null && (
-      <span className="rounded-full bg-info/10 px-2 py-0.5 text-xs font-semibold text-info">
-        Parcela {t.parcelaAtual}/{t.numeroParcelas}
-      </span>
-    )}
-    {t.recorrente && (
-      <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
-        Recorrente
-      </span>
-    )}
-  </div>
-);
+/** Carrega categorias e formas de pagamento da família se as stores ainda estão vazias. */
+const useCadastros = (familiaId: string, onErro: (mensagem: string) => void) => {
+  const { metodos } = useMetodoPagamentoStore();
+  const { categorias } = useCategoriaStore();
+
+  useEffect(() => {
+    if (!familiaId) return;
+    if (metodos.length === 0) {
+      metodoPagamentoService
+        .listar(familiaId)
+        .then((res) => useMetodoPagamentoStore.getState().setMetodos(res.metodosPagamento))
+        .catch(() => onErro('Erro ao carregar métodos de pagamento'));
+    }
+    if (categorias.length === 0) {
+      categoriaService
+        .listar(familiaId)
+        .then((res) => useCategoriaStore.getState().setCategorias(res.categorias))
+        .catch(() => onErro('Erro ao carregar categorias'));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familiaId]);
+
+  const metodosMap = useMemo(() => new Map(metodos.map((m) => [m.id, m.nome])), [metodos]);
+  const categoriasMap = useMemo(() => new Map(categorias.map((c) => [c.id, c.nome])), [categorias]);
+  return { metodosMap, categoriasMap };
+};
+
+const filtrar = (transacoes: Transacao[], tipo: FiltroTipo, busca: string): Transacao[] =>
+  transacoes.filter((t) => {
+    if (tipo !== 'todos' && t.tipo !== tipo) return false;
+    return !busca || (t.descricao ?? '').toLowerCase().includes(busca.toLowerCase());
+  });
+
+const textoDaListaVazia = (
+  total: number,
+  tipo: FiltroTipo,
+  busca: string,
+  mesReferencia: string,
+): string => {
+  if (total === 0) return `Nenhum lançamento em ${nomeDoMes(mesReferencia)}`;
+  if (busca) return `Nada encontrado para '${busca}'`;
+  return tipo === 'receita' ? 'Nenhuma entrada neste mês' : 'Nenhuma saída neste mês';
+};
+
+/** Nomes de categoria e forma de pagamento, mais a ação de abrir, para as linhas do Extrato. */
+const useDadosDoExtratoDaTela = (
+  familiaId: string,
+  onAbrir: DadosDoExtrato['onAbrir'],
+  onErro: (mensagem: string) => void,
+) => {
+  const { metodosMap, categoriasMap } = useCadastros(familiaId, onErro);
+  const dados = useMemo<DadosDoExtrato>(
+    () => ({
+      nomeDaCategoria: (id) => (id ? categoriasMap.get(id) : undefined) ?? SEM_CATEGORIA,
+      nomeDoMetodo: (id) => (id ? metodosMap.get(id) : undefined) ?? null,
+      onAbrir,
+    }),
+    [categoriasMap, metodosMap, onAbrir],
+  );
+  return { dados, categoriasMap, metodosMap };
+};
 
 export const ExtratoPage = ({
   familiaId,
@@ -85,264 +107,128 @@ export const ExtratoPage = ({
   onEditarTransacao,
 }: ExtratoPageProps) => {
   const { transacoes, carregando } = useTransacaoStore();
-  const setTransacoes = useTransacaoStore((s) => s.setTransacoes);
-  const setCarregando = useTransacaoStore((s) => s.setCarregando);
-
-  const { metodos } = useMetodoPagamentoStore();
-  const { categorias } = useCategoriaStore();
-
   const [erro, setErro] = useState<string | null>(null);
   const [mesReferencia, setMesReferencia] = useState(getCurrentMonth);
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos');
-  const [busca, setBusca] = useState('');
-  const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);
+  // `null` com a busca fechada. Mora aqui (e não no filtro) para sobreviver a trocar de mês.
+  const [busca, setBusca] = useState<string | null>(null);
 
-  const metodosMap = useMemo(() => new Map(metodos.map((m) => [m.id, m.nome])), [metodos]);
-  const categoriasMap = useMemo(() => new Map(categorias.map((c) => [c.id, c.nome])), [categorias]);
-
-  // Load stores if empty
-  useEffect(() => {
-    if (!familiaId) return;
-    if (metodos.length === 0) {
-      metodoPagamentoService
-        .listar(familiaId)
-        .then((res) => useMetodoPagamentoStore.getState().setMetodos(res.metodosPagamento))
-        .catch(() => {
-          setErro('Erro ao carregar métodos de pagamento');
-        });
-    }
-    if (categorias.length === 0) {
-      categoriaService
-        .listar(familiaId)
-        .then((res) => useCategoriaStore.getState().setCategorias(res.categorias))
-        .catch(() => {
-          setErro('Erro ao carregar categorias');
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familiaId]);
-
-  // Load transactions for selected month
-  useEffect(() => {
-    if (!familiaId) return;
-    setCarregando(true);
-    transacaoService
-      .listar({ mesReferencia }, familiaId)
-      .then((res) => setTransacoes(res.transacoes))
-      .catch(() => setTransacoes([]))
-      .finally(() => setCarregando(false));
-  }, [familiaId, mesReferencia, setCarregando, setTransacoes]);
-
-  const transacoesFiltradas = useMemo(
-    () =>
-      transacoes.filter((t) => {
-        if (filtroTipo !== 'todos' && t.tipo !== filtroTipo) return false;
-        if (busca && !(t.descricao ?? '').toLowerCase().includes(busca.toLowerCase())) return false;
-        return true;
-      }),
+  const { falhou, tentarDeNovo } = useTransacoesDoMes(familiaId, mesReferencia);
+  const { dados, categoriasMap, metodosMap } = useDadosDoExtratoDaTela(
+    familiaId,
+    onEditarTransacao,
+    setErro,
+  );
+  const filtradas = useMemo(
+    () => filtrar(transacoes, filtroTipo, busca ?? ''),
     [transacoes, filtroTipo, busca],
   );
-
-  const getMetodoNome = useCallback(
-    (id: string | null) => (!id ? '—' : (metodosMap.get(id) ?? '—')),
-    [metodosMap],
-  );
-
-  const getCategoriaNome = useCallback(
-    (id: string | null) => (!id ? '—' : (categoriasMap.get(id) ?? '—')),
-    [categoriasMap],
-  );
-
-  const exportarCSV = useCallback(() => {
-    const headers = ['Data', 'Descrição', 'Categoria', 'Pagamento', 'Tipo', 'Valor'];
-    const rows = transacoesFiltradas.map((t) => [
-      t.data,
-      t.descricao ?? '',
-      getCategoriaNome(t.categoriaId),
-      getMetodoNome(t.metodoPagamentoId),
-      t.tipo,
-      t.valor,
-    ]);
-    const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(','))
-      .join('\n');
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `extrato-${mesReferencia}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [transacoesFiltradas, mesReferencia, getCategoriaNome, getMetodoNome]);
 
   return (
     <div className="flex min-h-full flex-col bg-bg">
       <ErrorBanner error={erro} />
-
       <CabecalhoAba titulo="Extrato" mes={mesReferencia} onMesChange={setMesReferencia} />
-
-      {/* Filtros e busca */}
-      <div className="border-b border-border px-4 pb-4 md:px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFiltroTipo('todos')}
-            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
-              filtroTipo === 'todos'
-                ? 'bg-success text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            type="button"
-            aria-label="Filtrar despesas"
-            onClick={() => setFiltroTipo(filtroTipo === 'despesa' ? 'todos' : 'despesa')}
-            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
-              filtroTipo === 'despesa'
-                ? 'bg-success text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            Despesas
-          </button>
-          <button
-            type="button"
-            aria-label="Filtrar receitas"
-            onClick={() => setFiltroTipo(filtroTipo === 'receita' ? 'todos' : 'receita')}
-            className={`${ALVO_TOQUE_CLASSES} rounded-full px-3 text-sm font-semibold transition ${
-              filtroTipo === 'receita'
-                ? 'bg-success text-white'
-                : 'border border-border text-text-muted hover:text-text'
-            }`}
-          >
-            Receitas
-          </button>
-          <button
-            type="button"
-            onClick={exportarCSV}
-            className={`${ALVO_TOQUE_CLASSES} ml-auto shrink-0 whitespace-nowrap rounded-lg border border-border px-3 text-xs text-text-muted transition hover:bg-surface hover:text-text`}
-            aria-label="Exportar CSV"
-          >
-            Exportar CSV
-          </button>
-        </div>
-        <div className="mt-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" size={16} />
-            <input
-              type="text"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por descrição..."
-              className={`${CAMPO_CLASSES} pl-9 pr-3`}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div className="flex-1 p-4 md:px-6">
-        {carregando && <p className="text-center text-sm text-text-muted">Carregando...</p>}
-
-        {!carregando && transacoesFiltradas.length === 0 && (
-          <p className="text-center text-sm text-text-muted">Nenhuma transação encontrada.</p>
-        )}
-
-        {/* Mobile: lista de cards */}
-        <ul className="flex flex-col gap-2 md:hidden">
-          {transacoesFiltradas.map((t) => (
-            <li
-              key={t.id}
-              className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-panel px-4 py-3 transition hover:bg-surface"
-              onClick={() =>
-                onEditarTransacao ? onEditarTransacao(t) : setTransacaoSelecionada(t)
+      <div className="mx-auto w-full max-w-3xl pb-6">
+        {carregando && <Mensagem>Carregando...</Mensagem>}
+        {!carregando && falhou && <ErroAoCarregar onTentarDeNovo={tentarDeNovo} />}
+        {!carregando && !falhou && (
+          <ExtratoContexto.Provider value={dados}>
+            <ConteudoDoExtrato
+              transacoes={transacoes}
+              filtradas={filtradas}
+              filtroTipo={filtroTipo}
+              onFiltro={setFiltroTipo}
+              busca={busca}
+              onBusca={setBusca}
+              mesReferencia={mesReferencia}
+              onExportar={() =>
+                exportarExtrato(filtradas, mesReferencia, categoriasMap, metodosMap)
               }
-            >
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-text">{t.descricao}</span>
-                <span className="text-xs text-text-dim">{getCategoriaNome(t.categoriaId)}</span>
-                <div className="flex flex-wrap items-center gap-1">
-                  <TransacaoBadges t={t} />
-                  <span className="text-xs text-text-muted">{t.data}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className={`text-xs ${t.tipo === 'receita' ? 'text-success' : 'text-text'}`}>
-                  {t.tipo === 'receita' ? (
-                    <IconEntrada size={14} aria-hidden="true" />
-                  ) : (
-                    <IconSaida size={14} aria-hidden="true" />
-                  )}
-                </span>
-                <span
-                  className={`text-sm font-semibold tabular-nums ${
-                    t.tipo === 'receita' ? 'text-success' : 'text-text'
-                  }`}
-                >
-                  {formatValor(t.valor, t.tipo)}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {/* Desktop: tabela */}
-        {transacoesFiltradas.length > 0 && (
-          <div className="hidden md:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-text-muted">
-                  <th className="pb-2 pr-4 font-semibold">Data</th>
-                  <th className="pb-2 pr-4 font-semibold">Descrição</th>
-                  <th className="pb-2 pr-4 font-semibold">Categoria</th>
-                  <th className="pb-2 pr-4 font-semibold">Pagamento</th>
-                  <th className="pb-2 text-right font-semibold">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transacoesFiltradas.map((t, idx) => (
-                  <tr
-                    key={t.id}
-                    className={`cursor-pointer border-b border-border/50 hover:bg-card-alt ${idx % 2 === 1 ? 'bg-surface/30' : ''}`}
-                    onClick={() =>
-                      onEditarTransacao ? onEditarTransacao(t) : setTransacaoSelecionada(t)
-                    }
-                  >
-                    <td className="py-3.5 pr-4 text-text-muted">{t.data}</td>
-                    <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-text">{t.descricao}</span>
-                        <TransacaoBadges t={t} />
-                      </div>
-                    </td>
-                    <td className="py-3.5 pr-4 text-text-muted">
-                      {getCategoriaNome(t.categoriaId)}
-                    </td>
-                    <td className="py-3.5 pr-4 text-text-muted">
-                      {getMetodoNome(t.metodoPagamentoId)}
-                    </td>
-                    <td
-                      className={`py-3.5 text-right font-semibold tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-text'}`}
-                    >
-                      {formatValor(t.valor, t.tipo)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            />
+          </ExtratoContexto.Provider>
         )}
       </div>
+    </div>
+  );
+};
 
-      {/* Modal de detalhe */}
-      {transacaoSelecionada && (
-        <TransacaoDetalheModal
-          transacao={transacaoSelecionada}
-          onClose={() => setTransacaoSelecionada(null)}
-        />
+const exportarExtrato = (
+  filtradas: Transacao[],
+  mesReferencia: string,
+  categoriasMap: Map<string, string>,
+  metodosMap: Map<string, string>,
+) => {
+  const nome = (mapa: Map<string, string>) => (id: string | null) =>
+    (id ? mapa.get(id) : undefined) ?? '—';
+  baixarCsv(
+    montarCsv(filtradas, nome(categoriasMap), nome(metodosMap)),
+    `extrato-${mesReferencia}.csv`,
+  );
+};
+
+const ErroAoCarregar = ({ onTentarDeNovo }: { onTentarDeNovo: () => void }) => (
+  <div className="px-5 py-8 text-center">
+    <p className="text-sm text-text-muted">
+      Não foi possível carregar o extrato. Verifique a conexão e tente de novo.
+    </p>
+    <button
+      type="button"
+      onClick={onTentarDeNovo}
+      className="mt-3 min-h-11 rounded-full bg-success px-5 text-sm font-bold text-white"
+    >
+      Tentar de novo
+    </button>
+  </div>
+);
+
+interface ConteudoDoExtratoProps {
+  transacoes: Transacao[];
+  filtradas: Transacao[];
+  filtroTipo: FiltroTipo;
+  onFiltro: (filtro: FiltroTipo) => void;
+  busca: string | null;
+  onBusca: (busca: string | null) => void;
+  mesReferencia: string;
+  onExportar: () => void;
+}
+
+const ConteudoDoExtrato = (props: ConteudoDoExtratoProps) => {
+  const { transacoes, filtradas, filtroTipo, busca, mesReferencia } = props;
+  const dias = useMemo(() => agruparPorDia(filtradas), [filtradas]);
+  return (
+    <>
+      <ResumoDoPeriodo resumo={resumoDoPeriodo(filtradas)} />
+      <FiltrosDoExtrato
+        filtro={filtroTipo}
+        onFiltro={props.onFiltro}
+        busca={busca}
+        onBusca={props.onBusca}
+        onExportar={props.onExportar}
+      />
+      {dias.length === 0 && (
+        <Mensagem>
+          {textoDaListaVazia(transacoes.length, filtroTipo, busca ?? '', mesReferencia)}
+        </Mensagem>
       )}
+      <ListaPorDia dias={dias} />
+    </>
+  );
+};
+
+const ListaPorDia = ({ dias }: { dias: ReturnType<typeof agruparPorDia> }) => {
+  const hoje = getTodayLocalISO();
+  return (
+    <div className="mt-2">
+      {dias.map((dia) => (
+        <section key={dia.data}>
+          <CabecalhoDoDia rotulo={rotuloDoDia(dia.data, hoje)} totalCentavos={dia.totalCentavos} />
+          <ul className="mx-3.5 divide-y divide-border-soft overflow-hidden rounded-[14px] bg-panel shadow-soft">
+            {dia.transacoes.map((t) => (
+              <LinhaDeLancamento key={t.id} transacao={t} />
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 };

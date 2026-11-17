@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { StrictMode, type ReactElement } from 'react';
 import { MemoryRouter, type InitialEntry } from 'react-router';
 
 import { SondaDeRota } from './sonda-de-rota';
@@ -13,14 +13,19 @@ import { SondaDeRota } from './sonda-de-rota';
 export const renderPagina = (
   pagina: ReactElement,
   entradas: InitialEntry | InitialEntry[] = '/',
+  { strict = false }: { strict?: boolean } = {},
 ) => {
   const lista = Array.isArray(entradas) ? entradas : [entradas];
-  const arvore = (elemento: ReactElement) => (
+  const roteador = (elemento: ReactElement) => (
     <MemoryRouter initialEntries={lista} initialIndex={lista.length - 1}>
       {elemento}
       <SondaDeRota />
     </MemoryRouter>
   );
+  // `strict` põe o StrictMode na raiz, fora do roteador, como o main.tsx: só assim cada efeito
+  // roda duas vezes (um StrictMode dentro do roteador não duplica o efeito da página).
+  const arvore = (elemento: ReactElement) =>
+    strict ? <StrictMode>{roteador(elemento)}</StrictMode> : roteador(elemento);
   const resultado = render(arvore(pagina));
   return {
     ...resultado,

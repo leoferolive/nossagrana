@@ -27,6 +27,16 @@ const config: Config = {
         'warning-fill': 'rgb(var(--color-warning-fill) / <alpha-value>)',
         'border-strong': 'rgb(var(--color-border-strong) / <alpha-value>)',
         'border-soft': 'rgb(var(--color-border-soft) / <alpha-value>)',
+        'cat-alimentacao-bg': 'rgb(var(--color-cat-alimentacao-bg) / <alpha-value>)',
+        'cat-alimentacao-ink': 'rgb(var(--color-cat-alimentacao-ink) / <alpha-value>)',
+        'cat-saude-bg': 'rgb(var(--color-cat-saude-bg) / <alpha-value>)',
+        'cat-saude-ink': 'rgb(var(--color-cat-saude-ink) / <alpha-value>)',
+        'cat-lazer-bg': 'rgb(var(--color-cat-lazer-bg) / <alpha-value>)',
+        'cat-lazer-ink': 'rgb(var(--color-cat-lazer-ink) / <alpha-value>)',
+        'cat-compras-bg': 'rgb(var(--color-cat-compras-bg) / <alpha-value>)',
+        'cat-compras-ink': 'rgb(var(--color-cat-compras-ink) / <alpha-value>)',
+        'cat-outros-bg': 'rgb(var(--color-cat-outros-bg) / <alpha-value>)',
+        'cat-outros-ink': 'rgb(var(--color-cat-outros-ink) / <alpha-value>)',
       },
       // Faz `pb-safe` (usada na BottomNav) existir; sem `viewport-fit=cover` o valor é 0.
       spacing: {

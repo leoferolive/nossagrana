@@ -29,10 +29,10 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. Entrega 3 em andamento: o PR de correções (limite duplicado, membros, 429) está
-pronto. **Próximo passo:** o PR do Extrato, com plano em
-`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr2-extrato.md` na branch
-`feat/nova-ui-e3-extrato`; depois, o do Lançar, sobre a branch do Extrato.
+Lançar e Início ainda é o antigo. Entrega 3 em andamento: correções (#191) e Extrato (#192) entregues.
+**Próximo passo:** o PR do Lançar, com plano em
+`docs/superpowers/plans/2026-11-17-nova-ui-entrega-3-pr3-lancar.md` na branch
+`feat/nova-ui-e3-lancar` (criada sobre a do Extrato).
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -94,10 +94,10 @@ Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
 - [x] 2026-11-16 — Desenho da Entrega 3 aprovado pelo usuário
 - [x] 2026-11-16 — Correções: limite duplicado, membros que não recarregam e erro 500 no
       limite de login
-- [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
-- [ ] Lista do Extrato atualizada logo depois de salvar ou excluir um lançamento
-      (hoje só atualiza ao sair e voltar à tela; visto na validação do #188)
-- [ ] Resumo do período, filtros e busca
+- [x] 2026-11-17 — Extrato em ordem cronológica, agrupado por dia, com total do dia
+- [x] 2026-11-17 — Lista do Extrato atualizada logo depois de salvar ou excluir um
+      lançamento
+- [x] 2026-11-17 — Resumo do período, filtros e busca
 - [ ] Lançar com valor primeiro e chips de categoria, data e pagamento
 - [ ] Salvar fixo no rodapé e "Mais opções" para descrição, parcelas e repetição
 - [ ] Botão de voz visível
@@ -127,6 +127,13 @@ correção:
 
 - A API não tem rota para excluir a conta (`DELETE /auth/account`), que os
   testes E2E tentavam usar para limpar os usuários criados.
+
+Pontos menores do PR do Extrato:
+
+- A linha tocada fica com fundo cinza depois do toque.
+- A pílula de mês continua navegável durante o erro de carga.
+- Salvar com a rede fora fecha o painel de lançar sem aviso e perde o que foi
+  digitado (comportamento antigo; corrigido no PR do Lançar).
 
 Pontos menores do PR de correções da Entrega 3:
 
@@ -239,6 +246,13 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 - 2026-11-16 — Entrega 3, PR 1, testes E2E: os specs `orcamento` e `familia` rodam sem `test.fixme` (limite sem duplicar e membro novo sem recarregar); a suíte passa a ter 31 testes rodando e 1 em `test.fixme` (o Extrato, da Entrega 3 PR 2).
 - 2026-11-16 — Entrega 3, PR 1, ajustes da revisão: pedir um limite com início anterior ao do limite vigente responde 409 `LIMITE_VIGENCIA_ANTERIOR` (mês pedido e início vigente na mensagem) antes de qualquer escrita, em vez de encerrar o vigente e criar uma segunda linha válida no mesmo mês; a leitura do erro do PostgreSQL embrulhado pelo Drizzle (`cause`) virou `encontrarErroPostgres`, em `shared/postgres/`, usada pela tradução de FK composta e pelo índice de vigência.
 - 2026-11-16 — Entrega 3, PR 1, sem estado parcial ao trocar o limite vigente: o serviço confere antes de escrever se já existe linha da mesma família e categoria com a vigência pedida (409 `LIMITE_VIGENCIA_DUPLICADA`, caso de linha encerrada deixada pelo defeito antigo) e a troca (encerrar o vigente e inserir o novo) roda numa transação única em `substituirVigente`; se a inserção falhar, o vigente continua aberto. Teste no PostgreSQL.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), cálculo: `utils/extrato.ts` agrupa por dia (do mais recente ao mais antigo), totaliza em centavos inteiros, monta o rótulo do dia ("Hoje · seg, 16 nov") a partir de `getTodayLocalISO` e resume o período, sem converter fuso.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), lista viva: a store de transações ganhou `versao` e `sinalizarMudanca`; `useLancamento` sinaliza depois de registrar, editar e excluir com sucesso (falha não sinaliza) e o Extrato recarrega o mês em silêncio, sem trocar a lista por "Carregando". A resposta de mês ou família que já mudou é descartada, então gravar em outro mês não põe o lançamento na lista errada. O histórico do painel de lançar não mudou. Falha ao gravar segue sem tratamento visual no modal (rejeição sem captura), fora do escopo deste PR.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), ícone de categoria: `IconeCategoria` (38×38, raio 12) escolhe a família pelo nome sem acento (alimentação, saúde, lazer, compras, outros) e as categorias padrão fora delas (moradia, transporte, educação, assinaturas, salário, bônus, investimentos, cofrinho) ganham ícone próprio na família "outros". As dez cores entraram como tokens `cat-*-bg` e `cat-*-ink` (CSS e Tailwind), com teste de contraste de 4,5:1 em `tokens.test.ts`.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), tela: lista por dia do mais recente ao mais antigo (cabeçalho "Hoje · seg, 16 nov" com o total do dia), cartão de resumo (Entradas, Saídas, Saldo), chips Tudo/Saídas/Entradas com `aria-pressed`, busca que abre pelo botão e recebe o foco, menu "Mais ações" com Exportar CSV (mesmo CSV, agora montado por `montarCsv`) e linhas de 52px com ícone de categoria. A tabela do desktop saiu: a mesma lista serve nos dois tamanhos (largura máxima de 48rem no desktop). Estados: carregando, erro com "Tentar de novo" (antes a falha virava lista vazia), mês vazio ("Nenhum lançamento em novembro") e busca sem resultado ("Nada encontrado para 'xyz'"), mais "Nenhuma entrada/saída neste mês" para o filtro de tipo. A linha também diz "Recorrente" no metadado, para não perder o selo da tela antiga; o modal de detalhe sem edição saiu e `onEditarTransacao` passou a obrigatório. O metadado de lazer (de quem é o gasto) fica para a Entrega 4, que traz o dado do backend.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), E2E: `transacoes.spec.ts` sai do `test.fixme` em "lançar com o Extrato aberto atualiza a lista" (agora também confere o resumo do período) e passa a esperar o sinal "−" (U+2212) nas saídas e a mensagem "Nenhum lançamento em <mês>" no mês vazio. Specs não rodados por quem desenvolveu (ambiente isolado em uso); a validação roda `transacoes.spec.ts`.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato), correções da revisão: o estado da busca (aberta ou não, e o texto) passa a viver na página, então sobrevive a trocar de mês e a "Tentar de novo" (campo reaberto com o texto, botão "Limpar busca"); a carga do mês só marca a chave como boa no sucesso (`hooks/use-transacoes-do-mes.ts`) e toda falha, inclusive a recarga depois de gravar, mostra o erro com "Tentar de novo" em vez de lista vazia ou velha; menu "Mais ações" fecha com Escape de qualquer elemento do menu, leva o foco ao primeiro item ao abrir e devolve ao botão ao fechar; o nome acessível da linha inclui o metadado; nomes de categoria e forma de pagamento e a ação de abrir descem por um contexto do Extrato (`extrato-contexto.ts`) e não por props; `familiaDaCategoria` deixou de ser exportada.
+- 2026-11-17 — Entrega 3, PR 2 (Extrato): o teste de falha de carga sob StrictMode passou a montar o `<StrictMode>` na raiz (opção `strict` do `renderPagina`), porque dentro do roteador o efeito rodava uma vez só e o teste não pegava o defeito. Com a lógica antiga da chave de carga ele falha mostrando "Nenhum lançamento em novembro"; com a correção, mostra "Tentar de novo".
 
 ## Decisões fechadas
 

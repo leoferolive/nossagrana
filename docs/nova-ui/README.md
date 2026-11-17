@@ -29,10 +29,11 @@ será construído vira item em [Perguntas em aberto](#perguntas-em-aberto).
 **Estado em 2026-11-16:** Entregas 1 e 2 concluídas. Entrega 1: #183 (Correções)
 e #186 (Base visual). Entrega 2: #188 (Rotas com URL), #189 (barra de cinco,
 Mais, Planejar, cabeçalhos e tour) e o PR dos testes E2E. O miolo de Extrato,
-Lançar e Início ainda é o antigo. O desenho da Entrega 3 (Extrato e Lançar) está escrito. **Próximo passo:** o
-usuário aprovar o
-[desenho da Entrega 3](../superpowers/specs/2026-11-16-nova-ui-entrega-3-design.md);
-em seguida, o plano do primeiro PR dela (Correções).
+Lançar e Início ainda é o antigo. O desenho da Entrega 3 (Extrato e Lançar) está aprovado e o plano do primeiro PR
+dela está escrito. **Próximo passo:** executar o
+[plano do PR 1 da Entrega 3 (Correções)](../superpowers/plans/2026-11-16-nova-ui-entrega-3-pr1-correcoes.md)
+na branch `feat/nova-ui-e3-correcoes`. Depois, os PRs do Extrato e do Lançar,
+cada um com plano próprio.
 
 Cada PR segue este fluxo: um subagente desenvolve, outro testa
 e valida, outro revisa e abre o PR; com o review do Codex sem pendências e o CI
@@ -91,7 +92,7 @@ cabeçalhos e tour; E2E. Desenho em
 Sai em três PRs em sequência: correções, Extrato e Lançar. Desenho em
 [`2026-11-16-nova-ui-entrega-3-design.md`](../superpowers/specs/2026-11-16-nova-ui-entrega-3-design.md).
 
-- [ ] Desenho da Entrega 3 aprovado pelo usuário
+- [x] 2026-11-16 — Desenho da Entrega 3 aprovado pelo usuário
 - [ ] Correções: limite duplicado, membros que não recarregam e erro 500 no
       limite de login
 - [ ] Extrato em ordem cronológica, agrupado por dia, com total do dia
@@ -260,10 +261,16 @@ Pontos menores que ficaram da Entrega 1 (revisão e validação do PR 2):
 | 21  | Um único tour de boas-vindas, mostrado uma vez a todos                                                                                                                 | Eram oito tours, um por tela; a navegação mudou para todo mundo                                                                                                                                                                                       |
 | 22  | O mês selecionado não vai para o endereço; só a fatura leva o mês                                                                                                      | O mês identifica a fatura; nas outras telas seria custo sem ganho agora                                                                                                                                                                               |
 | 23  | Troca de família em Mais › Família; a troca rápida no topo do Início vem com o Início novo (Entrega 4)                                                                 | O topo do Início é redesenhado na Entrega 4                                                                                                                                                                                                           |
+| 24  | Extrato do mais recente para o mais antigo, agrupado por dia, com o total do dia                                                                                       | É como a família confere o mês; hoje a lista vem na ordem de criação                                                                                                                                                                                  |
+| 25  | "Mais usadas" no Lançar: as seis categorias com mais lançamentos nos últimos 60 dias, calculadas no app                                                                | Não muda a API; família nova vê as seis primeiras categorias padrão                                                                                                                                                                                   |
+| 26  | Aviso "lançado" com "Desfazer" por 6 segundos; exclusão confirmada num painel do app                                                                                   | Hoje nada avisa que salvou, e a exclusão usa a confirmação nativa do navegador                                                                                                                                                                        |
+| 27  | Microfone visível ao lado do valor, além do toque longo no "+"                                                                                                         | O toque longo ninguém descobre sozinho                                                                                                                                                                                                                |
+| 28  | "Lazer de quem" fica para a Entrega 4                                                                                                                                  | Depende do direito de lazer por pessoa, que é backend da Entrega 4                                                                                                                                                                                    |
 
 As decisões 13 a 16 foram escolhidas pelo Claude em 2026-11-15, por delegação do
 usuário. As decisões 17 a 23 foram propostas pelo Claude no desenho da Entrega 2,
-que o usuário aprovou em 2026-11-16.
+que o usuário aprovou em 2026-11-16. As decisões 24 a 28 vieram do desenho da Entrega 3,
+aprovado no mesmo dia.
 
 `docs/AUDIT-UX.md` (2026-03) e `docs/wireframes/` são anteriores a esta direção;
 onde divergirem, vale este arquivo.

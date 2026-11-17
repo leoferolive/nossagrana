@@ -1,6 +1,6 @@
 # Nova UI — Entrega 3: Extrato e Lançar
 
-**Estado:** aguardando aprovação do usuário. **Data:** 2026-11-16.
+**Estado:** aprovado pelo usuário em 2026-11-16. **Data:** 2026-11-16.
 Direção e sistema visual: [`docs/nova-ui/README.md`](../../nova-ui/README.md).
 Roteiro das telas: [`docs/nova-ui/telas.md`](../../nova-ui/telas.md), seções
 "Extrato" e "Lançar". Evidências: [`docs/nova-ui/auditoria.md`](../../nova-ui/auditoria.md).

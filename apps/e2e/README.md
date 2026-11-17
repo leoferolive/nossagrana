@@ -75,10 +75,13 @@ Como o ritmo é cumprido:
   `page.goto` para abrir telas direto.
 - O tour de boas-vindas (chave `tour-boas-vindas` no `localStorage`) é suprimido em todo teste
   pela fixture automática `tourSuprimido`.
-- Categoria e método de pagamento são `CustomSelect`, não `<select>`: use
-  `escolherOpcao` (`helpers/custom-select.ts`) em vez de `selectOption`.
-- O painel de lançar abre pelo "Lançar" da barra: `abrirPainelLancar` e `salvarLancamento`
-  (`helpers/navegacao.ts`).
+- No painel de lançar, categoria, data e forma de pagamento são chips (`aria-pressed`), e
+  descrição, parcelas e repetição ficam em "Mais opções". `lancar` (`helpers/lancar.ts`) faz o
+  passo a passo inteiro; `abrirPainelLancar`, `escolherCategoria` (chip ou "Todas") e
+  `salvarLancamento` servem para os casos que precisam parar no meio. O aviso "Despesa lançada",
+  com "Desfazer", se acha com `avisoDeLancamento`.
+- Os demais seletores do app (como a frequência da repetição) são `CustomSelect`, não `<select>`:
+  use `escolherOpcao` (`helpers/custom-select.ts`) em vez de `selectOption`.
 - O refresh do login é rotativo: `abrirAppAutenticado` roda uma vez por teste; depois use
   `page.goto`/`reload`, que levam o cookie já rotacionado.
 - A API não tem rota de exclusão de conta: os usuários dos testes ficam no banco isolado (e-mails
